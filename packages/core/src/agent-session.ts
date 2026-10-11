@@ -62,7 +62,7 @@ import {
   type PermissionQuestion,
 } from './permission.ts';
 import { openAgent, runTurn, withAuthHint, type AgentHandle, type OpenAgentOptions } from './run.ts';
-import { toTranscript } from './transcript.ts';
+import { fitsInputCap, isJsonValue, toTranscript } from './transcript.ts';
 import {
   agentExitedEntry,
   agentStatus,
@@ -254,6 +254,8 @@ export class AgentSession {
   readonly #command: AgentCommand;
   readonly #events: AgentSessionEvents;
   readonly #append: (sessionId: SessionId, entries: TranscriptEntry[]) => void;
+  /** Whether the host passed an `append`; without one a host entry would be drawn and never stored. */
+  readonly #persists: boolean;
   readonly #create: (record: SessionRecord) => void;
   readonly #source: AgentSource;
   readonly #resolveAgent: AgentSessionOptions['resolveAgent'];
@@ -377,6 +379,7 @@ export class AgentSession {
     this.#command = options.command;
     this.#events = options.events;
     this.#append = options.append ?? (() => {});
+    this.#persists = options.append !== undefined;
     this.#create = options.create ?? (() => {});
     this.#source = options.source ?? 'host';
     this.#resolveAgent = options.resolveAgent;
@@ -601,7 +604,11 @@ export class AgentSession {
    * line sits in the transcript in the order it happened and survives a resume. **Throws when there
    * is no session yet**: a new conversation has no record until its first prompt answers, and a line
    * drawn but filed nowhere would vanish on the next resume, which is the silent loss a host most
-   * needs to hear about. Also throws for an empty `type` or `text`, which no surface could show.
+   * needs to hear about. For the same reason it **throws when the host configured no `append`**: the
+   * default is a no-op, and a no-op would draw a line that is gone on the next resume. Also throws for an
+   * empty `type` or `text`, which no surface could show, and for `data` that is over the input cap or is
+   * not JSON all the way down (a function, `undefined` member, `Map`, `BigInt`, a cycle), because the
+   * store would write something other than what the host handed over.
    */
   appendHostEntry(input: { type: string; text: string; data?: unknown; icon?: string }): TranscriptEntry {
     if (typeof input.type !== 'string' || input.type === '') throw new Error('a host entry needs a type');
@@ -609,6 +616,13 @@ export class AgentSession {
       throw new Error('a host entry needs a text');
     if (input.icon !== undefined && typeof input.icon !== 'string')
       throw new Error('a host entry icon is a name');
+    if (input.data !== undefined && !isJsonValue(input.data))
+      throw new Error('host entry data must be JSON: no functions, undefined, Map, BigInt or cycles');
+    if (input.data !== undefined && !fitsInputCap(input.data))
+      throw new Error('host entry data is too large to store');
+    if (!this.#persists) {
+      throw new Error('no appendTurns was configured, so a host entry could not be stored');
+    }
     const session = this.#session;
     if (!session) {
       throw new Error(

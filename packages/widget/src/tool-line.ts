@@ -103,23 +103,36 @@ export function toolRow(
   const line = call === null ? parseToolLine(summary) : lineOfCall(call, summary);
   const standard: ToolRow = { ...line, subtitle: null, icon: iconOf(line.title, call?.kind) };
   if (call === null || presenter === undefined) return standard;
-  let presented: unknown;
+  // Every field is read exactly once, inside the try, into plain locals; validation and drawing use
+  // only those. A getter or Proxy can throw, or answer differently on a second read (valid at the
+  // check, empty at the draw), and either would bring back the vanished or blank row this guards.
+  let title: unknown;
+  let subtitle: unknown;
+  let icon: unknown;
   try {
-    presented = presenter(call);
+    const presented: unknown = presenter(call);
+    if (presented === null) return standard;
+    if (typeof presented === 'object') {
+      ({ title, subtitle, icon } = presented as Record<string, unknown>);
+    }
   } catch (error) {
     warn(`the tool presenter threw, so the call is drawn as lotse would: ${String(error)}`);
     return standard;
   }
-  if (presented === null) return standard;
-  if (!isPresentation(presented)) {
+  if (
+    typeof title !== 'string' ||
+    title.trim() === '' ||
+    (subtitle !== undefined && typeof subtitle !== 'string') ||
+    (icon !== undefined && typeof icon !== 'string')
+  ) {
     warn('the tool presenter returned no usable title, so the call is drawn as lotse would');
     return standard;
   }
   return {
-    title: presented.title,
+    title,
     status: line.status,
-    subtitle: presented.subtitle && presented.subtitle !== '' ? presented.subtitle : null,
-    icon: presented.icon && presented.icon !== '' ? presented.icon : standard.icon,
+    subtitle: subtitle && subtitle !== '' ? subtitle : null,
+    icon: icon && icon !== '' ? icon : standard.icon,
   };
 }
 
@@ -137,15 +150,4 @@ function lineOfCall(call: ToolCallView, summary: string): ToolLine {
 function iconOf(title: string, kind: string | undefined): string {
   if (kind !== undefined && kind !== 'other' && kind !== 'think') return toolIcon(kind);
   return toolIcon(title);
-}
-
-function isPresentation(value: unknown): value is ToolPresentation {
-  if (typeof value !== 'object' || value === null) return false;
-  const { title, subtitle, icon } = value as Record<string, unknown>;
-  return (
-    typeof title === 'string' &&
-    title.trim() !== '' &&
-    (subtitle === undefined || typeof subtitle === 'string') &&
-    (icon === undefined || typeof icon === 'string')
-  );
 }

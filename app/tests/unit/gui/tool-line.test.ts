@@ -111,6 +111,32 @@ export default async () => {
       });
     });
 
+    await it('falls back when a presentation getter throws', async () => {
+      warnings.length = 0;
+      const presented = {
+        get title(): string {
+          throw new Error('boom');
+        },
+      };
+      const row = toolRow('execute — completed', call, () => presented as ToolPresentation, warn);
+      expect(row.title).toBe('execute');
+      expect(row.subtitle).toBe(null);
+      expect(warnings.length).toBe(1);
+    });
+
+    await it('reads each field once, so a getter that changes its answer cannot blank the title', async () => {
+      let reads = 0;
+      const presented = {
+        get title(): string {
+          reads += 1;
+          return reads === 1 ? 'x' : '';
+        },
+      };
+      const row = toolRow('execute — completed', call, () => presented as ToolPresentation);
+      expect(row.title).toBe('x');
+      expect(reads).toBe(1);
+    });
+
     await it('falls back silently on null', async () => {
       warnings.length = 0;
       const row = toolRow('execute — completed', call, () => null, warn);

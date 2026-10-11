@@ -127,6 +127,25 @@ export function fitsInputCap(value: unknown): boolean {
 }
 
 /**
+ * Whether a value is JSON all the way down and survives a write to the store unchanged.
+ *
+ * `JSON.stringify` alone is too forgiving: it silently drops a function or an `undefined` member,
+ * turns a `Map` into `{}` and a `Date` into a string — the stored value then differs from the one the
+ * caller handed over. So this walks the value and accepts only `null`, booleans, strings, finite
+ * numbers, arrays and plain objects, and refuses a cycle.
+ */
+export function isJsonValue(value: unknown, ancestors: object[] = []): boolean {
+  if (value === null || typeof value === 'boolean' || typeof value === 'string') return true;
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value !== 'object' || ancestors.includes(value)) return false;
+  const next = [...ancestors, value];
+  if (Array.isArray(value)) return value.every((item) => isJsonValue(item, next));
+  const proto = Object.getPrototypeOf(value) as unknown;
+  if (proto !== Object.prototype && proto !== null) return false;
+  return Object.values(value).every((member) => isJsonValue(member, next));
+}
+
+/**
  * `tools.<server>.<tool>(`, with either segment in dot or bracket form.
  *
  * The lookbehind keeps `mytools.a.b(` and `x.tools.a.b(` out: those are some other object's

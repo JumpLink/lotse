@@ -136,7 +136,7 @@ receives each tool call folded into a `ToolCallView`, whose `mcp` list names the
 call reached (with opencode's code mode, the agent's own report once it completed). Return
 `{ title, subtitle?, icon? }`, or `null` for lotse's row; the status always stays the agent's, and a
 presenter that throws falls back to lotse's row. To record something your app did into the
-conversation, call `chat.appendHostItem({ type, text, data?, icon? })`. Details:
+conversation, call `chat.appendHostItem({ type, text, data?, icon? })` (needs `appendTurns`). Details:
 [`@lotse/widget`](../packages/widget/README.md#toolpresenter-renames-a-row-it-never-restatuses-it).
 
 ## 6. Add your permission gate

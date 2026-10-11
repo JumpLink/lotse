@@ -269,10 +269,31 @@ function foldCall(calls: Map<string, ToolCallView>, entry: TranscriptEntry): Too
   else if (before?.rawInput !== undefined) next.rawInput = before.rawInput;
   else if (before?.rawInputOmitted) next.rawInputOmitted = true;
   // Replaced, never merged: a later line's list is the agent's fuller account of the same run (the
-  // code reading while it runs, the reported calls once it is done), not further calls.
-  if (record.mcp && record.mcp.length > 0) next.mcp = record.mcp;
+  // code reading while it runs, the reported calls once it is done), not further calls. One exception:
+  // a list read off the code never replaces a reported one — the code only says what the script
+  // *names*, the report says what ran, and a late code-only line must not downgrade that.
+  if (record.mcp && record.mcp.length > 0) {
+    const downgrade =
+      record.mcp.every((call) => call.source === 'code') &&
+      (before?.mcp ?? []).some((call) => call.source === 'reported');
+    if (!downgrade) next.mcp = record.mcp;
+  }
+  // The map keeps `next` as built; the caller gets a frozen copy of it. The view is handed to a
+  // host presenter, and `mcp` and `rawInput` are the stored entries' own objects — a presenter that
+  // mutated them would rewrite the transcript, and every later fold with it. Copying here (rather
+  // than freezing in place) leaves the stored entries writable for their real owner, and freezing
+  // makes a mutating presenter throw, which `toolRow` already treats as a failed presenter.
   if (key !== null) calls.set(key, next);
-  return next;
+  return frozenCopy(next);
+}
+
+/** A deep copy of plain JSON-shaped data with every object and array frozen. */
+function frozenCopy<T>(value: T): T {
+  if (typeof value !== 'object' || value === null) return value;
+  const copy: unknown = Array.isArray(value)
+    ? value.map((item: unknown) => frozenCopy(item))
+    : Object.fromEntries(Object.entries(value).map(([k, v]) => [k, frozenCopy(v)]));
+  return Object.freeze(copy) as T;
 }
 
 function toItem(run: Run): TranscriptItem {
@@ -313,6 +334,10 @@ function toItem(run: Run): TranscriptItem {
         icon: run.entry.host?.icon || null,
         at: run.at,
       };
+    // A kind a newer lotse wrote. Shown as a note with its text rather than dropped (the person's
+    // history stays whole) or returned as `undefined` (a surface would crash on it).
+    default:
+      return { kind: 'system', text: `(${String(run.kind)}) ${text}`, at: run.at };
   }
 }
 

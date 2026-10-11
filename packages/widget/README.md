@@ -200,8 +200,9 @@ tool call vanish. Lines written by older lotse versions carry no record and neve
 
 `chat.appendHostItem({ type, text, data?, icon? })` records something your app did into the open
 conversation — kind `'host'`, persisted through `appendTurns` like any line and shown on resume as a
-small row with your icon. `data` is yours (keep it JSON). It rejects when no session is open yet (a new
-chat is filed after its first prompt) or when `type` or `text` is empty, instead of drawing a row that
+small row with your icon. `data` is yours and must be JSON (no functions, `Map`, `BigInt` or cycles) and
+small (8 KiB). It rejects when you passed no `appendTurns`, when no session is open yet (a new chat is
+filed after its first prompt), or when `type`, `text` or `data` is unusable, instead of drawing a row that
 would be lost.
 
 ### `providerOnboarding`
@@ -225,7 +226,7 @@ After a successful login the agent restarts. Nothing here reads or keeps a crede
 | `prompt(text)`, `clearDraft()`, `stop()` | Drive the composer from code. |
 | `snapshot`, `turnRunning`, `agentRunning`, `hasChat`, `openSessionId`, `sendReason` | Read-only state, for enabling your own controls. |
 | `dismissPermission(reason)`, `closePermission()`, `closeFailure()`, `closeLogin()` | Take a dialog down, e.g. when your window closes. Call `dismissPermission` first so the reason is recorded. |
-| `appendHostItem({ type, text, data?, icon? })` | Record a line of your own in the open conversation. Returns `Promise<void>`; rejects with no session open. See above. |
+| `appendHostItem({ type, text, data?, icon? })` | Record a line of your own in the open conversation. Returns `Promise<void>`; rejects with no session open or no `appendTurns`. See above. |
 | `shutdown()` | **Async.** Aborts the onboarding probe, cancels the running turn, waits, then terminates the agent. Call it from your window's close path and wait for it. |
 
 `stageOnboarding`, `stagePermissionRequest`, `stageConfigOption`, `openModelDropdown`,
