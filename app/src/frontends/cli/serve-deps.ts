@@ -96,6 +96,7 @@ export function serveDeps(options: DepsOptions): ServeDeps | null {
       return command;
     },
     promptFor: (task) => options.loaded.promptFor(task),
+    precheckPromptFor: (task) => options.loaded.precheckPromptFor(task),
     channel: options.channel,
     questions: questionBook(stateDir, now, (problem) => err(`  ${problem}`)),
     now,

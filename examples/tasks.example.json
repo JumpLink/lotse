@@ -3,7 +3,8 @@
   "users": [{ "id": "me", "addresses": [] }],
   "profiles": [
     { "id": "private", "user": "me", "data": "private", "model": "<provider>/<paid-model-id>" },
-    { "id": "public", "user": "me", "agent": "opencode", "data": "public" }
+    { "id": "public", "user": "me", "agent": "opencode", "data": "public" },
+    { "id": "private-check", "user": "me", "data": "private", "model": "<provider>/<small-model-id>" }
   ],
   "tasks": [
     {
@@ -22,7 +23,11 @@
       ],
       "rights": "confirm",
       "questions": { "expiresIn": "12h", "maxOpen": 3, "maxPerHour": 6 },
-      "notify": "always"
+      "notify": "always",
+      "precheck": {
+        "profile": "private-check",
+        "prompt": "Is there anything new since the last run? End with WORK or NOTHING on the last line."
+      }
     },
     {
       "id": "watch-something-public",

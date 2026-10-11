@@ -15,6 +15,7 @@ import type { CommandModule } from 'yargs';
 import {
   cancelOrphanedPermissions,
   dueTasks,
+  freeModelNotes,
   nextWakeMs,
   runTask,
   type LotsePaths,
@@ -59,6 +60,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
 
     const loaded = readTasks(serve);
     if (!loaded) return;
+    for (const note of freeModelNotes(loaded.config)) err(`  ${note}`);
     const channel = await openChannel();
     const agents = trackedAgents();
     const deps = serveDeps({ paths, serve, loaded, channel, open: agents.open, quiet });

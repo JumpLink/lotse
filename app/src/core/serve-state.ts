@@ -71,6 +71,8 @@ export interface RunRecord {
   readonly stopReason: string | null;
   readonly questionId: string | null;
   readonly reason: string | null;
+  /** The precheck's verdict; `null` when the task has none. Old records lack it. */
+  readonly precheck?: RunResult['precheck'];
 }
 
 export interface RunState {
@@ -108,6 +110,7 @@ export function runState(stateDir: string): RunState {
         stopReason: result.stopReason,
         questionId: result.questionId,
         reason: result.reason,
+        precheck: result.precheck,
       };
       writePrivateFile(file, `${JSON.stringify(runs, null, 2)}\n`, 'runs');
     },
