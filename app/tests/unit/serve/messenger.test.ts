@@ -10,6 +10,7 @@ import {
   messengerText,
   parseReply,
   parseServeConfig,
+  routeChannels,
   runReceiveLoop,
   type CursorStore,
   type MessengerSettings,
@@ -60,16 +61,37 @@ function question(
   };
 }
 
+/** Task `t` with no restriction, `tui` kept off the messenger, `quiet` sending the chat a notice only. */
+const ROUTED = parseServeConfig(
+  JSON.stringify({
+    version: 1,
+    users: [{ id: 'me' }],
+    profiles: [{ id: 'p', user: 'me', data: 'public' }],
+    tasks: [
+      { id: 't', profile: 'p', schedule: { every: '1h' }, prompt: 'x', cwd: '/fixture' },
+      {
+        id: 'tui',
+        profile: 'p',
+        schedule: { every: '1h' },
+        prompt: 'x',
+        cwd: '/fixture',
+        channels: ['desktop'],
+      },
+      {
+        id: 'quiet',
+        profile: 'p',
+        schedule: { every: '1h' },
+        prompt: 'x',
+        cwd: '/fixture',
+        messengerDetail: 'notice',
+      },
+    ],
+  }),
+);
+
 function serveDeps(book: { value: Question[] }): ServeDeps {
   return {
-    config: parseServeConfig(
-      JSON.stringify({
-        version: 1,
-        users: [{ id: 'me' }],
-        profiles: [{ id: 'p', user: 'me', data: 'public' }],
-        tasks: [{ id: 't', profile: 'p', schedule: { every: '1h' }, prompt: 'x', cwd: '/fixture' }],
-      }),
-    ),
+    config: ROUTED,
     questions: {
       read: () => book.value.map((q) => ({ ...q })),
       write: (next: Question[]) => void (book.value = [...next]),
@@ -262,6 +284,92 @@ export default async () => {
     });
   });
 
+  await describe('routeChannels', async () => {
+    const user = { id: 'me', addresses: [] };
+    const secret = 'Archive invoice 4711 from Example Corp?';
+    const asking = (task: string): ServeMessage => ({
+      title: `lotse · ${task} · #A5`,
+      body: `${secret}\n\nAnswer: lotse answer A5 <text>`,
+      text: secret,
+      questionId: 'A5',
+      task,
+      asks: 'reply',
+      expiresAt: '2026-10-11T00:00:00.000Z',
+    });
+    const recorder = (into: ServeMessage[]): ServeChannel => ({
+      name: 'desktop',
+      send: (_user, message) => void into.push(message),
+    });
+
+    await it('a task restricted to the desktop never reaches the messenger send tool', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const link = linkTo(fake);
+        const desktop: ServeMessage[] = [];
+        try {
+          const channel = routeChannels(
+            [
+              { name: 'desktop', channel: recorder(desktop) },
+              { name: 'messenger', channel: messengerChannel(link, SETTINGS) },
+            ],
+            ROUTED,
+          );
+          await channel.send(user, asking('tui'));
+          await channel.send(user, { title: 'done', body: secret, questionId: null, task: 'tui' });
+        } finally {
+          await link.close();
+        }
+        expect(fake.calls().filter((call) => call.tool === 'send_message').length).toBe(0);
+        expect(desktop.length).toBe(2);
+        expect(desktop[0]!.body).toContain(secret);
+      });
+    });
+
+    await it('notice mode sends the chat no question text; the desktop keeps it', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const link = linkTo(fake);
+        const desktop: ServeMessage[] = [];
+        try {
+          const channel = routeChannels(
+            [
+              { name: 'desktop', channel: recorder(desktop) },
+              { name: 'messenger', channel: messengerChannel(link, SETTINGS) },
+            ],
+            ROUTED,
+          );
+          await channel.send(user, asking('quiet'));
+          await channel.send(user, { title: 'lotse · quiet', body: secret, questionId: null, task: 'quiet' });
+        } finally {
+          await link.close();
+        }
+        const texts = sent(fake).map((call) => String(call.args['text']));
+        expect(texts.length).toBe(2);
+        for (const text of texts) {
+          expect(text).not.toContain('4711');
+          expect(text).not.toContain('Example Corp');
+        }
+        expect(texts[0]).toContain('A question is waiting in quiet');
+        expect(texts[0]).toContain('#A5');
+        expect(desktop[0]!.body).toContain(secret);
+      });
+    });
+
+    await it('an unrestricted task and serve news go to every channel in full', async () => {
+      const desktop: ServeMessage[] = [];
+      const chat: ServeMessage[] = [];
+      const channel = routeChannels(
+        [
+          { name: 'desktop', channel: recorder(desktop) },
+          { name: 'messenger', channel: { name: 'messenger', send: (_u, m) => void chat.push(m) } },
+        ],
+        ROUTED,
+      );
+      await channel.send(user, asking('t'));
+      await channel.send(user, { title: 'lotse serve stopped', body: 'why', questionId: null });
+      expect(chat.map((m) => m.text ?? m.body)).toStrictEqual([secret, 'why']);
+      expect(desktop.length).toBe(2);
+    });
+  });
+
   await describe('messenger retry', async () => {
     const user = { id: 'me', addresses: [] };
     const asks: ServeMessage = {
@@ -435,6 +543,21 @@ export default async () => {
         });
         expect(book.value[0]!.answer).toBe('no');
         expect(String(sent(fake)[0]!.args['text'])).toContain('#A1 is answered');
+      });
+    });
+
+    await it('a question kept off the chat cannot be answered from it', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const book = { value: [question('A1', 'reply', { task: 'tui' })] };
+        await looping(fake, book, memoryCursor(BEFORE), async () => {
+          fake.deliver('2026-10-10T11:30:00.000Z', 'go ahead');
+          await until(() => sent(fake).length === 1, 'the first reply');
+          fake.deliver('2026-10-10T11:31:00.000Z', 'A1 go ahead');
+          await until(() => sent(fake).length === 2, 'the second reply');
+        });
+        expect(book.value[0]!.status).toBe('open');
+        expect(String(sent(fake)[0]!.args['text'])).toContain('No question is waiting');
+        expect(String(sent(fake)[1]!.args['text'])).toContain('#A1 is not answered in this chat');
       });
     });
 

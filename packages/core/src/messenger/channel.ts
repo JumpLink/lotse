@@ -7,10 +7,10 @@
  */
 
 import type { ServeChannel, ServeMessage } from '../serve/channel.ts';
-import type { ServeUser } from '../serve/config.ts';
+import { deliveryOf, type ServeConfig, type ServeUser } from '../serve/config.ts';
 import { formatQuestionId } from '../serve/questions.ts';
 import { McpLink } from './link.ts';
-import type { MessengerSettings } from './settings.ts';
+import type { ChannelName, MessengerSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
 
 /** The text of `message` as one chat message. */
@@ -140,6 +140,55 @@ export function combineChannels(channels: readonly ServeChannel[], onFailure?: C
         }
       });
       if (failures === results.length && failures > 0) throw first;
+    },
+  };
+}
+
+/**
+ * `message` with no question text and no run output: the title (task and id) stays, the body says a
+ * message waits and where to read it. What the messenger gets for a task with `messengerDetail: "notice"`.
+ */
+export function noticeOf(message: ServeMessage): ServeMessage {
+  const task = message.task ?? 'lotse';
+  const body = message.asks ? msg(STRINGS.noticeQuestion, { task }) : msg(STRINGS.noticeMessage, { task });
+  return {
+    title: message.title,
+    body,
+    questionId: message.questionId,
+    ...(message.task !== undefined ? { task: message.task } : {}),
+    ...(message.asks !== undefined ? { asks: message.asks, text: body } : {}),
+    ...(message.expiresAt !== undefined ? { expiresAt: message.expiresAt } : {}),
+  };
+}
+
+/** An opened channel and the name a task's `channels` list uses for it (the stderr fallback is `desktop`). */
+export interface ChannelRoute {
+  readonly name: ChannelName;
+  readonly channel: ServeChannel;
+}
+
+/**
+ * The opened channels, each message sent only to those its task allows (`deliveryOf`), and to the
+ * messenger as a notice when the task asks for one. A message without a task — serve's own news — goes
+ * to all of them. A task none of whose channels is open sends nothing: its question waits in the store.
+ */
+export function routeChannels(
+  routes: readonly ChannelRoute[],
+  config: ServeConfig,
+  onFailure?: ChannelFailure,
+): ServeChannel {
+  return {
+    name: routes.map((route) => route.channel.name).join(' + '),
+    async send(user, message) {
+      const delivery = message.task ? deliveryOf(config, message.task) : null;
+      const allowed = routes.filter((route) => !delivery?.channels || delivery.channels.includes(route.name));
+      if (allowed.length === 0) return;
+      const notice = delivery?.messengerDetail === 'notice' ? noticeOf(message) : null;
+      const channels = allowed.map((route): ServeChannel => {
+        if (route.name !== 'messenger' || !notice) return route.channel;
+        return { name: route.channel.name, send: (to) => route.channel.send(to, notice) };
+      });
+      await combineChannels(channels, onFailure).send(user, message);
     },
   };
 }

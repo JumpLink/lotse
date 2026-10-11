@@ -21,6 +21,7 @@ import { createHash } from 'node:crypto';
 import type { McpServer } from '@lotse/acp';
 
 import { isFreeModel } from '../free-models.ts';
+import { CHANNEL_NAMES, type ChannelName } from '../messenger/settings.ts';
 import { parseDuration, parseSchedule, type Schedule } from './schedule.ts';
 import { SERVE_CONFIG_SCHEMA, schemaKeys } from './schema.ts';
 
@@ -43,6 +44,20 @@ export interface ServeProfile {
   readonly model: string | null;
   /** A label for the person. It never blocks a run (ADR 0002, amendment of 2026-10-11). */
   readonly data: 'private' | 'public';
+  /** The channels its tasks' messages may use. `null`: every active one. A task's own list wins. */
+  readonly channels: readonly ChannelName[] | null;
+  /** How much of a question the messenger gets. `null`: `full`. A task's own setting wins. */
+  readonly messengerDetail: MessengerDetail | null;
+}
+
+/** `full`: the question goes to the chat. `notice`: only that one waits, and where to read it. */
+export type MessengerDetail = 'full' | 'notice';
+
+/** Where one task's messages go, its own settings over its profile's. */
+export interface TaskDelivery {
+  /** `null`: every active channel. */
+  readonly channels: readonly ChannelName[] | null;
+  readonly messengerDetail: MessengerDetail;
 }
 
 /**
@@ -103,6 +118,10 @@ export interface ServeTask {
   readonly questions: QuestionLimits;
   /** `questions`: notify only when the agent asks. `always`: also send the run's answer. */
   readonly notify: 'questions' | 'always';
+  /** Overrides the profile's `channels`; `null`: the profile's. */
+  readonly channels: readonly ChannelName[] | null;
+  /** Overrides the profile's `messengerDetail`; `null`: the profile's. */
+  readonly messengerDetail: MessengerDetail | null;
 }
 
 export interface ServeConfig {
@@ -213,6 +232,52 @@ export function profileOf(config: ServeConfig, task: ServeTask): ServeProfile {
   return profile;
 }
 
+/** The channels and the messenger detail a task's messages get. An unknown task gets the defaults. */
+export function deliveryOf(config: ServeConfig, taskId: string): TaskDelivery {
+  const task = config.tasks.find((candidate) => candidate.id === taskId);
+  const profile = task ? config.profiles.find((candidate) => candidate.id === task.profile) : undefined;
+  return {
+    channels: task?.channels ?? profile?.channels ?? null,
+    messengerDetail: task?.messengerDetail ?? profile?.messengerDetail ?? 'full',
+  };
+}
+
+/** One sentence per task whose channels are none of the active ones: its questions reach nobody. */
+export function unreachableTaskNotes(config: ServeConfig, active: readonly ChannelName[]): string[] {
+  return config.tasks.flatMap((task) => {
+    const { channels } = deliveryOf(config, task.id);
+    if (!channels || channels.some((name) => active.includes(name))) return [];
+    return [
+      `task "${task.id}" may use only ${channels.join(', ')}, which is not active — its questions are in \`lotse questions\` only`,
+    ];
+  });
+}
+
+function parseDelivery(
+  record: Record<string, unknown>,
+  where: string,
+  problems: string[],
+): { channels: ChannelName[] | null; messengerDetail: MessengerDetail | null } {
+  let channels: ChannelName[] | null = null;
+  const rawChannels = record['channels'];
+  if (rawChannels !== undefined) {
+    const valid =
+      Array.isArray(rawChannels) &&
+      rawChannels.length > 0 &&
+      rawChannels.every((name) => CHANNEL_NAMES.includes(name as ChannelName));
+    if (valid) channels = [...new Set(rawChannels as ChannelName[])];
+    else
+      problems.push(
+        `${where}.channels must be a non-empty list of ${CHANNEL_NAMES.map((name) => `"${name}"`).join(', ')} — leave it out for every channel`,
+      );
+  }
+  const detail = record['messengerDetail'];
+  if (detail !== undefined && detail !== 'full' && detail !== 'notice') {
+    problems.push(`${where}.messengerDetail must be "full" or "notice"`);
+  }
+  return { channels, messengerDetail: detail === 'full' || detail === 'notice' ? detail : null };
+}
+
 function parseUser(value: unknown, where: string, problems: string[]): ServeUser {
   const record = object(value, where, problems, KEYS.user);
   const addresses = record['addresses'] === undefined ? [] : record['addresses'];
@@ -236,6 +301,7 @@ function parseProfile(value: unknown, where: string, problems: string[]): ServeP
     agent,
     model,
     data: data === 'public' ? 'public' : 'private',
+    ...parseDelivery(record, where, problems),
   };
 }
 
@@ -309,6 +375,7 @@ function parseTask(value: unknown, where: string, problems: string[]): ServeTask
     released,
     questions: parseLimits(record['questions'], label, problems),
     notify: notify === 'always' ? 'always' : 'questions',
+    ...parseDelivery(record, label, problems),
   };
 }
 

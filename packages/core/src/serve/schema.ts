@@ -21,6 +21,7 @@ export interface SchemaNode {
   readonly pattern?: string;
   readonly minimum?: number;
   readonly minLength?: number;
+  readonly minItems?: number;
   readonly properties?: Readonly<Record<string, SchemaNode>>;
   readonly required?: readonly string[];
   readonly additionalProperties?: boolean;
@@ -51,6 +52,31 @@ const PROMPT = {
     minLength: 1,
     title: 'Prompt file',
     description: 'A file holding the prompt, relative to the task file. Set this or a prompt, not both.',
+  },
+} as const satisfies Record<string, SchemaNode>;
+
+/** Where a task's messages may go. On a profile for its tasks; a task's own setting wins. */
+const DELIVERY = {
+  channels: {
+    type: 'array',
+    minItems: 1,
+    title: 'Channels',
+    description:
+      "The channels these messages may use. Empty: every active channel. A task's list wins over its profile's.",
+    items: {
+      type: 'string',
+      enum: ['desktop', 'messenger'],
+      title: 'Channel',
+      description: 'A channel name as in channel.active in the settings file.',
+    },
+  },
+  messengerDetail: {
+    type: 'string',
+    enum: ['full', 'notice'],
+    default: 'full',
+    title: 'Messenger detail',
+    description:
+      "full: the question itself goes to the chat. notice: only that a question waits in the task, and where to read it. A task's setting wins over its profile's.",
   },
 } as const satisfies Record<string, SchemaNode>;
 
@@ -138,6 +164,7 @@ export const SERVE_CONFIG_SCHEMA = {
           description:
             'Whether the tasks on this profile see private data. A label for you: serve notes a private profile on a free model at start and runs it all the same.',
         },
+        ...DELIVERY,
       },
     },
     precheck: {
@@ -308,6 +335,7 @@ export const SERVE_CONFIG_SCHEMA = {
           title: 'Notify',
           description: "questions: only when the agent asks. always: also the run's final message.",
         },
+        ...DELIVERY,
       },
     },
   },

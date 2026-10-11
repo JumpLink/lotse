@@ -24,5 +24,9 @@ export const STRINGS = {
   retryDelivered: '{id} was not delivered at first; it is now.',
   retryFailed: '{id} still not delivered ({reason}); will try again.',
   retryGaveUp: '{id} not delivered ({reason}); giving up. `lotse questions` still lists it.',
+  noticeQuestion:
+    'A question is waiting in {task}. Its text is not sent to this chat: read it with `lotse questions` or on the desktop.',
+  noticeMessage: '{task} has a message for you. Its text is not sent to this chat.',
+  notHere: '{id} is not answered in this chat. Use `lotse answer` or the desktop.',
   linkDown: 'The messenger connection is down; retrying in {seconds} s.',
 } as const;

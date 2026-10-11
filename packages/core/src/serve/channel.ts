@@ -1,9 +1,10 @@
 /**
  * How `serve` reaches its person — the seam ADR 0002 §9 asks for.
  *
- * A task never names a channel. It names a profile, the profile a user, and `serve` hands every
- * message for that user to the `ServeChannel` it was started with — one, or several combined
- * (`combineChannels`). The first channel is a desktop notification (the app's `desktop-notifier.ts`);
+ * A task names a profile, the profile a user, and `serve` hands every message for that user to the
+ * `ServeChannel` it was started with — one, or several combined (`combineChannels`). A task or profile
+ * may narrow that to some channels and keep the question text off the messenger (`channels`,
+ * `messengerDetail`); `routeChannels` applies it, by the `task` a message carries. The first channel is a desktop notification (the app's `desktop-notifier.ts`);
  * the messenger channel (`messenger/`) is a second implementation and changes no task.
  *
  * The interface is `send` only. An answer comes back by whatever the channel offers — a button on the
@@ -19,6 +20,8 @@ export interface ServeMessage {
   readonly body: string;
   /** The question this message asks, so a channel with replies can thread the answer to it. */
   readonly questionId: string | null;
+  /** The task the message is about, so a router can apply its `channels`. Absent: serve's own news. */
+  readonly task?: string;
   /**
    * Set only on the message that asks the question, not on one that reports about it (expired), so a
    * channel with buttons offers them where an answer is still possible.

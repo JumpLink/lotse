@@ -456,9 +456,12 @@ export {
   DEFAULT_QUESTION_LIMITS,
   ServeConfigError,
   configHash,
+  deliveryOf,
   freeModelNotes,
   parseServeConfig,
   profileOf,
+  unreachableTaskNotes,
+  type MessengerDetail,
   type QuestionLimits,
   type ReleasedArea,
   type RightsLevel,
@@ -467,6 +470,7 @@ export {
   type ServeProfile,
   type ServeTask,
   type ServeUser,
+  type TaskDelivery,
 } from './serve/config.ts';
 export {
   createdSince,
@@ -517,8 +521,11 @@ export {
   combineChannels,
   messengerChannel,
   messengerText,
+  noticeOf,
+  routeChannels,
   sendToPeer,
   type ChannelFailure,
+  type ChannelRoute,
   type MessengerChannel,
   type MessengerChannelOptions,
 } from './messenger/channel.ts';
