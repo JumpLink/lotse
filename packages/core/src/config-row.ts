@@ -35,7 +35,14 @@
  * to the protocol boundary; announcing the capability and drawing the widget go in together, and
  * until then a switch would be a control the agent is not obliged to honour.
  */
-import { configValue, projectConfigOptions, type ConfigControl, type ConfigValue } from './config.ts';
+import {
+  configValue,
+  MODEL_CATEGORY,
+  projectConfigOptions,
+  type ConfigControl,
+  type ConfigValue,
+} from './config.ts';
+import { allowedModelValues, type ModelPolicy } from './model-policy.ts';
 import type { SessionConfigOption, SessionUpdate, SetSessionConfigOptionRequest } from '@lotse/acp/types';
 
 /** What the row needs that is not the agent's own answer: a set in flight, and a sentence. */
@@ -49,6 +56,22 @@ export interface ConfigRowInput {
   readonly busy?: boolean;
   /** A sentence a refused set left behind, or `null`. Never an agent's own words — see `REFUSED`. */
   readonly error?: string | null;
+  /**
+   * The host's rule about which models a prompt may reach. Absent means every value the agent offered
+   * is on the row, which is what lotse's own window does.
+   *
+   * **A denied value is removed from the model dropdown, and that is a departure from two rules in
+   * this repo — stated here because it is deliberate.** `free-models.ts` says the hint "never hides",
+   * and the header above says `currentValue` is the only truth. Both are about lotse's *own*
+   * judgement, and neither applies to a host's: a row that still offered a model the host will refuse
+   * to send to is a control that points at a refusal, and "a model lotse stopped showing is a model a
+   * person cannot go back to" is the *intended* outcome when the host has said they may not go there.
+   *
+   * What the hiding must not do is lie about what is in use, and it does not: a denied *current* value
+   * leaves `selected` at `-1` and the composer says, in words, which model is in use and that it is
+   * blocked (`model-policy.ts`). The truth moves from the dropdown to the sentence under it.
+   */
+  readonly modelPolicy?: ModelPolicy;
 }
 
 /** One control, with everything a widget needs and nothing it has to compute. */
@@ -76,12 +99,32 @@ export interface ConfigRowControl {
    */
   readonly values: readonly ConfigValue[];
   /**
-   * The index of the current value, or `-1`.
+   * The index of the current value **in `values`**, or `-1`.
    *
-   * `-1` rather than a throw: `Gtk.DropDown` has a perfectly good way to say "nothing is selected",
-   * and a control that claims a selection it does not have is the failure this row exists to avoid.
+   * `-1` rather than a throw: a control that claims a selection it does not have is the failure this
+   * row exists to avoid. The only way to reach it is a host `modelPolicy` that denied the value in
+   * use, and `placeholder` is what the widget draws instead.
    */
   readonly selected: number;
+  /**
+   * The row to draw **above** the values when nothing is selected, or `null` when something is.
+   *
+   * **It exists because `Gtk.DropDown` has no unselected state, which was measured rather than
+   * assumed** (`scripts/probes/dropdown-no-selection.mjs`, GTK 4.22.5): writing
+   * `Gtk.INVALID_LIST_POSITION` to `selected` — at construction or afterwards — leaves it at `0`. So
+   * a dropdown over a filtered list *shows the first allowed model as though it were in use*, and the
+   * trap is the second measurement: picking that same row emits no `notify::selected`, because for
+   * GTK it was already selected. With one allowed model left, the one action the blocked composer
+   * asks for would do nothing at all and there would be no way out of the denied model.
+   *
+   * A real row the person can see is the way out: it is selected while nothing else is, so every
+   * value in the list is a *move* and emits. `configSelection` reads it back as "nothing", so the
+   * placeholder can never be sent as a value.
+   *
+   * Lotse's own word, generic over the control, and no agent text in it — the accessible name is
+   * already the control's name, so a screen reader reads "Model, Choose…".
+   */
+  readonly placeholder: string | null;
   /** Whether the list needs a search field. A fact about the data — decided in `core/config.ts`. */
   readonly searchable: boolean;
   /** False while a set is in flight: one set at a time, and no queue behind it. */
@@ -110,12 +153,6 @@ export interface ConfigSelection {
   readonly controlId: string;
   readonly value: string;
 }
-
-/**
- * The category the model control carries, as `opencode acp` 2.0.19 sends it. Measured, not guaranteed
- * — the same standing as `MODE_CONTROL_ID` below, and for the same reason.
- */
-const MODEL_CATEGORY = 'model';
 
 /**
  * The row's model control, or `null` when the agent reported no model option.
@@ -164,7 +201,10 @@ export function emptyConfigRow(): ConfigRowView {
  */
 export function configRowInput(input: ConfigRowInput): ConfigRowView {
   const busy = input.busy === true;
-  const controls = projectSelects(input.options).map((control) => ({ ...control, selectable: !busy }));
+  const controls = projectSelects(input.options, input.modelPolicy).map((control) => ({
+    ...control,
+    selectable: !busy,
+  }));
   if (controls.length === 0) return emptyConfigRow();
   return {
     visible: true,
@@ -176,21 +216,42 @@ export function configRowInput(input: ConfigRowInput): ConfigRowView {
   };
 }
 
+/**
+ * The label on the "nothing is selected" row. The ellipsis is GNOME's mark for a control that opens
+ * something, and the word is deliberately not "model": the field is on every control, and a thought
+ * level that ever reached this state must not be labelled with another control's noun.
+ */
+const CHOOSE_PLACEHOLDER = 'Choose…';
+
 /** Project, and keep only what the row can draw. See the header on why a switch is not that. */
-function projectSelects(options: SessionConfigOption[] | null): ConfigRowControl[] {
+function projectSelects(
+  options: SessionConfigOption[] | null,
+  modelPolicy?: ModelPolicy,
+): ConfigRowControl[] {
   const controls: ConfigRowControl[] = [];
   for (const control of projectConfigOptions(options)) {
     if (control.kind !== 'select') continue;
+    // **The host's policy applies here, and only to a model control.** Same join point and same
+    // reasoning as `config.ts`'s `modelFirst`: `category === 'model'` is what the agent said, and an
+    // agent that does not categorise gets no filtering rather than a thought level with values
+    // missing from it. A control the policy emptied is dropped below, not drawn empty.
+    const values =
+      control.category === MODEL_CATEGORY ? allowedModelValues(control.values, modelPolicy) : control.values;
+    if (values.length === 0) continue;
+    // `currentValue` is one of the values — that is what `narrowConfigSelect` guarantees — so this is
+    // `-1` only where a `modelPolicy` removed the value that is in use.
+    const selected = values.findIndex((value) => value.value === control.currentValue);
     controls.push({
       id: control.id,
       name: control.name,
       description: control.description ?? control.name,
       category: control.category,
-      values: control.values,
-      // `currentValue` is one of the values — that is what `narrowConfigSelect` guarantees — so this
-      // is never `-1` for a control that got this far. Written as the index anyway, because the index
-      // is what the widget needs and `-1` is what GTK offers for "nothing".
-      selected: control.values.findIndex((value) => value.value === control.currentValue),
+      values,
+      selected,
+      // Paired with `selected` and never set on its own: a placeholder beside a real selection would
+      // be a row the person can pick to mean nothing, and a missing one leaves the widget with no
+      // honest thing to display (see the field).
+      placeholder: selected < 0 ? CHOOSE_PLACEHOLDER : null,
       searchable: control.searchable,
       selectable: true,
     });
@@ -207,6 +268,11 @@ function projectSelects(options: SessionConfigOption[] | null): ConfigRowControl
  * index into a control that is not on the row, is `null` — never a value from another control, which
  * is the failure mode of doing this arithmetic in the widget: it types, it compiles, and it sets the
  * wrong model.
+ *
+ * **`index` is the dropdown's row, which is not the index into `values` when a `placeholder` is
+ * drawn** — the placeholder is row 0 and every value moves down one. That offset is exactly the
+ * arithmetic this function exists to keep out of the widget: done there it would send the model
+ * *above* the one the person picked, on the one row where lotse is already refusing to send.
  */
 export function configSelection(
   view: ConfigRowView,
@@ -215,8 +281,12 @@ export function configSelection(
 ): ConfigSelection | null {
   const control = view.controls.find((candidate) => candidate.id === controlId);
   if (!control) return null;
-  if (!Number.isInteger(index) || index < 0 || index >= control.values.length) return null;
-  return { controlId, value: control.values[index]!.value };
+  if (!Number.isInteger(index) || index < 0) return null;
+  // Row 0 under a placeholder is the placeholder: "nothing", which is what the person is being asked
+  // to leave. It is the one row that must never resolve to a value.
+  const at = control.placeholder === null ? index : index - 1;
+  if (at < 0 || at >= control.values.length) return null;
+  return { controlId, value: control.values[at]!.value };
 }
 
 /**
@@ -273,10 +343,16 @@ export function configAfterSet(view: ConfigRowView, answer: SessionConfigOption[
  * question with a different answer, and it lives in `configRequest`: a caller that wants both (which
  * `AgentSession.setConfigOption` does) asks both. Folding them into one function was the earlier shape,
  * and it left the second check unreachable for anyone who had not read this comment.
+ *
+ * **A control with nothing selected makes every pick a change**, which matters only under a
+ * `modelPolicy`: that is the one way `selected` reaches `-1` (`projectSelects` removed the value in
+ * use), and reading "no current value" as "no change" would make the row a dead control — every pick
+ * a non-change, so nothing is ever sent and the person cannot leave the denied model.
  */
 export function isConfigChange(view: ConfigRowView, controlId: string, value: string): boolean {
   const control = view.controls.find((candidate) => candidate.id === controlId);
   if (!control) return false;
+  if (control.selected < 0) return true;
   const current = control.values[control.selected];
   if (!current) return false;
   return current.value !== value;

@@ -17,7 +17,7 @@
  * sentence `withAuthHint` built and has no attachment to hang a kind on, which is the right amount of
  * machinery for a line of stderr. So "both arrive as one exception" is a statement about the GUI.
  *
- * **Four kinds, because each one has a different consequence for a person.**
+ * **One kind per consequence for a person, which is why there are this many.**
  *
  * - `auth` — the only failure with a **command to run somewhere else**. It gets a dialog, and the
  *   dialog names `lotse auth` and says why a window cannot do it instead (plan §6: "A window has no
@@ -26,6 +26,10 @@
  * - `model` — **the same wire error, arrived at after a turn started.** See the section on
  *   `FailureContext` below; this is the kind that issue <https://github.com/JumpLink/lotse/issues/2>
  *   is about.
+ * - `denied` — **the one failure that never reached the wire.** The embedding host's `modelPolicy`
+ *   refuses the model this prompt would have gone to, so `AgentSession` threw instead of sending
+ *   (`model-policy.ts`). Same remedy as `model`, same live agent, and a dialog because the composer's
+ *   caption cannot carry the case where lotse could not even name the model.
  * - `unsupported` — the agent ran and refused. Nothing a person can do to this session on this agent,
  *   and the window would otherwise show an empty transcript with no explanation, which plan §6 calls
  *   out by name ("shown as a refusal, not as an empty transcript"). It gets a dialog too, because the
@@ -66,10 +70,11 @@
 
 import { isAuthRequired, RpcError, UnsupportedCapabilityError } from '@lotse/acp';
 
+import { ModelDeniedError } from './model-policy.ts';
 import type { AgentAttachment } from './turn.ts';
 
 /** What sort of "this did not work" this is. The names are lotse's, not the protocol's. */
-export type FailureKind = 'auth' | 'model' | 'quota' | 'unsupported' | 'start';
+export type FailureKind = 'auth' | 'model' | 'quota' | 'denied' | 'unsupported' | 'start';
 
 /**
  * The one fact about the turn that decides between `auth` and `model`.
@@ -142,6 +147,10 @@ export function isQuotaExhausted(error: unknown): boolean {
  * same failure as the raw `RpcError` and must not be classified as `start`.
  */
 export function failureKind(error: unknown, context: FailureContext): FailureKind {
+  // First, because it is the one failure that never reached the wire: lotse itself refused to send,
+  // so no branch below it can have anything to say about it. Ordering it first keeps that true even
+  // if a host's policy throws something that happens to look like an `RpcError` further down.
+  if (error instanceof ModelDeniedError) return 'denied';
   if (isQuotaExhausted(error)) return 'quota';
   if (error instanceof AuthRequiredError) return context.promptSent ? 'model' : 'auth';
   if (isAuthRequired(error)) return context.promptSent ? 'model' : 'auth';
@@ -306,6 +315,23 @@ export function failureNotice(kind: FailureKind): FailureNotice | null {
           'The provider turned this request down. It may be limited by region or rate, or it may need ' +
           'a login. Choose another model, or run lotse auth in a terminal.',
         // `null`, not `AUTH_COMMAND`: see `FailureNotice.command`. This dialog's remedy is a button.
+        command: null,
+        action: 'choose-model',
+      };
+    case 'denied':
+      return {
+        heading: 'This model is not allowed here',
+        // **A notice rather than `null`, and the composer is the reason.** `composerView` draws
+        // `reason || status` and never an attached agent's `note` (`composer.ts`), so for the
+        // `'unknown'` cause — the one the composer deliberately does **not** block on, because the
+        // first prompt precedes any knowledge of the model — a `null` notice would make the refusal
+        // silent: a prompt that went nowhere, and no sentence anywhere on screen. The words name no
+        // model id and no host app, for `MODEL_DENIED_REASON`'s reason.
+        body:
+          'The app this chat is part of does not allow its data to be sent to this model, so the ' +
+          'prompt was not sent. Choose another model from the list and send it again.',
+        // `null`: there is no command, because nothing outside this window is wrong. The remedy is
+        // the dropdown, so it is the button.
         command: null,
         action: 'choose-model',
       };

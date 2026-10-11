@@ -21,6 +21,12 @@
  * Send button that accepted text would be the control-that-points-at-nothing this window's own header
  * forbids. A window with no session open has nothing to send to, and now says so.
  *
+ * **A fourth blocker arrived with the host model policy, and it is somebody else's answer too.**
+ * `modelBlock` is the embedding host's rule about where its data may travel (`model-policy.ts`),
+ * already reduced to a cause and a sentence. It is last of the blockers on purpose: a dead agent or
+ * a missing session is the more fundamental problem, and a caption about choosing another model in a
+ * window that has no agent would point at a dropdown that is not there.
+ *
  * **`status` is a second line, not a second `reason`.** `reason` explains why a *disabled* control is
  * disabled and is therefore empty exactly when the button works. A running turn is the case where the
  * button works and the person still needs to know what is happening — "Working" is the difference
@@ -33,6 +39,7 @@
  * chat is the way out: it retires the dead agent and the next prompt starts a fresh one.
  */
 
+import type { ModelBlock } from './model-policy.ts';
 import type { AgentStatus } from './turn.ts';
 
 export type TurnState = 'idle' | 'thinking' | 'waiting-for-you' | 'stopped' | 'gone';
@@ -57,6 +64,17 @@ export interface ComposerInput {
    * this is the caption. Stop still outranks it, though nothing can be running without an agent.
    */
   readonly unavailable?: string;
+  /**
+   * The host's model rule standing in the way, from `modelBlock()`. `null`/absent for every window
+   * that set no `modelPolicy`, which is what keeps this file's behaviour unchanged by default.
+   *
+   * **Only `cause: 'denied'` blocks here.** `'unknown'` means lotse has not been told which model
+   * would answer, and before the first prompt that is the *normal* state — `session/new` goes out
+   * with that prompt (`model-policy.ts`). Blocking on it would make the first message unsendable and
+   * the window unusable; the refusal for a genuinely unverifiable model is `AgentSession.#deliver`'s,
+   * where the agent has already answered.
+   */
+  readonly modelBlock?: ModelBlock | null;
 }
 
 export interface ComposerView {
@@ -153,6 +171,18 @@ export function composerView(input: ComposerInput): ComposerView {
       reason: NO_SESSION_OPEN,
       // The empty state above the composer already says to pick or start a chat.
       reasonOnPage: true,
+      status: '',
+    };
+  }
+
+  if (input.modelBlock?.cause === 'denied') {
+    return {
+      action: 'send',
+      buttonEnabled: false,
+      // Typing stays allowed, for the reason the no-agent branch gives: the draft is kept, and
+      // picking an allowed model from the row above makes this branch go away mid-sentence.
+      entryEditable: true,
+      reason: input.modelBlock.reason,
       status: '',
     };
   }

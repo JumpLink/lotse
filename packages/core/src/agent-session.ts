@@ -53,6 +53,7 @@ import {
 import { findControl, projectConfigOptions, type ConfigControl } from './config.ts';
 import { conversationRecord, unsavedMessage } from './conversation.ts';
 import { failureKind } from './failure.ts';
+import { modelBlock, ModelDeniedError, type ModelBlock, type ModelPolicy } from './model-policy.ts';
 import {
   answerFor,
   PermissionDesk,
@@ -148,6 +149,16 @@ export interface AgentSnapshot {
   readonly sessionId: SessionId | null;
   /** A new conversation is waiting for its first prompt, which is what creates its session. */
   readonly startsConversation: boolean;
+  /**
+   * The host's model rule standing in the way of a prompt, or `null`. Always `null` for a caller
+   * that passed no `modelPolicy`, so a surface may hand it straight to `composerView`.
+   *
+   * **In the snapshot rather than on the config row**, even though it is computed from the same
+   * options: it blocks the *composer*, and the composer renders from the snapshot. A surface that had
+   * to read the row to know whether Send works would need both callbacks to have fired in the right
+   * order.
+   */
+  readonly modelBlock: ModelBlock | null;
 }
 
 /** The session a window is bound to. */
@@ -221,6 +232,16 @@ export interface AgentSessionOptions {
    * app and the CLI send. lotse never edits the agent's global config for this.
    */
   readonly mcpServers?: readonly McpServer[];
+  /**
+   * The embedding host's rule about which models a prompt may reach (`model-policy.ts`). Absent means
+   * every model the agent offers is allowed, which is lotse's own window and the CLI.
+   *
+   * **Held here rather than in the widget, because the refusal has to be in front of the wire.** The
+   * widget can hide a value and disable a button; only this controller sends `session/prompt`, and a
+   * policy enforced solely in a surface would be a policy a second surface, a dev hook or a race
+   * around the composer could walk past.
+   */
+  readonly modelPolicy?: ModelPolicy;
 }
 
 /** What the controller needs of an `AgentHandle`: the connection, and a way to end it. */
@@ -240,6 +261,7 @@ export class AgentSession {
   readonly #open: (options: OpenAgentOptions) => Promise<AgentHandle>;
   readonly #closeGraceMs: number;
   readonly #mcpServers: McpServer[] | undefined;
+  readonly #modelPolicy: ModelPolicy | undefined;
   /**
    * One open question, a queue behind it, no memory. Owned here rather than by the surface because the
    * fail-closed paths are *this* file's: a Stop, a closing window and a dying agent are decided here,
@@ -362,6 +384,7 @@ export class AgentSession {
     this.#open = options.open ?? ((openOptions) => openAgent(openOptions));
     this.#closeGraceMs = options.closeGraceMs ?? CLOSE_GRACE_MS;
     this.#mcpServers = options.mcpServers ? [...options.mcpServers] : undefined;
+    this.#modelPolicy = options.modelPolicy;
     // **Bound in the constructor, not at the first ask.** The desk owns "this question is on screen",
     // and the surface is what is on screen — wiring it lazily would mean the first request of the very
     // first turn took a different path from every one after it.
@@ -381,7 +404,18 @@ export class AgentSession {
       attachment: this.#attachment,
       sessionId: this.#session?.id ?? null,
       startsConversation: this.#pending !== null,
+      modelBlock: this.#modelBlock(),
     };
+  }
+
+  /**
+   * Whether the host's policy stands in the way, from the agent's **raw** last answer.
+   *
+   * Never from `configRow`: the row has the denied values filtered out of it, so it reports nothing
+   * selected for exactly the case this has to catch (`config-row.ts`'s `modelPolicy`).
+   */
+  #modelBlock(): ModelBlock | null {
+    return modelBlock(this.#configOptions, this.#modelPolicy);
   }
 
   /** The composer's two agent facts. The join between `turn.ts`'s model and `composer-state.ts`. */
@@ -425,6 +459,7 @@ export class AgentSession {
       options: this.#configOptions,
       busy: this.#configBusy,
       error: this.#configError,
+      modelPolicy: this.#modelPolicy,
     });
   }
 
@@ -778,6 +813,15 @@ export class AgentSession {
 
   /** Send the prompt and settle the turn. Shared by an opened session and a new conversation. */
   async #deliver(handle: AgentClientHandle, body: string, session: BoundSession): Promise<void> {
+    // **The last gate in front of the wire, and the only one that catches `'unknown'`.** By here the
+    // handshake is done and `session/new`/`session/load` has answered, so `#configOptions` is the
+    // agent's own word on which model this prompt would reach — which makes "lotse cannot tell" a
+    // real answer rather than "not yet", and a prompt is not sent to a model nobody named. The
+    // composer's own block is the *visible* half and deliberately narrower (`model-policy.ts`); this
+    // is the half that holds when a dev hook, another surface or a race gets past it.
+    // Before `#promptSent`, because no prompt went out: the turn ends as a refusal, not as a death.
+    const block = this.#modelBlock();
+    if (block !== null) throw new ModelDeniedError(block);
     // From here a turn exists: if the promise below rejects, the agent went away *during* it, and the
     // transcript line the plan asks for is the honest record. See `#reportFailure`.
     this.#promptSent = true;
@@ -1341,7 +1385,11 @@ export class AgentSession {
     // on that path the desk is empty anyway, because the provider answers before it asks for anything.
     this.#failClosed('agent-gone');
     const kind = failureKind(error, { promptSent: this.#promptSent });
-    if (kind === 'model' || kind === 'quota') {
+    // `'denied'` joins the two refusals rather than the `!#promptSent` branch below, and the reason is
+    // what that branch does *not* do: it would leave the attachment `failed` with `attached: false`,
+    // and this refusal is one the person fixes from the model dropdown — the row and its cache have to
+    // survive it. The agent is alive and was never asked anything, which is as attached as it gets.
+    if (kind === 'model' || kind === 'quota' || kind === 'denied') {
       this.#reportModelRefusal(kind, message);
       return;
     }
@@ -1367,13 +1415,16 @@ export class AgentSession {
   }
 
   /**
-   * A turn the **provider** refused, on an agent that is attached and healthy.
+   * A turn that was refused over the **model**, on an agent that is attached and healthy — by the
+   * provider (`'model'`, `'quota'`) or, before anything left this process, by the embedding host's own
+   * policy (`'denied'`, `#deliver`). All three share this path because they share the remedy: pick a
+   * different model and send again.
    *
    * **Everything the `gone` path does is deliberately not done here**, and the list is the design:
    *
    * - **Not `gone`.** The agent handshook, loaded the session and answered; it is a *model* that will
-   *   not answer. `agentStatus` reads `kind === 'model'` as still attached, which is what keeps Send
-   *   working for the retry this dialog asks for.
+   *   not answer — or, for `'denied'`, one lotse would not ask. `agentStatus` reads all three kinds as
+   *   still attached, which is what keeps Send working for the retry this dialog asks for.
    * - **The config row stays, and so does its per-session cache.** `gone` clears both, and rightly:
    *   live dropdowns over a dead process are controls pointing at nothing. Here the process is alive,
    *   and **the dialog's own button opens the model dropdown** — clearing the row would make the
@@ -1389,7 +1440,7 @@ export class AgentSession {
    * reachable because `cancelledBy` is `'none'` — nobody pressed Stop and the agent did not abandon
    * the turn; the provider refused it, and the window says so in words rather than in a state name.
    */
-  #reportModelRefusal(kind: 'model' | 'quota', message: string): void {
+  #reportModelRefusal(kind: 'model' | 'quota' | 'denied', message: string): void {
     this.#setAttachment({ status: 'failed', kind, message });
     this.#move({ kind: 'turn-ended', stopReason: null, cancelledBy: 'none' });
   }

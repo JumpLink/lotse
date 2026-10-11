@@ -267,6 +267,7 @@ export {
   configValue,
   currentLabel,
   findControl,
+  MODEL_CATEGORY,
   projectConfigOptions,
   type ConfigControl,
   type ConfigSelectControl,
@@ -289,7 +290,26 @@ export {
   type ConfigRowView,
   type ConfigSelection,
 } from './config-row.ts';
-export { FREE_MODEL_IDS, FREE_MODELS, freeModelFirst, type FreeModelList } from './free-models.ts';
+export {
+  FREE_MODEL_IDS,
+  FREE_MODELS,
+  freeModelFirst,
+  isFreeModel,
+  type FreeModelList,
+} from './free-models.ts';
+// What a host will let a prompt reach. Absent `modelPolicy` is lotse's own behaviour unchanged.
+export {
+  allowedModelValues,
+  denyFreeHostedModels,
+  MODEL_DENIED_REASON,
+  MODEL_UNKNOWN_REASON,
+  modelAllowed,
+  modelBlock,
+  ModelDeniedError,
+  type ModelBlock,
+  type ModelDecision,
+  type ModelPolicy,
+} from './model-policy.ts';
 export { toTranscript } from './transcript.ts';
 export {
   toTranscriptItems,
@@ -340,7 +360,6 @@ export {
   DEFAULT_QUESTION_LIMITS,
   ServeConfigError,
   configHash,
-  isFreeModel,
   parseServeConfig,
   profileOf,
   type QuestionLimits,
