@@ -106,6 +106,7 @@ This is `app/tests/examples/embed.ts`, which is type-checked with the app. Each 
 | `closedPage` | `Gtk.Widget` | Your "nothing is open" page. Absent: that state renders nothing. |
 | `noAgentPage` | `Gtk.Widget` | Your "no agent found" page. Absent: that state renders nothing. |
 | `gate` | `(question) => 'ask' \| 'decline' \| Promise<…>` | Your permission policy, asked **before** the person. See below. |
+| `modelPolicy` | `(model: string) => 'allow' \| 'deny'` | Which models your data may reach. Absent: every model, which is lotse's own window. See below. |
 | `providerOnboarding` | `boolean` | Off by default. On: a new chat with no provider connected shows "Connect a provider" first. |
 | `onConversation` | `(record, current) => void` | A new conversation has its session and record; list it. Runs before the widget updates its own view. |
 | `onNotice` | `(message) => void` | A line from the agent that is not a transcript entry (it is also logged). |
@@ -125,6 +126,50 @@ There is **no answer that approves.** A host may narrow what the agent gets ("ne
 "not while unattended"); it cannot hand out an approval nobody gave. The gate is fail-closed: a throw, a
 rejected promise or any value other than the literal `'ask'` counts as a decline. `HostGateAnswer` is the
 type of the two words.
+
+### `modelPolicy` blocks the send, it never switches the model
+
+Your app's data reaches the model the agent is configured to use. If some of that data must not leave
+for some destinations, say so once:
+
+```ts
+import { denyFreeHostedModels } from '@lotse/core';
+
+new LotseChat({ …, modelPolicy: denyFreeHostedModels });
+```
+
+A `ModelPolicy` is `(model: string) => 'allow' | 'deny'`, called with the agent's own model id
+(`openrouter/qwen/qwen3-coder:free`, `anthropic/claude-sonnet-4-5`). Three things happen with one set:
+
+1. **Denied models are not offered.** The composer's model dropdown lists only what you allow, and the
+   model-refusal dialog's **Choose another model** is withheld when nothing is left to choose.
+2. **A denied model blocks the send.** The composer turns Send off and says why; the prompt does not
+   reach the agent. Lotse **never picks a different model for the person** — a silent switch is a
+   different conversation with a different model, made by nobody.
+3. **The check runs again whenever the agent reports a configuration change**, not only at startup.
+
+**Fail-closed, including the model nobody named.** A policy that throws is a deny. A model the widget
+cannot identify — an empty id, or an agent that reports no model control — is a deny too. Before the
+first prompt nothing is known yet and Send stays on (the first prompt is what starts the agent), but
+the controller checks again once the agent has answered and refuses to send if the model is denied or
+still unnamed.
+
+`denyFreeHostedModels` (from `@lotse/core`) denies what `isFreeModel` calls free, which is the same
+classification `lotse serve` has used since ADR 0003: the maintained ids in
+`packages/core/data/free-models.json`, plus any id ending in `-free`, plus an empty or blank id. The
+file's own criterion is "free to run without a paid key **and** documented as zero-retention" — the
+suffix rule is what catches the rest of the free tier, where a model is merely free and may be trained
+on. Free also means hosted: the prompt goes to whoever runs it.
+
+**A well-formed id the classification has never heard of is allowed**, deliberately. Denying the
+unknown reads safer and is unusable: the classification knows two exact ids and one suffix, so
+"unknown" is nearly every model an agent reports, *including every paid one*, and a widget with no
+allowed model left asks the person to pick something that does not exist. If your data needs certainty
+rather than a known-bad list, pass an allowlist: `allowOnlyProviders(['anthropic'])` from `@lotse/core`
+allows only ids whose provider (the part before the first `/`) is listed, exactly, and denies every other
+id, however new — it does not look inside a provider, so pair it with `denyFreeHostedModels` where
+that matters. Or write your own predicate; it is the same one-line option. The genuinely uncertain case, "which model is even in
+use?", is caught by the fail-closed rule above and not by this one.
 
 ### `providerOnboarding`
 

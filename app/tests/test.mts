@@ -19,6 +19,7 @@ import config from './unit/core/config.test.ts';
 import configRow from './unit/core/config-row.test.ts';
 import failure from './unit/core/failure.test.ts';
 import freeModels from './unit/core/free-models.test.ts';
+import modelPolicy from './unit/core/model-policy.test.ts';
 import usage from './unit/core/usage.test.ts';
 import policy from './unit/core/policy.test.ts';
 import interrupt from './unit/core/interrupt.test.ts';
@@ -61,6 +62,7 @@ import serveState from './unit/serve/serve-state.test.ts';
 import serveRunner from './unit/serve/runner.test.ts';
 
 import hookValue from './unit/gui/hook-value.test.ts';
+import modelPolicyHook from './unit/gui/model-policy-hook.test.ts';
 import toolLine from './unit/gui/tool-line.test.ts';
 
 import smoke from './unit/smoke.test.ts';
@@ -80,6 +82,7 @@ run({
   configRow,
   failure,
   freeModels,
+  modelPolicy,
   usage,
   policy,
   interrupt,
@@ -120,6 +123,7 @@ run({
   serveState,
   serveRunner,
   hookValue,
+  modelPolicyHook,
   toolLine,
   smoke,
 });

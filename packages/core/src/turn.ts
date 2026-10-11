@@ -229,6 +229,12 @@ export interface AgentStatus {
  * model", which would then lead to a disabled entry. That is the "control that points at nothing" this
  * window exists to avoid, so the two are decided together: a refused turn keeps its agent, and the note
  * says why the last prompt did not land.
+ *
+ * **`'quota'` and `'denied'` are the same case for the same reason.** The provider refusing for money
+ * and the host refusing the model both leave an agent that is up and a remedy that is a different
+ * model; `'denied'` never reached the wire at all (`model-policy.ts`), so the agent plainly did not
+ * fail. Were it `attached: false`, picking an allowed model could not bring Send back — the
+ * attachment stays `failed` until the next attach, and there is no next attach to wait for.
  */
 export function agentStatus(attachment: AgentAttachment): AgentStatus {
   switch (attachment.status) {
@@ -248,7 +254,7 @@ export function agentStatus(attachment: AgentAttachment): AgentStatus {
       };
     case 'failed':
       return {
-        attached: attachment.kind === 'model' || attachment.kind === 'quota',
+        attached: attachment.kind === 'model' || attachment.kind === 'quota' || attachment.kind === 'denied',
         note: attachment.message,
       };
   }

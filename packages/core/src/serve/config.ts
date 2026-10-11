@@ -20,7 +20,7 @@ import { createHash } from 'node:crypto';
 
 import type { McpServer } from '@lotse/acp';
 
-import { FREE_MODEL_IDS } from '../free-models.ts';
+import { isFreeModel } from '../free-models.ts';
 import { parseDuration, parseSchedule, type Schedule } from './schedule.ts';
 import { SERVE_CONFIG_SCHEMA, schemaKeys } from './schema.ts';
 
@@ -129,11 +129,6 @@ export class ServeConfigError extends Error {
 }
 
 const ID = /^[a-z0-9][a-z0-9_-]{0,39}$/;
-
-/** A free model: the maintained free list, and anything named `-free`. Used for a note, never a rule. */
-export function isFreeModel(model: string): boolean {
-  return FREE_MODEL_IDS.includes(model) || /-free$/.test(model);
-}
 
 /**
  * One sentence per private profile on a free model, for `serve` to print at start. A free model may be

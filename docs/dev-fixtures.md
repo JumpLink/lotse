@@ -196,6 +196,52 @@ whether it reached. `scripts/probes/` has the measurement behind the one call th
 see `activateDropdown` in `frontends/gui/config-row.ts`.
 
 
+## `LOTSE_APP_MODEL_POLICY` — the state lotse's own window cannot reach
+
+**A hook rather than a setting, because this app is the host that has no policy.** `LotseChat` takes a
+`modelPolicy` (`packages/core/src/model-policy.ts`) so that an app embedding the widget beside data of
+its own — the accounting app beside its receipts, say — can say where that data may travel. lotse's own
+window carries nobody's data but the person's own conversation, so it passes nothing and behaves exactly
+as it did before the option existed. Without a variable the one state a policy creates would be written,
+tested on both runtimes, and never once seen.
+
+| Value | The policy it builds |
+| --- | --- |
+| unset (or `,`) | **none** — the default path, the widget option absent |
+| `free` | `denyFreeHostedModels`, the ready-made rule over `packages/core/data/free-models.json` |
+| `id[,id…]` | deny exactly those model ids, allow the rest |
+
+Read as a list by `hookList` for `LOTSE_APP_SWITCH`'s reason — a variable's syntax is read where every
+variable's syntax is read. What the list *means* is `frontends/gui/model-policy-hook.ts`, which is the
+file a host's own composition root corresponds to.
+
+**An empty list has to mean no policy, and that is a regression test, not a nicety.** `hookList` answers
+an unset variable with `[]`; a `denied.includes(…)` predicate built from it denies nothing, which reads
+like "no rule" and is not one. A policy that is merely *present* makes a model the agent has not reported
+yet `unknown`, `modelBlock` fails closed on `unknown` — and lotse's own window then refused the **first
+turn of every ordinary run** with "This model is not allowed here". The policy's own suite could not catch
+it: every case there passes a policy on purpose. `app/tests/unit/gui/model-policy-hook.test.ts` is where
+the distinction between *absent* and *present and permissive* is now held.
+
+```sh
+# the blocked composer: the stand-in's own model denied, the refusal dialog closed behind it
+LOTSE_APP_AGENT=stand-in LOTSE_STANDIN_CONFIG=1 LOTSE_APP_PROMPT=hi LOTSE_APP_THINKING=1 \
+  LOTSE_APP_MODEL_POLICY=openrouter/vendor/model-000 LOTSE_APP_DISMISS_FAILURE=1 \
+  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+```
+
+Shot with `shot.sh model-policy` (`docs/design/screenshots/model-policy.png`): the model dropdown reads
+**Choose…**, Send is off, and the composer says the sentence instead of the agent's status. The person's
+own `hi` is in the transcript — the prompt *was* recorded — and nothing after it, because nothing was sent.
+
+**`Gtk.DropDown` has no unselected state, and that is why there is a placeholder row.** Measured by
+`scripts/probes/dropdown-no-selection.mjs` on GTK 4.22.5 / GJS 1.88.1: setting `selected` to
+`Gtk.INVALID_LIST_POSITION` leaves it at `0`, both at construction and on assignment, and picking row 0
+out of that state emits **zero** `notify::selected`. So a row whose model a policy removed would show the
+first *allowed* model as though it were in use, and choosing that model would emit nothing at all — a dead
+end whenever one allowed model is left. `ConfigRowControl.placeholder` (`'Choose…'`, set exactly when
+`selected < 0`) is prepended as row 0 and `configSelection` subtracts the offset, answering `null` for it.
+
 ## The five pointer-only controls
 
 Five states are unreachable from outside the process, and each has one hook. They are read at startup by
@@ -385,6 +431,10 @@ DISPLAY=:0 ./node_modules/.bin/gjsify run /tmp/focus.gjs.mjs
 The split exists because a look-alike cannot answer a question about our widget — the first version of
 the permission dialog left libadwaita's focus fallback in place, and the plain probe said the focus was
 on the allow button while the app's own screenshot showed a highlighted label instead.
+
+`dropdown-no-selection.mjs` is a look-alike of the first kind and the reason the config row has a
+placeholder row: `Gtk.DropDown` has no unselected state, and it says so in numbers rather than in a
+comment — see [the model-policy hook](#lotse_app_model_policy--the-state-lotses-own-window-cannot-reach).
 
 **The focus case measures both readings of `default_response`.** Case 9 of `alert-dialog-close.mjs`
 builds the dialog twice, `allow_once, reject_once` and `reject_once, allow_once`, because the two

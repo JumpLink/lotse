@@ -208,11 +208,21 @@ export class ConfigRow {
   /** One control: a dropdown, clamped so it shares the measure with the others. */
   #buildControl(control: ConfigRowControl): Gtk.Widget {
     const list = new Gtk.StringList();
+    // **The placeholder is a real row, because GTK has no unselected state.** Measured on GTK 4.22.5
+    // (`scripts/probes/dropdown-no-selection.mjs`): `Gtk.INVALID_LIST_POSITION` written to `selected`
+    // is silently kept at `0`, so the dropdown would show the first allowed model as though it were
+    // in use — and picking that row would emit nothing, because GTK already considers it selected.
+    // Core decides whether there is a placeholder and what it says; here it is appended first and
+    // selected, so every value below it is a move and therefore emits.
+    if (control.placeholder !== null) list.append(control.placeholder);
     for (const value of control.values) list.append(value.name);
 
     const dropdown = new Gtk.DropDown({
       model: list,
-      selected: control.selected,
+      // Row 0 is the placeholder exactly when core drew one, which is the same case `selected < 0`
+      // marks; otherwise every value sits one row lower than its index in `values`. `#onSelected`
+      // hands the row straight back to `configSelection`, which owns that offset.
+      selected: control.placeholder === null ? control.selected : control.selected + 1,
       // The expression is what makes search work at all: `Gtk.DropDown`'s search matches against the
       // *model's* strings through this expression, and without it a 400-entry list has a search field
       // that finds nothing. `Gtk.StringObject` is the row type of a `Gtk.StringList` — and the `$gtype`,

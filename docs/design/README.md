@@ -34,3 +34,4 @@ in [dev-fixtures.md](../dev-fixtures.md).
 | No agent found | ![](screenshots/no-agent.png) | |
 | Notice banner | ![](screenshots/notice.png) | |
 | Provider onboarding (no provider connected) | ![](screenshots/onboarding.png) | |
+| Composer blocked by a host's model policy | ![](screenshots/model-policy.png) | |

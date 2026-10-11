@@ -244,6 +244,25 @@ export interface LotseHooks extends FrameworkHooks {
 
   /** `LOTSE_APP_NO_AGENT` — force the nothing-found resolution; beats `LOTSE_APP_AGENT`. */
   noAgent?: boolean;
+
+  /**
+   * `LOTSE_APP_MODEL_POLICY` — stand in for the host's `LotseChatOptions.modelPolicy`, so the blocked
+   * composer can be looked at. `free` is the ready-made `denyFreeHostedModels`; anything else is a
+   * comma list of model ids to deny.
+   *
+   * **A hook because lotse's own window passes no policy, and never will.** The option exists for a
+   * host embedding the widget beside data of its own (see `packages/core/src/model-policy.ts`), so
+   * the one state it creates — Send off, a sentence naming the model list — is not reachable from
+   * this app at all. Without a variable it would be the only composer state that is written, tested
+   * on both runtimes, and never once seen.
+   *
+   * **A list rather than the raw string, for `LOTSE_APP_SWITCH`'s reason**: the syntax of a variable
+   * is read where every other variable's syntax is read, so `LOTSE_APP_MODEL_POLICY=,` asks for no
+   * rule rather than for a model called `''`. What the list *means* is `main.ts`'s — that is the file
+   * a host's own composition root corresponds to, and the predicate it builds there is the example of
+   * what a host writes.
+   */
+  modelPolicy?: string[];
 }
 
 /**
@@ -296,6 +315,9 @@ export function readHooks(env: Record<string, string | undefined> = process.env)
     notice: hookFlag(env, 'NOTICE'),
     noticeDismiss: hookFlag(env, 'NOTICE_DISMISS'),
     noAgent: hookFlag(env, 'NO_AGENT'),
+    // A list for `SWITCH`'s reason, and read here for the same one. `main.ts` turns it into a
+    // predicate; this file only says what the variable's text is.
+    modelPolicy: hookList(env, 'MODEL_POLICY'),
     thinking: hookFlag(env, 'THINKING'),
     prompt: hookValue(env, 'PROMPT'),
   };

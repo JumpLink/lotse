@@ -13,6 +13,7 @@ import {
   type AgentSnapshot,
   type ConfigRowView,
   type McpServer,
+  type ModelPolicy,
   type PermissionQuestion,
   type RecordedResolution,
 } from '@lotse/core';
@@ -78,6 +79,11 @@ interface HarnessOptions extends FixtureAgentOptions {
   /** Refuse every `open` after the first: the fixture has one transport, so a second process cannot be real. */
   failAfterFirstOpen?: boolean;
   mcpServers?: McpServer[];
+  /**
+   * The embedding host's rule about which models a prompt may reach. Absent is lotse's own window,
+   * which is why every other test in this file says nothing about it.
+   */
+  modelPolicy?: ModelPolicy;
 }
 
 /**
@@ -133,6 +139,9 @@ function harness(options: HarnessOptions = {}): Harness {
     },
     ...(options.source ? { source: options.source } : {}),
     ...(options.mcpServers ? { mcpServers: options.mcpServers } : {}),
+    // Spread, like every other optional: `modelPolicy: undefined` and an absent `modelPolicy` mean
+    // the same thing to the controller, and only one of them is what a host that set nothing passes.
+    ...(options.modelPolicy ? { modelPolicy: options.modelPolicy } : {}),
     ...(options.resolveAgent ? { resolveAgent: options.resolveAgent } : {}),
     // The gate lotse passes is the gate the client answers with, so the refusal assertions are about
     // the wire and not about a local array — that is what makes guardrail 2 a measurement.
@@ -1357,6 +1366,110 @@ export default async () => {
         expect(attachment.kind).toBe('auth');
         expect(failureNotice(attachment.kind)?.command).toBe('lotse auth');
       }
+    });
+  });
+
+  // The host's own rule, wired end to end: `model-policy.ts` holds the decisions and is tested on its
+  // own; what can only be measured here is that the controller **consults** it before the wire. A
+  // policy nothing asks is the one failure a fail-closed seam must not have.
+  await describe('agent-session — the host’s model policy', async () => {
+    /** Deny the model the fixture says is in use, and allow its other two. */
+    const denySol: ModelPolicy = (model) => (model === 'openrouter/openai/gpt-6.1-sol' ? 'deny' : 'allow');
+
+    await it('sends no prompt, and says which refusal it was', async () => {
+      const h = harness({ modelPolicy: denySol });
+      await h.session.prompt('hello');
+      expect(h.agent.calls('session/prompt').length).toBe(0);
+      const attachment = h.session.snapshot.attachment;
+      expect(attachment.status).toBe('failed');
+      if (attachment.status === 'failed') expect(attachment.kind).toBe('denied');
+    });
+
+    await it('leaves the agent attached and the turn over, so another model can be picked', async () => {
+      // It never reached the wire, so nothing about the agent failed. `attached: false` here would
+      // leave Send disabled with no next attach coming to re-enable it.
+      const h = harness({ modelPolicy: denySol });
+      await h.session.prompt('hello');
+      expect(h.session.snapshot.state).toBe('idle');
+      expect(h.session.agent.attached).toBe(true);
+      expect(h.session.agentRunning).toBe(true);
+    });
+
+    await it('keeps the row, with the denied value gone from the model dropdown', async () => {
+      const h = harness({ modelPolicy: denySol });
+      await h.session.prompt('hello');
+      const model = h.session.configRow.controls.find((control) => control.id === 'model');
+      expect(model?.values.map((value) => value.value)).toEqualArray([
+        'openrouter/anthropic/claude-sonnet-5.5',
+        'github-copilot/gpt-5.5-codex',
+      ]);
+      // Nothing is selected, because what is in use is the value that was removed — and the composer
+      // is where that is said in words.
+      expect(model?.selected).toBe(-1);
+    });
+
+    await it('blocks the composer through the snapshot, which is what a surface renders from', async () => {
+      const h = harness({ modelPolicy: denySol });
+      await h.session.prompt('hello');
+      const snapshot = h.session.snapshot;
+      expect(snapshot.modelBlock?.cause).toBe('denied');
+      const view = composerView({
+        state: snapshot.state,
+        agent: h.session.agent,
+        sessionId: snapshot.sessionId,
+        modelBlock: snapshot.modelBlock,
+      });
+      expect(view.buttonEnabled).toBe(false);
+      expect(view.reason).toBe(snapshot.modelBlock?.reason);
+    });
+
+    await it('records the person’s own line and nothing invented after it', async () => {
+      const h = harness({ modelPolicy: denySol });
+      await h.session.prompt('hello');
+      expect(h.entries.map((entry) => entry.text)).toEqualArray(['hello']);
+    });
+
+    await it('refuses when the agent reported no model control at all', async () => {
+      // The `'unknown'` cause, and the gate the composer deliberately does not have: the agent
+      // answered, it named no model, so lotse cannot verify where this prompt would go.
+      const h = harness({ modelPolicy: denySol, configOptions: [] });
+      await h.session.prompt('hello');
+      expect(h.agent.calls('session/prompt').length).toBe(0);
+      const attachment = h.session.snapshot.attachment;
+      expect(attachment.status === 'failed' && attachment.kind).toBe('denied');
+      expect(h.session.snapshot.modelBlock?.cause).toBe('unknown');
+    });
+
+    await it('lets the prompt through once an allowed model is in use', async () => {
+      // The remedy actually works, which is the whole claim the composer's sentence makes.
+      const h = harness({ modelPolicy: denySol });
+      await h.session.prompt('hello');
+      await h.session.setConfigOption('model', 'github-copilot/gpt-5.5-codex');
+      expect(h.session.snapshot.modelBlock).toBe(null);
+      await h.session.prompt('again');
+      expect(h.agent.calls('session/prompt').length).toBe(1);
+      expect(h.session.snapshot.state).toBe('idle');
+    });
+
+    await it('changes nothing for a window that set no policy', async () => {
+      // The default path, asserted here rather than assumed: the same fixture, the same model, and a
+      // prompt that goes out.
+      const h = harness();
+      await h.session.prompt('hello');
+      expect(h.agent.calls('session/prompt').length).toBe(1);
+      expect(h.session.snapshot.modelBlock).toBe(null);
+      expect(h.session.snapshot.attachment.status).toBe('attached');
+    });
+
+    await it('refuses rather than sending when the host’s policy throws', async () => {
+      const h = harness({
+        modelPolicy: () => {
+          throw new Error('the host policy is broken');
+        },
+      });
+      await h.session.prompt('hello');
+      expect(h.agent.calls('session/prompt').length).toBe(0);
+      expect(h.session.snapshot.modelBlock?.cause).toBe('denied');
     });
   });
 
