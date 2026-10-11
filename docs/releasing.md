@@ -19,7 +19,8 @@ Two things ship from one tag `vX.Y.Z`, both from [release.yml](../.github/workfl
 
 The `npm` job runs after the `check` job (type check, format, build, tests on GJS and Node), publishes
 in dependency order (acp, session, core, widget) and skips a name@version that is already on npm, so a
-re-run after a partial failure finishes the rest.
+re-run after a partial failure finishes the rest. The GitHub release job waits for `npm`: if it fails,
+re-run it before the app is attached.
 
 ## How npm authenticates
 
@@ -54,7 +55,7 @@ is a manual maintainer action. This is needed once, for each of the four names, 
 npm login
 # from a clean checkout of main, in this order (dependencies first)
 for p in acp session core widget; do
-  npm publish ./packages/$p --access public --otp <code>   # a fresh code per package
+  npm publish ./packages/$p --access public --provenance=false --otp <code>   # fresh code per package
 done
 npm view @lotse/widget version      # check every name answers before going on
 ```
@@ -69,6 +70,7 @@ for p in acp session core widget; do npm trust github @lotse/$p --repo JumpLink/
 
 Verify with the workflow input `npm` = `check`. From then on a tag publishes everything by OIDC.
 
-That first manual publish carries **no provenance** (it runs outside Actions). If 0.2.0 itself must be
+That first manual publish carries **no provenance** (it runs outside Actions; `--provenance=false`
+overrides `publishConfig.provenance`, which npm rejects outside a supported CI). If 0.2.0 itself must be
 attested, publish a placeholder `0.0.0` per name instead (`npm publish <dir with a bare package.json>
 --access public`), configure the entries, and let the `v0.2.0` tag publish the real packages.
