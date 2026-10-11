@@ -59,6 +59,7 @@ import {
   type EmptyStateView,
   type FailureNotice,
   type McpServer,
+  type ModelPolicy,
   type NotAnsweredReason,
   type PermissionQuestion,
   type RecordedResolution,
@@ -146,6 +147,29 @@ export interface LotseChatOptions {
    * anything. See `HostGateAnswer` for why there is no answer here that allows.
    */
   readonly gate?: (question: PermissionQuestion) => HostGateAnswer | Promise<HostGateAnswer>;
+  /**
+   * The host's rule about which models a prompt from this chat may reach.
+   *
+   * **The second host policy, and deliberately the same shape as `gate`**: a predicate the host
+   * passes, fail-closed on anything that is not an explicit answer, with no value that could *select*
+   * something on the person's behalf. A host carrying data the person has not agreed to hand around
+   * — an app over a document store, a window over somebody's accounts — is the only party that knows
+   * where its data may travel; `@lotse/core`'s `denyFreeHostedModels` is the ready-made one for "no
+   * free hosted model", and a host that needs certainty passes an allowlist of its own.
+   *
+   * Absent means what it has always meant: every model the agent offers is on the row and may be
+   * prompted, which is lotse's own window.
+   *
+   * What it does, in the three places it has to agree:
+   *
+   * - a denied model is **not on the dropdown**, and not reachable from the failure dialog's "Choose
+   *   another model" either — that button opens the same row;
+   * - Send is **blocked**, with the reason under the entry, while the model in use is denied. The
+   *   model is never switched for the person: picking one is theirs;
+   * - `@lotse/core`'s `AgentSession` refuses in front of the wire as well, so a prompt cannot reach a
+   *   denied — or an unverifiable — model around this surface.
+   */
+  readonly modelPolicy?: ModelPolicy;
   /**
    * A new conversation has its session and its record — the host's chance to list it.
    *
@@ -284,6 +308,10 @@ export class LotseChat extends Adw.Bin {
       // Forwarded as the host gave them. `@lotse/core` passes them to `session/new` and never reads
       // past `type`, so a host wires its own servers in without a line of widget-specific code.
       ...(options.mcpServers ? { mcpServers: options.mcpServers } : {}),
+      // **The host's model rule, to the one place that sends a prompt.** The widget keeps no copy: the
+      // controller filters the row, computes the composer's block and refuses in front of the wire, so
+      // the policy is asked once per question rather than once per surface.
+      ...(options.modelPolicy ? { modelPolicy: options.modelPolicy } : {}),
       ...(options.now ? { now: options.now } : {}),
       events: {
         onSnapshot: (snapshot) => this.#onSnapshot(snapshot),
@@ -303,7 +331,17 @@ export class LotseChat extends Adw.Bin {
         onPermission: (question) => this.#ask(question),
         // **The row, through the controller's decided view.** `config-row.ts` has already decided
         // which controls may exist, what is selected, and what a refusal says.
-        onConfig: (view) => this.#config.setView(view),
+        // **And the composer with it, because the model is one of its inputs now.** The row and the
+        // snapshot run on different clocks on purpose (`onConfig`), and a model change arrives on
+        // this one only: opencode pushes a `config_option_update`, no turn state moves, so
+        // `onSnapshot` never fires. Without this line the composer's `modelBlock` is whatever the
+        // last state move computed — Send still refusing a model the person has already replaced, or
+        // worse, still offering to send to one they just picked. Read from `snapshot` again rather
+        // than threaded through: the controller is the only honest source for it.
+        onConfig: (view) => {
+          this.#config.setView(view);
+          this.#composer.setInput(composerInput(this.#agent.snapshot, this.#unavailable));
+        },
       },
     });
     this.#composer = new Composer({
@@ -811,6 +849,8 @@ function composerInput(snapshot: AgentSnapshot, unavailable?: string): ComposerI
     agent: agentStatus(snapshot.attachment),
     sessionId: snapshot.sessionId,
     startsConversation: snapshot.startsConversation,
+    // `null` for every host that set no `modelPolicy`, so this changes nothing for lotse's own window.
+    modelBlock: snapshot.modelBlock,
   };
 }
 
