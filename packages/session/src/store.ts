@@ -29,7 +29,15 @@ import { dirname, join } from 'node:path';
 
 import { assertScopeIsNotAuthority } from '@lotse/acp/gate';
 
-import { appendTurns, byRecency, type SessionRecord, type TranscriptEntry } from './model.ts';
+import {
+  appendTurns,
+  byRecency,
+  type HostRecord,
+  type McpCall,
+  type SessionRecord,
+  type ToolCallRecord,
+  type TranscriptEntry,
+} from './model.ts';
 
 export interface SessionStore {
   all(): SessionRecord[];
@@ -76,6 +84,7 @@ export function createSessionStore(file: string): SessionStore {
       // A file that grew an authority field by hand is exactly the case the canary exists for, and
       // it is caught on read rather than on the next write.
       assertScopeIsNotAuthority(record as unknown as Record<string, unknown>);
+      if (Array.isArray(record?.turns)) record.turns.forEach(sanitizeEntry);
     }
     return parsed;
   };
@@ -148,4 +157,49 @@ export function createSessionStore(file: string): SessionStore {
   };
 
   return { all, get, create, update, append, remove };
+}
+
+/**
+ * Drop a turn's `tool` or `host` field when it is not the shape the model says, in place.
+ *
+ * **Degrade, never reject.** The fields are an addition beside `text`, and `text` alone is the whole
+ * line a person reads — so a hand-edited or half-understood `tool` costs the structured view of one
+ * line, not access to every conversation in the file. Rejecting the file, as a wrong `version`
+ * rightly does, would turn a cosmetic field into a lock-out. An entry without either field is left
+ * byte-for-byte alone, so a file older lotse wrote reads back exactly as written.
+ */
+function sanitizeEntry(entry: TranscriptEntry): void {
+  if (!entry || typeof entry !== 'object') return;
+  if ('tool' in entry && !isToolRecord(entry.tool)) delete entry.tool;
+  if ('host' in entry && !isHostRecord(entry.host)) delete entry.host;
+}
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isOptionalString = (value: unknown): boolean => value === undefined || typeof value === 'string';
+
+function isMcpCall(value: unknown): value is McpCall {
+  return (
+    isObject(value) &&
+    typeof value.server === 'string' &&
+    typeof value.tool === 'string' &&
+    (value.source === 'reported' || value.source === 'code') &&
+    isOptionalString(value.status)
+  );
+}
+
+function isToolRecord(value: unknown): value is ToolCallRecord {
+  if (!isObject(value)) return false;
+  if (!isOptionalString(value.kind) || !isOptionalString(value.title) || !isOptionalString(value.status)) {
+    return false;
+  }
+  if (value.rawInputOmitted !== undefined && value.rawInputOmitted !== true) return false;
+  return value.mcp === undefined || (Array.isArray(value.mcp) && value.mcp.every(isMcpCall));
+}
+
+function isHostRecord(value: unknown): value is HostRecord {
+  return (
+    isObject(value) && typeof value.type === 'string' && value.type !== '' && isOptionalString(value.icon)
+  );
 }

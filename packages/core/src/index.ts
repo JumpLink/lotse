@@ -311,13 +311,16 @@ export {
   type ModelDecision,
   type ModelPolicy,
 } from './model-policy.ts';
-export { toTranscript } from './transcript.ts';
+export { fitsInputCap, mcpCallsOf, toTranscript } from './transcript.ts';
+export type { HostRecord, McpCall, ToolCallRecord } from '@lotse/session';
 export {
   toTranscriptItems,
   type AgentItem,
   type DisclosureItem,
+  type HostItem,
   type SystemItem,
   type ThoughtItem,
+  type ToolCallView,
   type ToolItem,
   type TranscriptItem,
   type UserItem,

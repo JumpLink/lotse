@@ -36,9 +36,9 @@
  * **The person's messages are bubbles and the agent's answers are not**, which is `buildAgentMessage`'s
  * own argument: a bubble suits a line somebody typed, and the answer is the body text of the page. An
  * answer carries a caption above it — the agent's name and the time the message was recorded — and a
- * tool call is a card (icon, title, status capsule). Both are read from what the record holds; the
- * tool's kind and input are not recorded, so see `tool-line.ts` for what the icon is a guess from.
- * No copy button, no per-item controls. Everything on screen is
+ * tool call is a card (icon, title, status capsule). Both are read from what the record holds; a line
+ * older lotse wrote has no kind, so see `tool-line.ts` for what the icon is then a guess from, and for
+ * how a host's `toolPresenter` may retitle its own calls. A host line is a plain row. No copy button, no per-item controls. Everything on screen is
  * something the transcript actually holds; a control that points at nothing is the one thing this
  * window's own header forbids.
  */
@@ -63,7 +63,7 @@ import {
 } from '@lotse/core';
 import { CONTENT_MAX_WIDTH_PX } from './constants.ts';
 import { CSS } from './css.ts';
-import { parseToolLine, toolIcon, TOOL_FALLBACK_ICON, type ToolLine } from './tool-line.ts';
+import { toolRow, TOOL_FALLBACK_ICON, type ToolLine, type ToolPresenter, type ToolRow } from './tool-line.ts';
 
 /**
  * The conversation's measure is `CONTENT_MAX_WIDTH_PX`, not a constant of this file.
@@ -192,8 +192,11 @@ export class TranscriptView {
    * in the constructor.
    */
   #lastValue = 0;
+  /** The host's hook for its own tool calls (`LotseChatOptions.toolPresenter`), or none. */
+  readonly #toolPresenter: ToolPresenter | undefined;
 
-  constructor() {
+  constructor(options: { readonly toolPresenter?: ToolPresenter } = {}) {
+    this.#toolPresenter = options.toolPresenter;
     this.#column = new Gtk.Box({
       orientation: Gtk.Orientation.VERTICAL,
       spacing: ITEM_SPACING,
@@ -379,7 +382,7 @@ export class TranscriptView {
 
   /** Add one item as a new row at the end of the column. */
   #appendRow(item: TranscriptItem): void {
-    const row = buildItem(item, this.#agentName);
+    const row = buildItem(item, this.#agentName, this.#toolPresenter);
     this.#rows.push(row);
     this.#column.append(row);
   }
@@ -401,7 +404,7 @@ export class TranscriptView {
     const previous = this.#rows[index];
     const item = this.#items[index];
     if (!previous || !item) return;
-    const row = buildItem(item, this.#agentName);
+    const row = buildItem(item, this.#agentName, this.#toolPresenter);
     const sibling = this.#rows[index - 1] ?? null;
     this.#column.insert_child_after(row, sibling);
     this.#column.remove(previous);
@@ -541,7 +544,11 @@ export class TranscriptView {
  */
 const ROW_ICON_PX = 16;
 
-function buildItem(item: TranscriptItem, agentName: string): Gtk.Widget {
+function buildItem(
+  item: TranscriptItem,
+  agentName: string,
+  presenter: ToolPresenter | undefined,
+): Gtk.Widget {
   switch (item.kind) {
     case 'user':
       return buildBubble(item.text, Gtk.Align.END, CSS.bubbleUser);
@@ -559,12 +566,21 @@ function buildItem(item: TranscriptItem, agentName: string): Gtk.Widget {
     case 'tool': {
       // A payload is what the disclosure opens onto, so a line without one is not a disclosure.
       if (item.detail !== null) return buildDisclosure(TOOL_FALLBACK_ICON, item, CSS.mono);
-      const line = parseToolLine(item.summary);
-      return line.title === '' ? buildToolStatus(line.status) : buildToolCard(line);
+      // The structured record where the line has one, the text where it does not, and the host's
+      // presentation over either — `toolRow` decides all three, so Node tests what is drawn.
+      const row = toolRow(item.summary, item.call, presenter, warnPresenter);
+      return row.title === '' ? buildToolStatus(row.status) : buildToolCard(row);
     }
     case 'system':
       return buildNote(item.text);
+    case 'host':
+      return buildHostRow(item.text, item.icon);
   }
+}
+
+/** A presenter failure, on stderr beside the widget's other `lotse:` lines (`LotseChat.#onNotice`). */
+function warnPresenter(message: string): void {
+  console.warn(`lotse: ${message}`);
 }
 
 /**
@@ -623,20 +639,51 @@ function buildAgentMessage(text: string, at: string, agentName: string): Gtk.Wid
  * The title is `.lotse-tool-title`, not Adwaita's `heading`, and `css.ts` says why: a tool's name
  * at full size and full weight outranked the answer it belongs to.
  *
- * A line with no recognisable status gets no capsule rather than an invented one.
+ * A line with no recognisable status gets no capsule rather than an invented one. A subtitle is only
+ * ever a host presenter's (`toolRow`), drawn as a dim caption under the title.
  */
-function buildToolCard(line: ToolLine): Gtk.Widget {
+function buildToolCard(line: ToolRow): Gtk.Widget {
   const card = new Gtk.Box({
     orientation: Gtk.Orientation.HORIZONTAL,
     spacing: 10,
     cssClasses: ['card', CSS.toolCard],
   });
-  card.append(new Gtk.Image({ iconName: toolIcon(line.title), pixelSize: ROW_ICON_PX }));
+  card.append(new Gtk.Image({ iconName: line.icon, pixelSize: ROW_ICON_PX }));
   const title = buildLabel({ text: line.title, xalign: 0, cssClasses: [CSS.toolTitle] });
-  title.set_hexpand(true);
-  card.append(title);
+  if (line.subtitle === null) {
+    title.set_hexpand(true);
+    card.append(title);
+  } else {
+    const text = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 2, hexpand: true });
+    text.append(title);
+    text.append(buildLabel({ text: line.subtitle, xalign: 0, cssClasses: [CSS.dim, 'caption'] }));
+    card.append(text);
+  }
   if (line.status !== null) card.append(buildTonePill(line.status));
   return card;
+}
+
+/**
+ * A line the host recorded (`LotseChat.appendHostItem`): its text, after its icon if it named one.
+ *
+ * The status row's geometry (`.lotse-tool-status`) rather than a card, so the icon sits in the
+ * column the tool rows put theirs in, and full-contrast text rather than a note: a host line is
+ * something that happened in the conversation — an order placed — not the conversation's own
+ * bookkeeping, and `buildNote`'s centred dim line would rank it below a mode change.
+ */
+function buildHostRow(text: string, icon: string | null): Gtk.Widget {
+  const row = new Gtk.Box({
+    orientation: Gtk.Orientation.HORIZONTAL,
+    spacing: 10,
+    cssClasses: [CSS.toolStatus],
+  });
+  if (icon !== null) row.append(new Gtk.Image({ iconName: icon, pixelSize: ROW_ICON_PX }));
+  const label = buildLabel({ text, xalign: 0, cssClasses: [CSS.transcriptText] });
+  // Expanded for the same reason the tool title is: a wrapping label in a horizontal box is otherwise
+  // handed its unwrapped natural width.
+  label.set_hexpand(true);
+  row.append(label);
+  return row;
 }
 
 /**

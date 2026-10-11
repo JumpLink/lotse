@@ -26,7 +26,66 @@ export type Principal = string;
 /** The stand-in principal for a person at a terminal. A real name arrives with a real surface. */
 export const LOCAL_PRINCIPAL: Principal = 'local';
 
-export type EntryKind = 'user' | 'agent' | 'thought' | 'tool' | 'system';
+/**
+ * Who wrote a line. `host` is the embedding application, never the agent: a line an app built on
+ * lotse put into its own conversation (an order placed, a draft saved), recorded next to the agent's
+ * so a resumed session shows both in the order they happened.
+ */
+export type EntryKind = 'user' | 'agent' | 'thought' | 'tool' | 'system' | 'host';
+
+/**
+ * How large a recorded tool input may be, as `JSON.stringify` counts it.
+ *
+ * The record keeps a tool call's input so a host can recognise *its own* MCP call in a transcript —
+ * a `create_order` with the arguments it was given. It does not keep a file an agent wrote or a
+ * page it fetched: the session file is read in full on every write, and one pasted dump would make
+ * each later line pay for it. Over the cap the input is dropped and `rawInputOmitted` says so.
+ */
+export const TOOL_INPUT_MAX = 8 * 1024;
+
+/**
+ * One MCP tool the call reached.
+ *
+ * `reported` is the agent's own account (opencode's `rawOutput.metadata.toolCalls`), with the input
+ * and status it saw. `code` is read off the source of a code-mode call (`tools.<server>.<tool>(`)
+ * and is a claim about what the code *names*, not what ran — so it carries no input and no status.
+ */
+export interface McpCall {
+  server: string;
+  tool: string;
+  input?: unknown;
+  status?: string;
+  source: 'reported' | 'code';
+}
+
+/**
+ * What one `tool_call`/`tool_call_update` line said about the call, beyond its text.
+ *
+ * Only the fields the line itself carried are set: an update is a delta, and filling in an absent
+ * field here would be lotse inventing a state the agent never sent. Folding the deltas into one
+ * view is the projection's job (`toTranscriptItems`), where it can be undone. `rawOutput` and
+ * `content` are never stored — they are the tool's result, which is the agent's to keep.
+ */
+export interface ToolCallRecord {
+  kind?: string;
+  title?: string;
+  status?: string;
+  rawInput?: unknown;
+  /** Set when the line carried a `rawInput` larger than `TOOL_INPUT_MAX`, which was dropped. */
+  rawInputOmitted?: true;
+  mcp?: readonly McpCall[];
+}
+
+/** A line the embedding application recorded. `type` and `data` are the host's own; lotse reads neither. */
+export interface HostRecord {
+  type: string;
+  data?: unknown;
+  /**
+   * A themed icon name drawn in front of the text. Stored rather than passed at draw time, so a
+   * resumed session shows the line the way it looked when the host wrote it.
+   */
+  icon?: string;
+}
 
 /**
  * One line of the transcript.
@@ -35,6 +94,9 @@ export type EntryKind = 'user' | 'agent' | 'thought' | 'tool' | 'system';
  * `session/load` is the authority on history, and lotse's copy exists so `lotse sessions` and
  * `lotse resume` can show something without spawning a process. A transcript that claimed more
  * than that would be a second source of truth about someone else's conversation.
+ *
+ * `text` is always the line a human reads, for every kind. The structured fields sit beside it and
+ * a reader that knows none of them — `lotse sessions`, an older lotse — still has the whole story.
  */
 export interface TranscriptEntry {
   kind: EntryKind;
@@ -45,6 +107,10 @@ export interface TranscriptEntry {
   sessionId?: SessionId;
   /** A tool call's `toolCallId`, for `kind: 'tool'`. */
   toolCallId?: string;
+  /** What the protocol line said about the call, for `kind: 'tool'`. Absent on lines older lotse wrote. */
+  tool?: ToolCallRecord;
+  /** The host's own payload, for `kind: 'host'`. */
+  host?: HostRecord;
 }
 
 /**
@@ -159,7 +225,7 @@ export function labelOf(record: SessionRecord): string {
       parts.push(turn.text);
       continue;
     }
-    // A `thought` or `tool` line before the answer is not part of it and is skipped; one *between*
+    // A `thought`, `tool` or `host` line before the answer is not part of it and is skipped; one *between*
     // the answer's chunks ends the run. Concatening across it would splice "reading the file" into
     // a sentence that never contained it.
     if (parts.length > 0) break;
