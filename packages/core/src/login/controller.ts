@@ -67,6 +67,8 @@ export interface LoginControllerDeps {
   now(): number;
   /** Called once per successful login, before the state becomes `connected`. */
   onConnected?(provider: LoginProvider): void | Promise<void>;
+  /** Whether to list a provider — a host's `modelPolicy` through `providerOffered`. Absent: all of them. */
+  offers?(provider: LoginProvider): boolean;
 }
 
 function messageOf(error: unknown): string {
@@ -137,10 +139,16 @@ export class LoginController {
     }
     this.#session = session;
     try {
-      this.#set({ step: 'providers', providers: await session.providers() });
+      this.#set({ step: 'providers', providers: await this.#offered(session) });
     } catch (error) {
       this.#set({ step: 'failed', message: `could not read the provider list: ${messageOf(error)}` });
     }
+  }
+
+  async #offered(session: LoginSession): Promise<LoginProvider[]> {
+    const providers = await session.providers();
+    const offers = this.#deps.offers;
+    return offers ? providers.filter((provider) => offers(provider)) : providers;
   }
 
   /** Pick a provider: straight into its only method, or to the choice between several. */
@@ -256,7 +264,7 @@ export class LoginController {
     const session = this.#session;
     if (!session) return;
     try {
-      this.#set({ step: 'providers', providers: await session.providers() });
+      this.#set({ step: 'providers', providers: await this.#offered(session) });
     } catch (error) {
       this.#set({ step: 'failed', message: `could not read the provider list: ${messageOf(error)}` });
     }

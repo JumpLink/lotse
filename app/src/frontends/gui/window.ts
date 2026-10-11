@@ -348,6 +348,8 @@ export class MainWindow extends Adw.ApplicationWindow {
       ...(options.resolveAgent ? { resolveAgent: options.resolveAgent } : {}),
       ...(options.mcpServers ? { mcpServers: options.mcpServers } : {}),
       ...(options.modelPolicy ? { modelPolicy: options.modelPolicy } : {}),
+      // lotse's own window: the person's own servers are theirs to add (#17).
+      allowCustomProviders: true,
       ...(options.noAgent ? { noAgent: options.noAgent } : {}),
       ...(options.now ? { now: options.now } : {}),
       onConversation: (record, current) => this.#onConversation(record, current),
@@ -423,7 +425,7 @@ export class MainWindow extends Adw.ApplicationWindow {
    * same call.
    */
   #installPreferences(app: Adw.Application, actions: PreferencesActions): void {
-    const dialog = new PreferencesDialog(actions);
+    const dialog = new PreferencesDialog(actions, () => [this.#chat.providerSettingsPage()]);
     this.#preferences = dialog;
     // Installed once: the window is the app's only one (`AdwaitaApp` memoises `createWindow`), so this
     // constructor runs once per process and the action and its accelerator are never added twice.
@@ -820,7 +822,12 @@ export class MainWindow extends Adw.ApplicationWindow {
 
   /** `LOTSE_APP_PREFERENCES` opens the dialog through its action; `LOTSE_APP_PREFERENCES_AGENT` also chooses a row. */
   #applyPreferencesHooks(hooks: LotseHooks): void {
-    if (hooks.preferences !== true && hooks.preferencesAgent === undefined) return;
+    if (
+      hooks.preferences !== true &&
+      hooks.preferencesAgent === undefined &&
+      hooks.preferencesPage === undefined
+    )
+      return;
     const dialog = this.#preferences;
     const app = this.application;
     if (!dialog || !app) {
@@ -829,6 +836,11 @@ export class MainWindow extends Adw.ApplicationWindow {
     }
     console.log('lotse: LOTSE_APP_PREFERENCES — opening the dialog through app.preferences');
     app.activate_action('preferences', null);
+    const page = hooks.preferencesPage;
+    if (page !== undefined) {
+      const shown = dialog.showPage(page);
+      console.log(`lotse: LOTSE_APP_PREFERENCES_PAGE — ${shown ? `showing ${page}` : `no page ${page}`}`);
+    }
     const key = hooks.preferencesAgent;
     if (key === undefined) return;
     // The rows are final once the host detection (if any) has answered; the dialog says when.

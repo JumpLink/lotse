@@ -137,7 +137,7 @@ the agent keeps its own.
 | `arrangeAuth(hooks)` | Ask the agent, run its login command through your `runLogin`, ask again. Returns an `AuthArrangement` (`authenticated`, `login-missing`, `login-failed`, `refused`, …). `AuthHooks.runLogin` is the one part a surface supplies. |
 | `loginCommandFor(agent)`, `describeAuthMethods`, `AUTH_COMMAND` | The command to run for an agent (a bundled copy gets its own isolated one). |
 | `loginUnavailableReason(agent)` | Why no in-app login can run (not opencode, not on `PATH`, …), or `null`. |
-| `LoginController`, `LoginControllerDeps`, `LoginState` | The state machine behind a login dialog: providers, browser flow, code paste, API key, connected. `subscribe(listener)` for state; `open()` to start. You supply `openSession`, `unavailableReason`, `sleep`, `now`, optional `onConnected`. |
+| `LoginController`, `LoginControllerDeps`, `LoginState` | The state machine behind a login dialog: providers, browser flow, code paste, API key, connected. `subscribe(listener)` for state; `open()` to start. You supply `openSession`, `unavailableReason`, `sleep`, `now`, optional `onConnected` and `offers` (which providers to list, e.g. by `providerOffered`). |
 | `openLoginSession(agent)`, `startServer`, `serverCommand`, `createLoginApi`, `runLogin` | The private `opencode serve` on `127.0.0.1` with a per-start password, and the calls on it. Stopped when the login ends. |
 | `LOGIN_POLICY`, `parseIntegrations`, `KEY_METHOD_ID` | The shipped provider policy (`data/login-providers.json`) and the catalog parser. |
 
@@ -159,7 +159,10 @@ Details and measurements: [docs/login.md](../../docs/login.md).
 | `planCustomProvider(input)`, `parseModelSpecs` | Check an id, URL and models against the catalog: `ok` (with the entry, the privacy note and context warnings), `confirm` (plain http on the LAN) or `refused`. |
 | `checkEndpoint`, `hostReach`, `CUSTOM_PRESETS`, `contextWarning`, `MIN_CONTEXT_TOKENS`, `LOCAL_MODEL_HINT` | The URL rules (https or loopback; LAN asks; the rest is refused), the `local-*` presets and the honest hints. |
 | `customProvidersFile`, `customProvidersEnv`, `readProvidersDocument`, `writeProvidersDocument`, `withProvider`, `withoutProvider`, `providerEntry` | lotse's own `lotse-providers.json` for the bundled opencode (via `OPENCODE_CONFIG`), written `0600`, never with a key. |
-| `createProviderApi`, `probeModels`, `ProviderApi` | On the private server: the configured providers, the ids that may not be shadowed, `disconnect`, `waitForProvider`. |
+| `createProviderApi`, `probeModels`, `parseModelList`, `ProviderApi` | On the private server: the configured providers, the ids that may not be shadowed, the usable models per provider, `disconnect`, `waitForProvider`. |
+| `ProviderSettingsController`, `ProviderSettingsView`, `AddOutcome` | The state behind a provider settings page: connected rows, custom rows, privacy notes; `disconnect`, `addCustom` (`added`, `confirm`, `refused`), `removeCustom`, `reload`. The widget's page renders it. |
+| `openSettingsSession(agent)`, `customProvidersFileOf(agent)` | The private server for that controller, and lotse's own file for an agent: `null` for a host opencode, whose custom providers are then read-only (`NOT_LOTSE_COPY_REASON`). |
+| `reachPrivacyNote(reach)`, `PROVIDER_PRIVACY_NOTE`, `FREE_MODELS_PRIVACY_NOTE`, `FREE_MODELS_DENIED_NOTE` | The privacy sentences the page shows, per endpoint and for the page. |
 
 Details and measurements: [docs/custom-providers.md](../../docs/custom-providers.md).
 
