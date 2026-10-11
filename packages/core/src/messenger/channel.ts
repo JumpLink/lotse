@@ -14,10 +14,11 @@ import type { ChannelName, MessengerSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
 
 /** A deadline as the person's clock shows it ("Tue, 10/13, 18:14"); an unreadable one stays as it came. */
-export function localDeadline(iso: string): string {
+/** `locale` is for tests; people get the host's. */
+export function localDeadline(iso: string, locale?: string): string {
   const at = new Date(iso);
   if (Number.isNaN(at.getTime())) return iso;
-  return at.toLocaleString(undefined, {
+  return at.toLocaleString(locale, {
     weekday: 'short',
     day: 'numeric',
     month: 'numeric',

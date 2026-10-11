@@ -15,18 +15,39 @@
 import { deliveryOf } from '../serve/config.ts';
 import { answerQuestion, type AnswerResult, type ServeDeps } from '../serve/runner.ts';
 import { formatQuestionId, openQuestions } from '../serve/questions.ts';
-import { sendToPeer, type MessengerChannel } from './channel.ts';
+import { localDeadline, sendToPeer, type MessengerChannel } from './channel.ts';
 import { McpLink } from './link.ts';
 import { listIds, openIds, parseReply } from './reply.ts';
 import type { MessengerSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
 
-/** What the chat hears of an outcome: the continuation's internals stay in the log. */
+/**
+ * What the chat hears of an outcome: the continuation's internals stay in the log. A `dropped` or
+ * `expired` message carries the stored resolution, which can be a run's failure reason, so those two are
+ * rebuilt from the question's status and deadline, never forwarded.
+ */
 export function chatSays(questionId: string, result: AnswerResult): string {
   const id = formatQuestionId(questionId);
-  if (result.mode !== 'loaded' && result.mode !== 'resumed' && result.mode !== 'follow-up')
-    return result.message;
-  return msg(result.run?.outcome === 'failed' ? STRINGS.gotItRunFailed : STRINGS.gotIt, { id });
+  switch (result.mode) {
+    case 'allowed':
+    case 'declined':
+    case 'loaded':
+    case 'resumed':
+    case 'follow-up':
+      return msg(result.run?.outcome === 'failed' ? STRINGS.gotItRunFailed : STRINGS.gotIt, { id });
+    case 'dropped': {
+      const status = result.question?.status;
+      return status && status !== 'open'
+        ? msg(STRINGS.alreadySettled, { id, status })
+        : msg(STRINGS.noLongerWaiting, { id });
+    }
+    case 'expired':
+      return result.question
+        ? msg(STRINGS.expiredAt, { id, time: localDeadline(result.question.expiresAt) })
+        : msg(STRINGS.noLongerWaiting, { id });
+    default:
+      return result.message;
+  }
 }
 
 export interface CursorStore {
@@ -114,8 +135,10 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
     cursor = serve.now().toISOString();
     options.cursor.write(cursor);
   }
+  // Only forward: an older value (a message the server lists late) must not re-open what was read.
   const remember = (next: string) => {
-    if (next === cursor) return;
+    const [to, from] = [Date.parse(next), Date.parse(cursor ?? '')];
+    if (next === cursor || (!Number.isNaN(to) && !Number.isNaN(from) && to <= from)) return;
     cursor = next;
     options.cursor.write(next);
   };
@@ -214,6 +237,8 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
       for (const message of result.messages) {
         if (signal.aborted) return;
         if (!message.fromSelf) await handle(message.bodyText);
+        // No `sentAt`: the server's cursor, else now. Assumes the message is not seen again — a
+        // restart before the write re-reads it, and the second answer is dropped as already answered.
         remember(message.sentAt ?? result.cursor ?? serve.now().toISOString());
       }
       if (result.messages.length > 0 && result.cursor) remember(result.cursor);

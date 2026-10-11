@@ -7,6 +7,7 @@ import {
   chatSays,
   combineChannels,
   connectMcp,
+  localDeadline,
   messengerChannel,
   messengerText,
   noticeOf,
@@ -212,6 +213,30 @@ export default async () => {
         expect(said).not.toContain('session');
       }
     });
+    await it('a dropped answer names the status, never the stored resolution', async () => {
+      const reason = 'the run failed: disk /srv/secret is full';
+      const said = chatSays('A4', {
+        ...base,
+        mode: 'dropped',
+        message: `#A4 is answered (${reason}); nothing waits for this answer`,
+        question: question('A4', 'reply', { status: 'answered', resolution: reason }),
+      });
+      expect(said).toBe('#A4 is already answered.');
+    });
+    await it('an expired answer shows the local deadline, not the ISO time', async () => {
+      const said = chatSays('A4', {
+        ...base,
+        mode: 'expired',
+        message: '#A4 expired at 2026-10-11T00:00:00.000Z; the answer was dropped',
+        question: question('A4', 'reply', { status: 'expired', expiresAt: '2026-10-11T00:00:00.000Z' }),
+      });
+      expect(said).toBe(`#A4 expired at ${localDeadline('2026-10-11T00:00:00.000Z')}.`);
+      expect(said).not.toContain('.000Z');
+    });
+    await it('localDeadline takes an explicit locale', async () => {
+      expect(localDeadline('2026-10-11T12:00:00.000Z', 'en-US')).toContain('10/11');
+      expect(localDeadline('not a date')).toBe('not a date');
+    });
     await it('other outcomes keep their own sentence', async () => {
       expect(chatSays('A4', { ...base, mode: 'unknown', message: 'there is no question #A4' })).toBe(
         'there is no question #A4',
@@ -232,10 +257,7 @@ export default async () => {
       const text = messengerText(asks);
       expect(text.startsWith('lotse · t · #A3\n\nAllow it?')).toBe(true);
       expect(text).toContain('Reply: #A3 yes or #A3 no');
-      const at = new Date('2026-10-11T00:00:00.000Z');
-      const clock = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
-      expect(text).toContain('Valid until ');
-      expect(text).toContain(clock);
+      expect(text).toContain(`Valid until ${localDeadline('2026-10-11T00:00:00.000Z')}`);
       expect(text).not.toContain('2026-10-11T');
       expect(text).not.toContain('.000Z');
       expect(text).not.toContain('lotse answer');
@@ -566,8 +588,48 @@ export default async () => {
         });
         expect(book.value[0]!.status).toBe('answered');
         expect(book.value[0]!.answer).toBe('yes');
-        expect(String(sent(fake)[0]!.args['text'])).toContain('#A1');
+        expect(String(sent(fake)[0]!.args['text'])).toBe('Got it, #A1.');
         expect(cursor.value).toBe('2026-10-10T11:30:00.000Z');
+      });
+    });
+
+    await it('an answer to a question already settled with a failed run leaks no reason', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const reason = 'the run failed: token sk-synthetic-123 rejected';
+        const book = {
+          value: [
+            question('A1', 'reply', {
+              status: 'answered',
+              resolution: `continuing the session, but ${reason}`,
+            }),
+          ],
+        };
+        await looping(fake, book, memoryCursor(BEFORE), async () => {
+          fake.deliver('2026-10-10T11:30:00.000Z', 'A1 again');
+          await until(() => sent(fake).length === 1, 'the reply');
+        });
+        const text = String(sent(fake)[0]!.args['text']);
+        expect(text).toBe('#A1 is already answered.');
+        expect(text).not.toContain('sk-synthetic');
+        expect(text).not.toContain('failed');
+      });
+    });
+
+    await it('the cursor never moves back', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const book = { value: [question('A1')] };
+        const writes: string[] = [];
+        const cursor: CursorStore = {
+          read: () => BEFORE,
+          write: (next) => void writes.push(next),
+        };
+        await looping(fake, book, cursor, async () => {
+          // One batch, newest first: the older message must not pull the cursor back.
+          fake.deliver('2026-10-10T11:30:00.000Z', 'A1 ja');
+          fake.deliver('2026-10-10T11:10:00.000Z', 'A1 ja');
+          await until(() => sent(fake).length >= 2, 'both replies');
+          expect(writes).toStrictEqual(['2026-10-10T11:30:00.000Z']);
+        });
       });
     });
 
@@ -656,7 +718,7 @@ export default async () => {
           await until(() => sent(fake).length === 1, 'the answer');
         });
         expect(book.value[0]!.answer).toBe('no');
-        expect(String(sent(fake)[0]!.args['text'])).toContain('#A1 is answered');
+        expect(String(sent(fake)[0]!.args['text'])).toBe('#A1 is already answered.');
       });
     });
 
