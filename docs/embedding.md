@@ -89,6 +89,10 @@ catalog, nothing is downloaded when you generate, and an entry without a checksu
 carries the identical module (a test compares them byte for byte), so a refresh of the pin reaches you by
 regenerating. Then point `agentSource` at `'bundled'`, as above.
 
+The module installs `/app/bin/apply_extra`, and flatpak runs only that one file. If your app already ships
+`extra-data` of its own, merge the generated script's `commands` into your `apply_extra` rather than adding the
+module as it is. The unpack path (`/app/extra/agents/<id>`) is fixed: `apply_extra` can write nowhere else.
+
 ## 4. Create the widget
 
 ```ts
