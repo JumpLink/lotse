@@ -154,11 +154,16 @@ shipped, and the differences are all in the same direction — fewer things the 
 - **Manifest recipe** (from `eu.jumplink.Lotse.json`), what a host app must copy:
   1. An `opencode` module: `extra-data` sources per arch (url, sha256, size) + a script source `apply_extra` that does
      `mkdir -p /app/extra/agents/opencode`, untars, `chmod 0755 …/package/bin/opencode`, removes the tarball.
-  2. Same `installPath` so `BUNDLED_PREFIX` matches. A host that wants another prefix needs the prefix injectable.
+  2. Same `installPath` so `BUNDLED_PREFIX` matches. **Decided 2026-10-11: the prefix stays fixed.** Every Flatpak's
+     `apply_extra` can write only `/app/extra`, and `/app/extra` is per app, so two apps never collide there; a prefix
+     a host could change would only let it pick a path `apply_extra` cannot write. A non-Flatpak packaging is the case
+     that would need it, and none exists.
   3. finish-args: `--share=network` (provider calls, OAuth), `--filesystem=host` is what lotse uses; a host should prefer
      narrower access (the workspace dir only) and avoid the `--talk-name=org.freedesktop.Flatpak` unless it launches host agents.
-- Both the version pin and the checksum live in two places (manifest and JSON). A host should generate the module from the
-  JSON, e.g. a `lotse-flatpak-module` script in the widget package, or drift will occur.
+- Both the version pin and the checksum live in two places (manifest and JSON). **Done:** the module is generated from the
+  JSON (`flatpakAgentModule`, `scripts/flatpak-agent-module`), and a test pins lotse's own manifest to the output.
+- **One `apply_extra` per app.** flatpak runs exactly `/app/bin/apply_extra`, so a host that ships `extra-data` of its own
+  must merge the generated script's commands into its own `apply_extra` instead of adding the module unchanged.
 - Extra-data downloads at install time, so there is no offline first run. A host needs an empty state for "agent not yet unpacked".
 
 ## 5. Provider onboarding
@@ -197,7 +202,7 @@ Widget needs:
 | 5 | **Done** (`packages/widget`, see above for the deltas). Create `@lotse/widget`: move leaf widgets (`composer`, `transcript-view`, `config-row`, dialogs, css); then extract `LotseChat` from `window.ts`, with `MainWindow` consuming it. Blueprint (`.blp`) compile must work from a package | L |
 | 6 | **Done** (`onboarding.ts` in core, `onboarding-page.ts` in the widget; see the ADR). Inline provider onboarding page; the connected-state signal was left out | M |
 | 7 | Public API: signals/properties, docs, an example host app, license files (`LICENSE` + `COPYING`), `gjsify foreach` checks | M |
-| 8 | Flatpak module generator from `bundled-agents.json`; make `BUNDLED_PREFIX` configurable | M |
+| 8 | **Done** (`flatpakAgentModule`, `scripts/flatpak-agent-module`). Flatpak module generator from `bundled-agents.json`; `BUNDLED_PREFIX` stays fixed, see §4 | M |
 | 9 | Steuererklärung integration: replace the assistant's `getLLMProvider` chat (`core/actions/assistant/chat.ts`, `engine-status.ts`) with `LotseChat` and the injected `steuer mcp` server. The other three users of `getLLMProvider` (`classify-documents.ts`, `extract-invoice.ts`, `review-metadata.ts`) are headless one-shot document analysis; they stay on the in-process provider unless a headless lotse API is added. | M |
 
 **Risks**
