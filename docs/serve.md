@@ -206,5 +206,10 @@ Replies are read like `lotse answer`:
 The position in the conversation is kept in `messenger-cursor.json` in the state directory, so a
 restart neither replays old replies nor loses one. The first start begins at "now". If the MCP
 server dies, `serve` restarts it with a growing pause (5 s up to 5 min). There is no receive loop in
-`serve --once`: that run ends before anyone could reply. lotse adds no encryption of its own: a
+`serve --once`: that run ends before anyone could reply. A channel that fails while another one
+delivers is never silent: `serve` prints `<channel>: <error>` on stderr and writes an `error` entry
+(channel, kind, message) to `serve.log`. A question the messenger could not send is sent again by the
+receive loop after 30 s, 1, 2, 5 and 10 min, while it is still open; after the last try `serve` says
+it gave up (`lotse questions` still lists it). The retry list lives in memory, so a restart of
+`serve` drops it. lotse adds no encryption of its own: a
 question is as private as the messenger path it travels, and it names the task and the action.

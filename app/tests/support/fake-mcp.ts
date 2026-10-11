@@ -35,11 +35,14 @@ const tools = [
   { name: 'xmpp_wait_reply', description: 'wait', inputSchema: { type: 'object', properties: {} } },
 ].filter((tool) => !(opts.noSend && tool.name === 'send_message'));
 let waits = 0;
+let sends = 0;
 const text = (value) => ({ content: [{ type: 'text', text: JSON.stringify(value) }] });
 
 async function call(name, args) {
   log({ tool: name, args });
   if (name === 'send_message') {
+    sends += 1;
+    if (opts.sendFailures && sends <= opts.sendFailures) return { isError: true, content: [{ type: 'text', text: 'database is locked' }] };
     if (opts.sendError) return { isError: true, content: [{ type: 'text', text: opts.sendError }] };
     return text({ conversationId: 'c1', sentAt: new Date().toISOString() });
   }
@@ -80,6 +83,8 @@ readline.createInterface({ input: process.stdin }).on('line', async (line) => {
 export interface FakeMcpOptions {
   readonly noSend?: boolean;
   readonly sendError?: string;
+  /** The first n sends fail with "database is locked", later ones succeed. */
+  readonly sendFailures?: number;
   /** How long a wait lasts when nothing is in the inbox. Default 40 ms. */
   readonly waitMs?: number;
   /** The first server process exits (code 3) on this wait. */

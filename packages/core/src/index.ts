@@ -512,7 +512,16 @@ export {
 } from './messenger/settings.ts';
 export { McpToolError, connectMcp, type McpTools } from './messenger/mcp-client.ts';
 export { McpLink } from './messenger/link.ts';
-export { combineChannels, messengerChannel, messengerText, sendToPeer } from './messenger/channel.ts';
+export {
+  RETRY_DELAYS_MS,
+  combineChannels,
+  messengerChannel,
+  messengerText,
+  sendToPeer,
+  type ChannelFailure,
+  type MessengerChannel,
+  type MessengerChannelOptions,
+} from './messenger/channel.ts';
 export { openIds, parseReply, type ReplyIntent } from './messenger/reply.ts';
 export {
   abortableSleep,

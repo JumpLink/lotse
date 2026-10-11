@@ -12,7 +12,7 @@
 
 import { answerQuestion, type ServeDeps } from '../serve/runner.ts';
 import { formatQuestionId, openQuestions } from '../serve/questions.ts';
-import { sendToPeer } from './channel.ts';
+import { sendToPeer, type MessengerChannel } from './channel.ts';
 import { McpLink } from './link.ts';
 import { listIds, openIds, parseReply } from './reply.ts';
 import type { MessengerSettings } from './settings.ts';
@@ -29,6 +29,8 @@ export interface ReceiveOptions {
   readonly serve: ServeDeps;
   readonly cursor: CursorStore;
   readonly signal: AbortSignal;
+  /** When given, its unsent questions are retried before each poll while they are still open. */
+  readonly channel?: MessengerChannel;
   /** A line for the person running serve. */
   readonly log?: (line: string) => void;
   /** Long-poll length the server is asked for. Default 60 s (curlew's maximum is 120). */
@@ -141,10 +143,41 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
     }
   };
 
+  const retryUnsent = async () => {
+    if (!options.channel) return;
+    const open = new Set(
+      openQuestions(serve.questions.read(), serve.now()).map((question) => `${question.user}/${question.id}`),
+    );
+    const delivered = await options.channel.retryUnsent(
+      (user, id) => open.has(`${user}/${id}`),
+      (id, error, gaveUp) => {
+        const reason = error instanceof Error ? error.message : String(error);
+        const text = msg(gaveUp ? STRINGS.retryGaveUp : STRINGS.retryFailed, {
+          id: formatQuestionId(id),
+          reason,
+        });
+        log(`messenger: ${text}`);
+        serve.log?.({
+          event: 'error',
+          task: '-',
+          detail: {
+            channel: 'messenger',
+            kind: error instanceof Error ? error.name : 'Error',
+            retry: gaveUp ? 'gave up' : 'failed',
+            question: id,
+          },
+        });
+      },
+    );
+    for (const id of delivered)
+      log(`messenger: ${msg(STRINGS.retryDelivered, { id: formatQuestionId(id) })}`);
+  };
+
   let delay = backoff.initialMs;
   while (!signal.aborted) {
     const started = Date.now();
     try {
+      await retryUnsent();
       const tools = await link.acquire();
       const value = await tools.call(
         settings.waitTool,

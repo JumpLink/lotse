@@ -244,6 +244,133 @@ export default async () => {
       }
       expect(failed).toBe(true);
     });
+    await it('reports a failed channel even when another one delivered', async () => {
+      const log: string[] = [];
+      const heard: string[] = [];
+      await combineChannels([ok(log, 'a'), broken], (name, error) =>
+        heard.push(`${name}: ${(error as Error).message}`),
+      ).send(user, message);
+      expect(log).toStrictEqual(['a']);
+      expect(heard).toStrictEqual(['broken: down']);
+    });
+    await it('a reporter that throws does not fail the send', async () => {
+      const log: string[] = [];
+      await combineChannels([ok(log, 'a'), broken], () => {
+        throw new Error('log is full');
+      }).send(user, message);
+      expect(log).toStrictEqual(['a']);
+    });
+  });
+
+  await describe('messenger retry', async () => {
+    const user = { id: 'me', addresses: [] };
+    const asks: ServeMessage = {
+      title: 'lotse · t · #A4',
+      body: 'Allow it?',
+      text: 'Allow it?',
+      questionId: 'A4',
+      asks: 'permission',
+    };
+    const retrying = (fake: FakeMcp, link: McpLink, clock: { t: number }) =>
+      messengerChannel(link, SETTINGS, { now: () => clock.t, retryDelaysMs: [100, 100] });
+    const failures: string[] = [];
+    const heard = (id: string, error: unknown, gaveUp: boolean) =>
+      failures.push(`${id}:${(error as Error).message}:${gaveUp}`);
+
+    await it('delivers once after a transient failure, and never twice', async () => {
+      await withFakeMcp({ sendFailures: 1 }, async (fake) => {
+        const link = linkTo(fake);
+        const clock = { t: 0 };
+        try {
+          const channel = retrying(fake, link, clock);
+          let threw = false;
+          try {
+            await channel.send(user, asks);
+          } catch {
+            threw = true;
+          }
+          expect(threw).toBe(true);
+          expect(await channel.retryUnsent(() => true, heard)).toStrictEqual([]);
+          clock.t = 100;
+          expect(await channel.retryUnsent(() => true, heard)).toStrictEqual(['A4']);
+          clock.t = 1000;
+          expect(await channel.retryUnsent(() => true, heard)).toStrictEqual([]);
+        } finally {
+          await link.close();
+        }
+        expect(sent(fake).length).toBe(2);
+        expect(String(sent(fake)[1]!.args['text'])).toContain('#A4');
+      });
+    });
+    await it('does not retry a question that was answered meanwhile', async () => {
+      await withFakeMcp({ sendFailures: 1 }, async (fake) => {
+        const link = linkTo(fake);
+        const clock = { t: 0 };
+        try {
+          const channel = retrying(fake, link, clock);
+          await Promise.resolve(channel.send(user, asks)).catch(() => {});
+          clock.t = 100;
+          expect(await channel.retryUnsent(() => false, heard)).toStrictEqual([]);
+          expect(await channel.retryUnsent(() => true, heard)).toStrictEqual([]);
+        } finally {
+          await link.close();
+        }
+        expect(sent(fake).length).toBe(1);
+      });
+    });
+    await it('gives up after the last delay and says so', async () => {
+      await withFakeMcp({ sendError: 'down' }, async (fake) => {
+        const link = linkTo(fake);
+        const clock = { t: 0 };
+        failures.length = 0;
+        try {
+          const channel = retrying(fake, link, clock);
+          await Promise.resolve(channel.send(user, asks)).catch(() => {});
+          clock.t = 100;
+          await channel.retryUnsent(() => true, heard);
+          clock.t = 200;
+          await channel.retryUnsent(() => true, heard);
+          clock.t = 300;
+          await channel.retryUnsent(() => true, heard);
+        } finally {
+          await link.close();
+        }
+        expect(failures.length).toBe(2);
+        expect(failures[1]!.endsWith(':true')).toBe(true);
+        expect(sent(fake).length).toBe(3);
+      });
+    });
+    await it('the receive loop retries it while the question is open', async () => {
+      await withFakeMcp({ sendFailures: 1 }, async (fake) => {
+        const book = { value: [question('A4')] };
+        const link = linkTo(fake);
+        const channel = messengerChannel(link, SETTINGS, { retryDelaysMs: [0] });
+        await Promise.resolve(channel.send(user, asks)).catch(() => {});
+        const abort = new AbortController();
+        const lines: string[] = [];
+        const loop = runReceiveLoop({
+          link,
+          settings: SETTINGS,
+          serve: serveDeps(book),
+          cursor: memoryCursor(BEFORE),
+          signal: abort.signal,
+          channel,
+          log: (line) => lines.push(line),
+          timeoutS: 1,
+          minCycleMs: 0,
+          backoff: { initialMs: 10, maxMs: 40 },
+          sleep: (_ms, signal) => abortableSleep(10, signal),
+        });
+        try {
+          await until(() => sent(fake).length === 2, 'the retry');
+        } finally {
+          abort.abort();
+          await loop;
+          await link.close();
+        }
+        expect(lines.some((line) => line.includes('#A4'))).toBe(true);
+      });
+    });
   });
 
   await describe('receive loop', async () => {
