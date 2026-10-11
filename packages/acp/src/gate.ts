@@ -28,7 +28,7 @@ import type {
 } from './types.ts';
 
 /** What lotse calls itself in `initialize.clientInfo`. */
-export const LOTSE_IMPLEMENTATION: Implementation = { name: 'lotse', version: '0.1.1' };
+export const LOTSE_IMPLEMENTATION: Implementation = { name: 'lotse', version: '0.2.0' };
 
 /**
  * The capabilities lotse announces. Both file-system flags are `false` and `terminal` is

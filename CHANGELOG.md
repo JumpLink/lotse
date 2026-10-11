@@ -4,7 +4,7 @@ Notable changes to lotse. The per-release notes that ship in the AppStream metai
 from the `gjsify.flatpak.releases` block in `package.json`; this file is the developer-facing view
 and also records changes that are not a release of their own.
 
-## 0.2.0 — unreleased
+## 0.2.0 — 2026-10-11
 
 ### Added
 

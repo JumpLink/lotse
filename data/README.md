@@ -198,7 +198,7 @@ needs, the bundled agent runs *inside* the sandbox, and that grant is what lets 
 edit the project it is pointed at.
 
 What is still open: both icons are placeholders (see the table above) until the real mark
-lands. The `sources` `tag` in the manifest names the release being cut (`v0.1.1`) and only
+lands. The `sources` `tag` in the manifest names the release being cut (`v0.2.0`) and only
 resolves once that tag is pushed; the release workflow swaps it for the checkout.
 
 ## Validate
