@@ -190,21 +190,46 @@ contents of people's work:
   the clear); `agents/<id>/cache` is regenerable.
 - Tell your users that the files exist, and how to delete them.
 
-## Privacy: free hosted models never get private data
+## Privacy: say where your data may travel
 
-`@lotse/core` keeps a small list of hosted models that are free and documented as zero-retention
-(`FREE_MODELS`, `freeModelFirst`) and sorts them to the top of the model dropdown. It is a **hint**: lotse
-never selects a model, hides one or guesses. "Free" still means time-limited, and what you send goes to
-the provider that hosts the model; the onboarding page says so.
+A conversation can contain everything the agent read through your MCP tools, and it all goes to whatever
+model the agent is configured to use. Two different things in lotse touch that, and only one of them is
+a policy.
 
-For a host that handles client or personal data, the rule is yours to enforce:
+**The dropdown's order is a hint, not protection.** `@lotse/core` keeps a small list of hosted models
+that are free *and* documented as zero-retention (`FREE_MODELS`, `freeModelFirst`) and sorts them to the
+top of the model dropdown. Lotse never selects a model, hides one or guesses. "Free" still means
+time-limited, and what you send goes to the provider that hosts the model; the onboarding page says so.
 
-- Do not let a free hosted model see data that is not already public. A conversation can contain
-  everything the agent read through your MCP tools.
-- Decide per deployment which models are allowed, and constrain what your MCP servers return, as step 5
-  says. The dropdown's order is not a policy.
-- If the data is private, point the person at a connected provider with the retention terms you accept,
-  or a local model.
+**`modelPolicy` is the policy.** If your app carries client or personal data, pass one:
+
+```ts
+import { denyFreeHostedModels } from '@lotse/core';
+
+modelPolicy: denyFreeHostedModels,
+```
+
+Denied models leave the dropdown, a denied model turns Send off with a sentence naming the remedy, and
+the prompt is refused before it reaches the wire. Lotse never switches the model for the person — the
+choice stays theirs, it is only narrowed. The check is fail-closed in both directions a host cares
+about: a policy that throws is a deny, and so is a model lotse cannot identify (nothing reported yet, or
+no model control at all), because "I do not know where this would go" is not an approval.
+
+`denyFreeHostedModels` denies `isFreeModel`'s answer — the ids in
+`packages/core/data/free-models.json`, any id ending in `-free`, and an empty id — and **allows a
+well-formed id it does not recognise**, because the list names free models rather than paid ones and
+denying the unrecognised would deny nearly everything, paid models included. For certainty, pass an
+allowlist of your own: `(model) => OURS.has(model) ? 'allow' : 'deny'`.
+
+Two things `modelPolicy` does not do, and you still have to:
+
+- **Constrain what your MCP servers return** (step 5). A policy decides where a prompt may go; it does
+  not decide what went into it.
+- **Pick the destination you accept.** If the data is private, point the person at a connected provider
+  with retention terms you have read, or a local model.
+
+The full option, the two gates behind it and what counts as free:
+[`@lotse/widget`](../packages/widget/README.md#modelpolicy-blocks-the-send-it-never-switches-the-model).
 
 ## Where to go next
 
