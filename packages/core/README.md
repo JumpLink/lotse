@@ -135,7 +135,7 @@ One awaited call, no widget and no `gi://`: input in, a typed value out
 | `runJob<T>(options): Promise<JobResult<T>>` | A fresh agent process, one session, one turn, closed on every path. The final message is the whole trimmed message as JSON, or its **last** ` ```json ` block, and becomes a value only once your `parse` accepts it. |
 | `JobOptions<T>` | `command`, `cwd`, `prompt`, `parse`, **`modelPolicy` (required)**; optional `model`, `schema`, `mcpServers` (default `[]`), `gate` (default `denyAll`; only `allow_once` passes), `signal`, `timeoutMs`, `onLog`. |
 | `JobResult<T>` | `value`, `sessionId`, `model`, `stopReason`. |
-| `JobError`, `JobErrorKind` | Every rejection: `malformed`, `invalid`, `denied`, `unknown-model`, `auth`, `refused`, `timeout`, `cancelled`, `agent`. `message` is a fixed sentence; the raw answer is on `output`, never logged. No retries. |
+| `JobError`, `JobErrorKind` | Every rejection: `malformed`, `invalid`, `denied`, `unknown-model`, `auth`, `refused`, `timeout`, `cancelled`, `agent`. `message` is a fixed sentence; the raw answer is on `output`, never logged. No retries. `cause` may hold your `parse`'s error (Zod's can include the received values): don't log it. A missing `modelPolicy` or a `timeoutMs` that is not a positive finite number up to 2^31-1 is a programmer error and throws `TypeError` before anything starts. |
 | `JobLogEntry` | What `onLog` gets: lotse's own events with ids and kinds only, and the agent's stderr lines. |
 | `JOB_TIMEOUT_MS`, `jobPrompt(prompt, schema?)` | The default time limit (120 s over the whole job), and the prompt as sent when you pass a JSON Schema. |
 

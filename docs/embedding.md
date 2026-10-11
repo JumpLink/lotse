@@ -302,7 +302,10 @@ What it promises:
   both send `session/cancel`, give the agent a moment to answer, and then end the process.
 - **Logs carry ids and kinds.** `onLog` receives lotse's events (session id, stop reason, error kind,
   model) and the agent's stderr. `JobError.message` is a fixed sentence; the raw answer is on
-  `JobError.output` for you, and lotse never prints it.
+  `JobError.output` for you, and lotse never prints it. `JobError.cause` may hold the error your `parse`
+  threw, and a Zod error can include the received values, so don't log it.
+- **Misuse throws, it does not reject.** A missing `modelPolicy` or a `timeoutMs` that is not a positive
+  finite number up to 2^31-1 is a `TypeError` before anything starts; every other failure is a `JobError`.
 
 ## Where to go next
 

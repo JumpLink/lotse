@@ -190,6 +190,94 @@ export default async function job(): Promise<void> {
     });
   });
 
+  await describe('runJob: hardening', async () => {
+    await it('survives a throwing onLog on every event and still returns the value', async () => {
+      const h = harness({ chunks: [`{"merchant":"${SECRET_ANSWER}"}`] });
+      const result = await runJob(
+        h.options({
+          onLog: () => {
+            throw new Error('host logger broke');
+          },
+        }),
+      );
+      expect(result.value.merchant).toBe(SECRET_ANSWER);
+      expect(h.closed()).toBe(1);
+    });
+
+    await it('still fails refused when onLog throws on the gate entry and the turn ends normally', async () => {
+      const h = harness({ permissionOptions: ONCE, chunks: [`{"merchant":"${SECRET_ANSWER}"}`] });
+      const error = await failure(
+        runJob(
+          h.options({
+            onLog: (entry) => {
+              if (entry.source === 'job' && entry.event === 'gate') throw new Error('host logger broke');
+            },
+          }),
+        ),
+      );
+      expect(error.kind).toBe('refused');
+      expect(h.closed()).toBe(1);
+    });
+
+    await it('removes its abort listener on every path, even when onLog throws on start', async () => {
+      const h = harness({ chunks: [`{"merchant":"${SECRET_ANSWER}"}`] });
+      const controller = new AbortController();
+      let removed = 0;
+      const remove = controller.signal.removeEventListener.bind(controller.signal);
+      controller.signal.removeEventListener = ((...args: Parameters<typeof remove>) => {
+        removed += 1;
+        remove(...args);
+      }) as typeof remove;
+      await runJob(
+        h.options({
+          signal: controller.signal,
+          onLog: (entry) => {
+            if (entry.source === 'job' && entry.event === 'start') throw new Error('host logger broke');
+          },
+        }),
+      );
+      expect(removed).toBe(1);
+    });
+
+    await it('answers with the text after the last tool call, not the narration before it', async () => {
+      const h = harness({
+        chunks: ['Let me check the receipt. ', `{"merchant":"${SECRET_ANSWER}"}`],
+        toolCallAfterChunks: 1,
+      });
+      const result = await runJob(h.options());
+      expect(result.value.merchant).toBe(SECRET_ANSWER);
+    });
+
+    await it('parses a huge message of unclosed json openers in linear time', async () => {
+      const h = harness({ chunks: ['```json\n'.repeat(50_000)] });
+      const started = Date.now();
+      const error = await failure(runJob(h.options()));
+      expect(error.kind).toBe('malformed');
+      expect(Date.now() - started < 2_000).toBe(true);
+    });
+
+    await it('keeps last-block-wins after many unclosed openers', async () => {
+      const noise = '```json\n'.repeat(1_000);
+      const h = harness({ chunks: [`${noise}\`\`\`json\n{"merchant":"${SECRET_ANSWER}"}\n\`\`\`\n`] });
+      const result = await runJob(h.options());
+      expect(result.value.merchant).toBe(SECRET_ANSWER);
+    });
+
+    await it('rejects a bad timeoutMs with a TypeError before anything starts', async () => {
+      for (const timeoutMs of [0, -1, Number.NaN, Number.POSITIVE_INFINITY, 2 ** 31]) {
+        const h = harness();
+        let thrown: unknown = null;
+        try {
+          await runJob(h.options({ timeoutMs }));
+        } catch (error) {
+          thrown = error;
+        }
+        expect(thrown instanceof TypeError).toBe(true);
+        expect(h.opened()).toBe(0);
+      }
+    });
+  });
+
   await describe('runJob: the model gate', async () => {
     await it('refuses a denied model before any prompt is sent', async () => {
       const h = harness({ chunks: ['{}'] });
@@ -231,6 +319,15 @@ export default async function job(): Promise<void> {
       const model = 'openrouter/anthropic/claude-sonnet-5.5';
       const result = await runJob(h.options({ model }));
       expect(h.agent.configSets).toStrictEqual([{ configId: 'model', value: model }]);
+      expect(result.model).toBe(model);
+    });
+
+    await it('treats the requested model as current when the set answer carries no option list', async () => {
+      const h = harness({ bareConfigAnswer: true, chunks: [`{"merchant":"${SECRET_ANSWER}"}`] });
+      const model = 'openrouter/anthropic/claude-sonnet-5.5';
+      // The agent's default is denied; only the requested model is allowed.
+      const policy = (id: string): ModelDecision => (id === model ? 'allow' : 'deny');
+      const result = await runJob(h.options({ model, modelPolicy: policy }));
       expect(result.model).toBe(model);
     });
 

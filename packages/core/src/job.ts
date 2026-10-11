@@ -153,8 +153,15 @@ export const JOB_TIMEOUT_MS = 120_000;
  */
 const CANCEL_GRACE_MS = 2_000;
 
+/** The largest delay `setTimeout` honours; anything above it fires at once, i.e. a job that times out immediately. */
+const MAX_TIMER_MS = 2 ** 31 - 1;
+
 /**
  * Run one job: a fresh agent, a fresh session, one turn, closed on every path.
+ *
+ * **Every failure of the job is a `JobError`.** The two exceptions are programmer errors, thrown as
+ * `TypeError` before anything starts (no process, no log entry): a missing `modelPolicy`, and a
+ * `timeoutMs` that is not a positive finite number up to 2^31-1. A host sees them in its first test run.
  *
  * The order is the policy: the model gate is decided before the prompt exists on the wire, the
  * permission gate answers during the turn without asking anybody, and the answer is only a value once
@@ -166,8 +173,26 @@ export async function runJob<T>(options: JobOptions<T>): Promise<JobResult<T>> {
   if (typeof options.modelPolicy !== 'function') {
     throw new TypeError('runJob needs a modelPolicy; pass () => "allow" to allow every model');
   }
-  const log = (event: Extract<JobLogEntry, { source: 'job' }>['event'], detail: Record<string, string>) =>
-    options.onLog?.({ source: 'job', event, detail });
+  const timeoutMs = options.timeoutMs ?? JOB_TIMEOUT_MS;
+  // `setTimeout` turns NaN, a negative and anything above 2^31-1 into "fire now", which would read as a
+  // mysterious `'timeout'` on a job that never ran; a TypeError at the call site names the cause.
+  if (
+    typeof timeoutMs !== 'number' ||
+    !Number.isFinite(timeoutMs) ||
+    timeoutMs <= 0 ||
+    timeoutMs > MAX_TIMER_MS
+  ) {
+    throw new TypeError('runJob needs timeoutMs to be a positive finite number of at most 2147483647');
+  }
+  // A host's logger is not allowed to decide a job's outcome or to skip its cleanup: a throw here
+  // would escape before the timer and the abort listener are released, or out of the permission gate.
+  const log = (event: Extract<JobLogEntry, { source: 'job' }>['event'], detail: Record<string, string>) => {
+    try {
+      options.onLog?.({ source: 'job', event, detail });
+    } catch {
+      // Swallowed on purpose; the host's logging problem stays the host's.
+    }
+  };
   if (options.signal?.aborted) {
     log('error', { kind: 'cancelled' });
     throw new JobError('cancelled');
@@ -202,10 +227,11 @@ export async function runJob<T>(options: JobOptions<T>): Promise<JobResult<T>> {
   };
   const onAbort = (): void => halt('cancelled');
   options.signal?.addEventListener('abort', onAbort, { once: true });
-  const timer = setTimeout(() => halt('timeout'), options.timeoutMs ?? JOB_TIMEOUT_MS);
+  const timer = setTimeout(() => halt('timeout'), timeoutMs);
 
   const gate: PermissionGate = async (request) => {
     const answer = await answerPermission(options.gate ?? denyAll, request);
+    // Recorded before the log line, so no path through the log can leave a decline uncounted.
     if (answer === null) declined = true;
     log('gate', {
       session: request.sessionId,
@@ -254,8 +280,11 @@ export async function runJob<T>(options: JobOptions<T>): Promise<JobResult<T>> {
       text: jobPrompt(options.prompt, options.schema),
       onUpdate: (notification) => {
         if (notification.sessionId !== session.sessionId) return;
-        if (notification.update.sessionUpdate === 'agent_message_chunk')
-          message += chunkToText(notification.update.content);
+        const kind = notification.update.sessionUpdate;
+        // The answer is the FINAL message (ADR 0004): prose before a tool call ("Let me check…") is
+        // narration, not part of the value, so a tool call starts the message over.
+        if (kind === 'tool_call' || kind === 'tool_call_update') message = '';
+        else if (kind === 'agent_message_chunk') message += chunkToText(notification.update.content);
       },
     });
     const { stopReason } = (await turn) as { stopReason: StopReason };
@@ -338,7 +367,12 @@ async function selectModel(
   }
   if (control.currentValue === model) return options;
   const answer = await client.setConfigOption({ sessionId, configId: control.id, value: model });
-  return answer.configOptions ?? options;
+  // An answer without the list still means the set succeeded: the requested model is the current one,
+  // or `result.model` would name the old model and the gate would judge it instead of the new one.
+  return (
+    answer.configOptions ??
+    (options ?? []).map((option) => (option.id === control.id ? { ...option, currentValue: model } : option))
+  );
 }
 
 function currentModel(options: SessionConfigOption[] | null): string | null {
@@ -359,19 +393,41 @@ export function jobPrompt(prompt: string, schema?: object): string {
   ].join('\n');
 }
 
-const FENCED_JSON = /```json[^\S\r\n]*\r?\n([\s\S]*?)```/g;
+const FENCE_OPEN = '```json';
+const FENCE_CLOSE = '```';
+/** What may follow the opener on its line: blanks, then the newline. Sticky, so it never scans ahead. */
+const FENCE_HEADER = /[^\S\r\n]*\r?\n/y;
 
 /**
  * The two shapes ADR 0004 accepts, and nothing else: the whole trimmed message is one JSON value, or
  * the message's **last** ```` ```json ```` block is. No brace hunting and no repair — a guess that
  * turned prose into a value would hand the host something the model never committed to.
+ *
+ * **One forward pass, linear.** Each opener is looked at once and each closing fence is searched from
+ * where the previous block ended, so a model that emits thousands of unclosed openers costs a scan, not
+ * a quadratic regex backtrack. Blocks do not overlap; the last one found wins.
  */
 function jsonOf(message: string): { ok: true; value: unknown } | { ok: false } {
   const whole = tryJson(message.trim());
   if (whole.ok) return whole;
-  const blocks = [...message.matchAll(FENCED_JSON)];
-  const last = blocks.at(-1);
-  return last ? tryJson((last[1] ?? '').trim()) : { ok: false };
+  let last: string | null = null;
+  let from = 0;
+  for (;;) {
+    const open = message.indexOf(FENCE_OPEN, from);
+    if (open === -1) break;
+    FENCE_HEADER.lastIndex = open + FENCE_OPEN.length;
+    if (!FENCE_HEADER.test(message)) {
+      from = open + 1;
+      continue;
+    }
+    const body = FENCE_HEADER.lastIndex;
+    const close = message.indexOf(FENCE_CLOSE, body);
+    // No closing fence after this opener means none after any later one either.
+    if (close === -1) break;
+    last = message.slice(body, close);
+    from = close + FENCE_CLOSE.length;
+  }
+  return last === null ? { ok: false } : tryJson(last.trim());
 }
 
 function tryJson(text: string): { ok: true; value: unknown } | { ok: false } {

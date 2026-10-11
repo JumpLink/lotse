@@ -186,6 +186,8 @@ export interface FixtureAgentOptions {
   stopReason?: StopReason;
   /** Emit this many agent message chunks per turn. Defaults to one. */
   chunks?: string[];
+  /** Send a `tool_call` update after this many chunks, as an agent does between narration and answer. */
+  toolCallAfterChunks?: number;
   /**
    * Ask for permission once per prompt turn, offering these options. Empty (the default) means the
    * gate is never called — so "the gate is not consulted" and "the gate decides" are one option
@@ -254,6 +256,8 @@ export interface FixtureAgentOptions {
    * changes (it does not for `effort` or `mode`). Defaults to true.
    */
   pushConfigOptionUpdate?: boolean;
+  /** Answer a successful `session/set_config_option` without the option list, which the protocol allows. */
+  bareConfigAnswer?: boolean;
   /** Never answer `initialize` — for the initialize timeout. */
   hangOnInitialize?: boolean;
   /**
@@ -580,9 +584,23 @@ export class FixtureAgent {
         sessionId,
         update: { sessionUpdate: 'user_message_chunk', content: prompt[0] ?? { type: 'text', text: '' } },
       });
+      let sent = 0;
       for (const chunk of this.#options.chunks ?? ['answer']) {
         if (this.#cancelRequested) break;
         this.#update({ sessionId, update: this.#agentChunk(chunk) });
+        sent += 1;
+        if (sent === this.#options.toolCallAfterChunks) {
+          this.#update({
+            sessionId,
+            update: {
+              sessionUpdate: 'tool_call',
+              toolCallId: 'call_job',
+              title: 'look it up',
+              kind: 'read',
+              status: 'pending',
+            },
+          });
+        }
       }
       if (this.#options.holdTurn) {
         // Park here until a cancel arrives or a test releases it. Nothing before this point awaits, so a
@@ -811,6 +829,10 @@ export class FixtureAgent {
     // notification that lands while a set is in flight, and that decision is only observable if the
     // parked answer is older than the notification — see `FixtureAgentOptions.holdConfigAnswer`.
     const snapshot = this.#configOptions.map((option) => ({ ...option }));
+    if (this.#options.bareConfigAnswer === true) {
+      this.#reply(id, { ...this.#meta() });
+      return;
+    }
     if (this.#options.holdConfigAnswer === true) {
       this.#releaseConfigAnswer = () => {
         this.#releaseConfigAnswer = null;
