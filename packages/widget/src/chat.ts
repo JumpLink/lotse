@@ -719,15 +719,16 @@ export class LotseChat extends Adw.Bin {
       unavailableReason: () => loginUnavailableReason(agent),
       sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
       now: () => Date.now(),
-      // A provider the host's policy allows no model of is not offered for a login at all.
+      // A provider the host's policy rules out (`allowsProvider`) is not offered for a login at all.
       ...(policy ? { offers: (provider) => providerOffered(policy, provider.id) } : {}),
+      // The login is stored either way, so the settings page reads it even when the restart waits.
+      ...(done ? { onStored: () => done() } : {}),
       onConnected: async () => {
         // A turn in flight is left alone, so say so instead of claiming a restart that did not happen.
         if (!(await this.#agent.restartAgent()))
           throw new Error('a turn is still running — send again once it ends');
         this.#connection = { kind: 'connected' };
         this.#refreshOnboarding();
-        done?.();
       },
     });
     this.#login.show(this, controller);

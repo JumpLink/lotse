@@ -76,6 +76,11 @@ lotse provider remove my-gw
 `add` and `remove` work only on the bundled copy; with a host opencode they say so and name
 `lotse agents --use opencode:bundled`. A hand-written provider is read-only and shown with its path.
 
+The settings page goes one step further: a host opencode is read-only there **as a whole**. It lists
+the logins and providers and offers no log out, add or remove — those are the person's, kept where they
+put them (`opencode auth logout`). With `allowCustomProviders` off, a custom provider that holds a key is
+listed with the connected providers, so its key can still be logged out of.
+
 ## Measured (opencode 2.0.25)
 
 - `OPENCODE_CONFIG` is merged with the directory config; a missing file is fine.

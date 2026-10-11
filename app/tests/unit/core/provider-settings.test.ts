@@ -19,7 +19,10 @@ import {
   documentProviderIds,
   parseModelList,
   parseProvidersDocument,
+  planCustomProvider,
   providerOffered,
+  withProvider,
+  HOST_READ_ONLY_REASON,
   reachPrivacyNote,
   type ConfiguredProvider,
   type LoginProvider,
@@ -53,13 +56,18 @@ interface HarnessOptions {
   /** opencode never lists the new provider: the key is not stored. */
   neverListed?: boolean;
   changedError?: string;
+  /** `waitForProvider` waits for this, so a change can be caught in flight. */
+  holdWait?: Promise<void>;
+  /** lotse's file and the stored keys before the group opens. */
+  seed?: { raw: Record<string, unknown>; keys: string[] };
 }
 
 function harness(options: HarnessOptions = {}) {
   const calls: string[] = [];
   const files = new Map<string, string>();
   const file = options.file === undefined ? OUR_FILE : options.file;
-  const credentials = new Set<string>(['anthropic']);
+  const credentials = new Set<string>(['anthropic', ...(options.seed?.keys ?? [])]);
+  if (options.seed && file) files.set(file, JSON.stringify(options.seed.raw));
   const raw = (): Record<string, unknown> => {
     const document = file ? parseProvidersDocument(files.get(file) ?? null) : null;
     return document?.ok ? document.raw : {};
@@ -112,6 +120,7 @@ function harness(options: HarnessOptions = {}) {
     },
     async waitForProvider(id) {
       calls.push(`wait ${id}`);
+      await options.holdWait;
       return !options.neverListed;
     },
     async connectKey(id, key) {
@@ -145,7 +154,11 @@ function harness(options: HarnessOptions = {}) {
     },
     files: {
       read: (path) => parseProvidersDocument(files.get(path) ?? null),
-      write: (path, raw) => void files.set(path, JSON.stringify(raw)),
+      update: (path, change) => {
+        const document = parseProvidersDocument(files.get(path) ?? null);
+        if (!document.ok) throw new Error(document.problem);
+        files.set(path, JSON.stringify(change(document.raw)));
+      },
     },
   };
   const controller = new ProviderSettingsController(deps);
@@ -160,6 +173,21 @@ function harness(options: HarnessOptions = {}) {
 }
 
 const OLLAMA = { preset: 'local-ollama', models: [], confirmedLan: false } as const;
+
+/** lotse's file with the Ollama preset in it, as a seed. */
+function ollamaDocument(): Record<string, unknown> {
+  const plan = planCustomProvider(
+    { ...OLLAMA, models: [{ id: 'qwen3:4b' }] },
+    { knownIds: new Set(), ownIds: new Set() },
+  );
+  if (plan.kind !== 'ok') throw new Error('the preset did not plan');
+  return { ...withProvider({}, plan.provider) };
+}
+
+async function until(seen: () => boolean): Promise<void> {
+  for (let i = 0; i < 200 && !seen(); i += 1) await Promise.resolve();
+  if (!seen()) throw new Error('never happened');
+}
 
 export default async () => {
   await describe('ProviderSettingsController', async () => {
@@ -325,6 +353,75 @@ export default async () => {
       expect(free.view().connected[0]?.offered).toBe(true);
     });
 
+    await it('refuses to remove a custom provider when the host switched the custom part off', async () => {
+      const h = harness({ allowCustomProviders: false, seed: { raw: ollamaDocument(), keys: [] } });
+      await h.controller.open();
+      const before = h.files.get(OUR_FILE);
+      await h.controller.removeCustom('local-ollama');
+      expect(h.files.get(OUR_FILE)).toBe(before);
+      expect(h.calls.some((call) => call.startsWith('disconnect '))).toBe(false);
+      expect(h.view().message?.includes('does not add or remove')).toBe(true);
+    });
+
+    await it('lists a keyed custom provider as connected when the custom part is off', async () => {
+      const h = harness({
+        allowCustomProviders: false,
+        seed: { raw: ollamaDocument(), keys: ['local-ollama'] },
+      });
+      await h.controller.open();
+      const row = h.view().connected.find((entry) => entry.id === 'local-ollama');
+      expect(row?.models).toBe(1);
+      expect(row?.removable).toBe(true);
+      await h.controller.disconnect('local-ollama');
+      expect(h.view().connected.some((entry) => entry.id === 'local-ollama')).toBe(false);
+    });
+
+    await it('logs out of nothing on a host opencode', async () => {
+      const h = harness({ file: null });
+      await h.controller.open();
+      expect(h.view().connectedReadOnlyReason).toBe(HOST_READ_ONLY_REASON);
+      expect(h.view().connected.every((row) => !row.removable)).toBe(true);
+      await h.controller.disconnect('anthropic');
+      expect(h.calls.some((call) => call.startsWith('disconnect '))).toBe(false);
+      expect(h.view().connected.length).toBe(1);
+      expect(h.view().message).toBe(HOST_READ_ONLY_REASON);
+    });
+
+    await it('lets a running change finish before close stops the server', async () => {
+      let release = (): void => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const h = harness({ holdWait: held });
+      await h.controller.open();
+      const adding = h.controller.addCustom(OLLAMA, KEY);
+      await until(() => h.calls.includes('wait local-ollama'));
+      const closing = h.controller.close();
+      await until(() => h.controller.state.step === 'closed');
+      expect(h.calls.includes('close')).toBe(false);
+      release();
+      await Promise.all([adding, closing]);
+      const key = h.calls.indexOf(`key local-ollama ${KEY.length}`);
+      expect(key > 0 && key < h.calls.indexOf('close')).toBe(true);
+    });
+
+    await it('reloads once a change ends when asked to meanwhile', async () => {
+      let release = (): void => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const h = harness({ holdWait: held });
+      await h.controller.open();
+      const adding = h.controller.addCustom(OLLAMA, KEY);
+      await until(() => h.calls.includes('wait local-ollama'));
+      await h.controller.reload();
+      expect(h.calls.filter((call) => call === 'open').length).toBe(1);
+      release();
+      await adding;
+      expect(h.calls.filter((call) => call === 'open').length).toBe(2);
+      expect(h.controller.state.step).toBe('ready');
+    });
+
     await it('starts over on reload and closes its server once on close', async () => {
       const h = harness();
       await h.controller.open();
@@ -346,7 +443,17 @@ export default async () => {
       const exact: ModelPolicy = (model) => (model === 'a/m-2' ? 'allow' : 'deny');
       expect(providerOffered(exact, 'a', ['m-1', 'm-2'])).toBe(true);
       expect(providerOffered(exact, 'a', ['m-1'])).toBe(false);
-      expect(providerOffered(exact, 'a')).toBe(false);
+      // A predicate cannot be asked about a provider, so without `allowsProvider` nothing is hidden.
+      expect(providerOffered(exact, 'a')).toBe(true);
+      const narrowed = Object.assign(exact, { allowsProvider: (id: string) => id === 'a' });
+      expect(providerOffered(narrowed, 'a')).toBe(true);
+      expect(providerOffered(narrowed, 'b')).toBe(false);
+      const broken = Object.assign((): 'allow' => 'allow', {
+        allowsProvider: (): boolean => {
+          throw new Error('host bug');
+        },
+      });
+      expect(providerOffered(broken, 'a')).toBe(false);
     });
   });
 
@@ -396,6 +503,41 @@ export default async () => {
       await controller.open();
       const state = controller.state;
       expect(state.step === 'providers' && state.providers.map((entry) => entry.id).join()).toBe('b');
+      const exact: ModelPolicy = (model) => (model === 'a/m-1' ? 'allow' : 'deny');
+      const all = new LoginController({
+        openSession: async () => session,
+        unavailableReason: () => null,
+        sleep: async () => undefined,
+        now: () => 0,
+        offers: (entry) => providerOffered(exact, entry.id),
+      });
+      await all.open();
+      const listed = all.state;
+      expect(listed.step === 'providers' && listed.providers.map((entry) => entry.id).join()).toBe('a,b');
+    });
+
+    await it('tells onStored of a login even when the restart after it fails', async () => {
+      const stored: string[] = [];
+      const session = {
+        providers: async () => [provider('a', false)],
+        connectKey: async () => undefined,
+        close: async () => undefined,
+      } as unknown as LoginSession;
+      const controller = new LoginController({
+        openSession: async () => session,
+        unavailableReason: () => null,
+        sleep: async () => undefined,
+        now: () => 0,
+        onStored: (entry) => void stored.push(entry.id),
+        onConnected: () => {
+          throw new Error('a turn is still running');
+        },
+      });
+      await controller.open();
+      await controller.pickProvider(provider('a', false));
+      await controller.submitKey(provider('a', false), 'sk-synthetic');
+      expect(stored.join()).toBe('a');
+      expect(controller.state.step).toBe('failed');
     });
   });
 };

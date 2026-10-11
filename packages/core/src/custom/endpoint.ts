@@ -82,12 +82,12 @@ const PRIVACY_NOTE: Record<Exclude<EndpointReach, 'loopback'>, string> = {
     'output — goes to whoever runs it, under their terms.',
 };
 
-/** Check a base URL against the rules above. */
 /** What crosses to an endpoint of this reach, for a person deciding; `null` on this machine. */
 export function reachPrivacyNote(reach: EndpointReach): string | null {
   return reach === 'loopback' ? null : PRIVACY_NOTE[reach];
 }
 
+/** Check a base URL against the rules above. */
 export function checkEndpoint(raw: string): EndpointCheck {
   const text = raw.trim();
   let url: URL;

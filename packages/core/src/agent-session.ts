@@ -521,7 +521,7 @@ export class AgentSession {
     if (failed.status === 'gone') {
       // The agent exited, so its handle is dead: retire it, and the next prompt starts a fresh agent.
       // Without this the dead handle would be reused and the composer's "Press New chat" would be a lie.
-      this.#retiring = this.#retire();
+      this.#retireAfterPrevious();
       this.#attachment = { status: 'none' };
     } else if (failed.status === 'failed' && failed.kind !== 'model' && failed.kind !== 'quota') {
       this.#attachment = this.#handle ? { status: 'attached', name: this.#agentName } : { status: 'none' };
@@ -543,7 +543,7 @@ export class AgentSession {
   async restartAgent(): Promise<boolean> {
     if (this.#turn) return false;
     this.#setAttachment({ status: 'none' });
-    await this.#retire();
+    await this.#retireAfterPrevious();
     this.#emit();
     return true;
   }
@@ -941,11 +941,13 @@ export class AgentSession {
     // A session recorded on the other copy of the agent (host vs bundled) keeps its history in that
     // copy's database, so the live process is replaced rather than prompted about a session it never held.
     if (this.#handle && this.#handleCommand && !sameCommand(this.#handleCommand, command)) {
-      this.#retiring = this.#retire();
+      this.#retireAfterPrevious();
     }
-    if (this.#retiring) {
-      await this.#retiring;
-      this.#retiring = null;
+    // A loop: a restart may queue another retirement while this one is awaited.
+    while (this.#retiring) {
+      const retiring = this.#retiring;
+      await retiring;
+      if (this.#retiring === retiring) this.#retiring = null;
     }
     if (this.#handle) return this.#handle;
     if (this.#connecting) return this.#connecting;
@@ -986,6 +988,21 @@ export class AgentSession {
    * second turn), so nothing is cancelled out from under a person; the sessions the old process held are
    * not held by the new one, which is what the cleared bookkeeping says.
    */
+  /**
+   * `#retire`, queued behind one still running and recorded in `#retiring`. Two restarts at once (a login
+   * and the provider settings, say) would otherwise both return while the first close is still ending,
+   * and the next prompt would spawn a process beside the old one; `#connect` waits on `#retiring`.
+   */
+  #retireAfterPrevious(): Promise<void> {
+    const previous = this.#retiring;
+    const retiring = previous ? previous.then(() => this.#retire()) : this.#retire();
+    this.#retiring = retiring;
+    void retiring.then(() => {
+      if (this.#retiring === retiring) this.#retiring = null;
+    });
+    return retiring;
+  }
+
   async #retire(): Promise<void> {
     const close = this.#handle?.close ?? this.#spawnedClose;
     this.#handle = null;
