@@ -212,14 +212,16 @@ modelPolicy: denyFreeHostedModels,
 Denied models leave the dropdown, a denied model turns Send off with a sentence naming the remedy, and
 the prompt is refused before it reaches the wire. Lotse never switches the model for the person — the
 choice stays theirs, it is only narrowed. The check is fail-closed in both directions a host cares
-about: a policy that throws is a deny, and so is a model lotse cannot identify (nothing reported yet, or
-no model control at all), because "I do not know where this would go" is not an approval.
+about: a policy that throws is a deny, and so is a model lotse cannot identify (the agent, once it has answered,
+reported no model control), because "I do not know where this would go" is not an approval.
 
 `denyFreeHostedModels` denies `isFreeModel`'s answer — the ids in
 `packages/core/data/free-models.json`, any id ending in `-free`, and an empty id — and **allows a
 well-formed id it does not recognise**, because the list names free models rather than paid ones and
-denying the unrecognised would deny nearly everything, paid models included. For certainty, pass an
-allowlist of your own: `(model) => OURS.has(model) ? 'allow' : 'deny'`.
+denying the unrecognised would deny nearly everything, paid models included. For certainty, use
+`allowOnlyProviders(['anthropic', …])` (`@lotse/core`): only ids whose provider — the part before the
+first `/` — is listed are allowed, so a model released tomorrow is denied until you name its provider.
+It does not look inside a provider; or pass a predicate of your own.
 
 Two things `modelPolicy` does not do, and you still have to:
 

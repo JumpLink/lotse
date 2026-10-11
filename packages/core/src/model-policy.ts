@@ -130,6 +130,27 @@ export const denyFreeHostedModels: ModelPolicy = (model) => {
   return isFreeModel(model) ? 'deny' : 'allow';
 };
 
+/**
+ * The allowlist policy: **only models served through one of these providers may be prompted.**
+ *
+ * The provider is the part of an id before the first `/` (`anthropic/claude-sonnet-4-5` →
+ * `anthropic`), compared exactly. An id with no provider part, a blank one or an empty provider is
+ * denied, and so is everything when the list is empty. Unlike `denyFreeHostedModels` this needs no
+ * knowledge of which models are free: a model nobody has heard of is denied unless its provider is
+ * named, so a new free model cannot slip through a stale list. It does not look inside a provider —
+ * `openrouter/…:free` is allowed if `openrouter` is — so combine it with `denyFreeHostedModels` where
+ * that matters.
+ */
+export function allowOnlyProviders(providers: readonly string[]): ModelPolicy {
+  const allowed = new Set(providers);
+  return (model) => {
+    if (typeof model !== 'string') return 'deny';
+    const slash = model.indexOf('/');
+    if (slash <= 0 || slash === model.length - 1) return 'deny';
+    return allowed.has(model.slice(0, slash)) ? 'allow' : 'deny';
+  };
+}
+
 /** Why a prompt cannot go out, and which of the two gates may act on it. See the file header. */
 export interface ModelBlock {
   /**

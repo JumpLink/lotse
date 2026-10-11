@@ -300,6 +300,7 @@ export {
 // What a host will let a prompt reach. Absent `modelPolicy` is lotse's own behaviour unchanged.
 export {
   allowedModelValues,
+  allowOnlyProviders,
   denyFreeHostedModels,
   MODEL_DENIED_REASON,
   MODEL_UNKNOWN_REASON,

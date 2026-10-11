@@ -149,9 +149,10 @@ A `ModelPolicy` is `(model: string) => 'allow' | 'deny'`, called with the agent'
 3. **The check runs again whenever the agent reports a configuration change**, not only at startup.
 
 **Fail-closed, including the model nobody named.** A policy that throws is a deny. A model the widget
-cannot identify — no configuration reported yet, an empty id — is a deny too: before the first answer
-the agent has told the widget nothing about its model, so "I do not know where this is going" is
-answered as "not there". That is why `sendReason` can be set before a conversation has started.
+cannot identify — an empty id, or an agent that reports no model control — is a deny too. Before the
+first prompt nothing is known yet and Send stays on (the first prompt is what starts the agent), but
+the controller checks again once the agent has answered and refuses to send if the model is denied or
+still unnamed.
 
 `denyFreeHostedModels` (from `@lotse/core`) denies what `isFreeModel` calls free, which is the same
 classification `lotse serve` has used since ADR 0003: the maintained ids in
@@ -164,8 +165,10 @@ on. Free also means hosted: the prompt goes to whoever runs it.
 unknown reads safer and is unusable: the classification knows two exact ids and one suffix, so
 "unknown" is nearly every model an agent reports, *including every paid one*, and a widget with no
 allowed model left asks the person to pick something that does not exist. If your data needs certainty
-rather than a known-bad list, pass an allowlist of your own — `(model) => OURS.has(model) ? 'allow' :
-'deny'` — which is the same one-line option. The genuinely uncertain case, "which model is even in
+rather than a known-bad list, pass an allowlist: `allowOnlyProviders(['anthropic'])` from `@lotse/core`
+allows only ids whose provider (the part before the first `/`) is listed, exactly, and denies every other
+id, however new — it does not look inside a provider, so pair it with `denyFreeHostedModels` where
+that matters. Or write your own predicate; it is the same one-line option. The genuinely uncertain case, "which model is even in
 use?", is caught by the fail-closed rule above and not by this one.
 
 ### `providerOnboarding`

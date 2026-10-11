@@ -21,6 +21,7 @@ import { describe, expect, it } from '@gjsify/unit';
 import {
   agentStatus,
   allowedModelValues,
+  allowOnlyProviders,
   composerView,
   configRowInput,
   configSelection,
@@ -152,6 +153,31 @@ export default async function modelPolicy(): Promise<void> {
       expect(denyFreeHostedModels('anthropic/claude-opus-5')).toBe('allow');
       expect(denyFreeHostedModels('vendor/free-tier-model')).toBe('allow');
       expect(denyFreeHostedModels('vendor/something-nobody-classified')).toBe('allow');
+    });
+  });
+
+  await describe('model policy — allowOnlyProviders', async () => {
+    await it('allows a model of a named provider and denies every other provider, known or not', async () => {
+      const policy = allowOnlyProviders(['anthropic']);
+      expect(policy('anthropic/claude-opus-5')).toBe('allow');
+      expect(policy('opencode/brand-new-model')).toBe('deny');
+      expect(policy('openrouter/anthropic/claude-opus-5')).toBe('deny');
+    });
+
+    await it('compares the provider exactly, not by prefix', async () => {
+      const policy = allowOnlyProviders(['open']);
+      expect(policy('opencode/x')).toBe('deny');
+      expect(policy('open/x')).toBe('allow');
+    });
+
+    await it('denies ids with no provider, blank ids and everything on an empty list', async () => {
+      const policy = allowOnlyProviders(['anthropic']);
+      expect(policy('claude-opus-5')).toBe('deny');
+      expect(policy('/claude')).toBe('deny');
+      expect(policy('anthropic/')).toBe('deny');
+      expect(policy('')).toBe('deny');
+      expect(policy('   ')).toBe('deny');
+      expect(allowOnlyProviders([])('anthropic/claude-opus-5')).toBe('deny');
     });
   });
 
