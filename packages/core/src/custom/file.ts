@@ -63,6 +63,21 @@ export function customProvidersEnv(agentId: string, dirs: IsolationDirs): Record
   return agentId === 'opencode' ? { OPENCODE_CONFIG: customProvidersFile(dirs) } : {};
 }
 
+/**
+ * lotse's file for an agent that was started with one, read back off its environment, or `null`.
+ *
+ * Off the command rather than from the isolation directories, because a host embedding the widget hands
+ * over an `AgentCommand` and nothing else: `bundledCommand` is the one place that sets the variable, so
+ * a host opencode (no `OPENCODE_CONFIG`, or the catalog's blanked `""`) answers `null` and stays read-only.
+ */
+export function customProvidersFileOf(agent: {
+  readonly id: string;
+  readonly env?: Record<string, string>;
+}): string | null {
+  const file = agent.id === 'opencode' ? agent.env?.['OPENCODE_CONFIG'] : undefined;
+  return file && file.endsWith('/lotse-providers.json') ? file : null;
+}
+
 /** A provider id opencode and a URL path both accept. */
 export function providerIdProblem(id: string): string | null {
   return /^[a-z0-9][a-z0-9._-]{0,63}$/.test(id)

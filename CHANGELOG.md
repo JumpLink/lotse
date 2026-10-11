@@ -43,6 +43,11 @@ and also records changes that are not a release of their own.
   `connect/key`. https and loopback are accepted, LAN http needs `--allow-lan`, anything else is
   refused, and a catalog id is never shadowed. A keyless local provider counts as connected for the
   onboarding. See [docs/custom-providers.md](docs/custom-providers.md).
+- **Provider settings page** (#45, `@lotse/widget`): `LotseChat.providerSettingsPage()` and
+  `openProviderSettings()` list connected providers (connect, log out), custom providers and the
+  privacy notes; lotse's preferences gain it as the `providers` page. The host option
+  `allowCustomProviders` (default off) enables add and remove; a `modelPolicy` also filters the login
+  dialog (`providerOffered`). The logic is core's `ProviderSettingsController`.
 
 ### Changed
 

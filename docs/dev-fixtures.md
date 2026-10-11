@@ -294,7 +294,7 @@ reason for each, in `AGENTS.md` § Run / build / test.
 
 ## The preferences dialog
 
-Not a sixth pointer-only control in the table above, but the same reason: radio rows are not operable from the devtools plane. `LOTSE_APP_PREFERENCES=1` opens the dialog through `app.preferences`, the action the menu and `<Ctrl>comma` run. `LOTSE_APP_PREFERENCES_AGENT=<key>` opens it and chooses a row through the dialog's own handler; keys are `auto`, `<id>:host`, `<id>:bundled`. Both follow `flag()`/`hookValue` rules, and each logs one line saying whether it reached.
+Not a sixth pointer-only control in the table above, but the same reason: radio rows are not operable from the devtools plane. `LOTSE_APP_PREFERENCES=1` opens the dialog through `app.preferences`, the action the menu and `<Ctrl>comma` run. `LOTSE_APP_PREFERENCES_AGENT=<key>` opens it and chooses a row through the dialog's own handler; keys are `auto`, `<id>:host`, `<id>:bundled`. `LOTSE_APP_PREFERENCES_PAGE=<name>` opens it on a page (`agent`, `providers`) through `showPage`, which reads `visiblePageName` back. All three follow `flag()`/`hookValue` rules, and each logs one line saying whether it reached.
 
 ```sh
 # 360 px: with GJSIFY_DEVTOOLS=1, resize afterwards:

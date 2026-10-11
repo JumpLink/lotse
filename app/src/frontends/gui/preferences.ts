@@ -15,6 +15,9 @@
  * **The dialog opens before the host has answered.** `load(null)` is the cheap view; where a host question
  * exists (a Flatpak) `detect()` runs it asynchronously, and the rows are drawn again from its result. A
  * dialog closed in the meantime ignores the late answer, and `ready()` is what a dev hook waits on.
+ *
+ * **More pages come from the caller** (`extraPages`): the widget's provider settings (#45) are the
+ * conversation's, not this dialog's, so the window hands them in and this file only lays them out.
  */
 
 import Adw from '@girs/adw-1';
@@ -50,6 +53,7 @@ const SCOPE_LINE = 'A change applies the next time lotse starts. This window kee
 
 export class PreferencesDialog {
   readonly #actions: PreferencesActions;
+  readonly #extraPages: () => Adw.PreferencesPage[];
   #dialog: Adw.PreferencesDialog | null = null;
   #group: Adw.PreferencesGroup | null = null;
   #note: Gtk.Label | null = null;
@@ -63,14 +67,20 @@ export class PreferencesDialog {
   #saved = false;
   #ready: Promise<void> = Promise.resolve();
 
-  constructor(actions: PreferencesActions) {
+  /** `extraPages` is asked on every open: a page starts its own server when shown, so it is built fresh. */
+  constructor(actions: PreferencesActions, extraPages: () => Adw.PreferencesPage[] = () => []) {
     this.#actions = actions;
+    this.#extraPages = extraPages;
   }
 
   show(parent: Gtk.Widget): void {
     if (this.#dialog) return;
     const dialog = new Adw.PreferencesDialog({ title: 'Preferences' });
-    const page = new Adw.PreferencesPage();
+    const page = new Adw.PreferencesPage({
+      name: 'agent',
+      title: 'Agent',
+      iconName: 'utilities-terminal-symbolic',
+    });
     const noteGroup = new Adw.PreferencesGroup();
     // Plain text: the note carries paths and error messages, and a path may contain `&`.
     const note = new Gtk.Label({ wrap: true, xalign: 0, visible: false, useMarkup: false });
@@ -79,6 +89,7 @@ export class PreferencesDialog {
     page.add(noteGroup);
     page.add(group);
     dialog.add(page);
+    for (const extra of this.#extraPages()) dialog.add(extra);
     this.#dialog = dialog;
     this.#group = group;
     this.#note = note;
@@ -106,6 +117,15 @@ export class PreferencesDialog {
     } else {
       this.#ready = Promise.resolve();
     }
+  }
+
+  /** Show a page by name (`agent`, or a page the caller added); `false` when there is none. */
+  showPage(name: string): boolean {
+    const dialog = this.#dialog;
+    if (!dialog) return false;
+    // An unknown name leaves the visible page as it was, so reading it back is the answer.
+    dialog.visiblePageName = name;
+    return dialog.visiblePageName === name;
   }
 
   /** Resolves once the rows are final: at once when nothing is detected asynchronously. */

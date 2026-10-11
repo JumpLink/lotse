@@ -11,6 +11,7 @@ import { which } from '../agents/stdio.ts';
 import type { AgentCommand } from '../agents/stdio.ts';
 
 import { createProviderApi } from '../custom/api.ts';
+import type { SettingsSession } from '../custom/settings.ts';
 
 import { createLoginApi } from './api.ts';
 import type { LoginSession } from './controller.ts';
@@ -39,6 +40,24 @@ export async function openLoginSession(agent: AgentCommand): Promise<LoginSessio
     cancel: (providerId, attemptId) => api.cancel(providerId, attemptId),
     // Which file is lotse's does not matter for a count; the settings group asks `ProviderApi` itself.
     customProviders: () => custom.configured(''),
+    close: () => server.close(),
+  };
+}
+
+/** Start a private server for the provider settings group (`ProviderSettingsController`); `close()` stops it. */
+export async function openSettingsSession(agent: AgentCommand): Promise<SettingsSession> {
+  const server = await startServer(agent);
+  const api = createLoginApi(server.send);
+  const custom = createProviderApi(server.send);
+  return {
+    providers: () => api.providers(),
+    configured: (ourFile) => custom.configured(ourFile),
+    knownIds: () => custom.knownIds(),
+    models: () => custom.models(),
+    disconnect: (id) => custom.disconnect(id),
+    waitForProvider: (id, hooks) => custom.waitForProvider(id, hooks),
+    // A custom provider's only method is the key, and it asks nothing, so the answer is empty.
+    connectKey: (id, key) => api.connectKey(id, key, {}),
     close: () => server.close(),
   };
 }

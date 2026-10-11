@@ -1,7 +1,8 @@
 # Custom providers: local models and any OpenAI-compatible endpoint
 
-Status: **the core (`@lotse/core`, `custom/`) and `lotse provider` exist; the widget's settings group is
-[#45](https://github.com/JumpLink/lotse/issues/45).** Design decided in
+Status: **the core (`@lotse/core`, `custom/`), `lotse provider` and the widget's settings page
+([#45](https://github.com/JumpLink/lotse/issues/45), `LotseChat.providerSettingsPage()`) exist.** The page
+adds and removes only with the host option `allowCustomProviders`, and only for a bundled opencode. Design decided in
 [#17](https://github.com/JumpLink/lotse/issues/17). Measured on opencode 2.0.25, 2026-10-11.
 
 ## What it is

@@ -151,6 +151,26 @@ export function allowOnlyProviders(providers: readonly string[]): ModelPolicy {
   };
 }
 
+/**
+ * Whether a provider is worth **offering** — in the login dialog and the settings group — under a policy.
+ *
+ * Offered when one of its known models is allowed (`<provider>/<model>`, the agent's spelling). A provider
+ * nobody has connected has no known models (opencode's `/api/model` lists only usable ones, measured on
+ * 2.0.25), so it is asked about as `<provider>/*`: `allowOnlyProviders` answers that by its provider part
+ * and `denyFreeHostedModels` allows it, and a host allowlist of exact model ids denies it — which hides a
+ * provider the host may in fact allow one model of. That errs toward offering less, the direction a
+ * host's policy is for; the prompt gate (`modelBlock`) stays the guarantee either way.
+ */
+export function providerOffered(
+  policy: ModelPolicy | undefined,
+  providerId: string,
+  models: readonly string[] = [],
+): boolean {
+  if (policy === undefined) return true;
+  if (models.length === 0) return modelAllowed(policy, `${providerId}/*`);
+  return models.some((model) => modelAllowed(policy, `${providerId}/${model}`));
+}
+
 /** Why a prompt cannot go out, and which of the two gates may act on it. See the file header. */
 export interface ModelBlock {
   /**

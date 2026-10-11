@@ -192,7 +192,12 @@ export {
   type LoginPolicy,
   type LoginProvider,
 } from './login/providers.ts';
-export { loginUnavailableReason, openLoginSession, probeConnections } from './login/session.ts';
+export {
+  loginUnavailableReason,
+  openLoginSession,
+  openSettingsSession,
+  probeConnections,
+} from './login/session.ts';
 export {
   connectionFacts,
   onboardingView,
@@ -210,6 +215,7 @@ export {
   checkEndpoint,
   contextWarning,
   hostReach,
+  reachPrivacyNote,
   type CustomPreset,
   type EndpointCheck,
   type EndpointReach,
@@ -220,6 +226,7 @@ export {
   ProvidersFileBusyError,
   customProvidersEnv,
   customProvidersFile,
+  customProvidersFileOf,
   documentProviderIds,
   parseProvidersDocument,
   providerEntry,
@@ -239,6 +246,7 @@ export {
   createProviderApi,
   parseConfiguredProviders,
   parseIdList,
+  parseModelList,
   probeModels,
   type ConfiguredProvider,
   type FetchLike,
@@ -256,6 +264,21 @@ export {
   type ListedPlan,
   type ModelLister,
 } from './custom/plan.ts';
+export {
+  FREE_MODELS_DENIED_NOTE,
+  FREE_MODELS_PRIVACY_NOTE,
+  NOT_LOTSE_COPY_REASON,
+  PROVIDER_PRIVACY_NOTE,
+  ProviderSettingsController,
+  type AddOutcome,
+  type ConnectedRow,
+  type CustomRow,
+  type ProviderSettingsDeps,
+  type ProviderSettingsState,
+  type ProviderSettingsView,
+  type SettingsFiles,
+  type SettingsSession,
+} from './custom/settings.ts';
 
 // ── What a turn is doing, and what went wrong ────────────────────────────────────────────────────
 export {
@@ -362,6 +385,7 @@ export {
   modelAllowed,
   modelBlock,
   ModelDeniedError,
+  providerOffered,
   type ModelBlock,
   type ModelDecision,
   type ModelPolicy,
