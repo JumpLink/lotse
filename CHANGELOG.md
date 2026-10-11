@@ -15,6 +15,10 @@ First release published by CI with provenance: the app and the four libraries sh
   `lotse answer <id>` without text (or with `--dialog`) opens an answer window. The setting
   `channel.desktop.mode` (`notification` | `dialog`, also in Preferences) can open the window
   right away instead. See [docs/serve.md](docs/serve.md#answering-from-the-desktop).
+- **Answering over a messenger** (#57). `lotse serve` reaches its person through an MCP server
+  (curlew by default); lotse itself speaks no XMPP. Settings `channel.active` and
+  `channel.messenger` (also in Preferences). The first answer wins across desktop and messenger,
+  and `parseAnswer` also reads `allow` / `decline` / `deny`.
 - **Structured tool calls in the transcript** (#43). Each tool line now also stores `tool`: ACP kind,
   title, status, the input up to 8 KiB (`rawInputOmitted` above that) and `mcp`, the MCP tools the
   call reached (opencode's code-mode report, or a reading of the code while it runs). `text` is
