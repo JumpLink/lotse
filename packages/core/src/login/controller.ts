@@ -65,6 +65,11 @@ export interface LoginControllerDeps {
   unavailableReason(): string | null;
   sleep(ms: number): Promise<void>;
   now(): number;
+  /**
+   * Called once per successful login, first: the login is stored whatever `onConnected` then does, so a
+   * list that shows it (the provider settings) reads it again even when the restart cannot happen.
+   */
+  onStored?(provider: LoginProvider): void;
   /** Called once per successful login, before the state becomes `connected`. */
   onConnected?(provider: LoginProvider): void | Promise<void>;
   /** Whether to list a provider — a host's `modelPolicy` through `providerOffered`. Absent: all of them. */
@@ -207,6 +212,7 @@ export class LoginController {
 
   async #connected(provider: LoginProvider): Promise<void> {
     try {
+      this.#deps.onStored?.(provider);
       await this.#deps.onConnected?.(provider);
     } catch (error) {
       // The login itself worked; only the follow-up did not. Say so instead of calling it a failure.

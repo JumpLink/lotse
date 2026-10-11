@@ -396,6 +396,29 @@ export default async () => {
       expect(h.closed()).toBe(closedBefore + 1);
     });
 
+    await it('serializes overlapping restarts: none returns, and no prompt spawns, before the old process ends', async () => {
+      const h = harness({ slowClose: true, failAfterFirstOpen: true });
+      await h.session.prompt('hello');
+      expect(h.opened.length).toBe(1);
+      let settled = 0;
+      const count = (restarted: boolean): boolean => {
+        settled += 1;
+        return restarted;
+      };
+      const first = h.session.restartAgent().then(count);
+      const second = h.session.restartAgent().then(count);
+      const next = h.session.prompt('again');
+      await h.flush();
+      expect(h.closed()).toBe(1);
+      expect(settled).toBe(0);
+      expect(h.opened.length).toBe(1);
+      h.finishClose();
+      expect(await first).toBe(true);
+      expect(await second).toBe(true);
+      await next;
+      expect(h.opened.length).toBe(2);
+    });
+
     await it('leaves the pending conversation when a stored session is opened, and comes back to it', async () => {
       const h = fresh();
       h.session.bind(SESSION);

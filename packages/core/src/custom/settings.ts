@@ -13,8 +13,13 @@
  * message.
  *
  * **What the host decides.** `allowCustomProviders: false` takes the custom part away altogether (`custom:
- * null`), and `modelPolicy` marks every provider it allows no model of as `offered: false` — still listed
+ * null`; a custom provider that holds a key is listed with the connected ones, so the key can still be let
+ * go), and `modelPolicy` marks every provider it allows no model of as `offered: false` — still listed
  * when connected, so a login the person made elsewhere can be removed here, but not offered for use.
+ *
+ * **A host's own opencode is read-only as a whole** (`file: null`): its config and its logins are the
+ * person's, kept where they put them, so the group lists them and changes neither — no log out, no add,
+ * no remove.
  */
 
 import { FREE_MODEL_IDS } from '../free-models.ts';
@@ -28,7 +33,7 @@ import {
   readProvidersDocument,
   withProvider,
   withoutProvider,
-  writeProvidersDocument,
+  updateProvidersDocument,
   type ProvidersDocument,
 } from './file.ts';
 import { planCustomProvider, type CustomProviderInput, type CustomProviderPlan } from './plan.ts';
@@ -47,7 +52,11 @@ export interface SettingsSession {
 
 export interface SettingsFiles {
   read(file: string): ProvidersDocument;
-  write(file: string, raw: Readonly<Record<string, unknown>>): void;
+  /** Read fresh, change and write, under the file's lock (`updateProvidersDocument`). */
+  update(
+    file: string,
+    change: (raw: Readonly<Record<string, unknown>>) => Readonly<Record<string, unknown>>,
+  ): void;
 }
 
 export interface ProviderSettingsDeps {
@@ -76,6 +85,8 @@ export interface ConnectedRow {
   readonly models: number;
   /** The host's policy allows one of its models. */
   readonly offered: boolean;
+  /** Log out works: only on lotse's copy (`HOST_READ_ONLY_REASON`). */
+  readonly removable: boolean;
 }
 
 export interface CustomRow {
@@ -95,6 +106,8 @@ export interface CustomRow {
 
 export interface ProviderSettingsView {
   readonly connected: readonly ConnectedRow[];
+  /** Why the connected providers cannot be logged out of here, or `null`. */
+  readonly connectedReadOnlyReason: string | null;
   /** `null`: the host switched the custom part off. */
   readonly custom: {
     /** Adding and removing works; with `false`, `readOnlyReason` says why. */
@@ -136,7 +149,16 @@ export const NOT_LOTSE_COPY_REASON =
   'Custom providers are added only to the opencode that comes with lotse. Your own opencode keeps them in ' +
   'its own config, which lotse does not edit.';
 
-const REAL_FILES: SettingsFiles = { read: readProvidersDocument, write: writeProvidersDocument };
+export const HOST_READ_ONLY_REASON =
+  'This is your own opencode: lotse shows its logins and changes none of them. Log out with ' +
+  '`opencode auth logout`.';
+
+const CUSTOM_OFF_REASON = 'this app does not add or remove custom providers';
+
+const REAL_FILES: SettingsFiles = {
+  read: readProvidersDocument,
+  update: (file, change) => updateProvidersDocument(file, change),
+};
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -157,6 +179,10 @@ export class ProviderSettingsController {
   #opening = false;
   #busy: string | null = null;
   #message: string | null = null;
+  /** The change in flight, which `close` lets finish before it stops the server. */
+  #running: Promise<boolean> | null = null;
+  /** A `reload` asked for while a change or a start was running; done when it ends. */
+  #reloadWanted = false;
 
   constructor(deps: ProviderSettingsDeps) {
     this.#deps = deps;
@@ -203,6 +229,7 @@ export class ProviderSettingsController {
     } finally {
       this.#opening = false;
     }
+    if (this.#reloadWanted) await this.reload();
   }
 
   /** Read everything again — after a login in the dialog, say. */
@@ -222,7 +249,13 @@ export class ProviderSettingsController {
    * group does not count on it and starts over.
    */
   async reload(): Promise<void> {
-    if (this.#closed || this.#opening || this.#busy !== null) return;
+    if (this.#closed) return;
+    // Dropping it would lose a login made meanwhile, so it runs once the change or the start has ended.
+    if (this.#opening || this.#busy !== null) {
+      this.#reloadWanted = true;
+      return;
+    }
+    this.#reloadWanted = false;
     const session = this.#session;
     this.#session = null;
     this.#message = null;
@@ -238,21 +271,27 @@ export class ProviderSettingsController {
       session.configured(this.#deps.file ?? ''),
       session.models(),
     ]);
+    const writable = this.#deps.file !== null;
     const customIds = new Set(configured.map((provider) => provider.id));
+    const row = (id: string, name: string, known: readonly string[]): ConnectedRow => ({
+      id,
+      name,
+      models: known.length,
+      offered: providerOffered(policy, id, known),
+      removable: writable,
+    });
     const connected = providers
       .filter((provider) => provider.connected && !customIds.has(provider.id))
-      .map((provider) => {
-        const known = models.get(provider.id) ?? [];
-        return {
-          id: provider.id,
-          name: provider.name,
-          models: known.length,
-          offered: providerOffered(policy, provider.id, known),
-        };
-      });
+      .map((provider) => row(provider.id, provider.name, models.get(provider.id) ?? []));
+    // With the custom part off, a key stored for a custom provider would otherwise be out of sight.
+    if (!this.#deps.allowCustomProviders) {
+      for (const provider of configured.filter((entry) => entry.connected))
+        connected.push(row(provider.id, provider.name, models.get(provider.id) ?? provider.models));
+    }
     const freeAllowed = [...FREE_MODEL_IDS, 'opencode/model-free'].some((id) => modelAllowed(policy, id));
     return {
       connected,
+      connectedReadOnlyReason: writable ? null : HOST_READ_ONLY_REASON,
       custom: this.#deps.allowCustomProviders
         ? {
             editable: this.#deps.file !== null,
@@ -277,13 +316,24 @@ export class ProviderSettingsController {
     };
   }
 
-  /** Run one change with the group marked busy, then tell the agent and read everything again. */
-  async #change(id: string, run: (session: SettingsSession) => Promise<string>): Promise<void> {
+  /**
+   * Run one change with the group marked busy, then tell the agent and read everything again. `false`: it
+   * did not run — no server, closed, or another change first.
+   */
+  #change(id: string, run: (session: SettingsSession) => Promise<string>): Promise<boolean> {
     const session = this.#session;
-    if (!session || this.#busy !== null || this.#state.step !== 'ready') return;
+    if (!session || this.#busy !== null || this.#state.step !== 'ready') return Promise.resolve(false);
     this.#busy = id;
     this.#message = null;
     this.#set({ step: 'ready', view: { ...this.#state.view, busy: id, message: null } });
+    const running = this.#run(session, run).finally(() => {
+      if (this.#running === running) this.#running = null;
+    });
+    this.#running = running;
+    return running;
+  }
+
+  async #run(session: SettingsSession, run: (session: SettingsSession) => Promise<string>): Promise<boolean> {
     try {
       this.#message = await run(session);
       try {
@@ -296,12 +346,15 @@ export class ProviderSettingsController {
     } finally {
       this.#busy = null;
     }
-    await this.refresh();
+    if (this.#reloadWanted) await this.reload();
+    else await this.refresh();
+    return true;
   }
 
-  /** Remove every login opencode holds for a provider. */
-  disconnect(id: string): Promise<void> {
-    return this.#change(id, async (session) => {
+  /** Remove every login opencode holds for a provider — on lotse's copy only. */
+  async disconnect(id: string): Promise<void> {
+    await this.#change(id, async (session) => {
+      if (this.#deps.file === null) throw new Error(HOST_READ_ONLY_REASON);
       const removed = await session.disconnect(id);
       return removed > 0 ? `Logged out of ${id}.` : `${id} had no login to remove.`;
     });
@@ -318,7 +371,7 @@ export class ProviderSettingsController {
     });
     const session = this.#session;
     const file = this.#deps.file;
-    if (!this.#deps.allowCustomProviders) return refused('this app does not add custom providers');
+    if (!this.#deps.allowCustomProviders) return refused(CUSTOM_OFF_REASON);
     if (file === null) return refused(NOT_LOTSE_COPY_REASON);
     if (!session || this.#state.step !== 'ready') return refused('the providers are not loaded yet');
     if (this.#busy !== null) return refused('another change is still running');
@@ -358,8 +411,9 @@ export class ProviderSettingsController {
 
     const provider = plan.provider;
     let outcome: AddOutcome = { kind: 'added', id: provider.id, notes };
-    await this.#change(provider.id, async (live) => {
-      this.#files.write(file, withProvider(document.raw, provider));
+    const ran = await this.#change(provider.id, async (live) => {
+      // A fresh read under the lock: the CLI may have written while the models were listed.
+      this.#files.update(file, (raw) => withProvider(raw, provider));
       const verb = plan.replaces ? 'Updated' : 'Added';
       if (!key) return `${verb} ${provider.id}.`;
       const seen = await live.waitForProvider(provider.id, {
@@ -380,13 +434,14 @@ export class ProviderSettingsController {
       }
       return `${verb} ${provider.id} with its key.`;
     });
-    return outcome;
+    return ran ? outcome : refused('another change is still running');
   }
 
   /** Remove a custom provider from lotse's file, its stored key first. */
-  removeCustom(id: string): Promise<void> {
-    return this.#change(id, async (session) => {
+  async removeCustom(id: string): Promise<void> {
+    await this.#change(id, async (session) => {
       const file = this.#deps.file;
+      if (!this.#deps.allowCustomProviders) throw new Error(CUSTOM_OFF_REASON);
       if (file === null) throw new Error(NOT_LOTSE_COPY_REASON);
       const document = this.#files.read(file);
       if (!document.ok) throw new Error(`${file} could not be read (${document.problem})`);
@@ -396,18 +451,23 @@ export class ProviderSettingsController {
       // The key first: once the entry is gone opencode no longer lists the provider, and its credential
       // would be left behind with no way to reach it.
       const keys = await session.disconnect(id);
-      this.#files.write(file, withoutProvider(document.raw, id));
+      this.#files.update(file, (raw) => withoutProvider(raw, id));
       return `Removed ${id}${keys > 0 ? ' and its stored key' : ''}.`;
     });
   }
 
-  /** Stop the server. The widget calls this when the group goes away; safe to call twice. */
+  /**
+   * Stop the server. The widget calls this when the group goes away; safe to call twice. A change in
+   * flight finishes on the server it started on first — closing under it would leave a file written and
+   * its key not stored.
+   */
   async close(): Promise<void> {
     if (this.#closed) return;
     this.#closed = true;
     const session = this.#session;
     this.#session = null;
     this.#set({ step: 'closed' });
+    await this.#running;
     await session?.close();
   }
 }

@@ -107,6 +107,7 @@ export class ProviderSettingsPage {
     this.#unsubscribe = null;
     const closing = this.#controller;
     this.#controller = null;
+    // `close` lets a change in flight finish before it stops the server.
     void closing?.close();
   }
 
@@ -154,7 +155,7 @@ export class ProviderSettingsPage {
 
     const connected = this.#group({
       title: 'Connected providers',
-      description: 'The logins and keys the agent holds.',
+      description: view.connectedReadOnlyReason ?? 'The logins and keys the agent holds.',
     });
     const connect = rowButton('Connect…', () => this.#hooks.connect(() => void controller.reload()));
     connect.set_sensitive(idle);
@@ -166,6 +167,8 @@ export class ProviderSettingsPage {
         ...(provider.offered ? [] : ['not used by this app']),
       ];
       const row = new Adw.ActionRow({ title: provider.name, subtitle: notes.join(' · '), useMarkup: false });
+      connected.add(row);
+      if (!provider.removable) continue;
       const logout = rowButton(view.busy === provider.id ? 'Logging out…' : 'Log out', () => {
         void confirm(
           this.page,
@@ -176,7 +179,6 @@ export class ProviderSettingsPage {
       });
       logout.set_sensitive(idle);
       row.add_suffix(logout);
-      connected.add(row);
     }
 
     if (view.custom) {
