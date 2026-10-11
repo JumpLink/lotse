@@ -13,13 +13,21 @@
  */
 
 import { deliveryOf } from '../serve/config.ts';
-import { answerQuestion, type ServeDeps } from '../serve/runner.ts';
+import { answerQuestion, type AnswerResult, type ServeDeps } from '../serve/runner.ts';
 import { formatQuestionId, openQuestions } from '../serve/questions.ts';
 import { sendToPeer, type MessengerChannel } from './channel.ts';
 import { McpLink } from './link.ts';
 import { listIds, openIds, parseReply } from './reply.ts';
 import type { MessengerSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
+
+/** What the chat hears of an outcome: the continuation's internals stay in the log. */
+export function chatSays(questionId: string, result: AnswerResult): string {
+  const id = formatQuestionId(questionId);
+  if (result.mode !== 'loaded' && result.mode !== 'resumed' && result.mode !== 'follow-up')
+    return result.message;
+  return msg(result.run?.outcome === 'failed' ? STRINGS.gotItRunFailed : STRINGS.gotIt, { id });
+}
 
 export interface CursorStore {
   read(): string | null;
@@ -47,7 +55,8 @@ export interface ReceiveOptions {
 
 interface WaitMessage {
   readonly bodyText: string;
-  readonly sentAt: string;
+  /** `null` when the server could not say; the loop then moves the cursor by other means. */
+  readonly sentAt: string | null;
   readonly fromSelf: boolean;
 }
 
@@ -82,10 +91,10 @@ export function parseWaitResult(value: unknown): WaitResult {
   const raw = Array.isArray(value['messages']) ? value['messages'] : [];
   const messages: WaitMessage[] = [];
   for (const item of raw) {
-    if (!isRecord(item) || typeof item['sentAt'] !== 'string') continue;
+    if (!isRecord(item)) continue;
     messages.push({
       bodyText: typeof item['bodyText'] === 'string' ? item['bodyText'] : '',
-      sentAt: item['sentAt'],
+      sentAt: typeof item['sentAt'] === 'string' ? item['sentAt'] : null,
       fromSelf: item['fromSelf'] === true,
     });
   }
@@ -149,7 +158,7 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
         if (hidden) return reply(msg(STRINGS.notHere, { id: formatQuestionId(intent.questionId) }));
         const result = await answerQuestion(intent.questionId, intent.text, serve);
         log(`messenger: ${formatQuestionId(intent.questionId)}: ${result.message}`);
-        return reply(result.message);
+        return reply(chatSays(intent.questionId, result));
       }
     }
   };
@@ -205,7 +214,7 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
       for (const message of result.messages) {
         if (signal.aborted) return;
         if (!message.fromSelf) await handle(message.bodyText);
-        remember(message.sentAt);
+        remember(message.sentAt ?? result.cursor ?? serve.now().toISOString());
       }
       if (result.messages.length > 0 && result.cursor) remember(result.cursor);
       delay = backoff.initialMs;

@@ -4,10 +4,12 @@ import {
   McpLink,
   abortableSleep,
   answerQuestion,
+  chatSays,
   combineChannels,
   connectMcp,
   messengerChannel,
   messengerText,
+  noticeOf,
   parseReply,
   parseServeConfig,
   routeChannels,
@@ -186,6 +188,37 @@ export default async () => {
     });
   });
 
+  await describe('parseReply with a reply reference', async () => {
+    await it('a referenced open question settles a tagless reply among several', async () => {
+      expect(parseReply('yes', ['A1', 'A2'], 'A2')).toStrictEqual({
+        kind: 'answer',
+        questionId: 'A2',
+        text: 'yes',
+      });
+      expect(parseReply('yes', ['A1', 'A2'], 'A9')).toStrictEqual({ kind: 'ambiguous', open: ['A1', 'A2'] });
+    });
+  });
+
+  await describe('chatSays', async () => {
+    const base = { question: null, run: null };
+    await it('a continued session is "Got it", never the internals', async () => {
+      for (const mode of ['loaded', 'resumed', 'follow-up'] as const) {
+        const said = chatSays('A4', {
+          ...base,
+          mode,
+          message: '#A4: resumed the session with session/load',
+        });
+        expect(said).toBe('Got it, #A4.');
+        expect(said).not.toContain('session');
+      }
+    });
+    await it('other outcomes keep their own sentence', async () => {
+      expect(chatSays('A4', { ...base, mode: 'unknown', message: 'there is no question #A4' })).toBe(
+        'there is no question #A4',
+      );
+    });
+  });
+
   await describe('messenger channel', async () => {
     const asks: ServeMessage = {
       title: 'lotse · t · #A3',
@@ -199,8 +232,21 @@ export default async () => {
       const text = messengerText(asks);
       expect(text.startsWith('lotse · t · #A3\n\nAllow it?')).toBe(true);
       expect(text).toContain('Reply: #A3 yes or #A3 no');
-      expect(text).toContain('Valid until 2026-10-11T00:00:00.000Z');
+      const at = new Date('2026-10-11T00:00:00.000Z');
+      const clock = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
+      expect(text).toContain('Valid until ');
+      expect(text).toContain(clock);
+      expect(text).not.toContain('2026-10-11T');
+      expect(text).not.toContain('.000Z');
       expect(text).not.toContain('lotse answer');
+    });
+    await it('notice mode keeps the question text out and still shows a local deadline', async () => {
+      const text = messengerText(
+        noticeOf({ ...asks, text: 'Archive invoice 4711?', body: 'Archive invoice 4711?' }),
+      );
+      expect(text).not.toContain('4711');
+      expect(text).toContain('Valid until ');
+      expect(text).not.toContain('.000Z');
     });
     await it('a reply question asks for text; a report carries no hint', async () => {
       expect(messengerText({ ...asks, asks: 'reply' })).toContain('Reply: #A3 <your answer>');
@@ -533,6 +579,46 @@ export default async () => {
           await until(() => sent(fake).length === 1, 'the acknowledgement');
         });
         expect(book.value[0]!.answer).toBe('no');
+      });
+    });
+
+    await it('questions kept off the chat do not count as open: one visible, one answer', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const book = { value: [question('A1'), question('A2', 'reply', { task: 'tui' })] };
+        await looping(fake, book, memoryCursor(BEFORE), async () => {
+          fake.deliver('2026-10-10T11:30:00.000Z', 'yes');
+          await until(() => sent(fake).length === 1, 'the acknowledgement');
+        });
+        expect(book.value[0]!.status).toBe('answered');
+        expect(book.value[1]!.status).toBe('open');
+      });
+    });
+
+    await it("with several open the chat hears ids only, never a hidden task's text", async () => {
+      await withFakeMcp({}, async (fake) => {
+        const secret = 'Archive invoice 4711?';
+        const book = {
+          value: [question('A1'), question('A2'), question('A3', 'reply', { task: 'tui', text: secret })],
+        };
+        await looping(fake, book, memoryCursor(BEFORE), async () => {
+          fake.deliver('2026-10-10T11:30:00.000Z', 'yes');
+          await until(() => sent(fake).length === 1, 'the clarification');
+        });
+        const reply = String(sent(fake)[0]!.args['text']);
+        expect(reply).toContain('#A1, #A2');
+        expect(reply).not.toContain('#A3');
+        expect(reply).not.toContain('4711');
+      });
+    });
+
+    await it('a message without sentAt is not lost', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const book = { value: [question('A1')] };
+        await looping(fake, book, memoryCursor(BEFORE), async () => {
+          fake.deliver(null, 'A1 ja');
+          await until(() => sent(fake).length === 1, 'the acknowledgement');
+        });
+        expect(book.value[0]!.status).toBe('answered');
       });
     });
 

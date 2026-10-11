@@ -34,6 +34,7 @@ const tools = [
   { name: 'send_message', description: 'send', inputSchema: { type: 'object', properties: {} } },
   { name: 'xmpp_wait_reply', description: 'wait', inputSchema: { type: 'object', properties: {} } },
 ].filter((tool) => !(opts.noSend && tool.name === 'send_message'));
+const nulls = new Set();
 let waits = 0;
 let sends = 0;
 const text = (value) => ({ content: [{ type: 'text', text: JSON.stringify(value) }] });
@@ -54,8 +55,14 @@ async function call(name, args) {
     }
     const deadline = Date.now() + (opts.waitMs ?? 40);
     for (;;) {
-      const fresh = inbox().filter((m) => m.sentAt > args.after);
-      if (fresh.length > 0) return text({ status: 'reply', messages: fresh, cursor: fresh[fresh.length - 1].sentAt });
+      // A message without sentAt is served once, then counts as read.
+      const all = inbox();
+      const idx = all.map((m, i) => i).filter((i) => (all[i].sentAt === null ? !nulls.has(i) : all[i].sentAt > args.after));
+      if (idx.length > 0) {
+        const fresh = idx.map((i) => all[i]);
+        idx.forEach((i) => { if (all[i].sentAt === null) nulls.add(i); });
+        return text({ status: 'reply', messages: fresh, cursor: fresh[fresh.length - 1].sentAt ?? args.after });
+      }
       if (Date.now() >= deadline) return text({ status: 'timeout', cursor: args.after });
       await new Promise((resolve) => setTimeout(resolve, 10));
     }
@@ -96,7 +103,7 @@ export interface FakeMcp {
   /** Every tool call the server received, oldest first. */
   calls(): { tool: string; args: Record<string, unknown> }[];
   /** A message from the peer, as curlew's `xmpp_wait_reply` shapes it. */
-  deliver(sentAt: string, bodyText: string): void;
+  deliver(sentAt: string | null, bodyText: string): void;
   readonly dir: string;
 }
 
@@ -110,7 +117,7 @@ export async function withFakeMcp(
     const script = join(dir, 'server.cjs');
     writeFileSync(script, SERVER);
     writeFileSync(join(dir, 'calls'), '');
-    const inbox: { sentAt: string; bodyText: string; fromSelf: boolean }[] = [];
+    const inbox: { sentAt: string | null; bodyText: string; fromSelf: boolean }[] = [];
     writeFileSync(join(dir, 'inbox'), '[]');
     await run({
       dir,

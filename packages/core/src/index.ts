@@ -522,6 +522,7 @@ export {
   messengerChannel,
   messengerText,
   noticeOf,
+  localDeadline,
   routeChannels,
   sendToPeer,
   type ChannelFailure,
@@ -532,6 +533,7 @@ export {
 export { openIds, parseReply, type ReplyIntent } from './messenger/reply.ts';
 export {
   abortableSleep,
+  chatSays,
   parseWaitResult,
   runReceiveLoop,
   type CursorStore,

@@ -33,8 +33,16 @@ export type ReplyIntent =
 
 const LEADING_ID = /^(?:#([a-z]\d{1,6})|(a\d{1,6}))(?![\p{L}\p{N}_])[\s:,.\-–—]*([\s\S]*)$/iu;
 
-/** `open` are the ids of the questions that can still be answered, oldest first. */
-export function parseReply(text: string, open: readonly string[]): ReplyIntent {
+/**
+ * `open` are the ids of the questions that can still be answered, oldest first. `replyTarget` is the
+ * question a message-reply reference (XEP-0461) points at, already looked up; it settles a tagless
+ * reply even when several are open.
+ */
+export function parseReply(
+  text: string,
+  open: readonly string[],
+  replyTarget: string | null = null,
+): ReplyIntent {
   const trimmed = text.trim();
   if (trimmed === '') return { kind: 'ignore' };
   const lead = LEADING_ID.exec(trimmed);
@@ -43,6 +51,8 @@ export function parseReply(text: string, open: readonly string[]): ReplyIntent {
     const rest = (lead[3] ?? '').trim();
     return rest === '' ? { kind: 'missing-text', questionId } : { kind: 'answer', questionId, text: rest };
   }
+  if (replyTarget !== null && open.includes(replyTarget))
+    return { kind: 'answer', questionId: replyTarget, text: trimmed };
   if (open.length === 0) return { kind: 'nothing-open' };
   if (open.length === 1) return { kind: 'answer', questionId: open[0]!, text: trimmed };
   return { kind: 'ambiguous', open };

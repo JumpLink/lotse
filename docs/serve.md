@@ -220,11 +220,17 @@ Reply: #A3 yes or #A3 no
 Replies are read like `lotse answer`:
 
 - `A3 yes` or `#A3 only the first one`: answers that question.
-- Plain text while exactly one question is open: answers it.
-- Plain text while several are open: nothing is answered; lotse replies with the open ids.
+- Plain text while exactly one question is open **in this chat**: answers it, no id needed. Questions
+  kept off the chat (`channels`, `notice`) do not count as open here.
+- Plain text while several are open: nothing is answered; lotse replies with the open ids only.
 - An unknown or already answered id: lotse replies with that.
 - A permission question takes `yes`, `no`, `ja`, `nein`, `allow`, `decline` (and `deny`); anything
   longer is refused with a reply.
+
+The deadline ("Valid until Tue, 10/13, 18:14") is shown in the machine's local time and locale. The
+chat hears a short "Got it, #A1." after an answer; how the session was continued goes to the log, not
+the chat. A reply the server delivers without a timestamp is still read, and the cursor moves to the
+result's cursor.
 
 The position in the conversation is kept in `messenger-cursor.json` in the state directory, so a
 restart neither replays old replies nor loses one. The first start begins at "now". If the MCP

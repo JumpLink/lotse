@@ -13,6 +13,20 @@ import { McpLink } from './link.ts';
 import type { ChannelName, MessengerSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
 
+/** A deadline as the person's clock shows it ("Tue, 10/13, 18:14"); an unreadable one stays as it came. */
+export function localDeadline(iso: string): string {
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return iso;
+  return at.toLocaleString(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
+}
+
 /** The text of `message` as one chat message. */
 export function messengerText(message: ServeMessage): string {
   const parts = [message.title, message.text ?? message.body];
@@ -21,7 +35,7 @@ export function messengerText(message: ServeMessage): string {
     parts.push(
       msg(message.asks === 'permission' ? STRINGS.replyHintPermission : STRINGS.replyHintReply, { id }),
     );
-    if (message.expiresAt) parts.push(msg(STRINGS.validUntil, { time: message.expiresAt }));
+    if (message.expiresAt) parts.push(msg(STRINGS.validUntil, { time: localDeadline(message.expiresAt) }));
   }
   return parts.join('\n\n');
 }

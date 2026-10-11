@@ -142,7 +142,7 @@ Buttons for answering in the chat are planned
    first due time; `lotse serve --once` in a second terminal runs it right away without the receive
    loop.
 3. The question arrives in your XMPP client as `lotse · messenger-test · #A1`. Reply `#A1 hello`.
-4. Within about a minute lotse answers in the chat that it resumed the session, and
+4. Within about a minute lotse answers in the chat with a short "Got it, #A1.", and
    `lotse questions --all` shows the question as answered.
 
 If the question arrives but the answer does not, check that `curlew daemon` is running. If nothing

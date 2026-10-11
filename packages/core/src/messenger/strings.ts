@@ -21,6 +21,8 @@ export const STRINGS = {
   replyHintPermission: 'Reply: {id} yes or {id} no',
   replyHintReply: 'Reply: {id} <your answer>',
   validUntil: 'Valid until {time}',
+  gotIt: 'Got it, {id}.',
+  gotItRunFailed: 'Got it, {id}, but the run failed. `lotse questions` and the serve log have the details.',
   retryDelivered: '{id} was not delivered at first; it is now.',
   retryFailed: '{id} still not delivered ({reason}); will try again.',
   retryGaveUp: '{id} not delivered ({reason}); giving up. `lotse questions` still lists it.',
