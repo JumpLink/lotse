@@ -145,7 +145,7 @@ export default async () => {
       expect(problems(stray).some((line) => line.includes('its rights are "confirm"'))).toBe(true);
     });
 
-    await it('channels and messengerDetail: task over profile, defaults unchanged', async () => {
+    await it('channels and messengerDetail: a task narrows its profile, defaults unchanged', async () => {
       const plain = parseServeConfig(JSON.stringify(VALID));
       expect(deliveryOf(plain, 'inbox')).toStrictEqual({ channels: null, messengerDetail: 'full' });
       const profile = { ...VALID.profiles[0], channels: ['desktop', 'messenger'], messengerDetail: 'notice' };
@@ -154,6 +154,33 @@ export default async () => {
       expect(deliveryOf(config, 'inbox')).toStrictEqual({ channels: ['desktop'], messengerDetail: 'notice' });
       expect(unreachableTaskNotes(config, ['messenger']).length).toBe(1);
       expect(unreachableTaskNotes(config, ['desktop'])).toStrictEqual([]);
+    });
+
+    await it('a task cannot re-enable a channel its profile excludes, and says so', async () => {
+      const profile = { ...VALID.profiles[0], channels: ['desktop'] };
+      const wide = { ...VALID.tasks[0], channels: ['desktop', 'messenger'] };
+      const config = parseServeConfig(JSON.stringify({ ...VALID, profiles: [profile], tasks: [wide] }));
+      expect(deliveryOf(config, 'inbox').channels).toStrictEqual(['desktop']);
+      const notes = unreachableTaskNotes(config, ['desktop', 'messenger']);
+      expect(notes.length).toBe(1);
+      expect(notes[0]).toContain('messenger');
+      expect(notes[0]).toContain('excludes');
+      const only = { ...VALID.tasks[0], channels: ['messenger'] };
+      const none = parseServeConfig(JSON.stringify({ ...VALID, profiles: [profile], tasks: [only] }));
+      expect(deliveryOf(none, 'inbox').channels).toStrictEqual([]);
+      expect(unreachableTaskNotes(none, ['desktop', 'messenger']).length).toBe(2);
+      const open = parseServeConfig(JSON.stringify({ ...VALID, tasks: [only] }));
+      expect(deliveryOf(open, 'inbox').channels).toStrictEqual(['messenger']);
+    });
+
+    await it('the stricter messengerDetail wins: a task cannot loosen its profile', async () => {
+      const strict = { ...VALID.profiles[0], messengerDetail: 'notice' };
+      const loose = { ...VALID.tasks[0], messengerDetail: 'full' };
+      const kept = parseServeConfig(JSON.stringify({ ...VALID, profiles: [strict], tasks: [loose] }));
+      expect(deliveryOf(kept, 'inbox').messengerDetail).toBe('notice');
+      const tightened = { ...VALID.tasks[0], messengerDetail: 'notice' };
+      const task = parseServeConfig(JSON.stringify({ ...VALID, tasks: [tightened] }));
+      expect(deliveryOf(task, 'inbox').messengerDetail).toBe('notice');
     });
 
     await it('refuses an unknown channel, an empty list and an unknown detail', async () => {

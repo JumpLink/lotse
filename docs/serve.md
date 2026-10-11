@@ -75,17 +75,22 @@ run's final message.
 ### Which channels a task uses
 
 By default every message goes to every active channel. Two optional keys narrow that, on a profile
-for all its tasks or on a task, where the task's value wins:
+for all its tasks or on a task. A task can only narrow its profile, never widen it:
 
 - `channels`: a non-empty list of `desktop` and `messenger`. The task's messages go only there.
-  A reply in the chat cannot answer a question that was not sent to the chat. When none of the
-  listed channels is active, `serve` says so at start; the questions are then in `lotse questions`
-  only.
+  With a list on both, the task gets the channels in both. A channel the profile excludes stays
+  excluded when a task names it, and `serve` says so at start. A reply in the chat cannot answer a
+  question that was not sent to the chat. When none of the remaining channels is active, `serve`
+  says so at start; the questions are then in `lotse questions` only.
 - `messengerDetail`: `full` (default) sends the question to the chat. `notice` sends only its id
   and that a question waits in the task, without the question text or the run's message. Read it
-  with `lotse questions` or on the desktop; you can still answer in the chat with its id.
+  with `lotse questions` or on the desktop; you can still answer in the chat with its id. `notice`
+  on the profile or the task wins; a task cannot set `full` over a profile's `notice`.
 
 Use them for tasks that handle private data when the messenger path is not end-to-end encrypted.
+Two things they do not cover: the desktop answer window can answer any question whatever its
+`channels` (a local, trusted path), and a notice still names the task id, so pick neutral task ids
+when an id would name something private.
 
 ## Question → answer → resume
 
