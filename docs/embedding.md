@@ -22,6 +22,13 @@ it matches the signatures.
 `@lotse/session` supplies `createSessionStore`, a small JSON store you may use or replace; the widget
 only needs two callbacks (step 4). `@lotse/acp` (the protocol layer) comes in transitively.
 
+`@lotse/widget` declares the `@girs/*` typings it imports (`gtk-4.0`, `adw-1`, `gdk-4.0`, `glib-2.0`,
+`gobject-2.0`, `pango-1.0`) as **peer dependencies**: your app owns the one copy, so the widget's types
+and yours are the same types. If you build against a **linked** checkout (`gjsify link`), also set
+`"preserveSymlinks": true` in your `tsconfig.json` `compilerOptions`; without it TypeScript resolves the
+linked package's imports from the checkout's own `node_modules` and sees a second copy of every `@girs/*`
+package.
+
 ## 2. Give lotse its own data directory
 
 Lotse writes inside **one directory you choose**. It never reads `HOME`, `XDG_*` or `LOTSE_*` for this:
