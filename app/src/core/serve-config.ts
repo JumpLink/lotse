@@ -17,6 +17,7 @@ export interface LoadedTasks {
   /** Present when the file can be read by someone other than its owner. */
   readonly warning: string | null;
   promptFor(task: ServeTask): string;
+  precheckPromptFor(task: ServeTask): string;
 }
 
 export class TasksFileMissingError extends Error {
@@ -38,19 +39,21 @@ function texts(
   tasksFile: string,
   config: ServeConfig,
   first: string,
-): { all: string[]; prompts: Map<string, string> } {
+): { all: string[]; prompts: Map<string, string>; prechecks: Map<string, string> } {
   const all = [first];
-  const prompts = new Map<string, string>();
-  for (const task of config.tasks) {
-    if (task.prompt !== null) {
-      prompts.set(task.id, task.prompt);
-      continue;
-    }
-    const text = readFileSync(promptPath(tasksFile, task.promptFile ?? ''), 'utf8');
-    prompts.set(task.id, text);
+  const read = (source: { prompt: string | null; promptFile: string | null }): string => {
+    if (source.prompt !== null) return source.prompt;
+    const text = readFileSync(promptPath(tasksFile, source.promptFile ?? ''), 'utf8');
     all.push(text);
+    return text;
+  };
+  const prompts = new Map<string, string>();
+  const prechecks = new Map<string, string>();
+  for (const task of config.tasks) {
+    prompts.set(task.id, read(task));
+    if (task.precheck) prechecks.set(task.id, read(task.precheck));
   }
-  return { all, prompts };
+  return { all, prompts, prechecks };
 }
 
 /** Parse the file and read its prompt files. Throws `ServeConfigError` or `TasksFileMissingError`. */
@@ -58,7 +61,7 @@ export function loadTasks(tasksFile: string): LoadedTasks {
   if (!existsSync(tasksFile)) throw new TasksFileMissingError(tasksFile);
   const text = readFileSync(tasksFile, 'utf8');
   const config = parseServeConfig(text);
-  const { all, prompts } = texts(tasksFile, config, text);
+  const { all, prompts, prechecks } = texts(tasksFile, config, text);
   const mode = statSync(tasksFile).mode & 0o777;
   return {
     config,
@@ -68,6 +71,7 @@ export function loadTasks(tasksFile: string): LoadedTasks {
         ? `${tasksFile} is readable by others (mode ${mode.toString(8)}); \`chmod 600\` it`
         : null,
     promptFor: (task) => prompts.get(task.id) ?? '',
+    precheckPromptFor: (task) => prechecks.get(task.id) ?? '',
   };
 }
 

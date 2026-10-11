@@ -340,6 +340,7 @@ export {
   DEFAULT_QUESTION_LIMITS,
   ServeConfigError,
   configHash,
+  freeModelNotes,
   isFreeModel,
   parseServeConfig,
   profileOf,
@@ -347,6 +348,7 @@ export {
   type ReleasedArea,
   type RightsLevel,
   type ServeConfig,
+  type ServePrecheck,
   type ServeProfile,
   type ServeTask,
   type ServeUser,
@@ -384,6 +386,7 @@ export {
   type ServeToken,
 } from './serve/gate.ts';
 export type { ServeChannel, ServeMessage } from './serve/channel.ts';
+export { SERVE_CONFIG_SCHEMA, schemaKeys, type SchemaNode } from './serve/schema.ts';
 export {
   ModelUnavailableError,
   answerQuestion,
@@ -392,10 +395,12 @@ export {
   dueTasks,
   followUpPrompt,
   nextWakeMs,
+  parseVerdict,
   runTask,
   userOf,
   type AnswerMode,
   type AnswerResult,
+  type PrecheckVerdict,
   type QuestionBook,
   type RunOutcome,
   type RunResult,

@@ -3,9 +3,12 @@ import { describe, expect, it } from '@gjsify/unit';
 import {
   DEFAULT_QUESTION_LIMITS,
   ServeConfigError,
+  SERVE_CONFIG_SCHEMA,
   configHash,
+  freeModelNotes,
   isFreeModel,
   parseServeConfig,
+  type SchemaNode,
 } from '@lotse/core';
 
 import example from '../../../../examples/tasks.example.json' with { type: 'json' };
@@ -86,14 +89,46 @@ export default async () => {
       expect(found.some((line) => line.includes('cwd'))).toBe(true);
     });
 
-    await it('a private profile must name a model that is not free', async () => {
+    await it('any profile may leave the model out or name a free one', async () => {
       const unnamed = { ...VALID, profiles: [{ id: 'work', user: 'me', data: 'private' }] };
-      expect(problems(unnamed).some((line) => line.includes('must name its model'))).toBe(true);
+      expect(problems(unnamed).length).toBe(0);
+      expect(parseServeConfig(JSON.stringify(unnamed)).profiles[0]!.model).toBe(null);
       const free = {
         ...VALID,
         profiles: [{ id: 'work', user: 'me', data: 'private', model: 'zen/some-free' }],
       };
-      expect(problems(free).some((line) => line.includes('free model'))).toBe(true);
+      expect(problems(free).length).toBe(0);
+      const notes = freeModelNotes(parseServeConfig(JSON.stringify(free)));
+      expect(notes.length).toBe(1);
+      expect(notes[0]).toContain('zen/some-free');
+      expect(freeModelNotes(parseServeConfig(JSON.stringify(VALID))).length).toBe(0);
+    });
+
+    await it('reads a precheck, with or without its own profile', async () => {
+      const task = { ...VALID.tasks[0], precheck: { prompt: 'Anything new?' } };
+      const config = parseServeConfig(JSON.stringify({ ...VALID, tasks: [task] }));
+      expect(config.tasks[0]!.precheck).toStrictEqual({
+        profile: null,
+        prompt: 'Anything new?',
+        promptFile: null,
+      });
+      expect(parseServeConfig(JSON.stringify(VALID)).tasks[0]!.precheck).toBe(null);
+      const named = {
+        ...VALID,
+        profiles: [...VALID.profiles, { id: 'cheap', user: 'me', data: 'private' }],
+        tasks: [{ ...VALID.tasks[0], precheck: { profile: 'cheap', promptFile: 'check.md' } }],
+      };
+      expect(parseServeConfig(JSON.stringify(named)).tasks[0]!.precheck?.profile).toBe('cheap');
+    });
+
+    await it('a precheck needs one prompt, a known profile and no stray keys', async () => {
+      const found = problems({
+        ...VALID,
+        tasks: [{ ...VALID.tasks[0], precheck: { profile: 'ghost', extra: 1 } }],
+      });
+      expect(found.some((line) => line.includes('precheck needs exactly one'))).toBe(true);
+      expect(found.some((line) => line.includes('precheck names profile "ghost"'))).toBe(true);
+      expect(found.some((line) => line.includes('unknown key "extra"'))).toBe(true);
     });
 
     await it('a profile must say whether its data is private', async () => {
@@ -110,6 +145,26 @@ export default async () => {
 
     await it('refuses text that is not JSON', async () => {
       expect(() => parseServeConfig('{')).toThrow();
+    });
+  });
+
+  await describe('SERVE_CONFIG_SCHEMA', async () => {
+    await it('gives every property a title and a description', async () => {
+      const missing: string[] = [];
+      const walk = (node: SchemaNode, path: string): void => {
+        for (const [key, child] of Object.entries(node.properties ?? {})) {
+          if (!child.$ref && (!child.title || !child.description)) missing.push(`${path}.${key}`);
+          walk(child, `${path}.${key}`);
+        }
+        if (node.items) walk(node.items, `${path}[]`);
+        for (const [index, option] of (node.oneOf ?? []).entries()) walk(option, `${path}|${index}`);
+      };
+      walk(SERVE_CONFIG_SCHEMA, '');
+      for (const [name, def] of Object.entries(SERVE_CONFIG_SCHEMA.$defs)) {
+        if (!def.title || !def.description) missing.push(`$defs.${name}`);
+        walk(def, `$defs.${name}`);
+      }
+      expect(missing).toStrictEqual([]);
     });
   });
 
