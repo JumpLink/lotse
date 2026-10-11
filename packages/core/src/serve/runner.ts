@@ -75,6 +75,8 @@ export interface ServeDeps {
   readonly promptFor: (task: ServeTask) => string;
   /** The precheck's prompt, read by the app at start. Absent: the inline `precheck.prompt`. */
   readonly precheckPromptFor?: (task: ServeTask) => string;
+  /** The task's last recorded run, which the precheck is told about. Absent: it hears "never". */
+  readonly previousRun?: (task: string) => { readonly startedAt: string; readonly outcome: string } | null;
   readonly channel: ServeChannel;
   readonly questions: QuestionBook;
   readonly now: () => Date;
@@ -231,6 +233,21 @@ export function parseVerdict(message: string): PrecheckVerdict | null {
 }
 
 /**
+ * The precheck's prompt with the task's last run in front of it: the agent cannot read `runs.json`,
+ * and "newer than the last run" is the question most prechecks ask. The prompt stays last, so its
+ * closing instruction about the verdict line stays last too.
+ */
+export function precheckText(
+  prompt: string,
+  previous: { readonly startedAt: string; readonly outcome: string } | null,
+): string {
+  const context = previous
+    ? `Last run of this task: ${previous.startedAt} (outcome: ${previous.outcome}).`
+    : 'This task has not run before.';
+  return `${context}\n\n${prompt}`;
+}
+
+/**
  * One turn that decides whether the task has anything to do. It sees the task's `mcpServers` and a
  * gate with `read` rights, so every permission request is declined without a question, and it never
  * creates a question of its own. Its model is its own profile's, or none (the agent's default).
@@ -280,7 +297,10 @@ async function runPrecheck(
     let message = '';
     const { stopReason } = await runTurn(handle.client, {
       sessionId: session.sessionId,
-      text: deps.precheckPromptFor ? deps.precheckPromptFor(task) : (check.prompt ?? ''),
+      text: precheckText(
+        deps.precheckPromptFor ? deps.precheckPromptFor(task) : (check.prompt ?? ''),
+        deps.previousRun?.(task.id) ?? null,
+      ),
       onUpdate: (notification) => {
         if (notification.update.sessionUpdate === 'agent_message_chunk')
           message += chunkToText(notification.update.content);
