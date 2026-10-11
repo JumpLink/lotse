@@ -47,6 +47,7 @@ import { backupPath, readSettings, saveSettings } from '../../core/settings.ts';
 import { settingsChoicesView } from '../../core/settings-view.ts';
 import { APP_CSS } from './css.ts';
 import { readHooks } from './hooks.ts';
+import { modelPolicyFromHook } from './model-policy-hook.ts';
 import { MainWindow } from './window.ts';
 import { APP_ID, APP_NAME, APP_VERSION } from './constants.ts';
 
@@ -129,6 +130,23 @@ const sandboxed = isSandboxed(currentSandboxFacts());
 const facts = gatherCwdFacts(process.env);
 const cwd = resolveCwd({ ...process.env, ...(hooks.cwd ? { LOTSE_CWD: hooks.cwd } : {}) }, facts);
 
+/**
+ * The host's model rule — **and this app is the host that has none.**
+ *
+ * `LotseChat` takes a `modelPolicy` so that an app embedding it beside data of its own can say where
+ * that data may travel (`packages/core/src/model-policy.ts`). lotse's own window carries nobody's
+ * data but the person's own conversation, and the agent's model list is the person's own choice, so
+ * the honest value here is `undefined` and the composer behaves exactly as it did before the option
+ * existed.
+ *
+ * `LOTSE_APP_MODEL_POLICY` is therefore a dev hook and not a setting: it exists so the blocked state
+ * can be photographed and so this file shows what a real host writes — a predicate of its own, over
+ * ids it knows, rather than a rule borrowed from a core helper. What the list means is
+ * `model-policy-hook.ts`, next door: the empty list has to mean *no policy*, and that case needed a
+ * test on both runtimes rather than a comment here.
+ */
+const modelPolicy = modelPolicyFromHook(hooks.modelPolicy ?? []);
+
 const status = await runAdwaitaApp({
   applicationId: APP_ID,
   css: APP_CSS,
@@ -167,6 +185,7 @@ const status = await runAdwaitaApp({
           }
         : {}),
       newChat: cwd ? { cwd, home: facts.home } : null,
+      ...(modelPolicy ? { modelPolicy } : {}),
       // **Only when no agent is pinned.** `LOTSE_APP_AGENT` means "this agent, for everything in this window"
       // — a fixture record naming `opencode` must be answered by the stand-in, not start a real one.
       ...(hooks.agent

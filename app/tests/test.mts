@@ -62,6 +62,7 @@ import serveState from './unit/serve/serve-state.test.ts';
 import serveRunner from './unit/serve/runner.test.ts';
 
 import hookValue from './unit/gui/hook-value.test.ts';
+import modelPolicyHook from './unit/gui/model-policy-hook.test.ts';
 import toolLine from './unit/gui/tool-line.test.ts';
 
 import smoke from './unit/smoke.test.ts';
@@ -122,6 +123,7 @@ run({
   serveState,
   serveRunner,
   hookValue,
+  modelPolicyHook,
   toolLine,
   smoke,
 });

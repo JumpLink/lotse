@@ -84,6 +84,7 @@ import {
   type AgentCommand,
   type EmptyStateView,
   type McpServer,
+  type ModelPolicy,
   type NoticeView,
   type RecordedResolution,
 } from '@lotse/core';
@@ -196,6 +197,14 @@ export interface MainWindowOptions {
   readonly rememberNotice?: (id: NoticeView['id']) => void;
   /** Persist streamed transcript lines. Called once per arriving batch, in order. */
   readonly appendTurns?: (sessionId: string, entries: TranscriptEntry[]) => void;
+  /**
+   * The host's rule about which models a prompt may reach, handed to the widget unchanged.
+   *
+   * Absent in lotse's own window — the app has no data of its own to protect, and `main.ts` says why
+   * — so this travels the same way `mcpServers` does: the widget takes it, the window forwards it,
+   * and the one place that decides whether there is a rule at all is the composition root.
+   */
+  readonly modelPolicy?: ModelPolicy;
   /** The clock, injected so a screenshot run is the only place a real one is used. */
   readonly now?: () => string;
 }
@@ -338,6 +347,7 @@ export class MainWindow extends Adw.ApplicationWindow {
       ...(options.appendTurns ? { appendTurns: options.appendTurns } : {}),
       ...(options.resolveAgent ? { resolveAgent: options.resolveAgent } : {}),
       ...(options.mcpServers ? { mcpServers: options.mcpServers } : {}),
+      ...(options.modelPolicy ? { modelPolicy: options.modelPolicy } : {}),
       ...(options.noAgent ? { noAgent: options.noAgent } : {}),
       ...(options.now ? { now: options.now } : {}),
       onConversation: (record, current) => this.#onConversation(record, current),
