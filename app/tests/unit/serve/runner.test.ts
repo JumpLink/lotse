@@ -213,6 +213,27 @@ export default async () => {
       expect(JSON.stringify(h.book)).not.toContain('archive the older one');
     });
 
+    await it('hands the answer turn answerMcpServers, and the first turn mcpServers', async () => {
+      const first = harness(
+        config({
+          task: {
+            mcpServers: [{ name: 'read-only', command: 'x', args: [], env: [] }],
+            answerMcpServers: [{ name: 'writing', command: 'x', args: [], env: [] }],
+          },
+        }),
+        { chunks: ['Shall I?'] },
+      );
+      await runTask(first.deps.config.tasks[0]!, first.deps);
+      expect(JSON.stringify(first.agents[0]!.calls('session/new')[0]!.params)).toContain('read-only');
+      expect(JSON.stringify(first.agents[0]!.calls('session/new')[0]!.params)).not.toContain('writing');
+      const next = harness(first.deps.config, {});
+      next.book = first.book;
+      await answerQuestion('A1', 'yes', next.deps);
+      const params = JSON.stringify(next.agents[0]!.calls('session/load')[0]!.params);
+      expect(params).toContain('writing');
+      expect(params).not.toContain('read-only');
+    });
+
     await it('falls back to session/resume', async () => {
       const h = await asked({ omitLoadSession: true });
       const result = await answerQuestion('A1', 'yes', h.deps);

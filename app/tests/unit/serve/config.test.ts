@@ -41,6 +41,15 @@ export default async () => {
       expect(config.users[0]!.addresses.length).toBe(0);
     });
 
+    await it('reads answerMcpServers and rejects a malformed one', async () => {
+      const task = { ...VALID.tasks[0], answerMcpServers: [{ name: 'writing' }] };
+      const config = parseServeConfig(JSON.stringify({ ...VALID, tasks: [task] }));
+      expect(config.tasks[0]!.answerMcpServers?.length).toBe(1);
+      expect(parseServeConfig(JSON.stringify(VALID)).tasks[0]!.answerMcpServers).toBe(null);
+      const bad = { ...VALID.tasks[0], answerMcpServers: ['nope'] };
+      expect(() => parseServeConfig(JSON.stringify({ ...VALID, tasks: [bad] }))).toThrow();
+    });
+
     await it('reads the shipped example', async () => {
       const config = parseServeConfig(JSON.stringify(example));
       expect(config.tasks.map((task) => task.id)).toStrictEqual([

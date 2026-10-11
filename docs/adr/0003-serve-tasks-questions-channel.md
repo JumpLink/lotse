@@ -20,7 +20,7 @@ channel can be added without changing a task.
 1. **One configuration file, version 1**, at `$XDG_CONFIG_HOME/lotse/tasks.json`
    (`LOTSE_TASKS_FILE` overrides it). The shape:
    `{version: 1, users: [{id, addresses}], profiles: [{id, user, agent?, model?, data}],
-   tasks: [{id, profile, schedule, prompt | promptFile, cwd, mcpServers, rights, released,
+   tasks: [{id, profile, schedule, prompt | promptFile, cwd, mcpServers, answerMcpServers?, rights, released,
    questions: {expiresIn, maxOpen, maxPerHour}, notify}]}`. Unknown keys are errors. Every
    problem is reported at start, at once (`parseServeConfig`). A private profile must name a
    model that is not on the free list. `serve` hashes the file plus every prompt file and stops

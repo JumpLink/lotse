@@ -288,7 +288,7 @@ export async function answerQuestion(idText: string, text: string, deps: ServeDe
       }
       how = 'follow-up';
       const session = await withAuthHint('session/new', () =>
-        client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers] }),
+        client.newSession({ cwd: task.cwd, mcpServers: [...(task.answerMcpServers ?? task.mcpServers)] }),
       );
       return {
         sessionId: session.sessionId,
@@ -450,7 +450,7 @@ async function continueSession(
   task: ServeTask,
   sessionId: string,
 ): Promise<{ how: 'loaded' | 'resumed'; configOptions: SessionConfigOption[] | null } | null> {
-  const params = { cwd: task.cwd, mcpServers: [...task.mcpServers] };
+  const params = { cwd: task.cwd, mcpServers: [...(task.answerMcpServers ?? task.mcpServers)] };
   if (client.supportsLoadSession) {
     try {
       const loaded = await withAuthHint('session/load', () => client.loadSession({ sessionId, ...params }));
