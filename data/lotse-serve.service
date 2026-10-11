@@ -4,9 +4,8 @@
 #   systemctl --user daemon-reload
 #   systemctl --user enable --now lotse-serve.service
 #
-# Point ExecStart at your own `lotse`. `serve` stops with exit 0 when tasks.json or a prompt file
-# changes (ADR 0003), so `systemctl --user restart lotse-serve` is how an edit takes effect;
-# Restart=on-failure deliberately does not restart that clean stop.
+# Point ExecStart at your own `lotse`. `serve` reloads tasks.json and its prompt files in place
+# (ADR 0003), so an edit needs no restart; `systemctl --user restart lotse-serve` is for settings.json.
 
 [Unit]
 Description=lotse serve: scheduled agent tasks

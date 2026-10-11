@@ -61,6 +61,7 @@ export interface ServeLogEntry {
     | 'gate'
     | 'expired'
     | 'dropped'
+    | 'reload'
     | 'error';
   readonly task: string;
   readonly detail: Readonly<Record<string, string>>;

@@ -138,7 +138,7 @@ Buttons for answering in the chat are planned
    }
    ```
 
-   Saving the task file stops `serve`; start it again. The task has never run, so it waits for its
+   A running `serve` picks up the saved task file within a minute, with no restart. The task has never run, so it waits for its
    first due time; `lotse serve --once` in a second terminal runs it right away without the receive
    loop.
 3. The question arrives in your XMPP client as `lotse · messenger-test · #A1`. Reply `#A1 hello`.

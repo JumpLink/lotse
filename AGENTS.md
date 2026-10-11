@@ -75,8 +75,8 @@ lotse answer <id> [text..] [--dialog]     # yes/no or a reply; no text opens the
 
 **`serve` is [ADR 0003](docs/adr/0003-serve-tasks-questions-channel.md), read it before touching
 `packages/core/src/serve/`**; the person's guide is [docs/serve.md](docs/serve.md). Tasks live in
-`$XDG_CONFIG_HOME/lotse/tasks.json` (never in the repo, `examples/tasks.example.json` is the shape), read
-once at start: a changed file or prompt file stops `serve` rather than reloading. Pure logic in core, GI
+`$XDG_CONFIG_HOME/lotse/tasks.json` (never in the repo, `examples/tasks.example.json` is the shape), reloaded in place when it or a prompt file changes (`app/src/frontends/cli/serve-reload.ts`; running tasks
+finish with their old definition, an invalid file keeps the old tasks). Pure logic in core, GI
 only in `app/src/core/desktop-channel.ts`, which `serve.ts` imports lazily so `answer` stays GI-free.
 `serve/schema.ts` (`SERVE_CONFIG_SCHEMA`) is the one list of allowed keys, and the parser derives
 from it: a new field goes there first, with a title and a description.

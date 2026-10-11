@@ -23,8 +23,12 @@ channel can be added without changing a task.
    tasks: [{id, profile, schedule, prompt | promptFile, cwd, mcpServers, answerMcpServers?, rights, released,
    questions: {expiresIn, maxOpen, maxPerHour}, notify}]}`. Unknown keys are errors. Every
    problem is reported at start, at once (`parseServeConfig`). ~~A private profile must name a
-   model that is not on the free list.~~ `serve` hashes the file plus every prompt file and stops
-   when the hash changes (ADR 0002 §3).
+   model that is not on the free list.~~ `serve` hashes the file plus every prompt file and ~~stops
+   when the hash changes (ADR 0002 §3)~~ reloads when the hash changes (amended below).
+
+   *Amended 2026-10-12:* a changed file no longer stops `serve`. It is reloaded in place; a run in
+   progress finishes with the definition it started with, a file that does not parse leaves the
+   previous tasks in force and logs an `error`. docs/serve.md describes the behaviour.
 
    *Amended 2026-10-11:* `model` is optional on every profile; when it is unset, lotse sends no
    model and the agent's default applies. A private profile on a free model prints a note at

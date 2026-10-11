@@ -27,8 +27,26 @@ file at mode `0600`; `serve` warns when it is readable by others.
   `session/new` unchanged. `answerMcpServers` (optional) replaces it for the turn that continues
   a reply question (`lotse answer`).
 
-Unknown keys are errors, and every problem is reported at start. `serve` reads the file once. When
-the file or a prompt file changes, it stops with exit 0 and tells you; restart it to load the edit.
+Unknown keys are errors, and every problem is reported at start.
+
+### Editing the task file while `serve` runs
+
+`serve` looks at the task file and its prompt files before every pass (at least once a minute) and
+applies a change in place; there is nothing to restart.
+
+- A **run in progress is never interrupted.** It finishes with the definition it started with. A task
+  you removed is not started again, but its running instance completes; a changed task uses the new
+  definition from its next run.
+- **Nothing fires just because of the reload.** Schedules count from the last recorded run, so editing
+  a task does not make it due. The existing rule for new tasks applies unchanged: a task you add runs at
+  its first look when its schedule is `every` (as at start), while an `at` task that has never run waits
+  for its next time.
+- **An invalid file is ignored.** `serve` keeps the previous tasks, prints the problem, writes an
+  `error` entry (`kind: reload`) to `serve.log` and keeps running. Fix the file and the next pass loads
+  it; the same bad save is reported once.
+- Channels and agents come from `settings.json` and are read at start. A reload re-resolves each
+  profile's agent, but a change to which channels are open needs a restart. The routing per task
+  (`channels`, `messengerDetail`) follows the reloaded tasks.
 
 ### Schedules
 
@@ -121,8 +139,8 @@ kinds only, never a prompt or a reply) and `locks/`. Closed questions are kept f
 ## Running it as a service
 
 [data/lotse-serve.service](../data/lotse-serve.service) is an example systemd user unit. Nothing
-installs it; the install commands are in its header. `Restart=on-failure` does not restart the clean
-stop after a config change, so `systemctl --user restart lotse-serve` applies an edit.
+installs it; the install commands are in its header. An edit to the task file is picked up by the
+running service; `systemctl --user restart lotse-serve` is only needed for a change to `settings.json`.
 
 ## Channels
 
@@ -159,7 +177,7 @@ explicitly; without a display the command says so and nothing opens.
   notification is sent instead.
 
 `serve` reads the setting for every question, so a change needs no restart; it lives in the settings
-file rather than the task file because a change to the task file stops `serve`.
+file rather than the task file because channels are opened once, at start.
 
 The window is part of the GUI bundle (`lotse-app.gjs.mjs`, built by `gjsify workspace lotse-cli
 build:app`) and is looked up next to the CLI bundle, else as `lotse-app` beside it.

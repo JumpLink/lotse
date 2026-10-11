@@ -50,6 +50,8 @@ Curlew backend later.
    of every task are fixed for the life of the process. `serve` records a hash of the task
    configuration and refuses to continue when the hash changes, so an edit takes effect on a
    restart the person performs and never under a session that is already running.
+   *Amended 2026-10-12 (ADR 0003 §1):* the restart is no longer needed. A reload applies from the next
+   run on and never under a session that is already running, which is what this rule was for.
 4. **Users and profiles are in the data model from the start.** A *user* has one or more channel
    addresses. A *profile* belongs to a user and holds tasks, MCP servers, rights and the agent and
    model. Several users are possible; the first build serves one. A message from an address no
