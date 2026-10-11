@@ -106,10 +106,11 @@ stop after a config change, so `systemctl --user restart lotse-serve` applies an
 
 ## Channels
 
-Messages go through one `ServeChannel` (`packages/core/src/serve/channel.ts`): today a desktop
-notification over `org.freedesktop.Notifications`, falling back to stderr when there is no session
-bus. A task never names a channel, so an XMPP channel through Curlew can be added without changing
-any task.
+Messages go through one `ServeChannel` (`packages/core/src/serve/channel.ts`): a desktop
+notification over `org.freedesktop.Notifications` (stderr when there is no session bus), and the
+messenger channel below. A task never names a channel; `channel.active` in the settings file picks
+which ones ask, and with both active a question goes to both. The first answer wins: every answer
+ends in `answerQuestion`, so the other channel is told the question is already answered.
 
 ### Answering from the desktop
 
@@ -143,3 +144,67 @@ The window is part of the GUI bundle (`lotse-app.gjs.mjs`, built by `gjsify work
 build:app`) and is looked up next to the CLI bundle, else as `lotse-app` beside it.
 `LOTSE_ANSWER_DIALOG` names another program (split on spaces); it is started with
 `--answer <id>` and writes one line `lotse-answer:{"text":…}` on stdout, or nothing for Later.
+
+### Answering in a chat (the messenger channel)
+
+lotse speaks no XMPP. The channel is an MCP client: it starts the configured MCP server (curlew's
+`curlew mcp` by default) over stdio, sends a question with the server's send tool, and long-polls its
+wait-for-reply tool for the answer. Any MCP server with those two tools fits; their names are settings.
+
+```json
+{
+  "version": 1,
+  "agent": null,
+  "channel": {
+    "active": ["desktop", "messenger"],
+    "messenger": {
+      "command": "curlew",
+      "args": ["mcp"],
+      "account": "assistant",
+      "peer": "person@example.org",
+      "sendTool": "send_message",
+      "waitTool": "xmpp_wait_reply"
+    }
+  }
+}
+```
+
+`command`, `args`, `sendTool` and `waitTool` show their defaults; `account` and `peer` have none.
+`account` is the messenger account to send from, `peer` the address to talk to. No secret belongs in
+`args` (the settings file refuses secret-looking keys). The same fields are under *Preferences →
+Messenger* in the app. `serve` reads `active` and `messenger` once at start, so **restart `serve`
+to apply a change**. Incomplete settings (no account or peer) are reported at start and `serve` runs
+with the desktop channel alone.
+
+For curlew, three things must hold:
+
+- `curlew daemon` is running; replies only arrive while it is.
+- The account may send. Add a grant to curlew's configuration:
+  `{"capability":"xmpp.send","target":"<account>/<address>"}` (same account and peer as above).
+- `curlew mcp` is on `PATH` (inside the Flatpak, on the host: lotse starts it through
+  `flatpak-spawn --host`).
+
+A question arrives as one message whose first line carries the id, with a reply hint:
+
+```
+lotse · backup · #A3
+
+Allow rm -rf build/?
+
+Reply: #A3 yes or #A3 no
+```
+
+Replies are read like `lotse answer`:
+
+- `A3 yes` or `#A3 only the first one`: answers that question.
+- Plain text while exactly one question is open: answers it.
+- Plain text while several are open: nothing is answered; lotse replies with the open ids.
+- An unknown or already answered id: lotse replies with that.
+- A permission question takes `yes`, `no`, `ja`, `nein`, `allow`, `decline` (and `deny`); anything
+  longer is refused with a reply.
+
+The position in the conversation is kept in `messenger-cursor.json` in the state directory, so a
+restart neither replays old replies nor loses one. The first start begins at "now". If the MCP
+server dies, `serve` restarts it with a growing pause (5 s up to 5 min). There is no receive loop in
+`serve --once`: that run ends before anyone could reply. lotse adds no encryption of its own: a
+question is as private as the messenger path it travels, and it names the task and the action.

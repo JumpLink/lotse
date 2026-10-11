@@ -123,6 +123,7 @@ Curlew backend later.
    channel interface (send a text to an address, read new messages since a position). Its first
    implementation is an MCP client against Curlew's server, using the assistant's own account and
    the send tool Curlew grants for it. Messages from the person's own accounts are only read.
+   Implemented in `packages/core/src/messenger/`; set up in [serve.md](../serve.md).
 10. **State and log are declared.** Read positions, open questions, users and profiles, and an
    action log go under lotse's data directory, mode 0600 in 0700. The log has one line per
    trigger, question, answer and allowed action, with source ids instead of message text. Tiers:
