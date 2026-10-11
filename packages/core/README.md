@@ -13,11 +13,8 @@ widget, or to build your own surface on the same logic.
 
 ## Install and import
 
-The package is `private` and not yet on a registry. Take it as a workspace dependency (or vendor the
-`packages/` directory) and depend on it by name, as the other packages here do:
-
-```json
-{ "dependencies": { "@lotse/core": "*", "@lotse/session": "*" } }
+```bash
+npm i @lotse/core @lotse/acp @lotse/session
 ```
 
 ```ts

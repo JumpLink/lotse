@@ -1,10 +1,27 @@
 {
   "name": "@lotse/session",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "LGPL-3.0-or-later",
-  "private": true,
   "type": "module",
   "description": "What a lotse session IS: the record, the transcript, and the resume binding. Pure model plus a filesystem store — no ACP client, no agent adapter, no gi://. The store takes a path, so a test writes to a temp dir and the app writes to XDG.",
+  "keywords": [
+    "acp",
+    "session",
+    "coding-agent"
+  ],
+  "homepage": "https://github.com/JumpLink/lotse/tree/main/packages/session#readme",
+  "bugs": {
+    "url": "https://github.com/JumpLink/lotse/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JumpLink/lotse.git",
+    "directory": "packages/session"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "exports": {
     ".": "./src/index.ts"
   },
@@ -12,9 +29,12 @@
     "check": "gjsify tsc --noEmit --project tsconfig.json"
   },
   "files": [
-    "src"
+    "src",
+    "COPYING",
+    "LICENSE",
+    "README.md"
   ],
   "dependencies": {
-    "@lotse/acp": "*"
+    "@lotse/acp": "^0.2.0"
   }
 }

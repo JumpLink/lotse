@@ -58,6 +58,18 @@ lotse auth --agent opencode
 its auth method — not a token lotse could hand over by itself. Without `lotse auth`, a session
 started before you are logged in dies on `-32000 auth_required` instead of on your prompt.
 
+## Use the libraries
+
+The four LGPL packages are on npm. To embed the chat in your own GTK4 / libadwaita app:
+
+```bash
+npm i @lotse/widget @lotse/core @lotse/acp @lotse/session \
+  @girs/adw-1 @girs/gdk-4.0 @girs/glib-2.0 @girs/gobject-2.0 @girs/gtk-4.0 @girs/pango-1.0
+```
+
+The `@girs/*` packages are peers of the widget. They ship TypeScript sources and need a bundler that
+compiles them (gjsify); the [host guide](docs/embedding.md) has the walkthrough.
+
 ## Commands
 
 ```bash
@@ -143,7 +155,9 @@ Everything is unsigned, which is a legitimate deliverable rather than a placehol
 0024 § A13) — see the comment above the macOS/Windows packaging steps in
 [release.yml](.github/workflows/release.yml) for where `--sign`/`--notarize` would attach once a signing
 identity exists. `workflow_dispatch` on that workflow re-cuts
-assets for an existing tag without moving it.
+assets for an existing tag without moving it. The same tag publishes the four libraries to npm by
+Trusted Publishing; the steps, and the one-time manual first publish, are in
+[docs/releasing.md](docs/releasing.md).
 
 ## Development
 

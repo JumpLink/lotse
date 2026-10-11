@@ -158,7 +158,7 @@ const HOST_OUTER = [
   '      __k_path=$(LOTSE_RC="$__k_rcp" "$__k_sh" -i -c \'. "$LOTSE_RC" >/dev/null 2>&1; printf %s "$PATH"\' 2>/dev/null | tail -n 1)',
   // Accept only a value that is non-empty AND contains a `/` — i.e. at least one path-shaped entry.
   // Measured: a "is every character `:` or `/`" test rejects a perfectly good PATH, because an entry
-  // like `/home/pascal/.local/bin` is mostly letters. A rejected capture leaves the login PATH in
+  // like `/home/alice/.local/bin` is mostly letters. A rejected capture leaves the login PATH in
   // place, which is the honest floor rather than a corrupt one.
   '      case "$__k_path" in',
   '        */*) PATH="$__k_path" ;;',

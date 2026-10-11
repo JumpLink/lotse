@@ -34,7 +34,7 @@ export function resolveCwd(env: Record<string, string | undefined>, facts: CwdFa
 
 /**
  * The path as a person reads it: home abbreviated to `~`. A path that merely starts with the same
- * letters (`/home/pascal2`) is not under `/home/pascal`, so the boundary is checked.
+ * letters (`/home/alice2`) is not under `/home/alice`, so the boundary is checked.
  */
 export function displayCwd(cwd: string, home: string | null): string {
   if (!home || home === '/') return cwd;

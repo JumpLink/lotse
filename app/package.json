@@ -91,10 +91,10 @@
     }
   },
   "dependencies": {
-    "@lotse/acp": "*",
-    "@lotse/core": "*",
-    "@lotse/session": "*",
-    "@lotse/widget": "*",
+    "@lotse/acp": "^0.2.0",
+    "@lotse/core": "^0.2.0",
+    "@lotse/session": "^0.2.0",
+    "@lotse/widget": "^0.2.0",
     "yargs": "^18.1.0"
   },
   "devDependencies": {
