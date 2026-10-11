@@ -5,9 +5,11 @@ import {
   ServeConfigError,
   SERVE_CONFIG_SCHEMA,
   configHash,
+  deliveryOf,
   freeModelNotes,
   isFreeModel,
   parseServeConfig,
+  unreachableTaskNotes,
   type SchemaNode,
 } from '@lotse/core';
 
@@ -141,6 +143,30 @@ export default async () => {
       expect(problems(without).some((line) => line.includes('releases nothing'))).toBe(true);
       const stray = { ...VALID, tasks: [{ ...VALID.tasks[0], released: [{ tool: 'read' }] }] };
       expect(problems(stray).some((line) => line.includes('its rights are "confirm"'))).toBe(true);
+    });
+
+    await it('channels and messengerDetail: task over profile, defaults unchanged', async () => {
+      const plain = parseServeConfig(JSON.stringify(VALID));
+      expect(deliveryOf(plain, 'inbox')).toStrictEqual({ channels: null, messengerDetail: 'full' });
+      const profile = { ...VALID.profiles[0], channels: ['desktop', 'messenger'], messengerDetail: 'notice' };
+      const task = { ...VALID.tasks[0], channels: ['desktop', 'desktop'] };
+      const config = parseServeConfig(JSON.stringify({ ...VALID, profiles: [profile], tasks: [task] }));
+      expect(deliveryOf(config, 'inbox')).toStrictEqual({ channels: ['desktop'], messengerDetail: 'notice' });
+      expect(unreachableTaskNotes(config, ['messenger']).length).toBe(1);
+      expect(unreachableTaskNotes(config, ['desktop'])).toStrictEqual([]);
+    });
+
+    await it('refuses an unknown channel, an empty list and an unknown detail', async () => {
+      const bad = (patch: Record<string, unknown>) =>
+        problems({ ...VALID, tasks: [{ ...VALID.tasks[0], ...patch }] });
+      expect(bad({ channels: ['telegram'] }).some((line) => line.includes('.channels must be'))).toBe(true);
+      expect(bad({ channels: [] }).some((line) => line.includes('.channels must be'))).toBe(true);
+      expect(bad({ channels: 'desktop' }).some((line) => line.includes('.channels must be'))).toBe(true);
+      expect(bad({ messengerDetail: 'none' }).some((line) => line.includes('"full" or "notice"'))).toBe(true);
+      const profile = { ...VALID.profiles[0], messengerDetail: 1 };
+      expect(
+        problems({ ...VALID, profiles: [profile] }).some((line) => line.includes('messengerDetail')),
+      ).toBe(true);
     });
 
     await it('refuses text that is not JSON', async () => {

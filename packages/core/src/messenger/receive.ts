@@ -6,10 +6,13 @@
  *   handling and writing re-reads the message, and the second `answerQuestion` is dropped as "answered".
  * - **The server may die.** Any failure drops the link and waits (5 s, doubling to 5 min) before a
  *   fresh start; a success resets the wait. An abort ends the loop wherever it is.
+ * - **Only the questions the chat may see.** A task whose `channels` leave out the messenger never sent
+ *   its question here, so a reply cannot answer it — not by plain text, not by its id.
  * - **Every answer is `answerQuestion`** — the same path as `lotse answer` and the dialog — so the
  *   first channel to answer wins and the other hears what the runner says: already answered.
  */
 
+import { deliveryOf } from '../serve/config.ts';
 import { answerQuestion, type ServeDeps } from '../serve/runner.ts';
 import { formatQuestionId, openQuestions } from '../serve/questions.ts';
 import { sendToPeer, type MessengerChannel } from './channel.ts';
@@ -116,8 +119,14 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
     }
   };
 
+  const inChat = (task: string) => {
+    const { channels } = deliveryOf(serve.config, task);
+    return !channels || channels.includes('messenger');
+  };
+
   const handle = async (text: string) => {
-    const open = openQuestions(serve.questions.read(), serve.now());
+    const book = serve.questions.read();
+    const open = openQuestions(book, serve.now()).filter((question) => inChat(question.task));
     const intent = parseReply(text, openIds(open));
     switch (intent.kind) {
       case 'ignore':
@@ -136,6 +145,8 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
           }),
         );
       case 'answer': {
+        const hidden = book.some((question) => question.id === intent.questionId && !inChat(question.task));
+        if (hidden) return reply(msg(STRINGS.notHere, { id: formatQuestionId(intent.questionId) }));
         const result = await answerQuestion(intent.questionId, intent.text, serve);
         log(`messenger: ${formatQuestionId(intent.questionId)}: ${result.message}`);
         return reply(result.message);

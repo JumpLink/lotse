@@ -16,7 +16,6 @@ import {
   answerQuestion,
   attemptClock,
   cancelOrphanedPermissions,
-  combineChannels,
   connectMcp,
   dueTasks,
   freeModelNotes,
@@ -27,10 +26,14 @@ import {
   messengerProblem,
   nextWakeMs,
   runReceiveLoop,
+  routeChannels,
   runTask,
+  unreachableTaskNotes,
   type ChannelFailure,
+  type ChannelRoute,
   type LotsePaths,
   type ServeChannel,
+  type ServeConfig,
   type ServeDeps,
   type MessengerSettings,
   type ServeTask,
@@ -130,13 +133,20 @@ interface OpenedChannels {
   } | null;
 }
 
-/** The channels settings.json asks for, read once at start (a change needs a restart). */
-async function openChannels(paths: LotsePaths, deps: () => ServeDeps | null): Promise<OpenedChannels> {
+/**
+ * The channels settings.json asks for, read once at start (a change needs a restart), each message
+ * routed by its task's `channels` and `messengerDetail`.
+ */
+async function openChannels(
+  paths: LotsePaths,
+  config: ServeConfig,
+  deps: () => ServeDeps | null,
+): Promise<OpenedChannels> {
   const settings = readSettings(paths.settingsFile).settings;
   const active = activeChannels(settings);
   let desktop: ServeChannel | null = null;
   const useDesktop = active.includes('desktop');
-  const opened: ServeChannel[] = [];
+  const opened: ChannelRoute[] = [];
   let messenger: OpenedChannels['messenger'] = null;
   if (active.includes('messenger')) {
     const config = messengerSettings(settings);
@@ -148,13 +158,18 @@ async function openChannels(paths: LotsePaths, deps: () => ServeDeps | null): Pr
       );
       const channel = messengerChannel(link, config);
       messenger = { link, settings: config, channel };
-      opened.push(channel);
+      opened.push({ name: 'messenger', channel });
     }
   }
   if (useDesktop || opened.length === 0) {
     desktop = await openDesktop(paths, deps, () => desktop);
-    opened.unshift(desktop);
+    opened.unshift({ name: 'desktop', channel: desktop });
   }
+  for (const note of unreachableTaskNotes(
+    config,
+    opened.map((route) => route.name),
+  ))
+    err(`  ${note}`);
   // A channel that failed while another delivered is told here, nowhere else: stderr and serve.log.
   const failed: ChannelFailure = (name, error) => {
     const message = error instanceof Error ? error.message : String(error);
@@ -169,7 +184,7 @@ async function openChannels(paths: LotsePaths, deps: () => ServeDeps | null): Pr
       },
     });
   };
-  return { channel: combineChannels(opened, failed), messenger };
+  return { channel: routeChannels(opened, config, failed), messenger };
 }
 
 const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
@@ -192,7 +207,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     if (!loaded) return;
     for (const note of freeModelNotes(loaded.config)) err(`  ${note}`);
     let ready: ServeDeps | null = null;
-    const opened = await openChannels(paths, () => ready);
+    const opened = await openChannels(paths, loaded.config, () => ready);
     const channel = opened.channel;
     const agents = trackedAgents();
     const deps = serveDeps({ paths, serve, loaded, channel, open: agents.open, quiet });

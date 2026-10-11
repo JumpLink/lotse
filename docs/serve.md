@@ -19,11 +19,11 @@ repository. Start from [examples/tasks.example.json](../examples/tasks.example.j
 file at mode `0600`; `serve` warns when it is readable by others.
 
 - **users**: `{id, addresses}`. The desktop channel needs no address.
-- **profiles**: `{id, user, agent?, model?, data}`. `data` is `private` or `public` and is required.
+- **profiles**: `{id, user, agent?, model?, data, channels?, messengerDetail?}`. `data` is `private` or `public` and is required.
   `model` is optional: leave it out and the agent's default model applies. A private profile on a
   free model gets a note at start. That choice is yours, so `serve` does not block it.
 - **tasks**: `{id, profile, schedule, prompt | promptFile, cwd, mcpServers, rights, released,
-  questions, notify, precheck?}`. A `promptFile` resolves relative to the task file. `mcpServers` is passed to
+  questions, notify, precheck?, channels?, messengerDetail?}`. A `promptFile` resolves relative to the task file. `mcpServers` is passed to
   `session/new` unchanged. `answerMcpServers` (optional) replaces it for the turn that continues
   a reply question (`lotse answer`).
 
@@ -72,6 +72,21 @@ skipped before an agent starts.
 `notify: "questions"` (default) notifies only when the agent asks. `"always"` also sends the
 run's final message.
 
+### Which channels a task uses
+
+By default every message goes to every active channel. Two optional keys narrow that, on a profile
+for all its tasks or on a task, where the task's value wins:
+
+- `channels`: a non-empty list of `desktop` and `messenger`. The task's messages go only there.
+  A reply in the chat cannot answer a question that was not sent to the chat. When none of the
+  listed channels is active, `serve` says so at start; the questions are then in `lotse questions`
+  only.
+- `messengerDetail`: `full` (default) sends the question to the chat. `notice` sends only its id
+  and that a question waits in the task, without the question text or the run's message. Read it
+  with `lotse questions` or on the desktop; you can still answer in the chat with its id.
+
+Use them for tasks that handle private data when the messenger path is not end-to-end encrypted.
+
 ## Question → answer → resume
 
 1. **Permission questions.** The agent asks for a tool the rights do not cover. You get a notification
@@ -108,8 +123,9 @@ stop after a config change, so `systemctl --user restart lotse-serve` applies an
 
 Messages go through one `ServeChannel` (`packages/core/src/serve/channel.ts`): a desktop
 notification over `org.freedesktop.Notifications` (stderr when there is no session bus), and the
-messenger channel below. A task never names a channel; `channel.active` in the settings file picks
-which ones ask, and with both active a question goes to both. The first answer wins: every answer
+messenger channel below. `channel.active` in the settings file picks which ones ask, and with both
+active a question goes to both, unless the task narrows it
+([Which channels a task uses](#which-channels-a-task-uses)). The first answer wins: every answer
 ends in `answerQuestion`, so the other channel is told the question is already answered.
 
 ### Answering from the desktop
@@ -212,4 +228,5 @@ delivers is never silent: `serve` prints `<channel>: <error>` on stderr and writ
 receive loop after 30 s, 1, 2, 5 and 10 min, while it is still open; after the last try `serve` says
 it gave up (`lotse questions` still lists it). The retry list lives in memory, so a restart of
 `serve` drops it. lotse adds no encryption of its own: a
-question is as private as the messenger path it travels, and it names the task and the action.
+question is as private as the messenger path it travels, and it names the task and the action. To
+keep a task's questions out of the chat, set its `channels` or `messengerDetail: "notice"`.

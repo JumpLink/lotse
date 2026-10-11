@@ -334,6 +334,7 @@ async function runPrecheck(
         title: `lotse · ${task.id} precheck stopped`,
         body: reason,
         questionId: null,
+        task: task.id,
       });
     }
     return { verdict: null, sessionId, reason: `the precheck failed: ${reason}` };
@@ -583,7 +584,12 @@ async function runSession(
     if (stopReason === 'end_turn' && isQuestionText(message)) {
       questionId = createReplyQuestion(task, user, started.sessionId, message.trim(), deps);
     } else if (stopReason === 'end_turn' && task.notify === 'always' && message.trim()) {
-      await deps.channel.send(user, { title: `lotse · ${task.id}`, body: message.trim(), questionId: null });
+      await deps.channel.send(user, {
+        title: `lotse · ${task.id}`,
+        body: message.trim(),
+        questionId: null,
+        task: task.id,
+      });
     }
     // An agent that hears "no" often still ends its turn normally; the run was declined all the same.
     const outcome: RunOutcome = questionId
@@ -610,7 +616,12 @@ async function runSession(
       detail: { kind: error instanceof Error ? error.name : 'Error' },
     });
     if (error instanceof ModelUnavailableError) {
-      await deps.channel.send(user, { title: `lotse · ${task.id} stopped`, body: reason, questionId: null });
+      await deps.channel.send(user, {
+        title: `lotse · ${task.id} stopped`,
+        body: reason,
+        questionId: null,
+        task: task.id,
+      });
     }
     return result(task, 'failed', startedAt, deps.now(), { sessionId, reason });
   } finally {
@@ -729,6 +740,7 @@ async function notify(question: Question, user: ServeUser, deps: ServeDeps): Pro
       title: `lotse · ${question.task} · ${formatQuestionId(question.id)}`,
       body: `${question.text}\n\n${howToAnswer(question)}`,
       questionId: question.id,
+      task: question.task,
       asks: question.kind,
       text: question.text,
       expiresAt: question.expiresAt,
@@ -803,6 +815,7 @@ async function ask(
         title: `lotse · ${task.id} · ${formatQuestionId(current.id)} expired`,
         body: 'Nobody answered in time, so the request was cancelled.',
         questionId: current.id,
+        task: task.id,
       });
       return 'expired';
     }
