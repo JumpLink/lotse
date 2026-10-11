@@ -21,6 +21,11 @@ and also records changes that are not a release of their own.
 - **`lotse serve` precheck.** A task can have `precheck: {profile?, prompt | promptFile}`: a cheap
   read-only turn whose last line is `WORK` or `NOTHING`. Only `WORK` starts the real run, and
   `NOTHING` is recorded as outcome `nothing`.
+- **Answering from the desktop.** A `lotse serve` question's notification gets an **Answer…** button
+  and, for a permission, **Allow once** / **Decline**, when the notification server shows actions.
+  `lotse answer <id>` without text (or with `--dialog`) opens an answer window. The setting
+  `channel.desktop.mode` (`notification` | `dialog`, also in Preferences) can open the window
+  right away instead. See [docs/serve.md](docs/serve.md#answering-from-the-desktop).
 - **`SERVE_CONFIG_SCHEMA`** (`@lotse/core`): the task file as a JSON Schema with a title and a
   description on every field. The parser takes its allowed keys from it.
 - **Structured tool calls in the transcript** (#43). Each tool line now also stores `tool`: ACP kind,

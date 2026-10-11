@@ -82,7 +82,7 @@ lotse login [provider]                     # log in through the agent's OAuth fl
 lotse agents                               # the launchers that are registered, and whether the binary is on PATH
 lotse serve [--once]                       # run scheduled tasks; notify when an agent has a question
 lotse questions [--all] [--json]           # the questions agents are waiting on
-lotse answer <id> <text…>                  # yes/no for a permission, text for a reply
+lotse answer <id> [text…] [--dialog]       # yes/no, a reply, or the answer window
 ```
 
 `lotse serve` runs the tasks in `$XDG_CONFIG_HOME/lotse/tasks.json` on a schedule and asks you, by
