@@ -16,7 +16,7 @@ import { createHash } from 'node:crypto';
 
 import type { McpServer } from '@lotse/acp';
 
-import { FREE_MODEL_IDS } from '../free-models.ts';
+import { isFreeModel } from '../free-models.ts';
 import { parseDuration, parseSchedule, type Schedule } from './schedule.ts';
 
 /** A person `serve` works for. `addresses` are channel addresses; the desktop channel needs none. */
@@ -110,14 +110,6 @@ export class ServeConfigError extends Error {
 }
 
 const ID = /^[a-z0-9][a-z0-9_-]{0,39}$/;
-
-/**
- * A model id that must not see private data: the maintained free list, and anything named `-free`.
- * A merely-free model may be trained on, and that is not lotse's decision to make for a person.
- */
-export function isFreeModel(model: string): boolean {
-  return FREE_MODEL_IDS.includes(model) || /-free$/.test(model);
-}
 
 /** Parse and validate. Throws `ServeConfigError` listing every problem. */
 export function parseServeConfig(text: string): ServeConfig {

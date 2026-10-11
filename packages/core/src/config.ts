@@ -106,6 +106,17 @@ export type ConfigControl = ConfigSelectControl | ConfigSwitchControl;
 const CATEGORY_ORDER: readonly KnownConfigCategory[] = ['model', 'model_config', 'thought_level', 'mode'];
 
 /**
+ * The category a model control carries, as `opencode acp` 2.0.19 sends it and as the schema's
+ * `KnownConfigCategory` names it. Measured, not guaranteed.
+ *
+ * **Here rather than in each file that asks, because three now do** — the free-model order below,
+ * the row's `modelControl` (`config-row.ts`, which also explains why the *category* and not the id
+ * `'model'`) and the host's model policy (`model-policy.ts`). Three copies of a string an agent
+ * chooses is three places to miss when one agent spells it differently.
+ */
+export const MODEL_CATEGORY = 'model';
+
+/**
  * Above this many values a person stops scanning and starts reading, and a dropdown that needs
  * scrolling to find "the same as now" is a control they will avoid using.
  *
@@ -194,7 +205,7 @@ function projectOne(option: SessionConfigOption): ConfigControl | null {
  * the reasoning and the three things this deliberately does not do.
  */
 function modelFirst(category: string | null, values: ConfigValue[]): ConfigValue[] {
-  return category === 'model' ? freeModelFirst(values) : values;
+  return category === MODEL_CATEGORY ? freeModelFirst(values) : values;
 }
 
 /**

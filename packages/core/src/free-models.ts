@@ -62,6 +62,28 @@ export interface FreeModelList {
 }
 
 /**
+ * A model id that must not see private data: the maintained list, and anything named `-free`.
+ *
+ * A merely-free model may be trained on, and that is not lotse's decision to make for a person — so
+ * this is a *classification*, not a policy: it answers "is this one of the free ones", and who may
+ * prompt it is decided by `lotse serve`'s task configuration (`serve/config.ts`) or by a host's
+ * `ModelPolicy` (`model-policy.ts`). Both read this one function, which is why it lives beside the
+ * data rather than in either of them.
+ *
+ * **It moved here from `serve/config.ts`, and the move was not cosmetic.** That file imports
+ * `node:crypto`; a widget asking "is this model free" through it would pull `createHash` and the whole
+ * task-file parser into a GTK bundle that has no use for either.
+ *
+ * The suffix is matched as well as the list because a free model may be added upstream between two
+ * checks of `free-models.json` — `opencode/fledge-alpha-free`, the anonymous default measured on
+ * 2026-10-02, is caught by the suffix alone. What it cannot catch is a free model shipped without
+ * either marker; `denyFreeHostedModels` says so where a host can read it.
+ */
+export function isFreeModel(model: string): boolean {
+  return FREE_MODEL_IDS.includes(model) || model.endsWith('-free');
+}
+
+/**
  * Move every value whose id is in `ids` to the front, **in the hint's own order**, and keep the caller's
  * order for everything after them.
  *
