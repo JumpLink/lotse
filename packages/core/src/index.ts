@@ -215,7 +215,9 @@ export {
   type EndpointReach,
 } from './custom/endpoint.ts';
 export {
+  LOCK_STALE_MS,
   OPENAI_COMPATIBLE_PACKAGE,
+  ProvidersFileBusyError,
   customProvidersEnv,
   customProvidersFile,
   documentProviderIds,
@@ -223,6 +225,7 @@ export {
   providerEntry,
   providerIdProblem,
   readProvidersDocument,
+  updateProvidersDocument,
   withProvider,
   withoutProvider,
   writeProvidersDocument,
@@ -231,6 +234,7 @@ export {
   type ProvidersDocument,
 } from './custom/file.ts';
 export {
+  MODELS_TIMEOUT_MS,
   RELOAD_TIMEOUT_MS,
   createProviderApi,
   parseConfiguredProviders,
@@ -242,11 +246,15 @@ export {
   type WaitHooks,
 } from './custom/api.ts';
 export {
+  RESERVED_PROVIDER_IDS,
   parseModelSpecs,
   planCustomProvider,
+  planWithListedModels,
   type CustomProviderFacts,
   type CustomProviderInput,
   type CustomProviderPlan,
+  type ListedPlan,
+  type ModelLister,
 } from './custom/plan.ts';
 
 // ── What a turn is doing, and what went wrong ────────────────────────────────────────────────────

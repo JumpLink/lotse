@@ -23,23 +23,22 @@ import type { CommandModule } from 'yargs';
 import {
   CUSTOM_PRESETS,
   LOCAL_MODEL_HINT,
-  checkEndpoint,
   createLoginApi,
   createProviderApi,
   currentSandboxFacts,
   customProvidersFile,
   documentProviderIds,
   parseModelSpecs,
-  planCustomProvider,
+  planWithListedModels,
   probeModels,
   readProvidersDocument,
   serverCommand,
   startServer,
   which,
   whyNoLoginServer,
+  updateProvidersDocument,
   withProvider,
   withoutProvider,
-  writeProvidersDocument,
   type ConfiguredProvider,
   type LotsePaths,
   type OpencodeServer,
@@ -166,23 +165,10 @@ async function add(
   const api = createProviderApi(server.send);
   const preset = pickArgv<string>(raw, 'preset');
   const url = pickArgv<string>(raw, 'url') ?? CUSTOM_PRESETS.find((p) => p.id === preset)?.baseUrl;
-  if (models.length === 0 && url) {
-    const endpoint = checkEndpoint(url);
-    if (endpoint.ok) {
-      try {
-        const listed = await probeModels(endpoint.baseUrl, fetch, key ?? undefined);
-        models.push(...listed.map((id) => ({ id })));
-        err(`  ${endpoint.baseUrl}/models lists ${listed.length} model${listed.length === 1 ? '' : 's'}`);
-      } catch (error) {
-        const message = messageOf(error);
-        err(
-          `  could not list the models (${key ? message.split(key).join('[key]') : message}) — name them with --model`,
-        );
-      }
-    }
-  }
-
-  const plan = planCustomProvider(
+  const redact = (message: string) => (key ? message.split(key).join('[key]') : message);
+  // The server is asked for its models only once the plan is ok, `--allow-lan` included: the key goes
+  // with that request, and an unconfirmed plain-http URL must not see it.
+  const { plan, listed, listProblem } = await planWithListedModels(
     {
       ...(pickArgv<string>(raw, 'id') ? { id: pickArgv<string>(raw, 'id')! } : {}),
       ...(preset ? { preset } : {}),
@@ -192,7 +178,11 @@ async function add(
       confirmedLan: pickArgv<boolean>(raw, 'allow-lan', 'allowLan') === true,
     },
     { knownIds: await api.knownIds(), ownIds: new Set(documentProviderIds(document.raw)) },
+    (baseUrl) => probeModels(baseUrl, fetch, key ?? undefined),
   );
+  if (listed !== null) err(`  the server lists ${listed} model${listed === 1 ? '' : 's'}`);
+  if (listProblem !== null)
+    err(`  could not list the models (${redact(listProblem)}) — name them with --model`);
   if (plan.kind === 'refused') return fail(plan.reason);
   if (plan.kind === 'confirm') {
     if (plan.privacyNote) err(`  ${plan.privacyNote}`);
@@ -202,7 +192,8 @@ async function add(
   for (const note of plan.notes) err(`  ${note}`);
   if (plan.reach !== 'remote') err(`  ${LOCAL_MODEL_HINT}`);
 
-  writeProvidersDocument(file, withProvider(document.raw, plan.provider));
+  // Written onto the file as it is now, not as it was before the network calls above.
+  updateProvidersDocument(file, (fresh) => withProvider(fresh, plan.provider));
   const { id } = plan.provider;
   if (key) {
     const seen = await api.waitForProvider(id, {
@@ -233,7 +224,7 @@ async function remove(server: OpencodeServer, file: string, id: string | undefin
   // The key first: once the entry is gone opencode no longer lists the provider, and its credential
   // would be left behind with no way to reach it from here.
   const keys = await api.disconnect(id);
-  writeProvidersDocument(file, withoutProvider(document.raw, id));
+  updateProvidersDocument(file, (fresh) => withoutProvider(fresh, id));
   out(`removed ${id}${keys > 0 ? ' and its stored key' : ''}.`);
 }
 

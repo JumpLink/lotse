@@ -20,7 +20,16 @@
  * (`custom/api.ts`). The file holds a URL and model names, so it is mode 0600 for tidiness, not secrecy.
  */
 
-import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import type { IsolationDirs } from '../agents/isolation.ts';
@@ -67,15 +76,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 /** One provider entry as opencode reads it. `limit.output` is required next to `context`; half, at most 4096. */
 export function providerEntry(provider: CustomProvider): Record<string, unknown> {
-  const models: Record<string, unknown> = {};
-  for (const model of provider.models) {
-    models[model.id] = {
-      name: model.name ?? model.id,
-      ...(model.context === undefined
-        ? {}
-        : { limit: { context: model.context, output: Math.min(4096, Math.floor(model.context / 2)) } }),
-    };
-  }
+  // `fromEntries` defines own properties: an assignment to `models['__proto__']` would set the prototype
+  // and drop the model, and a model id is whatever the person's server lists.
+  const models = Object.fromEntries(
+    provider.models.map((model) => [
+      model.id,
+      {
+        name: model.name ?? model.id,
+        ...(model.context === undefined
+          ? {}
+          : { limit: { context: model.context, output: Math.min(4096, Math.floor(model.context / 2)) } }),
+      },
+    ]),
+  );
   return {
     name: provider.name,
     package: OPENAI_COMPATIBLE_PACKAGE,
@@ -144,8 +157,71 @@ export function writeProvidersDocument(file: string, raw: Readonly<Record<string
   const dir = dirname(file);
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   chmodSync(dir, 0o700);
-  const temp = `${file}.tmp`;
-  writeFileSync(temp, `${JSON.stringify(raw, null, 2)}\n`, { mode: 0o600 });
-  chmodSync(temp, 0o600);
-  renameSync(temp, file);
+  // A name of its own per writer: two writers sharing one `.tmp` would rename each other's half-file.
+  const temp = `${file}.${process.pid}-${Math.random().toString(36).slice(2)}.tmp`;
+  try {
+    writeFileSync(temp, `${JSON.stringify(raw, null, 2)}\n`, { mode: 0o600 });
+    chmodSync(temp, 0o600);
+    renameSync(temp, file);
+  } finally {
+    rmSync(temp, { force: true });
+  }
+}
+
+/** A lock older than this is a writer that died inside the few milliseconds it holds one. */
+export const LOCK_STALE_MS = 10_000;
+
+/** Another writer holds the lock right now. Nothing was written; trying again is safe. */
+export class ProvidersFileBusyError extends Error {
+  constructor(file: string) {
+    super(`${file} is being written by another lotse right now — try again`);
+    this.name = 'ProvidersFileBusyError';
+  }
+}
+
+/**
+ * Read, change and write the file under a lock — the CLI and the settings group are two writers, and a
+ * read before a slow network call and a write after it would drop the other one's change. So the read
+ * happens here, **after** every network call, and `change` gets that fresh copy; it may throw to write
+ * nothing.
+ *
+ * The lock is `<file>.lock`, created `O_EXCL` (`wx`). **Stale by age, not by pid**: the GUI may run in a
+ * Flatpak and the CLI on the host, in two pid namespaces, so a pid from the other one would look dead and
+ * a live lock would be broken. The lock covers no network call, only a read and a rename, so a lock older
+ * than `LOCK_STALE_MS` can only be left behind by a writer that died — it is removed and taken once. A
+ * fresh one is not waited for: `ProvidersFileBusyError`, which a person retries in a second.
+ */
+export function updateProvidersDocument(
+  file: string,
+  change: (raw: Readonly<Record<string, unknown>>) => Readonly<Record<string, unknown>>,
+  now: () => number = Date.now,
+): void {
+  const dir = dirname(file);
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  const lock = `${file}.lock`;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      writeFileSync(lock, `${process.pid}\n`, { flag: 'wx', mode: 0o600 });
+      break;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+      let age: number;
+      try {
+        age = now() - statSync(lock).mtimeMs;
+      } catch {
+        // Released between the two calls: nothing to remove, take it on the next round.
+        age = LOCK_STALE_MS;
+      }
+      if (attempt > 0 || age < LOCK_STALE_MS) throw new ProvidersFileBusyError(file);
+      rmSync(lock, { force: true });
+    }
+  }
+  try {
+    const document = readProvidersDocument(file);
+    if (!document.ok)
+      throw new Error(`${file} could not be read (${document.problem}) — fix or remove it first`);
+    writeProvidersDocument(file, change(document.raw));
+  } finally {
+    rmSync(lock, { force: true });
+  }
 }

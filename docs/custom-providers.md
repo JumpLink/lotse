@@ -14,6 +14,9 @@ local server speaks it, and one adapter keeps the written shape small enough to 
 
 Only into the **bundled** opencode, into a file of lotse's own:
 `<dataDir>/agents/opencode/config/lotse-providers.json` (file `0600`, directory `0700`, written atomically).
+A change is read, applied and written under `lotse-providers.json.lock` (`O_EXCL`), after every network
+call, so the CLI and the settings group never drop each other's change. The lock is stale after
+`LOCK_STALE_MS` by its age, not its pid: the GUI in a Flatpak and the CLI on the host see different pids.
 `bundledCommand` points `OPENCODE_CONFIG` at it (`customProvidersEnv`). A host's own opencode keeps its
 providers in `~/.config/opencode`, which lotse never edits; `lotse provider list` still shows them, marked
 with the file they come from.
@@ -42,13 +45,16 @@ it from stdin. `remove` deletes the credentials first (ids from the provider's `
 
 | Endpoint | Answer |
 |---|---|
-| `https://…`, or `http://` on loopback (`127/8`, `::1`, `localhost`) | accepted |
+| `https://…`, or `http://` on loopback (`127/8`, `::1`, exactly `localhost` — not `*.localhost`) | accepted |
 | `http://` on the local network (`10/8`, `172.16/12`, `192.168/16`, `169.254/16`, `fc00::/7`, `fe80::/10`, a bare hostname, `.local`, `.lan`, `.home.arpa`, `.internal`) | asks first (`--allow-lan`): the prompt and the key cross the network in the clear |
 | `http://` anywhere else; `user:pass@` in the URL; a query or a fragment | refused |
 
 - **No shadowing.** An id opencode already knows (from `/api/integration` or `/api/provider`, which
-  also lists the auto-detected `ollama`) is refused. That is why the presets are `local-ollama`,
+  also lists the auto-detected `ollama`) is refused, and so is one in `RESERVED_PROVIDER_IDS` (the
+  login policy's ids plus the well-known catalog ones) even when opencode's catalog did not load. That is why the presets are `local-ollama`,
   `local-lmstudio`, `local-llamacpp` and `local-vllm`.
+- **No request before the plan is ok.** `<baseUrl>/models` (with the key, if one was given) is asked only
+  after the plan passed, `--allow-lan` included (`planWithListedModels`), and gives up after 5 s.
 - **Privacy note** for every endpoint not on this machine: what you type goes there.
 - **An honest hint** for local models: agent work needs roughly a 30B model and a lot of VRAM; small
   models answer, but rarely use tools well. A context below 8k (`MIN_CONTEXT_TOKENS`) gets a warning:
