@@ -24,7 +24,7 @@ import Adw from '@girs/adw-1';
 import GLib from '@girs/glib-2.0';
 import Gtk from '@girs/gtk-4.0';
 
-import type { AgentChoice, ResolveContext } from '@lotse/core';
+import type { AgentChoice, ChannelName, MessengerSettings, ResolveContext } from '@lotse/core';
 import type { DesktopMode } from '../../core/settings.ts';
 import { choiceFromKey, type ChoicesView } from '../../core/settings-view.ts';
 
@@ -49,6 +49,15 @@ export interface PreferencesActions {
   readonly loadMode: () => DesktopMode;
   /** Persist the mode; throws like `save`. */
   readonly saveMode: (mode: DesktopMode) => { readonly backup: string | null };
+  /** `channel.active` and `channel.messenger` as the settings file says now. */
+  readonly loadMessenger: () => MessengerForm;
+  /** Persist both; throws like `save`. */
+  readonly saveMessenger: (form: MessengerForm) => { readonly backup: string | null };
+}
+
+export interface MessengerForm {
+  readonly active: readonly ChannelName[];
+  readonly messenger: MessengerSettings;
 }
 
 /** What `select` did, so a caller never claims a write that did not happen. */
@@ -71,6 +80,20 @@ const MODE_ROWS: readonly {
   { mode: 'dialog', title: 'Answer window', subtitle: 'The window opens as soon as a question arrives.' },
 ];
 
+const MESSENGER_LINE =
+  'Also ask in a chat, through an MCP server such as curlew, and read the reply as the answer. The first answer wins. A change applies the next time lotse serve starts.';
+
+type MessengerField = 'command' | 'args' | 'account' | 'peer' | 'sendTool' | 'waitTool';
+
+const MESSENGER_FIELDS: readonly { readonly field: MessengerField; readonly title: string }[] = [
+  { field: 'command', title: 'MCP server command' },
+  { field: 'args', title: 'Arguments (separated by spaces)' },
+  { field: 'account', title: 'Account' },
+  { field: 'peer', title: 'Send to' },
+  { field: 'sendTool', title: 'Send tool' },
+  { field: 'waitTool', title: 'Wait-for-reply tool' },
+];
+
 export class PreferencesDialog {
   readonly #actions: PreferencesActions;
   readonly #extraPages: () => Adw.PreferencesPage[];
@@ -80,6 +103,7 @@ export class PreferencesDialog {
   #rows: Adw.ActionRow[] = [];
   readonly #checks = new Map<string, Gtk.CheckButton>();
   #modes: Adw.PreferencesGroup | null = null;
+  #messenger: Adw.PreferencesGroup | null = null;
   readonly #modeChecks = new Map<DesktopMode, Gtk.CheckButton>();
   #rendering = false;
   #error: string | null = null;
@@ -111,6 +135,7 @@ export class PreferencesDialog {
     page.add(noteGroup);
     page.add(group);
     page.add(this.#modeGroup());
+    page.add(this.#messengerGroup());
     dialog.add(page);
     for (const extra of this.#extraPages()) dialog.add(extra);
     this.#dialog = dialog;
@@ -124,6 +149,7 @@ export class PreferencesDialog {
       this.#rows = [];
       this.#checks.clear();
       this.#modes = null;
+      this.#messenger = null;
       this.#modeChecks.clear();
     });
     this.#render();
@@ -215,6 +241,7 @@ export class PreferencesDialog {
     }
     // One file holds both choices, so a file lotse must not overwrite locks both groups.
     this.#modes?.set_sensitive(!view.readOnly);
+    this.#messenger?.set_sensitive(!view.readOnly);
     this.#modeChecks.get(this.#currentMode())?.set_active(true);
     this.#rendering = false;
     const moved = this.#backup === null ? null : `The earlier settings file was moved to ${this.#backup}.`;
@@ -248,6 +275,59 @@ export class PreferencesDialog {
     }
     this.#modes = group;
     return group;
+  }
+
+  #messengerGroup(): Adw.PreferencesGroup {
+    const group = new Adw.PreferencesGroup({ title: 'Messenger', description: MESSENGER_LINE });
+    const form = this.#currentMessenger();
+    for (const name of ['desktop', 'messenger'] as const) {
+      const row = new Adw.SwitchRow({
+        title: name === 'desktop' ? 'Ask on the desktop' : 'Ask in the messenger',
+        active: form.active.includes(name),
+      });
+      row.connect('notify::active', () => {
+        if (this.#rendering) return;
+        const now = this.#currentMessenger();
+        const rest = now.active.filter((other) => other !== name);
+        this.#saveMessenger({ ...now, active: row.active ? [...rest, name] : rest });
+      });
+      group.add(row);
+    }
+    for (const { field, title } of MESSENGER_FIELDS) {
+      const text = field === 'args' ? form.messenger.args.join(' ') : form.messenger[field];
+      const row = new Adw.EntryRow({ title, text, showApplyButton: true });
+      row.connect('apply', () => {
+        const now = this.#currentMessenger();
+        const value = row.get_text().trim();
+        const messenger = {
+          ...now.messenger,
+          [field]: field === 'args' ? value.split(/\s+/).filter((word) => word !== '') : value,
+        };
+        this.#saveMessenger({ ...now, messenger });
+      });
+      group.add(row);
+    }
+    this.#messenger = group;
+    return group;
+  }
+
+  #currentMessenger(): MessengerForm {
+    return this.#actions.loadMessenger();
+  }
+
+  #saveMessenger(form: MessengerForm): void {
+    if (this.#readOnly) return;
+    try {
+      const { backup } = this.#actions.saveMessenger(form);
+      if (backup !== null) this.#backup = backup;
+      this.#error = null;
+    } catch (error) {
+      this.#error = `Could not save your choice: ${error instanceof Error ? error.message : String(error)}`;
+    }
+    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+      if (this.#dialog) this.#render();
+      return GLib.SOURCE_REMOVE;
+    });
   }
 
   #currentMode(): DesktopMode {

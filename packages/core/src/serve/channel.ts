@@ -2,13 +2,13 @@
  * How `serve` reaches its person — the seam ADR 0002 §9 asks for.
  *
  * A task never names a channel. It names a profile, the profile a user, and `serve` hands every
- * message for that user to the one `ServeChannel` it was started with. The first channel is a
- * desktop notification (the app's `desktop-notifier.ts`); a Curlew/XMPP channel is a second
- * implementation of this interface and changes no task.
+ * message for that user to the `ServeChannel` it was started with — one, or several combined
+ * (`combineChannels`). The first channel is a desktop notification (the app's `desktop-notifier.ts`);
+ * the messenger channel (`messenger/`) is a second implementation and changes no task.
  *
- * Only `send` today. Reading answers off the channel ("read new messages since a position") arrives
- * with the Curlew channel; until then an answer comes in through `lotse answer` — or a button on the
- * desktop notification, which the app routes to the same `answerQuestion`.
+ * The interface is `send` only. An answer comes back by whatever the channel offers — a button on the
+ * desktop notification, a reply the messenger's receive loop reads, or `lotse answer` — and every one
+ * of them ends in the same `answerQuestion`, so the first answer wins and the others hear "answered".
  */
 
 import type { ServeUser } from './config.ts';
@@ -24,6 +24,13 @@ export interface ServeMessage {
    * channel with buttons offers them where an answer is still possible.
    */
   readonly asks?: QuestionKind;
+  /**
+   * The question's text without the `lotse answer …` hint that `body` ends with — for a channel whose
+   * person answers in the channel itself and wants its own hint. Set on the message that asks.
+   */
+  readonly text?: string;
+  /** When the question stops taking answers (ISO). Set on the message that asks. */
+  readonly expiresAt?: string;
 }
 
 export interface ServeChannel {

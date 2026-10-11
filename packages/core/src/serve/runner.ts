@@ -730,6 +730,8 @@ async function notify(question: Question, user: ServeUser, deps: ServeDeps): Pro
       body: `${question.text}\n\n${howToAnswer(question)}`,
       questionId: question.id,
       asks: question.kind,
+      text: question.text,
+      expiresAt: question.expiresAt,
     });
   } catch (error) {
     // The question is in the store and `lotse questions` lists it; a channel that failed is logged.

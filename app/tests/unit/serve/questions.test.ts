@@ -52,9 +52,10 @@ export default async () => {
 
   await describe('parseAnswer', async () => {
     await it('knows yes and no in two languages, without a model', async () => {
-      for (const word of ['yes', 'Y', 'ja', 'OK.', 'okay!'])
+      for (const word of ['yes', 'Y', 'ja', 'OK.', 'okay!', 'Allow'])
         expect(parseAnswer(word)).toStrictEqual({ kind: 'yes' });
-      for (const word of ['no', 'N', 'Nein.']) expect(parseAnswer(word)).toStrictEqual({ kind: 'no' });
+      for (const word of ['no', 'N', 'Nein.', 'decline', 'Deny!'])
+        expect(parseAnswer(word)).toStrictEqual({ kind: 'no' });
     });
 
     await it('anything longer is text for the session', async () => {
