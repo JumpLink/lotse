@@ -202,6 +202,53 @@ export {
   type OnboardingView,
 } from './onboarding.ts';
 
+// ── Custom providers: lotse's own opencode config file, read back over the login server ──────────
+export {
+  CUSTOM_PRESETS,
+  LOCAL_MODEL_HINT,
+  MIN_CONTEXT_TOKENS,
+  checkEndpoint,
+  contextWarning,
+  hostReach,
+  type CustomPreset,
+  type EndpointCheck,
+  type EndpointReach,
+} from './custom/endpoint.ts';
+export {
+  OPENAI_COMPATIBLE_PACKAGE,
+  customProvidersEnv,
+  customProvidersFile,
+  documentProviderIds,
+  parseProvidersDocument,
+  providerEntry,
+  providerIdProblem,
+  readProvidersDocument,
+  withProvider,
+  withoutProvider,
+  writeProvidersDocument,
+  type CustomModel,
+  type CustomProvider,
+  type ProvidersDocument,
+} from './custom/file.ts';
+export {
+  RELOAD_TIMEOUT_MS,
+  createProviderApi,
+  parseConfiguredProviders,
+  parseIdList,
+  probeModels,
+  type ConfiguredProvider,
+  type FetchLike,
+  type ProviderApi,
+  type WaitHooks,
+} from './custom/api.ts';
+export {
+  parseModelSpecs,
+  planCustomProvider,
+  type CustomProviderFacts,
+  type CustomProviderInput,
+  type CustomProviderPlan,
+} from './custom/plan.ts';
+
 // ── What a turn is doing, and what went wrong ────────────────────────────────────────────────────
 export {
   agentExitedEntry,

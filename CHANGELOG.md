@@ -36,6 +36,13 @@ and also records changes that are not a release of their own.
   of a kind this lotse does not know shows as a note instead of breaking the transcript.
   **Downgrade limit:** lotse versions before this one crash when resuming a session that contains a
   `host` line.
+- **Custom providers** (#17): local models (Ollama, LM Studio, llama.cpp, vLLM presets) and any
+  OpenAI-compatible endpoint for the bundled opencode, via `lotse provider list|add|remove` and
+  `@lotse/core` (`planCustomProvider`, `checkEndpoint`, `createProviderApi`, `withProvider`, …).
+  lotse writes its own `lotse-providers.json` through `OPENCODE_CONFIG`; keys go only to opencode's
+  `connect/key`. https and loopback are accepted, LAN http needs `--allow-lan`, anything else is
+  refused, and a catalog id is never shadowed. A keyless local provider counts as connected for the
+  onboarding. See [docs/custom-providers.md](docs/custom-providers.md).
 
 ### Changed
 

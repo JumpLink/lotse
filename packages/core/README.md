@@ -150,7 +150,18 @@ Details and measurements: [docs/login.md](../../docs/login.md).
 | `probeConnections(agent, { signal?, timeoutMs? })` | Ask a private login server which providers are connected, then close it. Any failure, timeout or abort is `{ kind: 'unknown' }`. |
 | `ConnectionFacts` | `unknown`, `connected`, or `none` with counts of providers offering a browser login and an API key. |
 | `onboardingView(input)` | The "Connect a provider" page as data, or `null` when the ordinary chat is right. Shown only with the option on, an agent found, a login that can run, **no** connection reported and no earlier "free models" choice. |
-| `connectionFacts(providers)` | `ConnectionFacts` from a parsed catalog. |
+| `connectionFacts(providers, custom?)` | `ConnectionFacts` from a parsed catalog; a keyless custom provider on loopback or the LAN counts as connected. |
+
+### Custom providers
+
+| Export | What it is |
+|---|---|
+| `planCustomProvider(input)`, `parseModelSpecs` | Check an id, URL and models against the catalog: `ok` (with the entry, the privacy note and context warnings), `confirm` (plain http on the LAN) or `refused`. |
+| `checkEndpoint`, `hostReach`, `CUSTOM_PRESETS`, `contextWarning`, `MIN_CONTEXT_TOKENS`, `LOCAL_MODEL_HINT` | The URL rules (https or loopback; LAN asks; the rest is refused), the `local-*` presets and the honest hints. |
+| `customProvidersFile`, `customProvidersEnv`, `readProvidersDocument`, `writeProvidersDocument`, `withProvider`, `withoutProvider`, `providerEntry` | lotse's own `lotse-providers.json` for the bundled opencode (via `OPENCODE_CONFIG`), written `0600`, never with a key. |
+| `createProviderApi`, `probeModels`, `ProviderApi` | On the private server: the configured providers, the ids that may not be shadowed, `disconnect`, `waitForProvider`. |
+
+Details and measurements: [docs/custom-providers.md](../../docs/custom-providers.md).
 
 ### Free hosted models
 

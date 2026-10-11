@@ -79,11 +79,14 @@ lotse resume <id> [prompt…]                # reattach a stored session, then o
 lotse cancel <id>                          # send session/cancel
 lotse auth [--agent opencode]              # the interactive-login escape hatch
 lotse login [provider]                     # log in through the agent's OAuth flow, no terminal (opencode v2)
+lotse provider list|add|remove [id]        # local models / OpenAI-compatible endpoints for the bundled opencode
 lotse agents                               # the launchers that are registered, and whether the binary is on PATH
 lotse serve [--once]                       # run scheduled tasks; notify when an agent has a question
 lotse questions [--all] [--json]           # the questions agents are waiting on
 lotse answer <id> <text…>                  # yes/no for a permission, text for a reply
 ```
+
+Custom providers and their rules (keys, LAN, local-model hints): [docs/custom-providers.md](docs/custom-providers.md).
 
 `lotse serve` runs the tasks in `$XDG_CONFIG_HOME/lotse/tasks.json` on a schedule and asks you, by
 desktop notification, when an agent needs a decision. How to set it up: [docs/serve.md](docs/serve.md).

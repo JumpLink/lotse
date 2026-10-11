@@ -10,6 +10,8 @@ import { currentSandboxFacts } from '../agents/sandbox.ts';
 import { which } from '../agents/stdio.ts';
 import type { AgentCommand } from '../agents/stdio.ts';
 
+import { createProviderApi } from '../custom/api.ts';
+
 import { createLoginApi } from './api.ts';
 import type { LoginSession } from './controller.ts';
 import { connectionFacts, type ConnectionFacts } from '../onboarding.ts';
@@ -27,6 +29,7 @@ export function loginUnavailableReason(agent: AgentCommand): string | null {
 export async function openLoginSession(agent: AgentCommand): Promise<LoginSession> {
   const server = await startServer(agent);
   const api = createLoginApi(server.send);
+  const custom = createProviderApi(server.send);
   return {
     providers: () => api.providers(),
     connectKey: (providerId, key, answer) => api.connectKey(providerId, key, answer),
@@ -34,6 +37,8 @@ export async function openLoginSession(agent: AgentCommand): Promise<LoginSessio
     status: (providerId, attemptId) => api.status(providerId, attemptId),
     complete: (providerId, attemptId, code) => api.complete(providerId, attemptId, code),
     cancel: (providerId, attemptId) => api.cancel(providerId, attemptId),
+    // Which file is lotse's does not matter for a count; the settings group asks `ProviderApi` itself.
+    customProviders: () => custom.configured(''),
     close: () => server.close(),
   };
 }
@@ -66,7 +71,8 @@ export async function probeConnections(agent: AgentCommand, deps: ProbeDeps = {}
   });
   const opening = Promise.resolve().then(() => (deps.open ?? openLoginSession)(agent));
   const read = opening.then(
-    async (session) => connectionFacts(await session.providers()),
+    async (session) =>
+      connectionFacts(await session.providers(), (await session.customProviders?.().catch(() => [])) ?? []),
     () => unknown,
   );
   try {
