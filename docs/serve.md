@@ -181,7 +181,7 @@ wait-for-reply tool for the answer. Any MCP server with those two tools fits; th
     "messenger": {
       "command": "curlew",
       "args": ["mcp"],
-      "account": "assistant",
+      "account": "xmpp-abc123",
       "peer": "person@example.org",
       "sendTool": "send_message",
       "waitTool": "xmpp_wait_reply"
@@ -191,13 +191,15 @@ wait-for-reply tool for the answer. Any MCP server with those two tools fits; th
 ```
 
 `command`, `args`, `sendTool` and `waitTool` show their defaults; `account` and `peer` have none.
-`account` is the messenger account to send from, `peer` the address to talk to. No secret belongs in
+`account` is the messenger account to send from (for curlew its account id, not the address), `peer`
+the address to talk to. No secret belongs in
 `args` (the settings file refuses secret-looking keys). The same fields are under *Preferences →
 Messenger* in the app. `serve` reads `active` and `messenger` once at start, so **restart `serve`
 to apply a change**. Incomplete settings (no account or peer) are reported at start and `serve` runs
 with the desktop channel alone.
 
-For curlew, three things must hold:
+For curlew, three things must hold ([XMPP via Curlew](serve-xmpp-curlew.md) is the step-by-step
+guide, with the tool contract and a round-trip test):
 
 - `curlew daemon` is running; replies only arrive while it is.
 - The account may send. Add a grant to curlew's configuration:
