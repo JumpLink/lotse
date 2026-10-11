@@ -38,6 +38,7 @@ function result(patch: Partial<RunResult>): RunResult {
     questionId: null,
     reply: 'the whole private answer',
     reason: null,
+    precheck: null,
     startedAt: NOW.toISOString(),
     endedAt: NOW.toISOString(),
     ...patch,

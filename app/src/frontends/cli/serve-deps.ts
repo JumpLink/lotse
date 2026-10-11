@@ -15,7 +15,7 @@ import {
 } from '@lotse/core';
 
 import type { ServePaths } from '../../core/paths.ts';
-import { actionLog, questionBook, taskLock } from '../../core/serve-state.ts';
+import { actionLog, questionBook, runState, taskLock } from '../../core/serve-state.ts';
 import { loadTasks, TasksFileMissingError, type LoadedTasks } from '../../core/serve-config.ts';
 import { agentForNew } from './choose.ts';
 import { err } from './output.ts';
@@ -96,6 +96,8 @@ export function serveDeps(options: DepsOptions): ServeDeps | null {
       return command;
     },
     promptFor: (task) => options.loaded.promptFor(task),
+    precheckPromptFor: (task) => options.loaded.precheckPromptFor(task),
+    previousRun: (task) => runState(stateDir).all()[task] ?? null,
     channel: options.channel,
     questions: questionBook(stateDir, now, (problem) => err(`  ${problem}`)),
     now,

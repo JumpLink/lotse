@@ -3,9 +3,13 @@
  *
  * **Configuration, not code** (ADR 0002 §3). lotse knows no task, no person and no address; all of
  * that arrives here as JSON from a private file outside the repository. This module only says whether
- * the file is well-formed and what it means, and it says it at start: a private profile on a free
- * model, a task naming a profile nobody defined, a released area under a read-only task — each is a
- * sentence before the first run, not a surprise at 3 a.m.
+ * the file is well-formed and what it means, and it says it at start: a task naming a profile nobody
+ * defined, a released area under a read-only task — each is a sentence before the first run, not a
+ * surprise at 3 a.m. Which model a profile runs on is the person's choice and never a problem here;
+ * a private profile on a free model earns a note (`freeModelNotes`), not a refusal.
+ *
+ * The keys each object may have come from `SERVE_CONFIG_SCHEMA` (`schema.ts`), so the schema a
+ * settings page edits and the parser cannot drift apart.
  *
  * **Read once, hashed.** `configHash` covers the file and every prompt file it names. `serve` keeps
  * the hash and stops when it changes, so an edit — by the person or by a session that should not have
@@ -18,6 +22,7 @@ import type { McpServer } from '@lotse/acp';
 
 import { isFreeModel } from '../free-models.ts';
 import { parseDuration, parseSchedule, type Schedule } from './schedule.ts';
+import { SERVE_CONFIG_SCHEMA, schemaKeys } from './schema.ts';
 
 /** A person `serve` works for. `addresses` are channel addresses; the desktop channel needs none. */
 export interface ServeUser {
@@ -26,17 +31,30 @@ export interface ServeUser {
 }
 
 /**
- * Who a task runs as and on what. `data: "private"` pins the model: it must be named, it must not be a
- * free model, and there is no fallback when it is unavailable (ADR 0002 §5).
+ * Who a task runs as and on what. A named model is pinned: there is no fallback when the agent does not
+ * offer it (ADR 0002 §5). No model: lotse sends none and the agent's own default applies.
  */
 export interface ServeProfile {
   readonly id: string;
   readonly user: string;
   /** A launcher id (`opencode`). Absent: the same resolution `lotse start` uses. */
   readonly agent: string | null;
-  /** A value of the agent's `model` config option. Required for a private profile. */
+  /** A value of the agent's `model` config option. `null`: the agent's own default. */
   readonly model: string | null;
+  /** A label for the person. It never blocks a run (ADR 0002, amendment of 2026-10-11). */
   readonly data: 'private' | 'public';
+}
+
+/**
+ * A cheaper turn before the task: it ends with `WORK` or `NOTHING` on its last line, and only `WORK`
+ * starts the task. It gets the task's `mcpServers` and a gate that declines every permission request.
+ */
+export interface ServePrecheck {
+  /** The profile it runs on. `null`: the task's agent, with no model sent (the agent's default). */
+  readonly profile: string | null;
+  /** Exactly one of the two, like a task's. */
+  readonly prompt: string | null;
+  readonly promptFile: string | null;
 }
 
 /**
@@ -79,6 +97,7 @@ export interface ServeTask {
    * the person has said yes — the write tools do not exist before the answer.
    */
   readonly answerMcpServers: readonly McpServer[] | null;
+  readonly precheck: ServePrecheck | null;
   readonly rights: RightsLevel;
   readonly released: readonly ReleasedArea[];
   readonly questions: QuestionLimits;
@@ -111,6 +130,29 @@ export class ServeConfigError extends Error {
 
 const ID = /^[a-z0-9][a-z0-9_-]{0,39}$/;
 
+/**
+ * One sentence per private profile on a free model, for `serve` to print at start. A free model may be
+ * unvetted for private data; choosing one is the person's call, so this informs and blocks nothing.
+ */
+export function freeModelNotes(config: ServeConfig): string[] {
+  return config.profiles
+    .filter((profile) => profile.data === 'private' && profile.model && isFreeModel(profile.model))
+    .map(
+      (profile) =>
+        `profile "${profile.id}" is private and runs on the free model "${profile.model}" — your choice, noted`,
+    );
+}
+
+const KEYS = {
+  top: schemaKeys(SERVE_CONFIG_SCHEMA),
+  user: schemaKeys(SERVE_CONFIG_SCHEMA.$defs.user),
+  profile: schemaKeys(SERVE_CONFIG_SCHEMA.$defs.profile),
+  task: schemaKeys(SERVE_CONFIG_SCHEMA.$defs.task),
+  precheck: schemaKeys(SERVE_CONFIG_SCHEMA.$defs.precheck),
+  released: schemaKeys(SERVE_CONFIG_SCHEMA.$defs.task.properties.released.items),
+  questions: schemaKeys(SERVE_CONFIG_SCHEMA.$defs.task.properties.questions),
+};
+
 /** Parse and validate. Throws `ServeConfigError` listing every problem. */
 export function parseServeConfig(text: string): ServeConfig {
   let raw: unknown;
@@ -123,7 +165,7 @@ export function parseServeConfig(text: string): ServeConfig {
   if (!isRecord(raw)) throw new ServeConfigError(['the top level must be an object']);
   if (raw['version'] !== 1) problems.push('"version" must be 1');
   for (const key of Object.keys(raw)) {
-    if (!['version', 'users', 'profiles', 'tasks'].includes(key)) problems.push(`unknown key "${key}"`);
+    if (!KEYS.top.includes(key)) problems.push(`unknown key "${key}"`);
   }
 
   const users = list(raw['users'], 'users', problems).map((value, index) =>
@@ -148,6 +190,10 @@ export function parseServeConfig(text: string): ServeConfig {
     if (task.id && !profiles.some((profile) => profile.id === task.profile)) {
       problems.push(`task "${task.id}" names profile "${task.profile}", which is not defined`);
     }
+    const checkProfile = task.precheck?.profile;
+    if (task.id && checkProfile && !profiles.some((profile) => profile.id === checkProfile)) {
+      problems.push(`task "${task.id}".precheck names profile "${checkProfile}", which is not defined`);
+    }
   }
 
   if (problems.length > 0) throw new ServeConfigError(problems);
@@ -168,7 +214,7 @@ export function profileOf(config: ServeConfig, task: ServeTask): ServeProfile {
 }
 
 function parseUser(value: unknown, where: string, problems: string[]): ServeUser {
-  const record = object(value, where, problems, ['id', 'addresses']);
+  const record = object(value, where, problems, KEYS.user);
   const addresses = record['addresses'] === undefined ? [] : record['addresses'];
   const valid = Array.isArray(addresses) && addresses.every((address) => typeof address === 'string');
   if (!valid) problems.push(`${where}.addresses must be a list of strings`);
@@ -176,19 +222,13 @@ function parseUser(value: unknown, where: string, problems: string[]): ServeUser
 }
 
 function parseProfile(value: unknown, where: string, problems: string[]): ServeProfile {
-  const record = object(value, where, problems, ['id', 'user', 'agent', 'model', 'data']);
+  const record = object(value, where, problems, KEYS.profile);
   const profileId = id(record['id'], where, problems);
   const agent = optionalString(record['agent'], `${where}.agent`, problems);
   const model = optionalString(record['model'], `${where}.model`, problems);
   const data = record['data'];
   if (data !== 'private' && data !== 'public') {
     problems.push(`${where}.data must be "private" or "public" — say which, there is no default`);
-  }
-  if (data === 'private') {
-    if (!model) problems.push(`profile "${profileId}" is private and must name its model`);
-    else if (isFreeModel(model)) {
-      problems.push(`profile "${profileId}" is private and names the free model "${model}"`);
-    }
   }
   return {
     id: profileId,
@@ -199,23 +239,8 @@ function parseProfile(value: unknown, where: string, problems: string[]): ServeP
   };
 }
 
-const TASK_KEYS = [
-  'id',
-  'profile',
-  'schedule',
-  'prompt',
-  'promptFile',
-  'cwd',
-  'mcpServers',
-  'answerMcpServers',
-  'rights',
-  'released',
-  'questions',
-  'notify',
-];
-
 function parseTask(value: unknown, where: string, problems: string[]): ServeTask {
-  const record = object(value, where, problems, TASK_KEYS);
+  const record = object(value, where, problems, KEYS.task);
   const taskId = id(record['id'], where, problems);
   const label = taskId ? `task "${taskId}"` : where;
 
@@ -250,6 +275,8 @@ function parseTask(value: unknown, where: string, problems: string[]): ServeTask
     problems.push(`${label}.answerMcpServers must be a list of MCP servers, each with a "name"`);
   }
 
+  const precheck = parsePrecheck(record['precheck'], label, problems);
+
   const rights = record['rights'] ?? 'confirm';
   if (rights !== 'read' && rights !== 'confirm' && rights !== 'released') {
     problems.push(`${label}.rights must be "read", "confirm" or "released"`);
@@ -277,11 +304,24 @@ function parseTask(value: unknown, where: string, problems: string[]): ServeTask
     mcpServers: serversValid ? (mcpServers as McpServer[]) : [],
     answerMcpServers:
       answerServers !== undefined && answerServersValid ? (answerServers as McpServer[]) : null,
+    precheck,
     rights: rights === 'read' || rights === 'released' ? rights : 'confirm',
     released,
     questions: parseLimits(record['questions'], label, problems),
     notify: notify === 'always' ? 'always' : 'questions',
   };
+}
+
+function parsePrecheck(value: unknown, label: string, problems: string[]): ServePrecheck | null {
+  if (value === undefined || value === null) return null;
+  const where = `${label}.precheck`;
+  const record = object(value, where, problems, KEYS.precheck);
+  const prompt = optionalString(record['prompt'], `${where}.prompt`, problems);
+  const promptFile = optionalString(record['promptFile'], `${where}.promptFile`, problems);
+  if ((prompt === null) === (promptFile === null)) {
+    problems.push(`${where} needs exactly one of "prompt" and "promptFile"`);
+  }
+  return { profile: optionalString(record['profile'], `${where}.profile`, problems), prompt, promptFile };
 }
 
 function parseReleased(value: unknown, label: string, problems: string[]): ReleasedArea[] {
@@ -292,7 +332,7 @@ function parseReleased(value: unknown, label: string, problems: string[]): Relea
   }
   return value.flatMap((entry, index) => {
     const where = `${label}.released[${index}]`;
-    const record = object(entry, where, problems, ['tool', 'kind']);
+    const record = object(entry, where, problems, KEYS.released);
     if (typeof record['tool'] !== 'string' || record['tool'].trim() === '') {
       problems.push(`${where}.tool must name the tool`);
       return [];
@@ -304,7 +344,7 @@ function parseReleased(value: unknown, label: string, problems: string[]): Relea
 function parseLimits(value: unknown, label: string, problems: string[]): QuestionLimits {
   if (value === undefined) return DEFAULT_QUESTION_LIMITS;
   const where = `${label}.questions`;
-  const record = object(value, where, problems, ['expiresIn', 'maxOpen', 'maxPerHour']);
+  const record = object(value, where, problems, KEYS.questions);
   let expiresMs = DEFAULT_QUESTION_LIMITS.expiresMs;
   if (record['expiresIn'] !== undefined) {
     const parsed = typeof record['expiresIn'] === 'string' ? parseDuration(record['expiresIn']) : null;
@@ -336,7 +376,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function object(value: unknown, where: string, problems: string[], keys: string[]): Record<string, unknown> {
+function object(
+  value: unknown,
+  where: string,
+  problems: string[],
+  keys: readonly string[],
+): Record<string, unknown> {
   if (!isRecord(value)) {
     problems.push(`${where} must be an object`);
     return {};

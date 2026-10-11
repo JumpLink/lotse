@@ -52,7 +52,16 @@ export interface QuestionBook {
 
 /** One line of the action log. Ids and kinds only — never a prompt, a message or call arguments. */
 export interface ServeLogEntry {
-  readonly event: 'run' | 'skip' | 'question' | 'answer' | 'gate' | 'expired' | 'dropped' | 'error';
+  readonly event:
+    | 'run'
+    | 'precheck'
+    | 'skip'
+    | 'question'
+    | 'answer'
+    | 'gate'
+    | 'expired'
+    | 'dropped'
+    | 'error';
   readonly task: string;
   readonly detail: Readonly<Record<string, string>>;
 }
@@ -64,6 +73,10 @@ export interface ServeDeps {
   readonly commandFor: (profile: ServeProfile) => AgentCommand;
   /** The task's prompt, read by the app at start (and covered by the config hash). */
   readonly promptFor: (task: ServeTask) => string;
+  /** The precheck's prompt, read by the app at start. Absent: the inline `precheck.prompt`. */
+  readonly precheckPromptFor?: (task: ServeTask) => string;
+  /** The task's last recorded run, which the precheck is told about. Absent: it hears "never". */
+  readonly previousRun?: (task: string) => { readonly startedAt: string; readonly outcome: string } | null;
   readonly channel: ServeChannel;
   readonly questions: QuestionBook;
   readonly now: () => Date;
@@ -76,7 +89,11 @@ export interface ServeDeps {
   readonly onAgentLog?: (line: string) => void;
 }
 
-export type RunOutcome = 'done' | 'asked' | 'declined' | 'skipped' | 'failed';
+/** `nothing`: the precheck found nothing to do, so the task itself never ran. */
+export type RunOutcome = 'done' | 'asked' | 'declined' | 'nothing' | 'skipped' | 'failed';
+
+/** The precheck's last line, read without a model. */
+export type PrecheckVerdict = 'work' | 'nothing';
 
 export interface RunResult {
   readonly task: string;
@@ -89,6 +106,8 @@ export interface RunResult {
   readonly reply: string | null;
   /** Why a run was skipped or failed, as a sentence. */
   readonly reason: string | null;
+  /** What the precheck answered; `null` when the task has none or it gave no verdict. */
+  readonly precheck: PrecheckVerdict | null;
   readonly startedAt: string;
   readonly endedAt: string;
 }
@@ -114,7 +133,7 @@ export interface AnswerResult {
   readonly run: RunResult | null;
 }
 
-/** The agent does not offer the model a profile pins. No fallback (ADR 0002 §5). */
+/** The agent does not offer the model a profile names. No fallback (ADR 0002 §5). */
 export class ModelUnavailableError extends Error {
   constructor(model: string) {
     super(`the agent does not offer the model "${model}" this profile names; there is no fallback`);
@@ -173,7 +192,17 @@ export async function runTask(task: ServeTask, deps: ServeDeps): Promise<RunResu
   const release = deps.lock ? deps.lock(task.id) : () => {};
   if (!release) return busy(task, startedAt, deps);
   try {
-    return await runSession(task, deps, startedAt, async (client) => {
+    if (task.precheck) {
+      const checked = await runPrecheck(task, deps);
+      if (checked.verdict !== 'work') {
+        return result(task, checked.verdict === 'nothing' ? 'nothing' : 'failed', startedAt, deps.now(), {
+          sessionId: checked.sessionId,
+          reason: checked.reason,
+          precheck: checked.verdict,
+        });
+      }
+    }
+    const run = await runSession(task, deps, startedAt, async (client) => {
       const session = await withAuthHint('session/new', () =>
         client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers] }),
       );
@@ -183,8 +212,133 @@ export async function runTask(task: ServeTask, deps: ServeDeps): Promise<RunResu
         text: deps.promptFor(task),
       };
     });
+    return task.precheck ? { ...run, precheck: 'work' } : run;
   } finally {
     release();
+  }
+}
+
+/**
+ * The precheck's verdict: the message's last non-empty line, without markdown emphasis or a full
+ * stop, is `WORK` or `NOTHING`. Anything else is `null` — no verdict, and the task does not run.
+ */
+export function parseVerdict(message: string): PrecheckVerdict | null {
+  const last = message
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .at(-1);
+  const word = last?.replace(/[*_`.!:\s]/g, '').toUpperCase();
+  return word === 'WORK' ? 'work' : word === 'NOTHING' ? 'nothing' : null;
+}
+
+/**
+ * The precheck's prompt with the task's last run in front of it: the agent cannot read `runs.json`,
+ * and "newer than the last run" is the question most prechecks ask. The prompt stays last, so its
+ * closing instruction about the verdict line stays last too.
+ */
+export function precheckText(
+  prompt: string,
+  previous: { readonly startedAt: string; readonly outcome: string } | null,
+): string {
+  const context = previous
+    ? `Last run of this task: ${previous.startedAt} (outcome: ${previous.outcome}).`
+    : 'This task has not run before.';
+  return `${context}\n\n${prompt}`;
+}
+
+/**
+ * One turn that decides whether the task has anything to do. It sees the task's `mcpServers` and a
+ * gate with `read` rights, so every permission request is declined without a question, and it never
+ * creates a question of its own. Its model is its own profile's, or none (the agent's default).
+ */
+async function runPrecheck(
+  task: ServeTask,
+  deps: ServeDeps,
+): Promise<{ verdict: PrecheckVerdict | null; sessionId: string | null; reason: string | null }> {
+  const check = task.precheck!;
+  const taskProfile = profileOf(deps.config, task);
+  const named = check.profile
+    ? deps.config.profiles.find((candidate) => candidate.id === check.profile)
+    : null;
+  const profile: ServeProfile = named ?? { ...taskProfile, model: null };
+  const user = userOf(deps.config, taskProfile);
+  let handle: AgentHandle | null = null;
+  let sessionId: string | null = null;
+  const gate = serveGate({
+    rights: 'read',
+    released: [],
+    now: () => deps.now().getTime(),
+    ask: async () => 'refused',
+    onDecision: (decision: GateDecision) =>
+      deps.log?.({
+        event: 'gate',
+        task: task.id,
+        detail: {
+          session: decision.sessionId,
+          tool: decision.tool,
+          answer: decision.answer,
+          why: 'precheck',
+        },
+      }),
+  });
+  deps.log?.({ event: 'precheck', task: task.id, detail: { phase: 'start', profile: profile.id } });
+  try {
+    handle = await deps.open({
+      command: deps.commandFor(profile),
+      gate: { permission: gate },
+      ...(deps.onAgentLog ? { onLog: deps.onAgentLog } : {}),
+    });
+    const session = await withAuthHint('session/new', () =>
+      handle!.client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers] }),
+    );
+    sessionId = session.sessionId;
+    await pinModel(handle.client, session.sessionId, session.configOptions ?? null, profile);
+    let message = '';
+    const { stopReason } = await runTurn(handle.client, {
+      sessionId: session.sessionId,
+      text: precheckText(
+        deps.precheckPromptFor ? deps.precheckPromptFor(task) : (check.prompt ?? ''),
+        deps.previousRun?.(task.id) ?? null,
+      ),
+      onUpdate: (notification) => {
+        if (notification.update.sessionUpdate === 'agent_message_chunk')
+          message += chunkToText(notification.update.content);
+      },
+    });
+    const verdict = stopReason === 'end_turn' ? parseVerdict(message) : null;
+    deps.log?.({
+      event: 'precheck',
+      task: task.id,
+      detail: { phase: 'end', session: session.sessionId, stopReason, verdict: verdict ?? 'none' },
+    });
+    return {
+      verdict,
+      sessionId,
+      reason:
+        verdict === 'nothing'
+          ? 'the precheck found nothing new'
+          : verdict === null
+            ? `the precheck ended without a WORK or NOTHING line (${stopReason}); the task did not run`
+            : null,
+    };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    deps.log?.({
+      event: 'error',
+      task: task.id,
+      detail: { phase: 'precheck', kind: error instanceof Error ? error.name : 'Error' },
+    });
+    if (error instanceof ModelUnavailableError) {
+      await deps.channel.send(user, {
+        title: `lotse · ${task.id} precheck stopped`,
+        body: reason,
+        questionId: null,
+      });
+    }
+    return { verdict: null, sessionId, reason: `the precheck failed: ${reason}` };
+  } finally {
+    await handle?.close();
   }
 }
 
@@ -314,6 +468,27 @@ export async function answerQuestion(idText: string, text: string, deps: ServeDe
   } finally {
     release();
   }
+}
+
+/**
+ * The schedule's view of the last run: the recorded one, or a later skip. A skip stays out of
+ * `runs.json`, where it would hide the run a question belongs to, but the schedule has to count it:
+ * otherwise a task at its question ceiling is due again at once and `serve` spins.
+ */
+export function attemptClock(recorded: (task: string) => Date | null): {
+  readonly skipped: (task: string, at: Date) => void;
+  readonly lastRun: (task: string) => Date | null;
+} {
+  const skips = new Map<string, Date>();
+  return {
+    skipped: (task, at) => void skips.set(task, at),
+    lastRun: (task) => {
+      const run = recorded(task);
+      const skip = skips.get(task) ?? null;
+      if (!run || !skip) return run ?? skip;
+      return skip.getTime() > run.getTime() ? skip : run;
+    },
+  };
 }
 
 /** The tasks due now that are not already running. */
@@ -675,6 +850,7 @@ function result(
     questionId?: string | null;
     reply?: string | null;
     reason?: string | null;
+    precheck?: PrecheckVerdict | null;
   },
 ): RunResult {
   return {
@@ -685,6 +861,7 @@ function result(
     questionId: rest.questionId ?? null,
     reply: rest.reply ?? null,
     reason: rest.reason ?? null,
+    precheck: rest.precheck ?? null,
     startedAt: startedAt.toISOString(),
     endedAt: endedAt.toISOString(),
   };

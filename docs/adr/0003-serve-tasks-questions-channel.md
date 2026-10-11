@@ -22,9 +22,19 @@ channel can be added without changing a task.
    `{version: 1, users: [{id, addresses}], profiles: [{id, user, agent?, model?, data}],
    tasks: [{id, profile, schedule, prompt | promptFile, cwd, mcpServers, answerMcpServers?, rights, released,
    questions: {expiresIn, maxOpen, maxPerHour}, notify}]}`. Unknown keys are errors. Every
-   problem is reported at start, at once (`parseServeConfig`). A private profile must name a
-   model that is not on the free list. `serve` hashes the file plus every prompt file and stops
+   problem is reported at start, at once (`parseServeConfig`). ~~A private profile must name a
+   model that is not on the free list.~~ `serve` hashes the file plus every prompt file and stops
    when the hash changes (ADR 0002 §3).
+
+   *Amended 2026-10-11:* `model` is optional on every profile; when it is unset, lotse sends no
+   model and the agent's default applies. A private profile on a free model prints a note at
+   start and is no longer an error, because which models to trust is the person's decision (ADR
+   0002 §5). A task can also have `precheck: {profile?, prompt | promptFile}`: a cheap read-only
+   turn that runs first and has to end with `WORK` or `NOTHING` on its last line. It gets the
+   task's `mcpServers` and never `answerMcpServers`, and it can't ask questions. Only `WORK`
+   starts the real run. `NOTHING` is recorded as outcome `nothing`, and a missing verdict as
+   `failed`. The schema is exported as `SERVE_CONFIG_SCHEMA` and the parser's allowed keys come
+   from it.
 2. **Two schedule shapes and nothing else**: `{"every": "30m"}` (units `m`, `h`, `d`; at least
    `1m`) and `{"at": "07:30", "days": ["mon", …]}` in local time. A missed `at` run fires once
    on start; with no last run it waits for the next occurrence. Runs of one task never overlap: a

@@ -7,8 +7,12 @@ import {
   OPENCODE_COMMAND,
   answerQuestion,
   cancelOrphanedPermissions,
+  attemptClock,
   dueTasks,
+  nextWakeMs,
   parseServeConfig,
+  parseVerdict,
+  precheckText,
   runTask,
   type Question,
   type ServeConfig,
@@ -27,13 +31,17 @@ const ONCE: PermissionOption[] = [
 ];
 
 function config(
-  patch: { profile?: Record<string, unknown>; task?: Record<string, unknown> } = {},
+  patch: {
+    profile?: Record<string, unknown>;
+    task?: Record<string, unknown>;
+    extraProfiles?: Record<string, unknown>[];
+  } = {},
 ): ServeConfig {
   return parseServeConfig(
     JSON.stringify({
       version: 1,
       users: [{ id: 'me' }],
-      profiles: [{ id: 'p', user: 'me', data: 'public', ...patch.profile }],
+      profiles: [{ id: 'p', user: 'me', data: 'public', ...patch.profile }, ...(patch.extraProfiles ?? [])],
       tasks: [
         {
           id: 't',
@@ -193,6 +201,112 @@ export default async () => {
     });
   });
 
+  await describe('precheck', async () => {
+    const PRECHECK = { precheck: { prompt: 'Anything new?' } };
+
+    await it('reads the verdict off the last line, and nothing else', async () => {
+      expect(parseVerdict('Two new mails.\nWORK')).toBe('work');
+      expect(parseVerdict('Nothing since the last run.\n\n**NOTHING.**\n')).toBe('nothing');
+      expect(parseVerdict('WORK\nbut maybe not')).toBe(null);
+      expect(parseVerdict('')).toBe(null);
+    });
+
+    await it('puts the last run in front of the prompt', async () => {
+      expect(precheckText('Anything new?', null)).toBe('This task has not run before.\n\nAnything new?');
+      expect(
+        precheckText('Anything new?', { startedAt: '2026-10-11T05:00:00.000Z', outcome: 'failed' }),
+      ).toBe('Last run of this task: 2026-10-11T05:00:00.000Z (outcome: failed).\n\nAnything new?');
+    });
+
+    await it('NOTHING ends the run as "nothing" and never starts the task', async () => {
+      const h = harness(config({ task: PRECHECK }), { chunks: ['No new messages.\nNOTHING'] });
+      const run = await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(run.outcome).toBe('nothing');
+      expect(run.precheck).toBe('nothing');
+      expect(h.agents.length).toBe(1);
+      expect(JSON.stringify(h.agents[0]!.calls('session/prompt')[0]!.params)).toContain('Anything new?');
+      expect(h.log.some((entry) => entry.event === 'precheck')).toBe(true);
+    });
+
+    await it('WORK starts the task in a fresh agent', async () => {
+      const h = harness(config({ task: PRECHECK }), { chunks: ['One new mail.\nWORK'] });
+      const run = await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(run.outcome).toBe('done');
+      expect(run.precheck).toBe('work');
+      expect(h.agents.length).toBe(2);
+      expect(JSON.stringify(h.agents[1]!.calls('session/prompt')[0]!.params)).toContain('Do the thing.');
+    });
+
+    await it('no verdict fails the run and the task does not start', async () => {
+      const h = harness(config({ task: PRECHECK }), { chunks: ['I am not sure.'] });
+      const run = await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(run.outcome).toBe('failed');
+      expect(run.reason).toContain('WORK or NOTHING');
+      expect(h.agents.length).toBe(1);
+    });
+
+    await it('declines every permission request without a question, and asks nothing', async () => {
+      const h = harness(config({ task: PRECHECK }), {
+        chunks: ['Shall I?\nNOTHING'],
+        permissionOptions: ONCE,
+      });
+      const run = await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(run.outcome).toBe('nothing');
+      expect(h.book.length).toBe(0);
+      const outcome = h.agents[0]!.permissionOutcomes[0]!.outcome;
+      expect(outcome.outcome === 'selected' ? outcome.optionId : null).toBe('reject_once');
+    });
+
+    await it("gets the first turn's servers, never the answer turn's", async () => {
+      const h = harness(
+        config({
+          task: {
+            ...PRECHECK,
+            mcpServers: [{ name: 'read-only', command: 'x', args: [], env: [] }],
+            answerMcpServers: [{ name: 'writing', command: 'x', args: [], env: [] }],
+          },
+        }),
+        { chunks: ['NOTHING'] },
+      );
+      await runTask(h.deps.config.tasks[0]!, h.deps);
+      const params = JSON.stringify(h.agents[0]!.calls('session/new')[0]!.params);
+      expect(params).toContain('read-only');
+      expect(params).not.toContain('writing');
+    });
+
+    await it("runs on its own profile's model, or sends no model at all", async () => {
+      const own = harness(
+        config({
+          task: { precheck: { profile: 'cheap', prompt: 'Anything new?' } },
+          extraProfiles: [
+            { id: 'cheap', user: 'me', data: 'private', model: 'github-copilot/gpt-5.5-codex' },
+          ],
+        }),
+        { chunks: ['NOTHING'] },
+      );
+      await runTask(own.deps.config.tasks[0]!, own.deps);
+      expect(own.agents[0]!.configSets[0]).toStrictEqual({
+        configId: 'model',
+        value: 'github-copilot/gpt-5.5-codex',
+      });
+
+      const fallback = harness(
+        config({ profile: { model: 'github-copilot/gpt-5.5-codex' }, task: PRECHECK }),
+        { chunks: ['WORK'] },
+      );
+      await runTask(fallback.deps.config.tasks[0]!, fallback.deps);
+      expect(fallback.agents[0]!.configSets.length).toBe(0);
+      expect(fallback.agents[1]!.configSets.length).toBe(1);
+    });
+
+    await it('a profile without a model sends none', async () => {
+      const h = harness(config({ profile: { data: 'private' } }));
+      const run = await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(run.outcome).toBe('done');
+      expect(h.agents[0]!.configSets.length).toBe(0);
+    });
+  });
+
   await describe('answerQuestion', async () => {
     const asked = async (agentOptions: FixtureAgentOptions) => {
       const h = harness(config(), { chunks: ['Shall I?'] });
@@ -297,6 +411,16 @@ export default async () => {
       expect(dueTasks(serveConfig, () => null, new Set(), now).length).toBe(1);
       expect(dueTasks(serveConfig, () => null, new Set(['t']), now).length).toBe(0);
       expect(dueTasks(serveConfig, () => now, new Set(), now).length).toBe(0);
+    });
+
+    await it('counts a skip, so a task at its ceiling is not due again at once', async () => {
+      const serveConfig = config();
+      const now = new Date(START);
+      const clock = attemptClock(() => new Date(now.getTime() - 2 * 3_600_000));
+      expect(dueTasks(serveConfig, clock.lastRun, new Set(), now).length).toBe(1);
+      clock.skipped('t', now);
+      expect(dueTasks(serveConfig, clock.lastRun, new Set(), now).length).toBe(0);
+      expect(nextWakeMs(serveConfig, clock.lastRun, now)).toBe(60_000);
     });
   });
 };

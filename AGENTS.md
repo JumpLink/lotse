@@ -78,6 +78,8 @@ lotse answer <id> <text..>                # yes/no or a reply; resumes the sessi
 `$XDG_CONFIG_HOME/lotse/tasks.json` (never in the repo, `examples/tasks.example.json` is the shape), read
 once at start: a changed file or prompt file stops `serve` rather than reloading. Pure logic in core, GI
 only in `app/src/core/desktop-channel.ts`, which `serve.ts` imports lazily so `answer` stays GI-free.
+`serve/schema.ts` (`SERVE_CONFIG_SCHEMA`) is the one list of allowed keys, and the parser derives
+from it: a new field goes there first, with a title and a description.
 
 **Host before bundled, and the bundled copy is off PATH.** A Flatpak build unpacks the agents in
 `packages/core/data/bundled-agents.json` under `BUNDLED_PREFIX` (`agents/catalog.ts` there, the one place the

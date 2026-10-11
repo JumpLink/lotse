@@ -58,6 +58,11 @@ Curlew backend later.
    private or public. A private profile runs only on the agents and models its configuration
    allows. There is no fallback to another model, and an unavailable one stops the task with a
    message to the person.
+
+   *Amended 2026-10-11:* the model is optional. A profile without one sends no model, and the
+   agent's default applies. A private profile on a free model is no longer an error. The rule
+   was about models nobody has vetted, and choosing which models to trust is the person's call,
+   not lotse's. `serve` prints a note at start and blocks nothing.
 6. **Three rights levels per task.**
    - **Read:** sessions reach read-only tools only.
    - **Confirm** (the default as soon as anything writes): before an action, the person gets a
@@ -147,8 +152,8 @@ Curlew backend later.
   known" for sessions: a session's `mcpServers` stay opaque.
 - The action log is the place to answer "what did the assistant do?". It must stay readable
   without a model.
-- A private profile on a free model is a configuration error, reported at start, not at the first
-  message.
+- ~~A private profile on a free model is a configuration error, reported at start, not at the
+  first message.~~ Amended 2026-10-11 (see §5): it is a note at start, never an error.
 
 ## Order of work
 
