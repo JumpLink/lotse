@@ -125,6 +125,23 @@ An agent asks `session/request_permission`; the answer is always a person's or a
 | `terminalGate`, `Terminal` | A command-line gate that asks on a terminal. |
 | `ClientGate` (from `@lotse/acp`) | `{ permission }`. Fail-closed by default (`denyAll`). |
 
+### Headless jobs
+
+One awaited call, no widget and no `gi://`: input in, a typed value out
+([ADR 0004](../../docs/adr/0004-headless-job-api.md)). Nothing is persisted and nobody is asked.
+
+| Export | What it is |
+|---|---|
+| `runJob<T>(options): Promise<JobResult<T>>` | A fresh agent process, one session, one turn, closed on every path. The final message is the whole trimmed message as JSON, or its **last** ` ```json ` block, and becomes a value only once your `parse` accepts it. |
+| `JobOptions<T>` | `command`, `cwd`, `prompt`, `parse`, **`modelPolicy` (required)**; optional `model`, `schema`, `mcpServers` (default `[]`), `gate` (default `denyAll`; only `allow_once` passes), `signal`, `timeoutMs`, `onLog`. |
+| `JobResult<T>` | `value`, `sessionId`, `model`, `stopReason`. |
+| `JobError`, `JobErrorKind` | Every rejection: `malformed`, `invalid`, `denied`, `unknown-model`, `auth`, `refused`, `timeout`, `cancelled`, `agent`. `message` is a fixed sentence; the raw answer is on `output`, never logged. No retries. |
+| `JobLogEntry` | What `onLog` gets: lotse's own events with ids and kinds only, and the agent's stderr lines. |
+| `JOB_TIMEOUT_MS`, `jobPrompt(prompt, schema?)` | The default time limit (120 s over the whole job), and the prompt as sent when you pass a JSON Schema. |
+
+A stop (timeout or `signal`) sends `session/cancel`, waits a short grace period, then closes the agent.
+Usage: [docs/embedding.md](../../docs/embedding.md#headless-jobs-no-widget).
+
 ### Login and auth
 
 Two different things: **auth** is the login the agent's `authMethods` ask for; the **login** is

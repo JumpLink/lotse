@@ -256,6 +256,54 @@ Two things `modelPolicy` does not do, and you still have to:
 The full option, the two gates behind it and what counts as free:
 [`@lotse/widget`](../packages/widget/README.md#modelpolicy-blocks-the-send-it-never-switches-the-model).
 
+## Headless jobs: no widget
+
+Some work has nobody watching it: read a receipt, classify a mail, extract fields from a PDF's text.
+`runJob` from `@lotse/core` runs that against the same agent, login and data directory as the chat,
+with no widget and no `gi://` import, so it also runs in a Node or GJS service
+([ADR 0004](adr/0004-headless-job-api.md)).
+
+```ts
+import { JobError, runJob, denyFreeHostedModels } from '@lotse/core';
+import { z } from 'zod';
+
+const Receipt = z.object({ merchant: z.string(), total: z.number() });
+
+try {
+  const { value } = await runJob({
+    command: agent, // the same AgentCommand you give the widget
+    cwd: dataDir,
+    prompt: `Extract merchant and total from this receipt:\n\n${text}`,
+    schema: z.toJSONSchema(Receipt), // optional; appended with one fixed instruction
+    parse: Receipt.parse,
+    modelPolicy: denyFreeHostedModels, // required
+    signal,
+  });
+  save(value);
+} catch (error) {
+  if (!(error instanceof JobError)) throw error;
+  // error.kind: malformed | invalid | denied | unknown-model | auth | refused | timeout | cancelled | agent
+}
+```
+
+What it promises:
+
+- **One process per job**, closed on every path, success or failure. Nothing is persisted by lotse; the
+  agent may keep its own session under your data directory.
+- **The model gate comes first.** `modelPolicy` is required, and a model lotse cannot identify is refused
+  like a denied one, before the prompt is sent. Pass `() => 'allow'` if you really mean "any model".
+- **Nobody is asked.** Permissions are declined by default. A `gate` of your own may allow once; an
+  "always" answer, an option the agent did not offer, or a throw is a decline, and a decline fails the
+  job as `refused`.
+- **The answer is JSON or an error.** Either the whole trimmed message is one JSON value, or the last
+  ` ```json ` block is. There is no repair and no retry: retrying is another model call with private
+  input, and that is your decision.
+- **A stop is a cancel, then a close.** `timeoutMs` (default 120 s, covering the whole job) and `signal`
+  both send `session/cancel`, give the agent a moment to answer, and then end the process.
+- **Logs carry ids and kinds.** `onLog` receives lotse's events (session id, stop reason, error kind,
+  model) and the agent's stderr. `JobError.message` is a fixed sentence; the raw answer is on
+  `JobError.output` for you, and lotse never prints it.
+
 ## Where to go next
 
 - [`@lotse/widget`](../packages/widget/README.md): every option and member.
