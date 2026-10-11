@@ -79,6 +79,8 @@ interface HarnessOptions extends FixtureAgentOptions {
   /** Refuse every `open` after the first: the fixture has one transport, so a second process cannot be real. */
   failAfterFirstOpen?: boolean;
   mcpServers?: McpServer[];
+  /** Leave `append` out, like a host that configured no `appendTurns`. */
+  noAppend?: boolean;
   /**
    * The embedding host's rule about which models a prompt may reach. Absent is lotse's own window,
    * which is why every other test in this file says nothing about it.
@@ -132,7 +134,12 @@ function harness(options: HarnessOptions = {}): Harness {
       // and cannot ask, which is not the same thing the CLI has.
       ...(options.onPermission ? { onPermission: options.onPermission } : {}),
     },
-    append: (sessionId, batch) => persisted.push({ sessionId, entries: batch }),
+    ...(options.noAppend
+      ? {}
+      : {
+          append: (sessionId: string, batch: TranscriptEntry[]) =>
+            persisted.push({ sessionId, entries: batch }),
+        }),
     create: (record) => {
       if (options.createFails) throw options.createFails;
       created.push(record);
@@ -1819,6 +1826,27 @@ export default async () => {
       h.session.startConversation('/synthetic/project');
       expect(() => h.session.appendHostEntry({ type: 'order', text: 'Order placed' })).toThrow(/no session/);
       expect(h.persisted).toStrictEqual([]);
+    });
+
+    await it('throws when no append was configured, instead of drawing a line nothing stores', async () => {
+      const h = harness({ noAppend: true });
+      expect(() => h.session.appendHostEntry({ type: 'order', text: 'Order placed' })).toThrow(/appendTurns/);
+      expect(h.entries).toStrictEqual([]);
+    });
+
+    await it('refuses data over the cap and data that is not JSON', async () => {
+      const h = harness();
+      const add = (data: unknown) => () => h.session.appendHostEntry({ type: 'x', text: 'y', data });
+      expect(add({ blob: 'x'.repeat(9000) })).toThrow(/too large/);
+      expect(add({ run: () => 1 })).toThrow(/JSON/);
+      expect(add({ gone: undefined })).toThrow(/JSON/);
+      expect(add(new Map())).toThrow(/JSON/);
+      expect(add({ n: 1n })).toThrow(/JSON/);
+      const cycle: Record<string, unknown> = {};
+      cycle.self = cycle;
+      expect(add(cycle)).toThrow(/JSON/);
+      expect(h.persisted).toStrictEqual([]);
+      expect(add({ ok: [1, 'a', null, { b: true }] })).not.toThrow();
     });
 
     await it('refuses an entry no surface could show', async () => {

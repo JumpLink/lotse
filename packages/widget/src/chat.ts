@@ -750,8 +750,9 @@ export class LotseChat extends Adw.Bin {
    *
    * **Rejects when no session exists yet** — nothing open, or a new chat whose first prompt has not
    * been answered — because there is no record to file the line in, and a line drawn but never
-   * stored would silently vanish on the next resume. Also rejects for an empty `type` or `text`, or
-   * when the host's `appendTurns` throws. A promise so a host can await the write and catch either.
+   * stored would silently vanish on the next resume. Also rejects when the host passed no
+   * `appendTurns` (nothing would store it), for an empty `type` or `text`, for `data` that is not
+   * JSON or is over the size cap, or when the host's `appendTurns` throws. A promise so a host can await the write and catch either.
    */
   appendHostItem(item: { type: string; text: string; data?: unknown; icon?: string }): Promise<void> {
     try {

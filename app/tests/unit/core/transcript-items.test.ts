@@ -384,6 +384,53 @@ export default async () => {
     });
   });
 
+  await describe('toTranscriptItems — newer kinds and the presenter view', async () => {
+    const tool = (tool: TranscriptEntry['tool'], at = AT): TranscriptEntry => ({
+      ...entry('tool', 'x', at, 'call_1'),
+      sessionId: 's1',
+      tool,
+    });
+
+    await it('turns a kind it does not know into a system note carrying the text', async () => {
+      const unknown = { ...entry('user', 'from the future'), kind: 'bookmark' } as unknown as TranscriptEntry;
+      const items = toTranscriptItems([unknown]);
+      expect(items).toStrictEqual([{ kind: 'system', text: '(bookmark) from the future', at: AT }]);
+    });
+
+    await it('hands out a view a presenter cannot use to rewrite the stored entries', async () => {
+      const entries = [
+        tool({ rawInput: { a: { b: 1 } }, mcp: [{ server: 's', tool: 't', source: 'reported' }] }),
+        tool({ status: 'completed' }, LATER),
+      ];
+      const first = toTranscriptItems(entries)[0];
+      if (first?.kind !== 'tool' || !first.call) throw new Error('expected a folded call');
+      const view = first.call as unknown as { rawInput: { a: { b: number } }; mcp: { tool: string }[] };
+      expect(() => {
+        view.rawInput.a.b = 2;
+      }).toThrow();
+      expect(() => {
+        view.mcp[0]!.tool = 'other';
+      }).toThrow();
+      expect(entries[0]?.tool?.rawInput).toStrictEqual({ a: { b: 1 } });
+      expect(entries[0]?.tool?.mcp?.[0]?.tool).toBe('t');
+      const again = toTranscriptItems(entries)[1];
+      if (again?.kind !== 'tool') throw new Error('expected a tool item');
+      expect(again.call?.rawInput).toStrictEqual({ a: { b: 1 } });
+    });
+
+    await it('never replaces a reported mcp list with one read off the code', async () => {
+      const items = toTranscriptItems([
+        tool({ mcp: [{ server: 's', tool: 't', source: 'reported', status: 'completed' }] }),
+        tool({ mcp: [{ server: 's', tool: 't', source: 'code' }] }, LATER),
+      ]);
+      const last = items[1];
+      if (last?.kind !== 'tool') throw new Error('expected a tool item');
+      expect(last.call?.mcp).toStrictEqual([
+        { server: 's', tool: 't', source: 'reported', status: 'completed' },
+      ]);
+    });
+  });
+
   await describe('toTranscriptItems — host lines', async () => {
     await it('becomes a HostItem and is never merged with the next host line', async () => {
       const items = toTranscriptItems([

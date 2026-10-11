@@ -21,7 +21,11 @@ and also records changes that are not a release of their own.
 - **`LotseChatOptions.toolPresenter`**: a host draws its own MCP calls with its own title, subtitle
   and icon. The status stays the agent's; a presenter that throws falls back to lotse's row.
 - **Host entries**: `LotseChat.appendHostItem({type, text, data?, icon?})` (core:
-  `AgentSession.appendHostEntry`) records a line of kind `host` in the open conversation.
+  `AgentSession.appendHostEntry`) records a line of kind `host` in the open conversation. It
+  rejects without an `appendTurns`, and for `data` that is not JSON or over the 8 KiB cap. A line
+  of a kind this lotse does not know shows as a note instead of breaking the transcript.
+  **Downgrade limit:** lotse versions before this one crash when resuming a session that contains a
+  `host` line.
 
 ### Changed
 

@@ -575,6 +575,10 @@ function buildItem(
       return buildNote(item.text);
     case 'host':
       return buildHostRow(item.text, item.icon);
+    // Unreachable for what `toTranscriptItems` returns; a note rather than `undefined` if an item
+    // from a newer core ever gets here, so `append` never gets a missing widget.
+    default:
+      return buildNote(String((item as { text?: unknown }).text ?? ''));
   }
 }
 
