@@ -4,10 +4,20 @@ Notable changes to lotse. The per-release notes that ship in the AppStream metai
 from the `gjsify.flatpak.releases` block in `package.json`; this file is the developer-facing view
 and also records changes that are not a release of their own.
 
-## Unreleased
+## 0.2.0 — unreleased
 
 ### Added
 
+- **The libraries are on npm.** `@lotse/acp`, `@lotse/session`, `@lotse/core` and `@lotse/widget`
+  (LGPL-3.0-or-later) are published, with provenance, by npm Trusted Publishing from the release
+  workflow. They ship TypeScript sources, the `.blp` templates and the data JSON; see
+  [docs/releasing.md](docs/releasing.md). The `@girs/*` packages are peers of the widget.
+- **`@lotse/widget`**, the embeddable chat (`LotseChat`), with the host's `mcpServers`, its own
+  permission gate and an onboarding page for a host without an agent.
+- **Host model policy** (`@lotse/core`): a host narrows which models a chat may use
+  (`allowOnlyProviders`, `denyFreeHostedModels`), and the widget takes it.
+- **Flatpak module generator** (`@lotse/core`): the module that bundles the agent is generated from
+  `bundled-agents.json` instead of written by hand.
 - **`lotse serve` precheck.** A task can have `precheck: {profile?, prompt | promptFile}`: a cheap
   read-only turn whose last line is `WORK` or `NOTHING`. Only `WORK` starts the real run, and
   `NOTHING` is recorded as outcome `nothing`.
