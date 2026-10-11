@@ -64,6 +64,11 @@ failure. That was the reason to build on opencode in the first place.
 
 A host opting in with `providerOnboarding` gets the same login from an inline page instead of a menu entry: `GET /api/integration` reports `connections` per provider (measured on 2.0.25, `scripts/probes/provider-connections.mjs`), so a chat with nothing connected offers **Connect a provider…** (this dialog) or **Use free hosted models**. Unknown state shows the ordinary chat. See [ADR 0001](adr/0001-lotse-as-an-embeddable-widget.md).
 
+## Custom providers
+
+A local model or any OpenAI-compatible endpoint is not a login but an entry in opencode's config; its
+key, if any, goes through the same `connect/key` call. See [custom-providers.md](custom-providers.md).
+
 ## Limits, and what is not known
 
 - **v2 only.** v1 answers a 404 on the catalog and `lotse login` says "use `lotse auth`".

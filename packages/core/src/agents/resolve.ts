@@ -15,6 +15,7 @@ import { NO_AGENT_REMEDY } from '../empty-state.ts';
 import { BUNDLED_AGENTS, bundledProgram, type BundledAgent } from './catalog.ts';
 import { resolveAgent, type AgentDetection } from './detect.ts';
 import type { AgentChoice } from './choice.ts';
+import { customProvidersEnv } from '../custom/file.ts';
 import { isolationEnv, type IsolationDirs } from './isolation.ts';
 import { LAUNCHERS } from './launcher.ts';
 import type { AgentCommand } from './stdio.ts';
@@ -43,7 +44,9 @@ export function bundledCommand(entry: BundledAgent, dirs: IsolationDirs): AgentC
     title: `${entry.title} ${entry.version} (bundled)`,
     program: bundledProgram(entry),
     args: [...entry.command],
-    env: { ...entry.env, ...isolationEnv(dirs) },
+    // `OPENCODE_CONFIG` is blanked by the catalog so the person's own value cannot leak in; lotse's own
+    // custom-provider file (`custom/file.ts`) replaces it, inside the isolated tree.
+    env: { ...entry.env, ...customProvidersEnv(entry.id, dirs), ...isolationEnv(dirs) },
     bundled: true,
   };
 }

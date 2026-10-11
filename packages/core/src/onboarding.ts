@@ -15,6 +15,7 @@
  * **Log in…** button. Nothing here reads, keeps or logs a credential: it counts providers.
  */
 
+import type { ConfiguredProvider } from './custom/api.ts';
 import type { LoginProvider } from './login/providers.ts';
 
 /** What is known about the agent's providers. */
@@ -24,8 +25,21 @@ export type ConnectionFacts =
   /** `browser` and `key` count the providers offering each way in, from the same catalog. */
   | { readonly kind: 'none'; readonly browser: number; readonly key: number };
 
-/** Read the catalog's connection state. An empty catalog tells nothing, so it is `unknown`. */
-export function connectionFacts(providers: readonly LoginProvider[]): ConnectionFacts {
+/**
+ * Read the catalog's connection state. An empty catalog tells nothing, so it is `unknown`.
+ *
+ * **A custom provider on this machine or the local network counts as connected without a key.** opencode
+ * lists it with `connections: []` until a key is stored (measured, `custom/api.ts`), but a local Ollama
+ * needs none and answers anyway — offering "Connect a provider" over it would be wrong. A remote custom
+ * provider still needs its key, and then it is `connected` in the catalog like any other.
+ */
+export function connectionFacts(
+  providers: readonly LoginProvider[],
+  custom: readonly Pick<ConfiguredProvider, 'reach'>[] = [],
+): ConnectionFacts {
+  if (custom.some((provider) => provider.reach === 'loopback' || provider.reach === 'lan')) {
+    return { kind: 'connected' };
+  }
   if (providers.length === 0) return { kind: 'unknown' };
   if (providers.some((provider) => provider.connected)) return { kind: 'connected' };
   const offering = (kind: 'oauth' | 'key') =>

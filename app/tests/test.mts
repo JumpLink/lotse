@@ -52,6 +52,7 @@ import loginProviders from './unit/core/login-providers.test.ts';
 import loginFlow from './unit/core/login-flow.test.ts';
 import loginController from './unit/core/login-controller.test.ts';
 import loginApi from './unit/core/login-api.test.ts';
+import customProviders from './unit/core/custom-providers.test.ts';
 import server from './unit/core/server.test.ts';
 
 import serveSchedule from './unit/serve/schedule.test.ts';
@@ -115,6 +116,7 @@ run({
   loginFlow,
   loginController,
   loginApi,
+  customProviders,
   server,
   serveSchedule,
   serveConfig,

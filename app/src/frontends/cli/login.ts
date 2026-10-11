@@ -89,7 +89,7 @@ function readLine(prompt: string): Promise<string | null> {
  * A key from stdin, never from an argument: an argument is in the process list and the shell history.
  * On a terminal the typed characters are not echoed; a pipe is read to its end.
  */
-async function readSecret(prompt: string): Promise<string | null> {
+export async function readSecret(prompt: string): Promise<string | null> {
   if (!process.stdin.isTTY) {
     // Events, not `for await`: GJS's stdin is not async-iterable (measured: "process.stdin is not iterable").
     return new Promise((resolve) => {

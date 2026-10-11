@@ -20,12 +20,16 @@ import {
   type LoginPrompt,
   type LoginResult,
 } from './flow.ts';
+import type { ConfiguredProvider } from '../custom/api.ts';
+
 import type { LoginField, LoginMethod, LoginProvider } from './providers.ts';
 
 /** What the controller needs from the private server. `createLoginApi` + `startServer` are the real one. */
 export interface LoginSession extends LoginApi {
   providers(): Promise<LoginProvider[]>;
   connectKey(providerId: string, key: string, answer: Readonly<Record<string, string>>): Promise<void>;
+  /** The custom providers opencode has read (`custom/api.ts`); optional, so a fake session may leave it out. */
+  customProviders?(): Promise<ConfiguredProvider[]>;
   close(): Promise<void>;
 }
 
