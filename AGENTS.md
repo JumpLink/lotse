@@ -70,7 +70,7 @@ lotse login [provider] [--method id]       # login, no terminal (docs/login.md)
 lotse agents                              # launchers, SOURCE, what lotse would use
 lotse serve [--once] [--quiet]            # scheduled tasks, a long-running service (ADR 0003)
 lotse questions [--all] [--json]          # what the tasks' agents are waiting on
-lotse answer <id> <text..>                # yes/no or a reply; resumes the session
+lotse answer <id> [text..] [--dialog]     # yes/no or a reply; no text opens the answer window
 ```
 
 **`serve` is [ADR 0003](docs/adr/0003-serve-tasks-questions-channel.md), read it before touching

@@ -8,7 +8,8 @@ behind it is [ADR 0003](adr/0003-serve-tasks-questions-channel.md); the design i
 ```bash
 lotse serve [--once] [--quiet]     # run due tasks; --once runs what is due now and exits
 lotse questions [--all] [--json]   # open questions (--all: also answered, expired, cancelled)
-lotse answer <id> <text…>          # yes/no for a permission, free text for a reply
+lotse answer <id> [text…] [--dialog]  # yes/no for a permission, free text for a reply;
+                                      # without text (or with --dialog) the answer window opens
 ```
 
 ## The task file
@@ -109,3 +110,36 @@ Messages go through one `ServeChannel` (`packages/core/src/serve/channel.ts`): t
 notification over `org.freedesktop.Notifications`, falling back to stderr when there is no session
 bus. A task never names a channel, so an XMPP channel through Curlew can be added without changing
 any task.
+
+### Answering from the desktop
+
+When the notification server can show actions (`GetCapabilities` lists `actions`), a question's
+notification gets buttons: **Answer…** (and a click on the notification itself) opens the answer
+window; a permission question also gets **Allow once** and **Decline**. A button answers through the
+same `answerQuestion` as `lotse answer <id> yes|no`, so the run that waits picks it up as before. A
+server without actions gets the plain notification, whose text still names `lotse answer`.
+
+The answer window shows the task, the question (selectable, scrolls when it is long) and when it
+expires. A reply question gets a text field; a permission question gets only its two buttons.
+<kbd>Ctrl</kbd>+<kbd>Enter</kbd> sends, <kbd>Esc</kbd> or **Later** closes it and leaves the
+question open. `lotse answer <id>` with no text opens the same window, and `--dialog` asks for it
+explicitly; without a display the command says so and nothing opens.
+
+`channel.desktop.mode` in the settings file (`$XDG_CONFIG_HOME/lotse/settings.json`, also under
+*Preferences → Questions* in the app) picks how a question arrives:
+
+```json
+{ "version": 1, "agent": null, "channel": { "desktop": { "mode": "dialog" } } }
+```
+
+- `notification` (default): the notification with its buttons.
+- `dialog`: the answer window opens right away. Without a display, or without the window, the
+  notification is sent instead.
+
+`serve` reads the setting for every question, so a change needs no restart; it lives in the settings
+file rather than the task file because a change to the task file stops `serve`.
+
+The window is part of the GUI bundle (`lotse-app.gjs.mjs`, built by `gjsify workspace lotse-cli
+build:app`) and is looked up next to the CLI bundle, else as `lotse-app` beside it.
+`LOTSE_ANSWER_DIALOG` names another program (split on spaces); it is started with
+`--answer <id>` and writes one line `lotse-answer:{"text":…}` on stdout, or nothing for Later.

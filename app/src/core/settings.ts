@@ -1,8 +1,9 @@
 /**
- * What a person chose, kept between runs: today only which agent to start.
+ * What a person chose, kept between runs: which agent to start, and how `lotse serve` puts a question
+ * on the desktop (`channel.desktop.mode`).
  *
- * **No secret can live here, by construction.** `parseSettings` is an allowlist — `version`, `agent`,
- * and inside `agent` an `id` and a `source` — so a `token`, `apiKey` or `password` is rejected as an
+ * **No secret can live here, by construction.** `parseSettings` is an allowlist — `version`, `agent`
+ * (an `id` and a `source`) and `channel.desktop.mode` — so a `token`, `apiKey` or `password` is rejected as an
  * unknown field (and named as secret-looking, so the message says why). lotse stores no credential
  * (AGENTS.md § Privacy); a setting is a preference, and the file is `derived`: choosing again
  * recreates it.
@@ -27,9 +28,26 @@ import type { AgentChoice } from '@lotse/core';
 
 import { writePrivateFile } from './private-file.ts';
 
+/**
+ * How the desktop channel asks: `notification` (a notification whose buttons answer or open the dialog)
+ * or `dialog` (the answer window opens as soon as a question arrives). `serve` reads it per question, so
+ * a change needs no restart.
+ */
+export type DesktopMode = 'notification' | 'dialog';
+
+export const DESKTOP_MODES: readonly DesktopMode[] = ['notification', 'dialog'];
+
+export const DEFAULT_DESKTOP_MODE: DesktopMode = 'notification';
+
+export interface ChannelSettings {
+  readonly desktop: { readonly mode: DesktopMode };
+}
+
 export interface Settings {
   readonly version: 1;
   readonly agent: AgentChoice | null;
+  /** Absent: every channel on its default. */
+  readonly channel?: ChannelSettings;
 }
 
 export const SETTINGS_VERSION = 1;
@@ -81,7 +99,8 @@ export function parseSettings(raw: string): ParsedSettings {
   const kind: SettingsProblemKind =
     typeof version === 'number' && version > SETTINGS_VERSION ? 'newer-version' : 'invalid';
   for (const key of Object.keys(value)) {
-    if (key !== 'version' && key !== 'agent') return { problem: unknownField('', key), kind };
+    if (key !== 'version' && key !== 'agent' && key !== 'channel')
+      return { problem: unknownField('', key), kind };
   }
   if (version !== SETTINGS_VERSION) {
     return {
@@ -89,8 +108,13 @@ export function parseSettings(raw: string): ParsedSettings {
       kind,
     };
   }
+  const channel = parseChannel(value['channel']);
+  if (typeof channel === 'string') return { problem: channel, kind };
+  const withChannel = (agent: AgentChoice | null): ParsedSettings => ({
+    settings: { version: SETTINGS_VERSION, agent, ...(channel ? { channel } : {}) },
+  });
   const agent = value['agent'];
-  if (agent === undefined || agent === null) return { settings: DEFAULT_SETTINGS };
+  if (agent === undefined || agent === null) return withChannel(null);
   if (!isRecord(agent)) {
     return { problem: '"agent" must be an object with an id and a source, or null', kind };
   }
@@ -104,7 +128,45 @@ export function parseSettings(raw: string): ParsedSettings {
   if (source !== 'host' && source !== 'bundled') {
     return { problem: '"agent.source" must be "host" or "bundled"', kind };
   }
-  return { settings: { version: SETTINGS_VERSION, agent: { id, source } } };
+  return withChannel({ id, source });
+}
+
+/** `channel` as it may appear in the file: absent, or `{desktop: {mode}}`. A string is the problem. */
+function parseChannel(channel: unknown): ChannelSettings | null | string {
+  if (channel === undefined || channel === null) return null;
+  if (!isRecord(channel)) return '"channel" must be an object';
+  for (const key of Object.keys(channel)) {
+    if (key !== 'desktop') return unknownField('channel.', key);
+  }
+  const desktop = channel['desktop'];
+  if (desktop === undefined || desktop === null) return null;
+  if (!isRecord(desktop)) return '"channel.desktop" must be an object';
+  for (const key of Object.keys(desktop)) {
+    if (key !== 'mode') return unknownField('channel.desktop.', key);
+  }
+  const mode = desktop['mode'];
+  if (mode === undefined) return null;
+  if (!DESKTOP_MODES.includes(mode as DesktopMode)) {
+    return `"channel.desktop.mode" must be one of ${DESKTOP_MODES.map((m) => `"${m}"`).join(', ')}`;
+  }
+  return { desktop: { mode: mode as DesktopMode } };
+}
+
+/** The desktop mode a settings value means: its own, else the default. */
+export function desktopMode(settings: Settings): DesktopMode {
+  return settings.channel?.desktop.mode ?? DEFAULT_DESKTOP_MODE;
+}
+
+/**
+ * `settings` with one part replaced and everything else kept — what both writers (the agent choice and the
+ * desktop mode) save, so choosing one never resets the other.
+ */
+export function withAgent(settings: Settings, agent: AgentChoice | null): Settings {
+  return { ...settings, agent };
+}
+
+export function withDesktopMode(settings: Settings, mode: DesktopMode): Settings {
+  return { ...settings, channel: { ...settings.channel, desktop: { mode } } };
 }
 
 /**

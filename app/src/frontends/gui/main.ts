@@ -41,10 +41,19 @@ import {
   resolveDefaultWithNote,
   resolveRecorded,
 } from '@lotse/core';
+import { answerArg } from '../../core/answer-dialog.ts';
 import { migratedPaths } from '../../core/migrate.ts';
 import { markSeen, readNotices, writeNotices } from '../../core/notices.ts';
-import { backupPath, readSettings, saveSettings } from '../../core/settings.ts';
+import {
+  backupPath,
+  desktopMode,
+  readSettings,
+  saveSettings,
+  withAgent,
+  withDesktopMode,
+} from '../../core/settings.ts';
 import { settingsChoicesView } from '../../core/settings-view.ts';
+import { runAnswerWindow } from './answer-window.ts';
 import { APP_CSS } from './css.ts';
 import { readHooks } from './hooks.ts';
 import { modelPolicyFromHook } from './model-policy-hook.ts';
@@ -55,6 +64,13 @@ import { APP_ID, APP_NAME, APP_VERSION } from './constants.ts';
 // unused to the linter, and the version pin it documents is the thing that actually matters when
 // libadwaita and the `@girs/*` types disagree about a signature.
 void Gtk;
+
+/**
+ * `--answer <id>`: the answer window instead of the main one (`answer-window.ts`), before anything below
+ * migrates paths or resolves an agent the window has no use for.
+ */
+const answering = answerArg(process.argv.slice(2));
+if (answering !== null) process.exit(await runAnswerWindow(answering));
 
 /**
  * Read the dev hooks **once**, before the window exists — see `hooks.ts` for why each one has to
@@ -232,7 +248,12 @@ const status = await runAdwaitaApp({
               }
             }
           : null,
-        save: (choice) => saveSettings(paths.settingsFile, { version: 1, agent: choice }),
+        // A read before each write, so a choice here keeps what the other preferences group saved.
+        save: (choice) =>
+          saveSettings(paths.settingsFile, withAgent(readSettings(paths.settingsFile).settings, choice)),
+        loadMode: () => desktopMode(readSettings(paths.settingsFile).settings),
+        saveMode: (mode) =>
+          saveSettings(paths.settingsFile, withDesktopMode(readSettings(paths.settingsFile).settings, mode)),
       },
       createSession: (record) => {
         createSessionStore(paths.sessionsFile).create(record);
