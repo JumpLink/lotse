@@ -23,7 +23,7 @@ export const APP_ID = 'eu.jumplink.Lotse';
 export const APP_NAME = 'lotse';
 
 /** Read from the package so the about dialog cannot drift from the installed version. */
-export const APP_VERSION = '0.1.1';
+export const APP_VERSION = '0.3.0';
 
 /**
  * The env prefix for the dev hooks, without a trailing underscore.

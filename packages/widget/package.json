@@ -1,6 +1,6 @@
 {
   "name": "@lotse/widget",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "LGPL-3.0-or-later",
   "type": "module",
   "description": "The chat surface, as a widget a host embeds: LotseChat renders one conversation — transcript, composer, model and mode controls, the tool and thought cards, the permission dialog — over @lotse/core's AgentSession. GTK/Adw, no app shell: the host passes the agent choice, the paths, the cwd, its mcpServers and its own permission gate.",
@@ -41,9 +41,9 @@
     "README.md"
   ],
   "dependencies": {
-    "@lotse/acp": "^0.2.0",
-    "@lotse/core": "^0.2.0",
-    "@lotse/session": "^0.2.0"
+    "@lotse/acp": "^0.3.0",
+    "@lotse/core": "^0.3.0",
+    "@lotse/session": "^0.3.0"
   },
   "peerDependencies": {
     "@girs/adw-1": "^5.4.0",

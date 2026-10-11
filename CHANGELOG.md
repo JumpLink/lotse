@@ -4,30 +4,17 @@ Notable changes to lotse. The per-release notes that ship in the AppStream metai
 from the `gjsify.flatpak.releases` block in `package.json`; this file is the developer-facing view
 and also records changes that are not a release of their own.
 
-## 0.2.0 — unreleased
+## 0.3.0 — 2026-10-11
+
+First release published by CI with provenance: the app and the four libraries share this version.
 
 ### Added
 
-- **The libraries are on npm.** `@lotse/acp`, `@lotse/session`, `@lotse/core` and `@lotse/widget`
-  (LGPL-3.0-or-later) are published, with provenance, by npm Trusted Publishing from the release
-  workflow. They ship TypeScript sources, the `.blp` templates and the data JSON; see
-  [docs/releasing.md](docs/releasing.md). The `@girs/*` packages are peers of the widget.
-- **`@lotse/widget`**, the embeddable chat (`LotseChat`), with the host's `mcpServers`, its own
-  permission gate and an onboarding page for a host without an agent.
-- **Host model policy** (`@lotse/core`): a host narrows which models a chat may use
-  (`allowOnlyProviders`, `denyFreeHostedModels`), and the widget takes it.
-- **Flatpak module generator** (`@lotse/core`): the module that bundles the agent is generated from
-  `bundled-agents.json` instead of written by hand.
-- **`lotse serve` precheck.** A task can have `precheck: {profile?, prompt | promptFile}`: a cheap
-  read-only turn whose last line is `WORK` or `NOTHING`. Only `WORK` starts the real run, and
-  `NOTHING` is recorded as outcome `nothing`.
 - **Answering from the desktop.** A `lotse serve` question's notification gets an **Answer…** button
   and, for a permission, **Allow once** / **Decline**, when the notification server shows actions.
   `lotse answer <id>` without text (or with `--dialog`) opens an answer window. The setting
   `channel.desktop.mode` (`notification` | `dialog`, also in Preferences) can open the window
   right away instead. See [docs/serve.md](docs/serve.md#answering-from-the-desktop).
-- **`SERVE_CONFIG_SCHEMA`** (`@lotse/core`): the task file as a JSON Schema with a title and a
-  description on every field. The parser takes its allowed keys from it.
 - **Structured tool calls in the transcript** (#43). Each tool line now also stores `tool`: ACP kind,
   title, status, the input up to 8 KiB (`rawInputOmitted` above that) and `mcp`, the MCP tools the
   call reached (opencode's code-mode report, or a reading of the code while it runs). `text` is
@@ -53,6 +40,28 @@ and also records changes that are not a release of their own.
   privacy notes; lotse's preferences gain it as the `providers` page. The host option
   `allowCustomProviders` (default off) enables add and remove; a `modelPolicy` also filters the login
   dialog (`providerOffered`). The logic is core's `ProviderSettingsController`.
+
+## 0.2.0 — 2026-10-11
+
+Libraries only: `@lotse/{acp,session,core,widget}@0.2.0` were published to npm by hand from c0839df. The app was
+never released as 0.2.0; its first release is 0.3.0, which also carries everything listed under 0.3.0.
+
+### Added
+
+- **The libraries are on npm.** `@lotse/acp`, `@lotse/session`, `@lotse/core` and `@lotse/widget`
+  (LGPL-3.0-or-later) are published to npm (by hand, without provenance). They ship TypeScript sources, the `.blp` templates and the data JSON; see
+  [docs/releasing.md](docs/releasing.md). The `@girs/*` packages are peers of the widget.
+- **`@lotse/widget`**, the embeddable chat (`LotseChat`), with the host's `mcpServers`, its own
+  permission gate and an onboarding page for a host without an agent.
+- **Host model policy** (`@lotse/core`): a host narrows which models a chat may use
+  (`allowOnlyProviders`, `denyFreeHostedModels`), and the widget takes it.
+- **Flatpak module generator** (`@lotse/core`): the module that bundles the agent is generated from
+  `bundled-agents.json` instead of written by hand.
+- **`lotse serve` precheck.** A task can have `precheck: {profile?, prompt | promptFile}`: a cheap
+  read-only turn whose last line is `WORK` or `NOTHING`. Only `WORK` starts the real run, and
+  `NOTHING` is recorded as outcome `nothing`.
+- **`SERVE_CONFIG_SCHEMA`** (`@lotse/core`): the task file as a JSON Schema with a title and a
+  description on every field. The parser takes its allowed keys from it.
 
 ### Changed
 

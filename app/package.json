@@ -1,6 +1,6 @@
 {
   "name": "lotse-cli",
-  "version": "0.1.1",
+  "version": "0.3.0",
   "license": "AGPL-3.0-or-later",
   "private": true,
   "type": "module",
@@ -91,10 +91,10 @@
     }
   },
   "dependencies": {
-    "@lotse/acp": "^0.2.0",
-    "@lotse/core": "^0.2.0",
-    "@lotse/session": "^0.2.0",
-    "@lotse/widget": "^0.2.0",
+    "@lotse/acp": "^0.3.0",
+    "@lotse/core": "^0.3.0",
+    "@lotse/session": "^0.3.0",
+    "@lotse/widget": "^0.3.0",
     "yargs": "^18.1.0"
   },
   "devDependencies": {

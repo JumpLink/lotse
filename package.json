@@ -1,6 +1,6 @@
 {
   "name": "lotse",
-  "version": "0.1.1",
+  "version": "0.3.0",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "type": "module",
@@ -122,6 +122,53 @@
         ]
       },
       "releases": [
+        {
+          "version": "0.3.0",
+          "date": "2026-10-11",
+          "description": [
+            {
+              "p": "Kurier is now lotse, and its building blocks are on npm for other apps to embed.",
+              "translatorHint": "Release notes for version 0.3.0 - opening line: the rename to lotse, the libraries on npm. Keep \"Kurier\" and \"lotse\" as they are."
+            },
+            {
+              "ul": [
+                {
+                  "item": "The libraries @lotse/acp, @lotse/session, @lotse/core and @lotse/widget are published on npm, so other apps can embed lotse.",
+                  "translatorHint": "Release notes for version 0.3.0 - the libraries are on npm. Keep the package names as they are."
+                },
+                {
+                  "item": "Local models and any OpenAI-compatible endpoint can be added as a provider for the bundled OpenCode.",
+                  "translatorHint": "Release notes for version 0.3.0 - custom and local model providers"
+                },
+                {
+                  "item": "Provider settings in Preferences: connect or log out of providers and manage your own.",
+                  "translatorHint": "Release notes for version 0.3.0 - provider settings page in Preferences"
+                },
+                {
+                  "item": "Questions from scheduled tasks can be answered from a notification or an answer window.",
+                  "translatorHint": "Release notes for version 0.3.0 - answering a lotse serve question from the desktop"
+                },
+                {
+                  "item": "Tool calls are stored in the conversation with their details, and a host can show its own tools with its own title and icon.",
+                  "translatorHint": "Release notes for version 0.3.0 - structured tool calls in the transcript"
+                },
+                {
+                  "item": "A host app can limit which models a chat may use.",
+                  "translatorHint": "Release notes for version 0.3.0 - host model policy"
+                },
+                {
+                  "item": "The login now offers xAI (Grok).",
+                  "translatorHint": "Release notes for version 0.3.0 - xAI added to the login"
+                },
+                {
+                  "item": "Kurier is now called lotse. An installed Kurier is upgraded, and your sessions and settings are moved over once.",
+                  "translatorHint": "Release notes for version 0.3.0 - the rename from Kurier to lotse. Keep \"Kurier\" and \"lotse\" as they are."
+                }
+              ],
+              "translatorHint": "Release notes for version 0.3.0 - the list of what changed"
+            }
+          ]
+        },
         {
           "version": "0.1.1",
           "date": "2026-10-10",
@@ -261,7 +308,7 @@
             {
               "type": "git",
               "url": "https://github.com/JumpLink/lotse.git",
-              "tag": "v0.1.1",
+              "tag": "v0.3.0",
               "x-checker-data": {
                 "type": "git",
                 "tag-pattern": "^v(\\d+\\.\\d+\\.\\d+)$",

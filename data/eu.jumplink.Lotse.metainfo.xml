@@ -37,6 +37,31 @@
     <content_attribute id="language-humor">none</content_attribute>
   </content_rating>
   <releases>
+    <release version="0.3.0" date="2026-10-11">
+      <description>
+        <!-- TRANSLATORS: Release notes for version 0.3.0 - opening line: the rename to lotse, the libraries on npm. Keep "Kurier" and "lotse" as they are. -->
+        <p>Kurier is now lotse, and its building blocks are on npm for other apps to embed.</p>
+        <!-- TRANSLATORS: Release notes for version 0.3.0 - the list of what changed -->
+        <ul>
+          <!-- TRANSLATORS: Release notes for version 0.3.0 - the libraries are on npm. Keep the package names as they are. -->
+          <li>The libraries @lotse/acp, @lotse/session, @lotse/core and @lotse/widget are published on npm, so other apps can embed lotse.</li>
+          <!-- TRANSLATORS: Release notes for version 0.3.0 - custom and local model providers -->
+          <li>Local models and any OpenAI-compatible endpoint can be added as a provider for the bundled OpenCode.</li>
+          <!-- TRANSLATORS: Release notes for version 0.3.0 - provider settings page in Preferences -->
+          <li>Provider settings in Preferences: connect or log out of providers and manage your own.</li>
+          <!-- TRANSLATORS: Release notes for version 0.3.0 - answering a lotse serve question from the desktop -->
+          <li>Questions from scheduled tasks can be answered from a notification or an answer window.</li>
+          <!-- TRANSLATORS: Release notes for version 0.3.0 - structured tool calls in the transcript -->
+          <li>Tool calls are stored in the conversation with their details, and a host can show its own tools with its own title and icon.</li>
+          <!-- TRANSLATORS: Release notes for version 0.3.0 - host model policy -->
+          <li>A host app can limit which models a chat may use.</li>
+          <!-- TRANSLATORS: Release notes for version 0.3.0 - xAI added to the login -->
+          <li>The login now offers xAI (Grok).</li>
+          <!-- TRANSLATORS: Release notes for version 0.3.0 - the rename from Kurier to lotse. Keep "Kurier" and "lotse" as they are. -->
+          <li>Kurier is now called lotse. An installed Kurier is upgraded, and your sessions and settings are moved over once.</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.1.1" date="2026-10-10">
       <description>
         <!-- TRANSLATORS: Release notes for version 0.1.1 - opening line: packages exist now, login from the app, bundled OpenCode in the Flatpak. Keep "OpenCode" and "Flatpak" as they are. -->
