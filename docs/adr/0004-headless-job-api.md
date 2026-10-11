@@ -1,6 +1,6 @@
 # 4. A headless job API in `@lotse/core`
 
-- Status: **Proposed**
+- Status: **Accepted**
 - Date: 2026-10-11
 - Deciders: Pascal Garber
 - Related: [ADR 0001](0001-lotse-as-an-embeddable-widget.md) (its open question),
@@ -45,12 +45,17 @@ alike.
    Zod). When the host passes `schema` (a JSON Schema object), lotse appends one fixed instruction
    with it to the prompt; validation is still `parse`'s job.
 
+   *Decided:* final text over `opencode serve` `json_schema`. One protocol serves every ACP
+   agent, and the job stays behind the ACP permission gate and the model gate. The cost: a
+   malformed answer is not prevented at generation, it fails readably (`'malformed'` or
+   `'invalid'`).
+
    *Weighed:* `opencode serve` `json_schema` gives the strongest guarantee, but it is a second
    protocol to one agent, it bypasses the ACP permission gate and the model gate, and it ties the
    job API to opencode. A result-sink MCP tool makes the model fill typed arguments, but lotse
-   would have to host an MCP server for every job. Final text works with every ACP agent today;
-   if a probe on real receipts shows it is unreliable, the result-sink tool is added behind the
-   same `parse` without changing the signature.
+   would have to host an MCP server for every job. If a probe on real receipts shows final text
+   is unreliable, the result-sink tool is added behind the same `parse` without changing the
+   signature.
 3. **A malformed answer fails, once, with a type.** Every failure is a `JobError` with a `kind`:
    `'malformed'` (no JSON in either shape), `'invalid'` (`parse` threw), `'denied'` and
    `'unknown-model'` (the model gate), `'auth'`, `'refused'` (the turn did not end with
@@ -65,7 +70,7 @@ alike.
    keep its session under the host's data directory (opencode does), which is the host's data
    directory and the host's backup, as ADR 0001 already says for the chat.
 5. **The model gate is mandatory and checked before the prompt.** `modelPolicy` is a required
-   option: a host that wants no restriction passes `() => 'allow'` and says so in its own code.
+   option, decided so: a host that wants no restriction passes `() => 'allow'` and says so in its own code.
    When `model` is given, lotse selects it through the session's model config option, as `serve`
    does, and fails `'unknown-model'` if the agent does not offer it. Then `modelBlock` decides on
    the agent's reported current value, and both causes (`'denied'` and `'unknown'`) refuse: no
@@ -76,14 +81,16 @@ alike.
    are refused. `mcpServers` default to `[]` and go unchanged into `session/new`.
 7. **Cancellation is an `AbortSignal`; a timeout is an abort.** On abort lotse sends
    `session/cancel`, waits a short grace for the turn to settle, then closes the agent; the job
-   rejects `'cancelled'`. `timeoutMs` (default 120 s, covering the handshake, `session/new` and
+   rejects `'cancelled'`. `timeoutMs` (default 120 s, host-overridable, covering the handshake, `session/new` and
    the turn) aborts the same way and rejects `'timeout'`. The agent process is closed in a
    `finally` on every path, with the closer from `onSpawn`, so an abort during the handshake
    leaves no orphan.
 8. **One agent process per job.** Jobs share nothing: a crash, a hung turn or a cancel touches
    one job only, and the close is exact. The cost is the agent's cold start per job. The `open`
    seam stays injectable, so a pooled opener can come later without a signature change; lotse
-   sets no concurrency limit, the host does.
+   sets no concurrency limit, the host does. A pooled or shared agent comes only after the
+   bundled opencode's start time is measured and only if Steuererklärung batches suffer
+   ([#55](https://github.com/JumpLink/lotse/issues/55)).
 9. **Job input is private by default.** lotse logs ids and kinds only, as `serve.log` does: never
    the prompt, the answer, a `parse` error's text or a tool's arguments. Agent stderr reaches
    `onLog` only if the host passes one. No error message carries input.
