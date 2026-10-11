@@ -89,7 +89,8 @@ lotse answer <id> [text…] [--dialog]       # yes/no, a reply, or the answer wi
 Custom providers and their rules (keys, LAN, local-model hints): [docs/custom-providers.md](docs/custom-providers.md).
 
 `lotse serve` runs the tasks in `$XDG_CONFIG_HOME/lotse/tasks.json` on a schedule and asks you, by
-desktop notification, when an agent needs a decision. How to set it up: [docs/serve.md](docs/serve.md).
+desktop notification or, if you configure it, in a chat through an MCP server such as curlew, when an
+agent needs a decision. How to set it up: [docs/serve.md](docs/serve.md).
 
 ## Run the surface
 

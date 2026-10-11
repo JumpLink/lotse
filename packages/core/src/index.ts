@@ -490,6 +490,25 @@ export {
   type ServeToken,
 } from './serve/gate.ts';
 export type { ServeChannel, ServeMessage } from './serve/channel.ts';
+export {
+  CHANNEL_NAMES,
+  MESSENGER_DEFAULTS,
+  messengerCommand,
+  messengerProblem,
+  type ChannelName,
+  type MessengerSettings,
+} from './messenger/settings.ts';
+export { McpToolError, connectMcp, type McpTools } from './messenger/mcp-client.ts';
+export { McpLink } from './messenger/link.ts';
+export { combineChannels, messengerChannel, messengerText, sendToPeer } from './messenger/channel.ts';
+export { openIds, parseReply, type ReplyIntent } from './messenger/reply.ts';
+export {
+  abortableSleep,
+  parseWaitResult,
+  runReceiveLoop,
+  type CursorStore,
+  type ReceiveOptions,
+} from './messenger/receive.ts';
 export { SERVE_CONFIG_SCHEMA, schemaKeys, type SchemaNode } from './serve/schema.ts';
 export {
   ModelUnavailableError,

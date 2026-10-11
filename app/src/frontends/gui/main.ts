@@ -51,6 +51,9 @@ import {
   saveSettings,
   withAgent,
   withDesktopMode,
+  withMessenger,
+  activeChannels,
+  messengerSettings,
 } from '../../core/settings.ts';
 import { settingsChoicesView } from '../../core/settings-view.ts';
 import { runAnswerWindow } from './answer-window.ts';
@@ -254,6 +257,15 @@ const status = await runAdwaitaApp({
         loadMode: () => desktopMode(readSettings(paths.settingsFile).settings),
         saveMode: (mode) =>
           saveSettings(paths.settingsFile, withDesktopMode(readSettings(paths.settingsFile).settings, mode)),
+        loadMessenger: () => {
+          const { settings } = readSettings(paths.settingsFile);
+          return { active: activeChannels(settings), messenger: messengerSettings(settings) };
+        },
+        saveMessenger: ({ active, messenger }) =>
+          saveSettings(
+            paths.settingsFile,
+            withMessenger(readSettings(paths.settingsFile).settings, active, messenger),
+          ),
       },
       createSession: (record) => {
         createSessionStore(paths.sessionsFile).create(record);

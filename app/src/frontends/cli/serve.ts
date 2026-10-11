@@ -16,13 +16,21 @@ import {
   answerQuestion,
   attemptClock,
   cancelOrphanedPermissions,
+  combineChannels,
+  connectMcp,
   dueTasks,
   freeModelNotes,
+  McpLink,
+  messengerChannel,
+  messengerCommand,
+  messengerProblem,
   nextWakeMs,
+  runReceiveLoop,
   runTask,
   type LotsePaths,
   type ServeChannel,
   type ServeDeps,
+  type MessengerSettings,
   type ServeTask,
 } from '@lotse/core';
 
@@ -30,7 +38,8 @@ import { currentDialogCommand, openAnswerDialog } from '../../core/answer-dialog
 import type { ServePaths } from '../../core/paths.ts';
 import { currentTasksHash } from '../../core/serve-config.ts';
 import { runState } from '../../core/serve-state.ts';
-import { desktopMode, readSettings } from '../../core/settings.ts';
+import { fileCursorStore, messengerCursorFile } from '../../core/messenger-state.ts';
+import { activeChannels, desktopMode, messengerSettings, readSettings } from '../../core/settings.ts';
 import { stderrChannel } from '../../core/stderr-channel.ts';
 import { err, pickArgv } from './output.ts';
 import { readTasks, serveDeps, trackedAgents } from './serve-deps.ts';
@@ -41,7 +50,11 @@ const FAILED = new Set(['unknown', 'dropped', 'expired', 'busy', 'invalid']);
  * What a click on a notification does: answer through `answerQuestion`, exactly as `lotse answer`.
  * `deps` is read late — the channel exists before them, because they carry it.
  */
-function answerHandlers(paths: LotsePaths, deps: () => ServeDeps | null) {
+function answerHandlers(
+  paths: LotsePaths,
+  deps: () => ServeDeps | null,
+  feedback: () => ServeChannel | null,
+) {
   const windows = new Set<string>();
   const answer = async (questionId: string, text: string) => {
     const current = deps();
@@ -49,10 +62,14 @@ function answerHandlers(paths: LotsePaths, deps: () => ServeDeps | null) {
     const result = await answerQuestion(questionId, text, current);
     err(`  #${questionId}: ${result.message}`);
     if (!FAILED.has(result.mode)) return;
+    // Feedback goes to the desktop, not the combined channel: the messenger's own receive loop
+    // answers its person in the chat, and a click here must not post "not taken" there.
+    const channel = feedback();
+    if (!channel) return;
     const owner = result.question?.user;
     for (const user of current.config.users) {
       if (owner && user.id !== owner) continue;
-      await current.channel.send(user, {
+      await channel.send(user, {
         title: 'lotse: answer not taken',
         body: result.message,
         questionId: null,
@@ -81,13 +98,17 @@ function answerHandlers(paths: LotsePaths, deps: () => ServeDeps | null) {
   };
 }
 
-async function openChannel(paths: LotsePaths, deps: () => ServeDeps | null): Promise<ServeChannel> {
+async function openDesktop(
+  paths: LotsePaths,
+  deps: () => ServeDeps | null,
+  feedback: () => ServeChannel | null,
+): Promise<ServeChannel> {
   try {
     const { desktopChannel } = await import('../../core/desktop-channel.ts');
     return desktopChannel({
       onProblem: (problem) => err(`  ${problem}`),
       dialog: !('problem' in currentDialogCommand()),
-      ...answerHandlers(paths, deps),
+      ...answerHandlers(paths, deps, feedback),
     });
   } catch (error) {
     err(
@@ -95,6 +116,39 @@ async function openChannel(paths: LotsePaths, deps: () => ServeDeps | null): Pro
     );
     return stderrChannel();
   }
+}
+
+interface OpenedChannels {
+  readonly channel: ServeChannel;
+  /** Present when the messenger is active and complete: the receive loop runs on this link. */
+  readonly messenger: { readonly link: McpLink; readonly settings: MessengerSettings } | null;
+}
+
+/** The channels settings.json asks for, read once at start (a change needs a restart). */
+async function openChannels(paths: LotsePaths, deps: () => ServeDeps | null): Promise<OpenedChannels> {
+  const settings = readSettings(paths.settingsFile).settings;
+  const active = activeChannels(settings);
+  let desktop: ServeChannel | null = null;
+  const useDesktop = active.includes('desktop');
+  const opened: ServeChannel[] = [];
+  let messenger: OpenedChannels['messenger'] = null;
+  if (active.includes('messenger')) {
+    const config = messengerSettings(settings);
+    const problem = messengerProblem(config);
+    if (problem) err(`  messenger channel not started: ${problem}`);
+    else {
+      const link = new McpLink(() =>
+        connectMcp(messengerCommand(config), { onStderr: (line) => err(`  messenger: ${line}`) }),
+      );
+      messenger = { link, settings: config };
+      opened.push(messengerChannel(link, config));
+    }
+  }
+  if (useDesktop || opened.length === 0) {
+    desktop = await openDesktop(paths, deps, () => desktop);
+    opened.unshift(desktop);
+  }
+  return { channel: combineChannels(opened), messenger };
 }
 
 const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
@@ -117,7 +171,8 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     if (!loaded) return;
     for (const note of freeModelNotes(loaded.config)) err(`  ${note}`);
     let ready: ServeDeps | null = null;
-    const channel = await openChannel(paths, () => ready);
+    const opened = await openChannels(paths, () => ready);
+    const channel = opened.channel;
     const agents = trackedAgents();
     const deps = serveDeps({ paths, serve, loaded, channel, open: agents.open, quiet });
     if (!deps) return;
@@ -133,12 +188,28 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
 
     let stopping = false;
     let wake: (() => void) | null = null;
+    const abort = new AbortController();
     const stop = (why: string) => {
       if (stopping) return;
       stopping = true;
       err(`  stopping: ${why}`);
+      abort.abort();
       wake?.();
     };
+    // `--once` ends before a person could reply, so the receive loop belongs to the long-running serve.
+    const receiving =
+      opened.messenger && !once
+        ? runReceiveLoop({
+            link: opened.messenger.link,
+            settings: opened.messenger.settings,
+            serve: deps,
+            cursor: fileCursorStore(messengerCursorFile(serve.stateDir)),
+            signal: abort.signal,
+            log: (line) => err(`  ${line}`),
+          }).catch((error: unknown) =>
+            err(`  messenger: ${error instanceof Error ? error.message : String(error)}`),
+          )
+        : null;
     const onSignal = () => stop('signal');
     process.on('SIGINT', onSignal);
     process.on('SIGTERM', onSignal);
@@ -198,6 +269,9 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     } finally {
       process.off('SIGINT', onSignal);
       process.off('SIGTERM', onSignal);
+      abort.abort();
+      await receiving;
+      await opened.messenger?.link.close();
       await agents.closeAll();
     }
   },

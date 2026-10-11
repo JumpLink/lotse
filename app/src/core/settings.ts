@@ -24,7 +24,13 @@
 
 import { chmodSync, readFileSync, renameSync } from 'node:fs';
 
-import type { AgentChoice } from '@lotse/core';
+import {
+  CHANNEL_NAMES,
+  MESSENGER_DEFAULTS,
+  type AgentChoice,
+  type ChannelName,
+  type MessengerSettings,
+} from '@lotse/core';
 
 import { writePrivateFile } from './private-file.ts';
 
@@ -41,7 +47,13 @@ export const DEFAULT_DESKTOP_MODE: DesktopMode = 'notification';
 
 export interface ChannelSettings {
   readonly desktop: { readonly mode: DesktopMode };
+  /** Which channels `serve` asks on. Absent: the desktop only. Read at start, so a change needs a restart. */
+  readonly active?: readonly ChannelName[];
+  /** The messenger's MCP server, account and peer. Absent: its defaults (curlew) with no account. */
+  readonly messenger?: MessengerSettings;
 }
+
+export const DEFAULT_ACTIVE_CHANNELS: readonly ChannelName[] = ['desktop'];
 
 export interface Settings {
   readonly version: 1;
@@ -131,25 +143,79 @@ export function parseSettings(raw: string): ParsedSettings {
   return withChannel({ id, source });
 }
 
-/** `channel` as it may appear in the file: absent, or `{desktop: {mode}}`. A string is the problem. */
+const MESSENGER_KEYS = ['command', 'args', 'account', 'peer', 'sendTool', 'waitTool'] as const;
+
+function parseMessenger(value: unknown): MessengerSettings | string {
+  if (!isRecord(value)) return '"channel.messenger" must be an object';
+  for (const key of Object.keys(value)) {
+    if (!(MESSENGER_KEYS as readonly string[]).includes(key)) return unknownField('channel.messenger.', key);
+  }
+  const text = (key: 'command' | 'account' | 'peer' | 'sendTool' | 'waitTool'): string | null => {
+    const field = value[key];
+    if (field === undefined) return MESSENGER_DEFAULTS[key];
+    return typeof field === 'string' ? field : null;
+  };
+  const out: Record<string, string> = {};
+  for (const key of ['command', 'account', 'peer', 'sendTool', 'waitTool'] as const) {
+    const field = text(key);
+    if (field === null) return `"channel.messenger.${key}" must be a string`;
+    out[key] = field;
+  }
+  const args = value['args'] === undefined ? MESSENGER_DEFAULTS.args : value['args'];
+  if (!Array.isArray(args) || !args.every((arg) => typeof arg === 'string')) {
+    return '"channel.messenger.args" must be a list of strings';
+  }
+  return { ...(out as unknown as MessengerSettings), args: args as string[] };
+}
+
+/**
+ * `channel` as it may appear in the file: absent, or an object with any of `desktop: {mode}`, `active`
+ * and `messenger`. A string is the problem.
+ */
 function parseChannel(channel: unknown): ChannelSettings | null | string {
   if (channel === undefined || channel === null) return null;
   if (!isRecord(channel)) return '"channel" must be an object';
   for (const key of Object.keys(channel)) {
-    if (key !== 'desktop') return unknownField('channel.', key);
+    if (key !== 'desktop' && key !== 'active' && key !== 'messenger') return unknownField('channel.', key);
   }
+  let mode: DesktopMode | undefined;
   const desktop = channel['desktop'];
-  if (desktop === undefined || desktop === null) return null;
-  if (!isRecord(desktop)) return '"channel.desktop" must be an object';
-  for (const key of Object.keys(desktop)) {
-    if (key !== 'mode') return unknownField('channel.desktop.', key);
+  if (desktop !== undefined && desktop !== null) {
+    if (!isRecord(desktop)) return '"channel.desktop" must be an object';
+    for (const key of Object.keys(desktop)) {
+      if (key !== 'mode') return unknownField('channel.desktop.', key);
+    }
+    const value = desktop['mode'];
+    if (value !== undefined) {
+      if (!DESKTOP_MODES.includes(value as DesktopMode)) {
+        return `"channel.desktop.mode" must be one of ${DESKTOP_MODES.map((m) => `"${m}"`).join(', ')}`;
+      }
+      mode = value as DesktopMode;
+    }
   }
-  const mode = desktop['mode'];
-  if (mode === undefined) return null;
-  if (!DESKTOP_MODES.includes(mode as DesktopMode)) {
-    return `"channel.desktop.mode" must be one of ${DESKTOP_MODES.map((m) => `"${m}"`).join(', ')}`;
+  let active: ChannelName[] | undefined;
+  const rawActive = channel['active'];
+  if (rawActive !== undefined && rawActive !== null) {
+    const valid =
+      Array.isArray(rawActive) && rawActive.every((name) => CHANNEL_NAMES.includes(name as ChannelName));
+    if (!valid) {
+      return `"channel.active" must be a list of ${CHANNEL_NAMES.map((n) => `"${n}"`).join(', ')}`;
+    }
+    active = [...new Set(rawActive as ChannelName[])];
   }
-  return { desktop: { mode: mode as DesktopMode } };
+  let messenger: MessengerSettings | undefined;
+  const rawMessenger = channel['messenger'];
+  if (rawMessenger !== undefined && rawMessenger !== null) {
+    const parsed = parseMessenger(rawMessenger);
+    if (typeof parsed === 'string') return parsed;
+    messenger = parsed;
+  }
+  if (mode === undefined && active === undefined && messenger === undefined) return null;
+  return {
+    desktop: { mode: mode ?? DEFAULT_DESKTOP_MODE },
+    ...(active ? { active } : {}),
+    ...(messenger ? { messenger } : {}),
+  };
 }
 
 /** The desktop mode a settings value means: its own, else the default. */
@@ -167,6 +233,26 @@ export function withAgent(settings: Settings, agent: AgentChoice | null): Settin
 
 export function withDesktopMode(settings: Settings, mode: DesktopMode): Settings {
   return { ...settings, channel: { ...settings.channel, desktop: { mode } } };
+}
+
+/** The channels `serve` asks on: the settings' own list, else the desktop alone. */
+export function activeChannels(settings: Settings): readonly ChannelName[] {
+  return settings.channel?.active ?? DEFAULT_ACTIVE_CHANNELS;
+}
+
+/** The messenger settings a value means: its own, else the defaults. */
+export function messengerSettings(settings: Settings): MessengerSettings {
+  return settings.channel?.messenger ?? MESSENGER_DEFAULTS;
+}
+
+/** Which channels are active and how the messenger is set up — what the settings page saves together. */
+export function withMessenger(
+  settings: Settings,
+  active: readonly ChannelName[],
+  messenger: MessengerSettings,
+): Settings {
+  const desktop = settings.channel?.desktop ?? { mode: DEFAULT_DESKTOP_MODE };
+  return { ...settings, channel: { desktop, active: [...new Set(active)], messenger } };
 }
 
 /**

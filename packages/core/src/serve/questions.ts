@@ -72,8 +72,8 @@ export function nextQuestionId(questions: readonly Question[], user: string): st
   return `${ID_PREFIX}${highest + 1}`;
 }
 
-const YES = new Set(['yes', 'y', 'ja', 'j', 'ok', 'okay']);
-const NO = new Set(['no', 'n', 'nein']);
+const YES = new Set(['yes', 'y', 'ja', 'j', 'ok', 'okay', 'allow']);
+const NO = new Set(['no', 'n', 'nein', 'decline', 'deny']);
 
 /**
  * "Yes" and "no" without a model (ADR 0002 §8). Case and one trailing punctuation mark do not
