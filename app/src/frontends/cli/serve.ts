@@ -13,6 +13,7 @@
 import type { CommandModule } from 'yargs';
 
 import {
+  attemptClock,
   cancelOrphanedPermissions,
   dueTasks,
   freeModelNotes,
@@ -66,6 +67,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     const deps = serveDeps({ paths, serve, loaded, channel, open: agents.open, quiet });
     if (!deps) return;
     const runs = runState(serve.stateDir);
+    const clock = attemptClock((id) => runs.lastRun(id));
 
     const dropped = cancelOrphanedPermissions(deps);
     if (dropped > 0) err(`  ${dropped} permission question(s) from an earlier serve cancelled`);
@@ -89,7 +91,8 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     const start = (task: ServeTask) => {
       const done = runTask(task, deps)
         .then((result) => {
-          if (result.outcome !== 'skipped') runs.record(result);
+          if (result.outcome === 'skipped') clock.skipped(task.id, new Date(result.startedAt));
+          else runs.record(result);
           const tail = result.reason
             ? `: ${result.reason}`
             : result.questionId
@@ -118,10 +121,9 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
           break;
         }
         const now = deps.now();
-        for (const task of dueTasks(loaded.config, (id) => runs.lastRun(id), new Set(running.keys()), now))
-          start(task);
+        for (const task of dueTasks(loaded.config, clock.lastRun, new Set(running.keys()), now)) start(task);
         if (once) break;
-        const ms = nextWakeMs(loaded.config, (id) => runs.lastRun(id), deps.now());
+        const ms = nextWakeMs(loaded.config, clock.lastRun, deps.now());
         await new Promise<void>((resolve) => {
           const timer = setTimeout(() => {
             wake = null;

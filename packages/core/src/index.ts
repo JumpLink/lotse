@@ -390,6 +390,7 @@ export { SERVE_CONFIG_SCHEMA, schemaKeys, type SchemaNode } from './serve/schema
 export {
   ModelUnavailableError,
   answerQuestion,
+  attemptClock,
   cancelOrphanedPermissions,
   ceilingReached,
   dueTasks,
