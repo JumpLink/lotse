@@ -5,11 +5,12 @@ This guide wires the [messenger channel](serve.md#answering-in-a-chat-the-messen
 address, and you answer from any XMPP client on your phone or desktop. lotse speaks no XMPP itself;
 it starts `curlew mcp` and calls two of its tools.
 
-> **Warning: the chat is not end-to-end encrypted.** Curlew does not implement OMEMO, so a question
-> travels as plain text through both XMPP servers. A question names the task and the action, and a
-> reply question carries whatever the agent wrote. Every active channel gets every question, from
-> every task: there is no per-task channel choice. Turn the messenger on only when no task can ask
-> about data you would not send in plain text, or when the whole path is under your control.
+> **Warning: the chat is not end-to-end encrypted.** Curlew has no OMEMO yet
+> ([JumpLink/curlew#76](https://github.com/JumpLink/curlew/issues/76)), so a question travels as
+> plain text through both XMPP servers. A question names the task and the action, and a reply
+> question carries whatever the agent wrote. For tasks that touch private documents, send a
+> notice instead of the question, or keep the messenger out of the task: see
+> [Keep private tasks out of the chat](#keep-private-tasks-out-of-the-chat).
 
 ## What you need
 
@@ -84,6 +85,38 @@ Any MCP server that offers these two tools works in Curlew's place:
 `after` is an ISO 8601 time: on the first start, the time `serve` started, and from then on the
 `sentAt` of the last handled message, kept in `messenger-cursor.json`. A message with `fromSelf: true`
 is skipped. lotse reads the result from `structuredContent`, else from the first text block as JSON.
+
+## Keep private tasks out of the chat
+
+By default every active channel gets every question. Two keys narrow that per task or per profile
+(details: [Which channels a task uses](serve.md#which-channels-a-task-uses)):
+
+- `messengerDetail: "notice"` sends the chat only the question id and that a question waits in the
+  task. Read the question with `lotse questions` or on the desktop; you can still answer in the chat
+  with its id.
+- `channels: ["desktop"]` leaves the messenger out of the task entirely.
+
+```json
+{
+  "id": "inbox-review",
+  "profile": "<a profile>",
+  "schedule": { "every": "1d" },
+  "prompt": "Sort the new documents and ask before you change anything.",
+  "cwd": "/tmp",
+  "mcpServers": [],
+  "rights": "read",
+  "channels": ["desktop", "messenger"],
+  "messengerDetail": "notice"
+}
+```
+
+A task can only narrow its profile: `channels` is the overlap of both lists, and a `notice` on the
+profile stays a `notice` whatever the task says. The notice still names the task id, so pick a
+neutral id.
+
+Buttons for answering in the chat are planned
+([JumpLink/lotse#65](https://github.com/JumpLink/lotse/issues/65),
+[JumpLink/curlew#81](https://github.com/JumpLink/curlew/issues/81)). Text answers stay the fallback.
 
 ## Test the round trip
 
