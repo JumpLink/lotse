@@ -112,6 +112,18 @@ export {
   type TurnOptions,
 } from './run.ts';
 export type { McpServer } from '@lotse/acp';
+
+// ── Headless jobs: input in, a typed value out (ADR 0004) ───────────────────────────────────────
+export {
+  JOB_TIMEOUT_MS,
+  JobError,
+  jobPrompt,
+  runJob,
+  type JobErrorKind,
+  type JobLogEntry,
+  type JobOptions,
+  type JobResult,
+} from './job.ts';
 export {
   AgentSession,
   type AgentSessionEvents,
