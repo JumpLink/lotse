@@ -121,6 +121,24 @@ function connectedIdsOf(body: unknown): Set<string> {
   );
 }
 
+/**
+ * The models opencode can use now, per provider, from a `GET /api/model` body (`data[].{id, providerID}`).
+ * Measured on 2.0.25: only usable providers are in it — a catalog provider nobody connected has none.
+ */
+export function parseModelList(body: unknown): Map<string, string[]> {
+  const list = isRecord(body) ? body['data'] : undefined;
+  if (!Array.isArray(list)) throw new Error('the response has no `data` list');
+  const byProvider = new Map<string, string[]>();
+  for (const entry of list) {
+    if (!isRecord(entry) || typeof entry['id'] !== 'string' || typeof entry['providerID'] !== 'string')
+      continue;
+    const models = byProvider.get(entry['providerID']) ?? [];
+    models.push(entry['id']);
+    byProvider.set(entry['providerID'], models);
+  }
+  return byProvider;
+}
+
 export interface WaitHooks {
   sleep(ms: number): Promise<void>;
   now(): number;
@@ -134,6 +152,8 @@ export interface ProviderApi {
   configured(ourFile: string): Promise<ConfiguredProvider[]>;
   /** Every id opencode knows — catalog and runtime — so a new custom id shadows none. */
   knownIds(): Promise<Set<string>>;
+  /** The usable models per provider id (`parseModelList`). */
+  models(): Promise<Map<string, string[]>>;
   /** Remove every credential opencode holds for `id`. Resolves with how many there were. */
   disconnect(id: string): Promise<number>;
   /** Resolve `true` once opencode lists `id` (after a file write), `false` after `timeoutMs`. */
@@ -156,6 +176,9 @@ export function createProviderApi(send: Send): ProviderApi {
         send('GET', '/api/provider'),
       ]);
       return new Set([...parseIdList(ok(integrations).json), ...parseIdList(ok(providers).json)]);
+    },
+    async models() {
+      return parseModelList(ok(await send('GET', '/api/model')).json);
     },
     async disconnect(id) {
       const response = await integration(id);

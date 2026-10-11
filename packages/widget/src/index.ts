@@ -31,6 +31,8 @@ export { LotseChat, type HostGateAnswer, type LotseChatOptions } from './chat.ts
 // The host's say over how its own tool calls are drawn, and what it is handed to decide.
 export type { ToolPresentation, ToolPresenter } from './tool-line.ts';
 export type { HostItem, McpCall, ToolCallView } from '@lotse/core';
+// The policy-side helpers a host may want next to `modelPolicy` and `allowCustomProviders`.
+export { providerOffered, type ModelPolicy } from '@lotse/core';
 
 // The stylesheet is installed by `LotseChat` itself; only the class-name map is public, for a host
 // that styles its own widgets next to the chat (lotse's app reuses `calm`).

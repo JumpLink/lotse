@@ -83,7 +83,7 @@ lotse provider list|add|remove [id]        # local models / OpenAI-compatible en
 lotse agents                               # the launchers that are registered, and whether the binary is on PATH
 lotse serve [--once]                       # run scheduled tasks; notify when an agent has a question
 lotse questions [--all] [--json]           # the questions agents are waiting on
-lotse answer <id> <text…>                  # yes/no for a permission, text for a reply
+lotse answer <id> [text…] [--dialog]       # yes/no, a reply, or the answer window
 ```
 
 Custom providers and their rules (keys, LAN, local-model hints): [docs/custom-providers.md](docs/custom-providers.md).

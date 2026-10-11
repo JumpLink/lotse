@@ -1,6 +1,6 @@
 # 1. lotse as an embeddable widget
 
-- Status: **Proposed**
+- Status: **Accepted**
 - Date: 2026-10-10
 - Deciders: Pascal Garber
 - Related: [design study](../architecture/embeddable-widget-study.md)
@@ -33,11 +33,11 @@ so the reusable parts have to leave `app/`.
   host's backups.
 - The first consumer is the app **Steuererklärung**.
 
-### Open question
+### Headless jobs
 
 Non-chat one-shot AI jobs (receipt analysis, document classification) are not covered by a chat
-widget. Whether lotse gets a headless API for them or they stay on the host's in-process
-provider is under study. **Decision pending.**
+widget. lotse gets a headless `runJob` API in `@lotse/core` for them, decided in
+[ADR 0004](0004-headless-job-api.md).
 
 ## Probe result (step 1, done)
 

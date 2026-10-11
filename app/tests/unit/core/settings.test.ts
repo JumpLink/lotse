@@ -11,6 +11,7 @@ import { join } from 'node:path';
 
 import {
   DEFAULT_SETTINGS,
+  desktopMode,
   parseChoiceSpec,
   backupPath,
   parseSettings,
@@ -20,6 +21,8 @@ import {
   writeSettings,
   type Settings,
   type SettingsProblemKind,
+  withAgent,
+  withDesktopMode,
 } from '../../../src/core/settings.ts';
 
 async function withTempDir(run: (dir: string) => Promise<void> | void): Promise<void> {
@@ -120,6 +123,67 @@ export default async () => {
       if (!('settings' in parsed)) throw new Error('expected settings');
       expect(Object.keys(parsed.settings).sort()).toStrictEqual(['agent', 'version']);
       expect(Object.keys(parsed.settings.agent!).sort()).toStrictEqual(['id', 'source']);
+    });
+  });
+
+  await describe('channel.desktop.mode', async () => {
+    await it('reads either mode next to an agent, or alone', async () => {
+      expect(
+        parseSettings(
+          '{"version":1,"agent":{"id":"opencode","source":"bundled"},"channel":{"desktop":{"mode":"dialog"}}}',
+        ),
+      ).toStrictEqual({ settings: { ...BUNDLED, channel: { desktop: { mode: 'dialog' } } } });
+      expect(parseSettings('{"version":1,"channel":{"desktop":{"mode":"notification"}}}')).toStrictEqual({
+        settings: { version: 1, agent: null, channel: { desktop: { mode: 'notification' } } },
+      });
+    });
+
+    await it('an absent or empty channel is the default, notification', async () => {
+      for (const raw of [
+        '{"version":1}',
+        '{"version":1,"channel":{}}',
+        '{"version":1,"channel":{"desktop":{}}}',
+      ]) {
+        const parsed = parseSettings(raw);
+        if ('problem' in parsed) throw new Error(parsed.problem);
+        expect(desktopMode(parsed.settings)).toBe('notification');
+      }
+    });
+
+    await it('refuses an unknown mode and unknown keys, naming the path', async () => {
+      expect(problemOf('{"version":1,"channel":{"desktop":{"mode":"popup"}}}')).toContain(
+        '"channel.desktop.mode"',
+      );
+      expect(problemOf('{"version":1,"channel":{"mail":{}}}')).toContain('mail');
+      expect(problemOf('{"version":1,"channel":{"desktop":{"mode":"dialog","sound":true}}}')).toContain(
+        'sound',
+      );
+      expect(problemOf('{"version":1,"channel":"dialog"}')).toContain('"channel"');
+    });
+
+    await it('a secret-looking key under channel is refused as one', async () => {
+      expect(problemOf('{"version":1,"channel":{"desktop":{"token":"x"}}}')).toContain('secret-looking');
+    });
+
+    await it('saving one part keeps the other', async () => {
+      const both = withDesktopMode(BUNDLED, 'dialog');
+      expect(both).toStrictEqual({ ...BUNDLED, channel: { desktop: { mode: 'dialog' } } });
+      expect(withAgent(both, null)).toStrictEqual({
+        version: 1,
+        agent: null,
+        channel: { desktop: { mode: 'dialog' } },
+      });
+      expect(withDesktopMode(withAgent(both, null), 'notification').channel).toStrictEqual({
+        desktop: { mode: 'notification' },
+      });
+    });
+
+    await it('survives a write and a read', async () => {
+      await withTempDir((dir) => {
+        const file = join(dir, 'settings.json');
+        writeSettings(file, withDesktopMode(BUNDLED, 'dialog'));
+        expect(desktopMode(readSettings(file).settings)).toBe('dialog');
+      });
     });
   });
 

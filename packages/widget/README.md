@@ -113,6 +113,7 @@ This is `app/tests/examples/embed.ts`, which is type-checked with the app. Each 
 | `modelPolicy` | `(model: string) => 'allow' \| 'deny'` | Which models your data may reach. Absent: every model, which is lotse's own window. See below. |
 | `toolPresenter` | `(call: ToolCallView) => ToolPresentation \| null` | Draw your own MCP calls in your words. Absent: every tool row is lotse's. See below. |
 | `providerOnboarding` | `boolean` | Off by default. On: a new chat with no provider connected shows "Connect a provider" first. |
+| `allowCustomProviders` | `boolean` | Off by default. On: `providerSettingsPage()` lets the person add and remove custom providers (local models, any OpenAI-compatible endpoint). Off: the page lists them read-only. |
 | `onConversation` | `(record, current) => void` | A new conversation has its session and record; list it. Runs before the widget updates its own view. |
 | `onNotice` | `(message) => void` | A line from the agent that is not a transcript entry (it is also logged). |
 | `now` | `() => string` | ISO clock for transcript timestamps. Default is the real clock; inject one for screenshots and tests. |
@@ -214,6 +215,21 @@ the hosting provider. An unreadable state shows the ordinary chat: the page is a
 After a successful login the agent restarts. Nothing here reads or keeps a credential. Core's
 `probeConnections` and `onboardingView` are the pieces, if you want the signal elsewhere.
 
+### Provider settings
+
+`chat.providerSettingsPage()` returns an `Adw.PreferencesPage` (name `providers`) for your own
+preferences dialog; `chat.openProviderSettings()` presents the same page in a dialog of its own. The
+page lists the connected providers (**Connect…** opens the login dialog, **Log out** asks first), the
+custom providers (add and remove only with `allowCustomProviders`) and the privacy notes: which
+providers keep data, and what a free hosted model sees. With a `modelPolicy`, a provider the policy
+denies is left out of the login dialog and listed as "not used by this app" here.
+
+The page starts a private login server when it is shown and stops it when it is hidden. A change
+restarts the agent, or applies from its next start when a turn is still running. Custom providers are
+written only for a **bundled** opencode (lotse's own `lotse-providers.json`); a host opencode's
+configuration is the person's, so the page shows it read-only. All of the logic is core's
+`ProviderSettingsController`; the page only renders it.
+
 ## `LotseChat` members
 
 | Member | Use |
@@ -223,6 +239,7 @@ After a successful login the agent restarts. Nothing here reads or keeps a crede
 | `hasNewChat` | Whether a new chat has a directory to run in. Disable your own control when `false`. |
 | `showNoAgent()` | Show your `noAgentPage`. |
 | `hasLogin`, `openLogin()` | Whether a login can run at all, and open the login dialog. After a login the agent restarts. |
+| `providerSettingsPage()`, `openProviderSettings()` | The provider settings as a page for your dialog, or in a dialog of their own. See above. |
 | `prompt(text)`, `clearDraft()`, `stop()` | Drive the composer from code. |
 | `snapshot`, `turnRunning`, `agentRunning`, `hasChat`, `openSessionId`, `sendReason` | Read-only state, for enabling your own controls. |
 | `dismissPermission(reason)`, `closePermission()`, `closeFailure()`, `closeLogin()` | Take a dialog down, e.g. when your window closes. Call `dismissPermission` first so the reason is recorded. |
@@ -244,6 +261,7 @@ terminates only afterwards. Terminating first would lose the work of the turn in
 | `HostGateAnswer` | `'ask' \| 'decline'`. |
 | `LotseChatOptions` | The options above. |
 | `ToolPresenter`, `ToolPresentation`, `ToolCallView`, `McpCall`, `HostItem` | The types `toolPresenter` and host entries use. |
+| `providerOffered(policy, id, models?)`, `ModelPolicy` | Whether a `modelPolicy` lets a chat use any model of a provider; the login dialog and the settings page filter by it. |
 | `CSS` | The widget's class-name map, for a host that styles its own widgets next to the chat. The stylesheet itself is installed by `LotseChat`; a host needs no CSS of its own. |
 
 ## Related

@@ -59,8 +59,14 @@ export type ModelDecision = 'allow' | 'deny';
  * The id and not a richer object, because the id is the only thing lotse actually knows: the agent
  * sends a value id and a display name, and a name is a label an agent may reword. A policy that has
  * to match on something is given the part that is stable.
+ *
+ * `allowsProvider`, when present, answers for a provider nobody has connected yet — one with no model
+ * ids to ask about (`providerOffered`). It only decides what is *offered*; the prompt gate asks the
+ * predicate itself either way.
  */
-export type ModelPolicy = (model: string) => ModelDecision;
+export type ModelPolicy = ((model: string) => ModelDecision) & {
+  readonly allowsProvider?: (providerId: string) => boolean;
+};
 
 /**
  * Ask the policy, and treat everything that is not an explicit `'allow'` as a deny.
@@ -139,16 +145,42 @@ export const denyFreeHostedModels: ModelPolicy = (model) => {
  * knowledge of which models are free: a model nobody has heard of is denied unless its provider is
  * named, so a new free model cannot slip through a stale list. It does not look inside a provider —
  * `openrouter/…:free` is allowed if `openrouter` is — so combine it with `denyFreeHostedModels` where
- * that matters.
+ * that matters. It answers `allowsProvider` too, so the login dialog offers only the named providers.
  */
 export function allowOnlyProviders(providers: readonly string[]): ModelPolicy {
   const allowed = new Set(providers);
-  return (model) => {
+  const policy = (model: string): ModelDecision => {
     if (typeof model !== 'string') return 'deny';
     const slash = model.indexOf('/');
     if (slash <= 0 || slash === model.length - 1) return 'deny';
     return allowed.has(model.slice(0, slash)) ? 'allow' : 'deny';
   };
+  return Object.assign(policy, { allowsProvider: (providerId: string) => allowed.has(providerId) });
+}
+
+/**
+ * Whether a provider is worth **offering** — in the login dialog and the settings group — under a policy.
+ *
+ * Offered when one of its known models is allowed (`<provider>/<model>`, the agent's spelling). A provider
+ * nobody has connected has no known models (opencode's `/api/model` lists only usable ones, measured on
+ * 2.0.25), and a model predicate cannot be asked about a provider: an allowlist of exact model ids would
+ * deny any made-up stand-in and so hide every provider. So such a provider is offered by the policy's
+ * `allowsProvider` when it has one (a throw is a no), and **offered** when it has none — the prompt gate
+ * (`modelBlock`) still refuses a denied model once one is picked.
+ */
+export function providerOffered(
+  policy: ModelPolicy | undefined,
+  providerId: string,
+  models: readonly string[] = [],
+): boolean {
+  if (policy === undefined) return true;
+  if (models.length > 0) return models.some((model) => modelAllowed(policy, `${providerId}/${model}`));
+  if (policy.allowsProvider === undefined) return true;
+  try {
+    return policy.allowsProvider(providerId) === true;
+  } catch {
+    return false;
+  }
 }
 
 /** Why a prompt cannot go out, and which of the two gates may act on it. See the file header. */

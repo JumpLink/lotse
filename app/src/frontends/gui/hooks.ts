@@ -202,6 +202,13 @@ export interface LotseHooks extends FrameworkHooks {
   preferencesAgent?: string;
 
   /**
+   * `LOTSE_APP_PREFERENCES_PAGE` — open the dialog on a page by name (`agent`, `providers`). The view
+   * switcher is the devtools plane's blind spot as well, and `providers` starts the page's own server, so
+   * a screenshot of it shows the real provider list.
+   */
+  preferencesPage?: string;
+
+  /**
    * `LOTSE_APP_LOGIN` — open the login dialog the way the auth dialog's "Log in…" button does. A flag. It
    * runs the real path (a private `opencode serve`, the real provider list), so a screenshot shows what a
    * person sees; the dialog's rows are `Adw.ActionRow`s, which the devtools plane can activate.
@@ -307,6 +314,7 @@ export function readHooks(env: Record<string, string | undefined> = process.env)
     chooseModel: hookFlag(env, 'CHOOSE_MODEL'),
     preferences: hookFlag(env, 'PREFERENCES'),
     preferencesAgent: hookValue(env, 'PREFERENCES_AGENT'),
+    preferencesPage: hookValue(env, 'PREFERENCES_PAGE'),
     login: hookFlag(env, 'LOGIN'),
     onboarding: hookFlag(env, 'ONBOARDING'),
     newChat: hookFlag(env, 'NEW_CHAT'),

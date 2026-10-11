@@ -171,6 +171,17 @@ chat, and a turn that fails on a login still offers **Log in…**. Add an entry 
 `chat.hasLogin` and `chat.openLogin()` (for example a menu item). The mechanics, measurements and the
 private login server: [login.md](login.md).
 
+**Provider settings.** `chat.providerSettingsPage()` is an `Adw.PreferencesPage` for your own preferences
+dialog (`chat.openProviderSettings()` opens it alone): connected providers with connect and log out, custom
+providers, and the privacy notes. Adding a custom provider (a local model, any OpenAI-compatible
+endpoint) is off unless you pass `allowCustomProviders: true`, and it works only for a bundled opencode.
+A host's own opencode is read-only on the page as a whole: it lists the logins and custom providers, and
+offers no log out, add or remove. With a `modelPolicy`, a connected provider it allows no model of is
+marked "not used by this app". A provider nobody has connected has no model ids to ask about, so the login
+dialog leaves it out only when the policy carries `allowsProvider(id)` (`allowOnlyProviders` does); a
+plain predicate offers every provider and still refuses a denied model at send. Details:
+[custom-providers.md](custom-providers.md).
+
 Lotse never reads or stores a credential; the agent keeps its own (for a bundled agent: under
 `<dataDir>/agents/<id>/`).
 

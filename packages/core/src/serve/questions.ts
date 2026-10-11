@@ -87,6 +87,15 @@ export function parseAnswer(text: string): ParsedAnswer {
 }
 
 /**
+ * The answers a question takes in one click, each a word `parseAnswer` reads. A permission question
+ * has exactly two; a reply question has none, because its answer is the person's own text and a
+ * guessed "yes" would put words in their mouth.
+ */
+export function quickReplies(kind: QuestionKind): readonly ('yes' | 'no')[] {
+  return kind === 'permission' ? ['yes', 'no'] : [];
+}
+
+/**
  * Whether a turn's final message is a question to the person: its last non-empty line ends with
  * `?`. Deterministic on purpose — deciding with a model would cost a call per run, and a prompt can
  * tell the agent to end with a question when it needs one.

@@ -21,6 +21,11 @@ and also records changes that are not a release of their own.
 - **`lotse serve` precheck.** A task can have `precheck: {profile?, prompt | promptFile}`: a cheap
   read-only turn whose last line is `WORK` or `NOTHING`. Only `WORK` starts the real run, and
   `NOTHING` is recorded as outcome `nothing`.
+- **Answering from the desktop.** A `lotse serve` question's notification gets an **Answer…** button
+  and, for a permission, **Allow once** / **Decline**, when the notification server shows actions.
+  `lotse answer <id>` without text (or with `--dialog`) opens an answer window. The setting
+  `channel.desktop.mode` (`notification` | `dialog`, also in Preferences) can open the window
+  right away instead. See [docs/serve.md](docs/serve.md#answering-from-the-desktop).
 - **`SERVE_CONFIG_SCHEMA`** (`@lotse/core`): the task file as a JSON Schema with a title and a
   description on every field. The parser takes its allowed keys from it.
 - **Structured tool calls in the transcript** (#43). Each tool line now also stores `tool`: ACP kind,
@@ -43,6 +48,11 @@ and also records changes that are not a release of their own.
   `connect/key`. https and loopback are accepted, LAN http needs `--allow-lan`, anything else is
   refused, and a catalog id is never shadowed. A keyless local provider counts as connected for the
   onboarding. See [docs/custom-providers.md](docs/custom-providers.md).
+- **Provider settings page** (#45, `@lotse/widget`): `LotseChat.providerSettingsPage()` and
+  `openProviderSettings()` list connected providers (connect, log out), custom providers and the
+  privacy notes; lotse's preferences gain it as the `providers` page. The host option
+  `allowCustomProviders` (default off) enables add and remove; a `modelPolicy` also filters the login
+  dialog (`providerOffered`). The logic is core's `ProviderSettingsController`.
 
 ### Changed
 

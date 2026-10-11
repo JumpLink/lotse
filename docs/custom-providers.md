@@ -1,7 +1,8 @@
 # Custom providers: local models and any OpenAI-compatible endpoint
 
-Status: **the core (`@lotse/core`, `custom/`) and `lotse provider` exist; the widget's settings group is
-[#45](https://github.com/JumpLink/lotse/issues/45).** Design decided in
+Status: **the core (`@lotse/core`, `custom/`), `lotse provider` and the widget's settings page
+([#45](https://github.com/JumpLink/lotse/issues/45), `LotseChat.providerSettingsPage()`) exist.** The page
+adds and removes only with the host option `allowCustomProviders`, and only for a bundled opencode. Design decided in
 [#17](https://github.com/JumpLink/lotse/issues/17). Measured on opencode 2.0.25, 2026-10-11.
 
 ## What it is
@@ -74,6 +75,11 @@ lotse provider remove my-gw
 
 `add` and `remove` work only on the bundled copy; with a host opencode they say so and name
 `lotse agents --use opencode:bundled`. A hand-written provider is read-only and shown with its path.
+
+The settings page goes one step further: a host opencode is read-only there **as a whole**. It lists
+the logins and providers and offers no log out, add or remove — those are the person's, kept where they
+put them (`opencode auth logout`). With `allowCustomProviders` off, a custom provider that holds a key is
+listed with the connected providers, so its key can still be logged out of.
 
 ## Measured (opencode 2.0.25)
 

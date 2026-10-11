@@ -23,7 +23,13 @@ import {
   type AgentDetection,
   type LotsePaths,
 } from '@lotse/core';
-import { parseChoiceSpec, readSettings, saveSettings, type Settings } from '../../core/settings.ts';
+import {
+  parseChoiceSpec,
+  readSettings,
+  saveSettings,
+  withAgent,
+  type Settings,
+} from '../../core/settings.ts';
 
 import { err, out, pickArgv } from './output.ts';
 
@@ -94,7 +100,7 @@ const command = (paths: LotsePaths): CommandModule => ({
         return;
       }
       try {
-        const { backup } = saveSettings(file, { version: 1, agent: parsed.choice });
+        const { backup } = saveSettings(file, withAgent(readSettings(file).settings, parsed.choice));
         if (backup) err(`the earlier settings file was moved to ${backup}`);
       } catch (error) {
         const code = (error as NodeJS.ErrnoException).code;

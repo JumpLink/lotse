@@ -53,7 +53,11 @@ import loginFlow from './unit/core/login-flow.test.ts';
 import loginController from './unit/core/login-controller.test.ts';
 import loginApi from './unit/core/login-api.test.ts';
 import customProviders from './unit/core/custom-providers.test.ts';
+import providerSettings from './unit/core/provider-settings.test.ts';
 import server from './unit/core/server.test.ts';
+import questionActions from './unit/core/question-actions.test.ts';
+import answerDialog from './unit/core/answer-dialog.test.ts';
+import answerView from './unit/core/answer-view.test.ts';
 
 import serveSchedule from './unit/serve/schedule.test.ts';
 import serveConfig from './unit/serve/config.test.ts';
@@ -117,7 +121,11 @@ run({
   loginController,
   loginApi,
   customProviders,
+  providerSettings,
   server,
+  questionActions,
+  answerDialog,
+  answerView,
   serveSchedule,
   serveConfig,
   serveQuestions,

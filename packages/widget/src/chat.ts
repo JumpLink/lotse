@@ -41,7 +41,9 @@ import type { AgentSource, SessionRecord, TranscriptEntry } from '@lotse/session
 import {
   AgentSession,
   LoginController,
+  ProviderSettingsController,
   agentStatus,
+  customProvidersFileOf,
   displayCwd,
   failureAction,
   failureToShow,
@@ -49,7 +51,10 @@ import {
   loginUnavailableReason,
   onboardingView,
   openLoginSession,
+  openSettingsSession,
   probeConnections,
+  probeModels,
+  providerOffered,
   staleDialog,
   type AgentAttachment,
   type AgentCommand,
@@ -72,6 +77,7 @@ import { FailureDialog } from './failure-dialog.ts';
 import { LoginDialog } from './login-dialog.ts';
 import { OnboardingPage } from './onboarding-page.ts';
 import { PermissionDialog } from './permission-dialog.ts';
+import { ProviderSettingsPage } from './provider-settings.ts';
 import type { ToolPresenter } from './tool-line.ts';
 import { TranscriptView } from './transcript-view.ts';
 import Template from './chat.blp';
@@ -171,6 +177,13 @@ export interface LotseChatOptions {
    *   denied — or an unverifiable — model around this surface.
    */
   readonly modelPolicy?: ModelPolicy;
+  /**
+   * Whether the provider settings (`providerSettingsPage`) let the person add and remove custom providers
+   * — an OpenAI-compatible server of their own, local or not. Off by default: a custom provider is a new
+   * place a prompt can go, which a host carrying data opts into. `modelPolicy` still applies to what such
+   * a provider offers.
+   */
+  readonly allowCustomProviders?: boolean;
   /**
    * How the host wants its own tool calls drawn.
    *
@@ -276,6 +289,8 @@ export class LotseChat extends Adw.Bin {
   readonly #gate: LotseChatOptions['gate'];
   readonly #hostConversation: LotseChatOptions['onConversation'];
   readonly #hostNotice: LotseChatOptions['onNotice'];
+  readonly #modelPolicy: ModelPolicy | undefined;
+  readonly #allowCustomProviders: boolean;
 
   constructor(options: LotseChatOptions) {
     super();
@@ -288,6 +303,8 @@ export class LotseChat extends Adw.Bin {
     this.#hostNotice = options.onNotice;
     this.#loginAgent = options.agent;
     this.#providerOnboarding = options.providerOnboarding === true;
+    this.#modelPolicy = options.modelPolicy;
+    this.#allowCustomProviders = options.allowCustomProviders === true;
     // `this` rather than a window, which is why `PermissionDialog` and `FailureDialog` take a
     // `Gtk.Widget`: a widget a host embeds does not know what window it will end up in, and
     // `Adw.Dialog.present` walks up to the root by itself.
@@ -690,12 +707,22 @@ export class LotseChat extends Adw.Bin {
    * the process that hit the login trap would keep saying "log in".
    */
   openLogin(): void {
+    this.#openLogin();
+  }
+
+  /** `done` runs after a successful login — the settings page reads its list again then. */
+  #openLogin(done?: () => void): void {
     const agent = this.#loginAgent;
+    const policy = this.#modelPolicy;
     const controller = new LoginController({
       openSession: () => openLoginSession(agent),
       unavailableReason: () => loginUnavailableReason(agent),
       sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
       now: () => Date.now(),
+      // A provider the host's policy rules out (`allowsProvider`) is not offered for a login at all.
+      ...(policy ? { offers: (provider) => providerOffered(policy, provider.id) } : {}),
+      // The login is stored either way, so the settings page reads it even when the restart waits.
+      ...(done ? { onStored: () => done() } : {}),
       onConnected: async () => {
         // A turn in flight is left alone, so say so instead of claiming a restart that did not happen.
         if (!(await this.#agent.restartAgent()))
@@ -705,6 +732,46 @@ export class LotseChat extends Adw.Bin {
       },
     });
     this.#login.show(this, controller);
+  }
+
+  // ─── the provider settings ──────────────────────────────────────────────────────────────────
+
+  /**
+   * A new provider settings page (#45) for a host's own `Adw.PreferencesDialog`: the connected providers,
+   * the custom ones (when `allowCustomProviders`) and what each means for the person's data.
+   *
+   * The page starts its private server when it is shown and stops it when it is hidden, so a host may
+   * build it with its dialog. A change the agent has to pick up restarts it, as a login does.
+   */
+  providerSettingsPage(): Adw.PreferencesPage {
+    const agent = this.#loginAgent;
+    const policy = this.#modelPolicy;
+    const page = new ProviderSettingsPage({
+      createController: () =>
+        new ProviderSettingsController({
+          openSession: () => openSettingsSession(agent),
+          unavailableReason: () => loginUnavailableReason(agent),
+          file: customProvidersFileOf(agent),
+          allowCustomProviders: this.#allowCustomProviders,
+          ...(policy ? { modelPolicy: policy } : {}),
+          listModels: (baseUrl, key) => probeModels(baseUrl, fetch, key),
+          sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+          now: () => Date.now(),
+          onChanged: async () => {
+            if (!(await this.#agent.restartAgent()))
+              throw new Error('a turn is still running — it uses the change from the next start');
+          },
+        }),
+      connect: (done) => this.#openLogin(done),
+    });
+    return page.page;
+  }
+
+  /** The same page in a dialog of its own, for a host without a preferences dialog to put it in. */
+  openProviderSettings(): void {
+    const dialog = new Adw.PreferencesDialog({ title: 'Providers' });
+    dialog.add(this.providerSettingsPage());
+    dialog.present(this);
   }
 
   /**
