@@ -133,11 +133,12 @@ export default async () => {
           data: [
             { id: 'xai', name: 'xAI', methods: [{ type: 'oauth', id: 'device', label: 'SuperGrok' }] },
             { id: 'poe', name: 'Poe', methods: [{ type: 'oauth', id: 'browser', label: 'Poe' }] },
+            { id: 'openai', name: 'OpenAI', methods: [{ type: 'key' }] },
           ],
         },
       };
       const providers = await createLoginApi(recorder(catalog).send).providers();
-      expect(providers.map((p) => p.id).join(',')).toBe('poe');
+      expect(providers.map((p) => p.id).join(',')).toBe('openai,poe,xai');
     });
 
     await it('sends an API key to connect/key and accepts the empty 204', async () => {

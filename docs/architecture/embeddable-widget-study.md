@@ -183,7 +183,7 @@ Widget needs:
   the same `probeConnections`.
 - The login dialog should become a reusable `Adw.NavigationPage` / `Gtk.Widget` content, the dialog being a thin wrapper.
 - Login must run under the host's isolation dir so credentials land in the host app's agent store (already how `server.ts` works).
-- Provider data policy: the `xai` exclusion and featured lists are lotse decisions; make `login-providers.json` injectable.
+- Provider data policy: the exclusion and featured lists are lotse decisions; make `login-providers.json` injectable.
 - Browser OAuth in a Flatpak needs `xdg-open` via portal (`Gtk.UriLauncher`) rather than spawning a browser.
 
 ## 6. Steps, sizes, risks

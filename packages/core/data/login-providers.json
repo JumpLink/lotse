@@ -1,6 +1,6 @@
 {
-  "checked": "2026-10-05",
-  "excluded": [{ "id": "xai", "reason": "Not supported, by decision of 2026-10-04." }],
+  "checked": "2026-10-11",
+  "excluded": [],
   "preferred": [
     "opencode",
     "opencode-go",
