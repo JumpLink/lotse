@@ -17,11 +17,15 @@ Requires GJS with GTK 4 and libadwaita, and an ACP agent (opencode today) on `PA
 
 ## Install and import
 
-The packages are `private` and not yet on a registry; depend on them as a workspace:
-
-```json
-{ "dependencies": { "@lotse/widget": "*", "@lotse/core": "*", "@lotse/session": "*" } }
+```bash
+npm i @lotse/widget @lotse/core @lotse/acp @lotse/session \
+  @girs/adw-1 @girs/gdk-4.0 @girs/glib-2.0 @girs/gobject-2.0 @girs/gtk-4.0 @girs/pango-1.0
 ```
+
+The `@girs/*` type packages are peer dependencies (`^5.4.0`); the widget itself loads GTK 4 and
+libadwaita from the system at run time. It ships TypeScript sources and `.blp` templates, so the host
+builds with gjsify (which compiles Blueprint). A plain `tsc` consumer needs
+`"allowArbitraryExtensions": true` in its tsconfig, for the `.d.blp.ts` declarations next to the templates.
 
 ```ts
 import { LotseChat } from '@lotse/widget';

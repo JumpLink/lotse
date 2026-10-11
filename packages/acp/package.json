@@ -1,10 +1,28 @@
 {
   "name": "@lotse/acp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "LGPL-3.0-or-later",
-  "private": true,
   "type": "module",
   "description": "Agent Client Protocol, layer 1: the protocol types against refs/acp/schema.v1.json, the JSON-RPC 2.0 codec, and the client session lifecycle. NO spawn, NO gi://, NO dependencies — the transport is an injected interface, so every byte of protocol lives here and is unit-testable on both runtimes.",
+  "keywords": [
+    "acp",
+    "agent-client-protocol",
+    "json-rpc",
+    "coding-agent"
+  ],
+  "homepage": "https://github.com/JumpLink/lotse/tree/main/packages/acp#readme",
+  "bugs": {
+    "url": "https://github.com/JumpLink/lotse/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JumpLink/lotse.git",
+    "directory": "packages/acp"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
@@ -19,6 +37,9 @@
     "check": "gjsify tsc --noEmit --project tsconfig.json"
   },
   "files": [
-    "src"
+    "src",
+    "COPYING",
+    "LICENSE",
+    "README.md"
   ]
 }

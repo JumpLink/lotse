@@ -1,10 +1,28 @@
 {
   "name": "@lotse/core",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "LGPL-3.0-or-later",
-  "private": true,
   "type": "module",
   "description": "Lotse without a surface: which agent to start and how, the session a turn runs in, the view models a chat renders from, and the provider login. No gi://, no yargs, no widget — a host injects its paths, its agent choice and its gate, so the same logic drives the CLI, the window and an embedded widget.",
+  "keywords": [
+    "acp",
+    "coding-agent",
+    "gjs",
+    "gjsify"
+  ],
+  "homepage": "https://github.com/JumpLink/lotse/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/JumpLink/lotse/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JumpLink/lotse.git",
+    "directory": "packages/core"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "exports": {
     ".": "./src/index.ts"
   },
@@ -13,10 +31,13 @@
   },
   "files": [
     "src",
-    "data"
+    "data",
+    "COPYING",
+    "LICENSE",
+    "README.md"
   ],
   "dependencies": {
-    "@lotse/acp": "*",
-    "@lotse/session": "*"
+    "@lotse/acp": "^0.2.0",
+    "@lotse/session": "^0.2.0"
   }
 }
