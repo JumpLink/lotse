@@ -10,6 +10,7 @@ import {
   dueTasks,
   parseServeConfig,
   parseVerdict,
+  precheckText,
   runTask,
   type Question,
   type ServeConfig,
@@ -206,6 +207,13 @@ export default async () => {
       expect(parseVerdict('Nothing since the last run.\n\n**NOTHING.**\n')).toBe('nothing');
       expect(parseVerdict('WORK\nbut maybe not')).toBe(null);
       expect(parseVerdict('')).toBe(null);
+    });
+
+    await it('puts the last run in front of the prompt', async () => {
+      expect(precheckText('Anything new?', null)).toBe('This task has not run before.\n\nAnything new?');
+      expect(
+        precheckText('Anything new?', { startedAt: '2026-10-11T05:00:00.000Z', outcome: 'failed' }),
+      ).toBe('Last run of this task: 2026-10-11T05:00:00.000Z (outcome: failed).\n\nAnything new?');
     });
 
     await it('NOTHING ends the run as "nothing" and never starts the task', async () => {

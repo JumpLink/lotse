@@ -50,8 +50,9 @@ model, that answers one question: is there anything to do? Its last line must be
 - `NOTHING` records outcome `nothing` in `runs.json`, which is not `done`. A missing verdict or a
   failed precheck records `failed`, and the task does not run.
 
-Write the precheck prompt to compare against the last run, which you can read from `runs.json`. For
-example: "WORK if a message is newer than the last run, else NOTHING."
+lotse puts one line in front of the precheck prompt: the time and outcome of the task's last run
+from `runs.json`, or that it has not run before. Compare against it, for example: "WORK if a message
+is newer than the last run or the last run failed, else NOTHING."
 
 ### Rights
 

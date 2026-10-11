@@ -396,6 +396,7 @@ export {
   followUpPrompt,
   nextWakeMs,
   parseVerdict,
+  precheckText,
   runTask,
   userOf,
   type AnswerMode,
