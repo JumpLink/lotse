@@ -73,6 +73,12 @@ export interface ServeTask {
   readonly cwd: string;
   /** Passed to `session/new` as is — MCP is passed through, not known. */
   readonly mcpServers: readonly McpServer[];
+  /**
+   * The servers for the turn that continues a reply question, instead of `mcpServers`. `null`: the
+   * same ones. A task can hand the agent a read-only server to ask with and a writing one only after
+   * the person has said yes — the write tools do not exist before the answer.
+   */
+  readonly answerMcpServers: readonly McpServer[] | null;
   readonly rights: RightsLevel;
   readonly released: readonly ReleasedArea[];
   readonly questions: QuestionLimits;
@@ -209,6 +215,7 @@ const TASK_KEYS = [
   'promptFile',
   'cwd',
   'mcpServers',
+  'answerMcpServers',
   'rights',
   'released',
   'questions',
@@ -242,6 +249,15 @@ function parseTask(value: unknown, where: string, problems: string[]): ServeTask
     mcpServers.every((server) => isRecord(server) && typeof server['name'] === 'string');
   if (!serversValid) problems.push(`${label}.mcpServers must be a list of MCP servers, each with a "name"`);
 
+  const answerServers = record['answerMcpServers'];
+  const answerServersValid =
+    answerServers === undefined ||
+    (Array.isArray(answerServers) &&
+      answerServers.every((server) => isRecord(server) && typeof server['name'] === 'string'));
+  if (!answerServersValid) {
+    problems.push(`${label}.answerMcpServers must be a list of MCP servers, each with a "name"`);
+  }
+
   const rights = record['rights'] ?? 'confirm';
   if (rights !== 'read' && rights !== 'confirm' && rights !== 'released') {
     problems.push(`${label}.rights must be "read", "confirm" or "released"`);
@@ -267,6 +283,8 @@ function parseTask(value: unknown, where: string, problems: string[]): ServeTask
     promptFile,
     cwd: typeof cwd === 'string' ? cwd : '',
     mcpServers: serversValid ? (mcpServers as McpServer[]) : [],
+    answerMcpServers:
+      answerServers !== undefined && answerServersValid ? (answerServers as McpServer[]) : null,
     rights: rights === 'read' || rights === 'released' ? rights : 'confirm',
     released,
     questions: parseLimits(record['questions'], label, problems),

@@ -22,7 +22,8 @@ file at mode `0600`; `serve` warns when it is readable by others.
   A private profile must name a model that is not on the free list.
 - **tasks**: `{id, profile, schedule, prompt | promptFile, cwd, mcpServers, rights, released,
   questions, notify}`. A `promptFile` resolves relative to the task file. `mcpServers` is passed to
-  `session/new` unchanged.
+  `session/new` unchanged. `answerMcpServers` (optional) replaces it for the turn that continues
+  a reply question (`lotse answer`).
 
 Unknown keys are errors, and every problem is reported at start. `serve` reads the file once. When
 the file or a prompt file changes, it stops with exit 0 and tells you; restart it to load the edit.
@@ -65,6 +66,11 @@ run's final message.
    one it used. The agent's reply goes to stdout.
 
 Write prompts so that an agent that needs you ends its message with a question.
+
+**Propose first, write after the yes.** Give the first turn a read-only MCP server in `mcpServers`
+and the writing one in `answerMcpServers`: the agent proposes a whole batch in one reply question, and
+the write tools exist only in the turn that your answer starts. Nothing depends on the model keeping
+a promise or on the agent asking permission for an MCP tool.
 
 ## Where the state lives
 
