@@ -44,16 +44,16 @@ export interface ServeProfile {
   readonly model: string | null;
   /** A label for the person. It never blocks a run (ADR 0002, amendment of 2026-10-11). */
   readonly data: 'private' | 'public';
-  /** The channels its tasks' messages may use. `null`: every active one. A task's own list wins. */
+  /** The channels its tasks' messages may use. `null`: every active one. A task's own list can only narrow it. */
   readonly channels: readonly ChannelName[] | null;
-  /** How much of a question the messenger gets. `null`: `full`. A task's own setting wins. */
+  /** How much of a question the messenger gets. `null`: `full`. `notice` on the task or here wins. */
   readonly messengerDetail: MessengerDetail | null;
 }
 
 /** `full`: the question goes to the chat. `notice`: only that one waits, and where to read it. */
 export type MessengerDetail = 'full' | 'notice';
 
-/** Where one task's messages go, its own settings over its profile's. */
+/** Where one task's messages go, its own settings narrowing its profile's. */
 export interface TaskDelivery {
   /** `null`: every active channel. */
   readonly channels: readonly ChannelName[] | null;
@@ -118,9 +118,9 @@ export interface ServeTask {
   readonly questions: QuestionLimits;
   /** `questions`: notify only when the agent asks. `always`: also send the run's answer. */
   readonly notify: 'questions' | 'always';
-  /** Overrides the profile's `channels`; `null`: the profile's. */
+  /** Narrows the profile's `channels` (the intersection); `null`: the profile's. */
   readonly channels: readonly ChannelName[] | null;
-  /** Overrides the profile's `messengerDetail`; `null`: the profile's. */
+  /** `notice` tightens the profile's `messengerDetail`, never loosens it; `null`: the profile's. */
   readonly messengerDetail: MessengerDetail | null;
 }
 
@@ -232,24 +232,45 @@ export function profileOf(config: ServeConfig, task: ServeTask): ServeProfile {
   return profile;
 }
 
-/** The channels and the messenger detail a task's messages get. An unknown task gets the defaults. */
+/**
+ * The channels and the messenger detail a task's messages get. A task can only narrow its profile:
+ * the channels are the intersection of both lists, and the stricter detail (`notice`) wins — so a
+ * profile that keeps private documents off a channel cannot be undone by one task. An unknown task
+ * gets the defaults.
+ */
 export function deliveryOf(config: ServeConfig, taskId: string): TaskDelivery {
   const task = config.tasks.find((candidate) => candidate.id === taskId);
   const profile = task ? config.profiles.find((candidate) => candidate.id === task.profile) : undefined;
-  return {
-    channels: task?.channels ?? profile?.channels ?? null,
-    messengerDetail: task?.messengerDetail ?? profile?.messengerDetail ?? 'full',
-  };
+  const own = task?.channels ?? null;
+  const inherited = profile?.channels ?? null;
+  const channels = own && inherited ? own.filter((name) => inherited.includes(name)) : (own ?? inherited);
+  const notice = task?.messengerDetail === 'notice' || profile?.messengerDetail === 'notice';
+  return { channels, messengerDetail: notice ? 'notice' : 'full' };
 }
 
-/** One sentence per task whose channels are none of the active ones: its questions reach nobody. */
+/**
+ * One sentence per task that cannot reach what it asks for: it names a channel its profile excludes
+ * (ignored, never widened), or none of its channels is active so its questions reach nobody.
+ */
 export function unreachableTaskNotes(config: ServeConfig, active: readonly ChannelName[]): string[] {
   return config.tasks.flatMap((task) => {
+    const notes: string[] = [];
+    const profile = config.profiles.find((candidate) => candidate.id === task.profile);
+    const excluded = (task.channels ?? []).filter(
+      (name) => profile?.channels && !profile.channels.includes(name),
+    );
+    if (excluded.length > 0)
+      notes.push(
+        `task "${task.id}" names ${excluded.join(', ')}, which its profile "${task.profile}" excludes — a task can only narrow its profile, so it is ignored`,
+      );
     const { channels } = deliveryOf(config, task.id);
-    if (!channels || channels.some((name) => active.includes(name))) return [];
-    return [
-      `task "${task.id}" may use only ${channels.join(', ')}, which is not active — its questions are in \`lotse questions\` only`,
-    ];
+    if (channels && !channels.some((name) => active.includes(name)))
+      notes.push(
+        channels.length === 0
+          ? `task "${task.id}" has no channel left after its profile's list — its questions are in \`lotse questions\` only`
+          : `task "${task.id}" may use only ${channels.join(', ')}, which is not active — its questions are in \`lotse questions\` only`,
+      );
+    return notes;
   });
 }
 

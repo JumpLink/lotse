@@ -55,14 +55,14 @@ const PROMPT = {
   },
 } as const satisfies Record<string, SchemaNode>;
 
-/** Where a task's messages may go. On a profile for its tasks; a task's own setting wins. */
+/** Where a task's messages may go. On a profile for its tasks; a task can only narrow its profile. */
 const DELIVERY = {
   channels: {
     type: 'array',
     minItems: 1,
     title: 'Channels',
     description:
-      "The channels these messages may use. Empty: every active channel. A task's list wins over its profile's.",
+      "The channels these messages may use. Leave it out for every active channel. A task's list can only narrow its profile's.",
     items: {
       type: 'string',
       enum: ['desktop', 'messenger'],
@@ -76,7 +76,7 @@ const DELIVERY = {
     default: 'full',
     title: 'Messenger detail',
     description:
-      "full: the question itself goes to the chat. notice: only that a question waits in the task, and where to read it. A task's setting wins over its profile's.",
+      'full: the question itself goes to the chat. notice: only that a question waits in the task, and where to read it. Notice on the task or its profile wins; a task cannot loosen its profile.',
   },
 } as const satisfies Record<string, SchemaNode>;
 

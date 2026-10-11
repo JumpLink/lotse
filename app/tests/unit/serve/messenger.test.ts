@@ -353,6 +353,34 @@ export default async () => {
       });
     });
 
+    await it('a notice that fails to send is retried as the notice, never the full question', async () => {
+      await withFakeMcp({ sendFailures: 1 }, async (fake) => {
+        const link = linkTo(fake);
+        const clock = { t: 0 };
+        const messenger = messengerChannel(link, SETTINGS, { now: () => clock.t, retryDelaysMs: [100] });
+        try {
+          const channel = routeChannels([{ name: 'messenger', channel: messenger }], ROUTED);
+          await Promise.resolve(channel.send(user, asking('quiet'))).catch(() => {});
+          clock.t = 100;
+          expect(
+            await messenger.retryUnsent(
+              () => true,
+              () => {},
+            ),
+          ).toStrictEqual(['A5']);
+        } finally {
+          await link.close();
+        }
+        const texts = sent(fake).map((call) => String(call.args['text']));
+        expect(texts.length).toBe(2);
+        for (const text of texts) {
+          expect(text).toContain('A question is waiting in quiet');
+          expect(text).not.toContain('4711');
+          expect(text).not.toContain('Example Corp');
+        }
+      });
+    });
+
     await it('an unrestricted task and serve news go to every channel in full', async () => {
       const desktop: ServeMessage[] = [];
       const chat: ServeMessage[] = [];
@@ -558,6 +586,23 @@ export default async () => {
         expect(book.value[0]!.status).toBe('open');
         expect(String(sent(fake)[0]!.args['text'])).toContain('No question is waiting');
         expect(String(sent(fake)[1]!.args['text'])).toContain('#A1 is not answered in this chat');
+      });
+    });
+
+    await it('an id-prefixed reply to a hidden question leaks only the id', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const text = 'Archive invoice 4711 from Example Corp?';
+        const book = { value: [question('A1', 'reply', { task: 'tui', text })] };
+        await looping(fake, book, memoryCursor(BEFORE), async () => {
+          fake.deliver('2026-10-10T11:30:00.000Z', '#A1 yes');
+          await until(() => sent(fake).length === 1, 'the refusal');
+        });
+        const reply = String(sent(fake)[0]!.args['text']);
+        expect(reply).toContain('#A1 is not answered in this chat');
+        expect(reply).not.toContain('4711');
+        expect(reply).not.toContain('Example Corp');
+        expect(book.value[0]!.status).toBe('open');
+        expect(book.value[0]!.answer).toBe(null);
       });
     });
 
