@@ -122,12 +122,13 @@ export default async () => {
       expect([second!.featured, second!.europe].join()).toBe('false,false');
     });
 
-    await it('drops a provider the policy excludes, however it is spelled in the catalog', async () => {
-      expect(ids.includes('xai')).toBe(false);
+    await it('drops a provider the policy excludes', async () => {
+      const policy = parseLoginPolicy({ excluded: [{ id: 'xai', reason: 'synthetic' }], preferred: [] });
+      expect(parseIntegrations(CATALOG, policy).some((p) => p.id === 'xai')).toBe(false);
     });
 
     await it('puts the preferred providers first, in their order, and the rest by name', async () => {
-      expect(ids.join(',')).toBe('opencode,openai,github-copilot,anthropic,poe');
+      expect(ids.join(',')).toBe('opencode,openai,github-copilot,anthropic,poe,xai');
     });
 
     await it('says which provider already holds a connection', async () => {
@@ -163,8 +164,10 @@ export default async () => {
   });
 
   await describe('the shipped policy', async () => {
-    await it('does not offer xAI, and says why', async () => {
-      expect(LOGIN_POLICY.excluded.get('xai')!.length > 0).toBe(true);
+    await it('offers xAI under Other, neither popular nor European', async () => {
+      expect(LOGIN_POLICY.excluded.has('xai')).toBe(false);
+      const xai = parseIntegrations(CATALOG).find((p) => p.id === 'xai')!;
+      expect([xai.featured, xai.europe].join()).toBe('false,false');
     });
 
     await it('lists opencode’s own popular providers first and Scaleway among the European ones', async () => {

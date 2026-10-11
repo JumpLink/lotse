@@ -44,8 +44,9 @@ The key is held for the length of that one call: not in the controller's `state`
 file. The CLI reads it from stdin (`echo "$KEY" | lotse login scaleway`), never from an argument, which would
 sit in the process list and the shell history.
 
-`packages/core/data/login-providers.json` holds what lotse owns: the providers it does not offer (`xai`, by decision of
-2026-10-04, each with a reason), the **featured** order and the **European** providers. The featured list is
+`packages/core/data/login-providers.json` holds what lotse owns: the providers it does not offer (`excluded`, each
+with a reason; empty since 2026-10-11, when xAI's device login "SuperGrok Subscription" was let in, listed under
+**Other**), the **featured** order and the **European** providers. The featured list is
 opencode's own "popular" set (`opencode`, `opencode-go`, `openai`, `github-copilot`, `anthropic`, `google`,
 `openrouter`, `vercel`, from its TUI and app pickers) followed by the European ones (Mistral, Scaleway,
 OVHcloud, STACKIT, Berget, Infomaniak, Hetzner, Cortecs); the window shows them under **Popular**, everything

@@ -19,6 +19,8 @@ and also records changes that are not a release of their own.
 - **`lotse serve`: the model is optional** on every profile. Without one, the agent's default
   applies. A private profile on a free model is a note at start, no longer an error (ADR 0002 §5,
   amended).
+- **The login offers xAI** (Grok, including the "SuperGrok Subscription" device login), under
+  **Other**. The exclusion list in `login-providers.json` stays, now empty.
 
 - **The project is now called lotse** (German for the pilot who comes aboard a ship and steers it
   through unfamiliar water). Everything up to and including 0.1.1 was released as **Kurier**; the
