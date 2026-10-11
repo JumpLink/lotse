@@ -19,9 +19,10 @@ file at mode `0600`; `serve` warns when it is readable by others.
 
 - **users**: `{id, addresses}`. The desktop channel needs no address.
 - **profiles**: `{id, user, agent?, model?, data}`. `data` is `private` or `public` and is required.
-  A private profile must name a model that is not on the free list.
+  `model` is optional: leave it out and the agent's default model applies. A private profile on a
+  free model gets a note at start. That choice is yours, so `serve` does not block it.
 - **tasks**: `{id, profile, schedule, prompt | promptFile, cwd, mcpServers, rights, released,
-  questions, notify}`. A `promptFile` resolves relative to the task file. `mcpServers` is passed to
+  questions, notify, precheck?}`. A `promptFile` resolves relative to the task file. `mcpServers` is passed to
   `session/new` unchanged. `answerMcpServers` (optional) replaces it for the turn that continues
   a reply question (`lotse answer`).
 
@@ -35,6 +36,22 @@ the file or a prompt file changes, it stops with exit 0 and tells you; restart i
   while `serve` was down fires once on start. A task that has never run waits for the next time.
 
 Runs of one task never overlap, across `serve` and `lotse answer` alike.
+
+### Precheck
+
+`precheck: {profile?, prompt | promptFile}` runs a cheap turn before the task, usually on a small
+model, that answers one question: is there anything to do? Its last line must be `WORK` or
+`NOTHING`. Only `WORK` starts the real run.
+
+- It gets the task's `mcpServers`, always with `read` rights. It never gets `answerMcpServers` and
+  never asks you a question.
+- Its model comes from its own `profile`. Without one, it uses the task's profile with no model,
+  so the agent's default applies.
+- `NOTHING` records outcome `nothing` in `runs.json`, which is not `done`. A missing verdict or a
+  failed precheck records `failed`, and the task does not run.
+
+Write the precheck prompt to compare against the last run, which you can read from `runs.json`. For
+example: "WORK if a message is newer than the last run, else NOTHING."
 
 ### Rights
 
@@ -75,8 +92,9 @@ a promise or on the agent asking permission for an MCP tool.
 ## Where the state lives
 
 `$XDG_STATE_HOME/lotse/` (`LOTSE_STATE_DIR` overrides it), mode `0600` in a `0700` directory:
-`questions.json`, `runs.json` (last run, outcome, session per task), `serve.log` (JSON lines, ids
-and kinds only, never a prompt or a reply) and `locks/`. Closed questions are kept for 7 days.
+`questions.json`, `runs.json` (last run, outcome, precheck verdict and session per task; outcome is
+`done`, `asked`, `declined`, `nothing`, `skipped` or `failed`), `serve.log` (JSON lines, ids and
+kinds only, never a prompt or a reply) and `locks/`. Closed questions are kept for 7 days.
 
 ## Running it as a service
 
