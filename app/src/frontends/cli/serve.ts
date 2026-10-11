@@ -13,6 +13,7 @@
 import type { CommandModule } from 'yargs';
 
 import {
+  answerQuestion,
   attemptClock,
   cancelOrphanedPermissions,
   dueTasks,
@@ -21,20 +22,73 @@ import {
   runTask,
   type LotsePaths,
   type ServeChannel,
+  type ServeDeps,
   type ServeTask,
 } from '@lotse/core';
 
+import { currentDialogCommand, openAnswerDialog } from '../../core/answer-dialog.ts';
 import type { ServePaths } from '../../core/paths.ts';
 import { currentTasksHash } from '../../core/serve-config.ts';
 import { runState } from '../../core/serve-state.ts';
+import { desktopMode, readSettings } from '../../core/settings.ts';
 import { stderrChannel } from '../../core/stderr-channel.ts';
 import { err, pickArgv } from './output.ts';
 import { readTasks, serveDeps, trackedAgents } from './serve-deps.ts';
 
-async function openChannel(): Promise<ServeChannel> {
+const FAILED = new Set(['unknown', 'dropped', 'expired', 'busy', 'invalid']);
+
+/**
+ * What a click on a notification does: answer through `answerQuestion`, exactly as `lotse answer`.
+ * `deps` is read late — the channel exists before them, because they carry it.
+ */
+function answerHandlers(paths: LotsePaths, deps: () => ServeDeps | null) {
+  const windows = new Set<string>();
+  const answer = async (questionId: string, text: string) => {
+    const current = deps();
+    if (!current) return;
+    const result = await answerQuestion(questionId, text, current);
+    err(`  #${questionId}: ${result.message}`);
+    if (!FAILED.has(result.mode)) return;
+    const owner = result.question?.user;
+    for (const user of current.config.users) {
+      if (owner && user.id !== owner) continue;
+      await current.channel.send(user, {
+        title: 'lotse: answer not taken',
+        body: result.message,
+        questionId: null,
+      });
+    }
+  };
+  const report = (questionId: string, error: unknown) =>
+    err(`  #${questionId}: ${error instanceof Error ? error.message : String(error)}`);
+  return {
+    mode: () => desktopMode(readSettings(paths.settingsFile).settings),
+    onAnswer: (questionId: string, text: string) => {
+      answer(questionId, text).catch((error: unknown) => report(questionId, error));
+    },
+    onDialog: (questionId: string) => {
+      const command = currentDialogCommand();
+      if ('problem' in command || windows.has(questionId)) return;
+      windows.add(questionId);
+      openAnswerDialog(command.command, questionId)
+        .then(async (result) => {
+          if (result.kind === 'failed') err(`  #${questionId}: ${result.reason}`);
+          if (result.kind === 'answer') await answer(questionId, result.text);
+        })
+        .catch((error: unknown) => report(questionId, error))
+        .finally(() => windows.delete(questionId));
+    },
+  };
+}
+
+async function openChannel(paths: LotsePaths, deps: () => ServeDeps | null): Promise<ServeChannel> {
   try {
     const { desktopChannel } = await import('../../core/desktop-channel.ts');
-    return desktopChannel((problem) => err(`  ${problem}`));
+    return desktopChannel({
+      onProblem: (problem) => err(`  ${problem}`),
+      dialog: !('problem' in currentDialogCommand()),
+      ...answerHandlers(paths, deps),
+    });
   } catch (error) {
     err(
       `  no desktop session bus (${error instanceof Error ? error.message : String(error)}); questions go to stderr`,
@@ -62,10 +116,12 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     const loaded = readTasks(serve);
     if (!loaded) return;
     for (const note of freeModelNotes(loaded.config)) err(`  ${note}`);
-    const channel = await openChannel();
+    let ready: ServeDeps | null = null;
+    const channel = await openChannel(paths, () => ready);
     const agents = trackedAgents();
     const deps = serveDeps({ paths, serve, loaded, channel, open: agents.open, quiet });
     if (!deps) return;
+    ready = deps;
     const runs = runState(serve.stateDir);
     const clock = attemptClock((id) => runs.lastRun(id));
 

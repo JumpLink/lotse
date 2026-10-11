@@ -1,5 +1,5 @@
 /**
- * The preferences dialog: which agent lotse connects to.
+ * The preferences dialog: which agent lotse connects to, and how `lotse serve` asks on the desktop.
  *
  * **Action rows with radio check buttons, not an `Adw.ComboRow`.** A combo row shows one line per item
  * and no subtitle, so the path and version that tell "my opencode" from "the bundled one" would be lost —
@@ -22,6 +22,7 @@ import GLib from '@girs/glib-2.0';
 import Gtk from '@girs/gtk-4.0';
 
 import type { AgentChoice, ResolveContext } from '@lotse/core';
+import type { DesktopMode } from '../../core/settings.ts';
 import { choiceFromKey, type ChoicesView } from '../../core/settings-view.ts';
 
 /** What the host detection found; the part of a `ResolveContext` the rows are built from. */
@@ -41,12 +42,31 @@ export interface PreferencesActions {
    * the file cannot be written or must not be overwritten.
    */
   readonly save: (choice: AgentChoice | null) => { readonly backup: string | null };
+  /** `channel.desktop.mode` as the settings file says now. */
+  readonly loadMode: () => DesktopMode;
+  /** Persist the mode; throws like `save`. */
+  readonly saveMode: (mode: DesktopMode) => { readonly backup: string | null };
 }
 
 /** What `select` did, so a caller never claims a write that did not happen. */
 export type SelectOutcome = 'chose' | 'unchanged' | 'refused' | 'failed' | 'missing';
 
 const SCOPE_LINE = 'A change applies the next time lotse starts. This window keeps its agent.';
+
+const MODE_LINE = 'How lotse serve shows a question an agent asks. A change applies to the next question.';
+
+const MODE_ROWS: readonly {
+  readonly mode: DesktopMode;
+  readonly title: string;
+  readonly subtitle: string;
+}[] = [
+  {
+    mode: 'notification',
+    title: 'Notification',
+    subtitle: 'Buttons answer in a window, or allow and decline at once.',
+  },
+  { mode: 'dialog', title: 'Answer window', subtitle: 'The window opens as soon as a question arrives.' },
+];
 
 export class PreferencesDialog {
   readonly #actions: PreferencesActions;
@@ -55,6 +75,8 @@ export class PreferencesDialog {
   #note: Gtk.Label | null = null;
   #rows: Adw.ActionRow[] = [];
   readonly #checks = new Map<string, Gtk.CheckButton>();
+  #modes: Adw.PreferencesGroup | null = null;
+  readonly #modeChecks = new Map<DesktopMode, Gtk.CheckButton>();
   #rendering = false;
   #error: string | null = null;
   #backup: string | null = null;
@@ -78,6 +100,7 @@ export class PreferencesDialog {
     const group = new Adw.PreferencesGroup({ title: 'Agent', description: SCOPE_LINE });
     page.add(noteGroup);
     page.add(group);
+    page.add(this.#modeGroup());
     dialog.add(page);
     this.#dialog = dialog;
     this.#group = group;
@@ -89,6 +112,8 @@ export class PreferencesDialog {
       if (this.#dialog === dialog) this.#dialog = null;
       this.#rows = [];
       this.#checks.clear();
+      this.#modes = null;
+      this.#modeChecks.clear();
     });
     this.#render();
     dialog.present(parent);
@@ -168,12 +193,64 @@ export class PreferencesDialog {
       this.#rows.push(row);
       this.#checks.set(entry.key, check);
     }
+    // One file holds both choices, so a file lotse must not overwrite locks both groups.
+    this.#modes?.set_sensitive(!view.readOnly);
+    this.#modeChecks.get(this.#currentMode())?.set_active(true);
     this.#rendering = false;
     const moved = this.#backup === null ? null : `The earlier settings file was moved to ${this.#backup}.`;
     const lines = [this.#error, moved, view.note].filter((line): line is string => line !== null);
     note.set_label(lines.join('\n'));
     note.set_visible(lines.length > 0);
     note.set_css_classes(['caption', this.#error !== null ? 'error' : 'warning']);
+  }
+
+  #modeGroup(): Adw.PreferencesGroup {
+    const group = new Adw.PreferencesGroup({ title: 'Questions', description: MODE_LINE });
+    const current = this.#currentMode();
+    let first: Gtk.CheckButton | null = null;
+    for (const entry of MODE_ROWS) {
+      const check = new Gtk.CheckButton({ valign: Gtk.Align.CENTER, active: entry.mode === current });
+      if (first) check.set_group(first);
+      else first = check;
+      const row = new Adw.ActionRow({
+        title: entry.title,
+        subtitle: entry.subtitle,
+        useMarkup: false,
+        activatableWidget: check,
+      });
+      row.add_prefix(check);
+      check.connect('toggled', () => {
+        if (this.#rendering || !check.active) return;
+        this.#chooseMode(entry.mode);
+      });
+      group.add(row);
+      this.#modeChecks.set(entry.mode, check);
+    }
+    this.#modes = group;
+    return group;
+  }
+
+  #currentMode(): DesktopMode {
+    try {
+      return this.#actions.loadMode();
+    } catch {
+      return MODE_ROWS[0]!.mode;
+    }
+  }
+
+  #chooseMode(mode: DesktopMode): void {
+    if (this.#readOnly) return;
+    try {
+      const { backup } = this.#actions.saveMode(mode);
+      if (backup !== null) this.#backup = backup;
+      this.#error = null;
+    } catch (error) {
+      this.#error = `Could not save your choice: ${error instanceof Error ? error.message : String(error)}`;
+    }
+    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+      if (this.#dialog) this.#render();
+      return GLib.SOURCE_REMOVE;
+    });
   }
 
   #choose(key: string): void {

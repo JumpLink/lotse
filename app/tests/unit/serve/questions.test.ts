@@ -9,6 +9,7 @@ import {
   parseAnswer,
   parseQuestions,
   pruneQuestions,
+  quickReplies,
   type Question,
 } from '@lotse/core';
 
@@ -61,6 +62,17 @@ export default async () => {
         kind: 'text',
         text: 'yes, but only the first one',
       });
+    });
+  });
+
+  await describe('quickReplies', async () => {
+    await it('a permission takes yes or no, both words parseAnswer reads', async () => {
+      expect(quickReplies('permission')).toStrictEqual(['yes', 'no']);
+      expect(quickReplies('permission').map((reply) => parseAnswer(reply).kind)).toStrictEqual(['yes', 'no']);
+    });
+
+    await it("a reply question has none: its answer is the person's own words", async () => {
+      expect(quickReplies('reply')).toStrictEqual([]);
     });
   });
 

@@ -388,6 +388,7 @@ export {
   parseAnswer,
   parseQuestions,
   pruneQuestions,
+  quickReplies,
   type AnswerKind,
   type ParsedAnswer,
   type Question,
