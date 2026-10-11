@@ -4,15 +4,6 @@ Notable changes to lotse. The per-release notes that ship in the AppStream metai
 from the `gjsify.flatpak.releases` block in `package.json`; this file is the developer-facing view
 and also records changes that are not a release of their own.
 
-## Unreleased
-
-### Added
-
-- **Headless jobs** (`@lotse/core`): `runJob<T>` runs one prompt with no widget and returns your
-  `parse`d JSON value or a typed `JobError`. One agent per job, a required `modelPolicy`, every
-  permission declined by default, timeout and abort as cancel-then-close, nothing persisted
-  ([ADR 0004](docs/adr/0004-headless-job-api.md)).
-
 ## 0.3.0 — 2026-10-11
 
 First release published by CI with provenance: the app and the four libraries share this version.
@@ -49,6 +40,10 @@ First release published by CI with provenance: the app and the four libraries sh
   privacy notes; lotse's preferences gain it as the `providers` page. The host option
   `allowCustomProviders` (default off) enables add and remove; a `modelPolicy` also filters the login
   dialog (`providerOffered`). The logic is core's `ProviderSettingsController`.
+- **Headless jobs** (`@lotse/core`): `runJob<T>` runs one prompt with no widget and returns your
+  `parse`d JSON value or a typed `JobError`. One agent per job, a required `modelPolicy`, every
+  permission declined by default, timeout and abort as cancel-then-close, nothing persisted
+  ([ADR 0004](docs/adr/0004-headless-job-api.md)).
 
 ## 0.2.0 — 2026-10-11
 

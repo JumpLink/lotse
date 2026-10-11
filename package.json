@@ -161,6 +161,10 @@
                   "translatorHint": "Release notes for version 0.3.0 - xAI added to the login"
                 },
                 {
+                  "item": "A host app can run a single prompt as a headless job, with no chat window, and get a typed result back.",
+                  "translatorHint": "Release notes for version 0.3.0 - headless jobs (runJob)"
+                },
+                {
                   "item": "Kurier is now called lotse. An installed Kurier is upgraded, and your sessions and settings are moved over once.",
                   "translatorHint": "Release notes for version 0.3.0 - the rename from Kurier to lotse. Keep \"Kurier\" and \"lotse\" as they are."
                 }
