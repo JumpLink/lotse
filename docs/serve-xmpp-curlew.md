@@ -83,7 +83,8 @@ Any MCP server that offers these two tools works in Curlew's place:
 | `waitTool` | `{account, peer, after, timeout_s: 60, include_bodies: true}` | `{status: "reply" \| "timeout", messages: [{bodyText, sentAt, fromSelf}], cursor}` |
 
 `after` is an ISO 8601 time: on the first start, the time `serve` started, and from then on the
-`sentAt` of the last handled message, kept in `messenger-cursor.json`. A message with `fromSelf: true`
+`cursor` the wait tool returned (else the `sentAt` of the last handled message), kept in
+`messenger-cursor.json`. A message with `fromSelf: true`
 is skipped. lotse reads the result from `structuredContent`, else from the first text block as JSON.
 
 ## Keep private tasks out of the chat
@@ -99,7 +100,7 @@ By default every active channel gets every question. Two keys narrow that per ta
 ```json
 {
   "id": "inbox-review",
-  "profile": "<a profile>",
+  "profile": "assistant",
   "schedule": { "every": "1d" },
   "prompt": "Sort the new documents and ask before you change anything.",
   "cwd": "/tmp",
@@ -110,7 +111,8 @@ By default every active channel gets every question. Two keys narrow that per ta
 }
 ```
 
-A task can only narrow its profile: `channels` is the overlap of both lists, and a `notice` on the
+Replace `assistant` here and below with your profile's id. A task can only narrow its profile:
+`channels` is the overlap of both lists, and a `notice` on the
 profile stays a `notice` whatever the task says. The notice still names the task id, so pick a
 neutral id.
 
@@ -127,7 +129,7 @@ Buttons for answering in the chat are planned
    ```json
    {
      "id": "messenger-test",
-     "profile": "<a profile>",
+     "profile": "assistant",
      "schedule": { "every": "1d" },
      "prompt": "Reply with exactly one line: 'Messenger test: reply with any word?'",
      "cwd": "/tmp",
