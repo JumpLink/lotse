@@ -37,7 +37,8 @@ so the reusable parts have to leave `app/`.
 
 Non-chat one-shot AI jobs (receipt analysis, document classification) are not covered by a chat
 widget. Whether lotse gets a headless API for them or they stay on the host's in-process
-provider is under study. **Decision pending.**
+provider is under study. **Decision pending.** Proposed in
+[ADR 0004](0004-headless-job-api.md).
 
 ## Probe result (step 1, done)
 
