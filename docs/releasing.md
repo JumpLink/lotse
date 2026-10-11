@@ -71,6 +71,6 @@ for p in acp session core widget; do npm trust github @lotse/$p --repo JumpLink/
 Verify with the workflow input `npm` = `check`. From then on a tag publishes everything by OIDC.
 
 That first manual publish carries **no provenance** (it runs outside Actions; `--provenance=false`
-overrides `publishConfig.provenance`, which npm rejects outside a supported CI). If 0.2.0 itself must be
+overrides `publishConfig.provenance`, which npm rejects outside a supported CI). If 0.3.0 itself must be
 attested, publish a placeholder `0.0.0` per name instead (`npm publish <dir with a bare package.json>
---access public`), configure the entries, and let the `v0.2.0` tag publish the real packages.
+--access public`), configure the entries, and let the `v0.3.0` tag publish the real packages.
