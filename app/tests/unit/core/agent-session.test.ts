@@ -1802,4 +1802,30 @@ export default async () => {
       expect(h.session.configRow.visible).toBe(false);
     });
   });
+
+  await describe('agent-session — host entries (#43)', async () => {
+    await it('files a host entry in the bound session and hands it to the surface', async () => {
+      const h = harness();
+      const entry = h.session.appendHostEntry({ type: 'order', text: 'Order placed', data: { id: 7 } });
+      expect(entry.kind).toBe('host');
+      expect(entry.host).toStrictEqual({ type: 'order', data: { id: 7 } });
+      expect(h.persisted).toStrictEqual([{ sessionId: SESSION.id, entries: [entry] }]);
+      expect(h.entries).toStrictEqual([entry]);
+    });
+
+    await it('throws rather than drop it when there is no session to file it in', async () => {
+      const h = harness({ bind: false });
+      expect(() => h.session.appendHostEntry({ type: 'order', text: 'Order placed' })).toThrow(/no session/);
+      h.session.startConversation('/synthetic/project');
+      expect(() => h.session.appendHostEntry({ type: 'order', text: 'Order placed' })).toThrow(/no session/);
+      expect(h.persisted).toStrictEqual([]);
+    });
+
+    await it('refuses an entry no surface could show', async () => {
+      const h = harness();
+      expect(() => h.session.appendHostEntry({ type: '', text: 'x' })).toThrow(/type/);
+      expect(() => h.session.appendHostEntry({ type: 'x', text: '  ' })).toThrow(/text/);
+      expect(h.persisted).toStrictEqual([]);
+    });
+  });
 };

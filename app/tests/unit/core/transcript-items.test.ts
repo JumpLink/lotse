@@ -297,4 +297,110 @@ export default async () => {
       expect(toTranscriptItems([broken])).toStrictEqual([]);
     });
   });
+
+  await describe('toTranscriptItems — the folded tool call (#43)', async () => {
+    const line = (text: string, tool: TranscriptEntry['tool'], toolCallId = 'call_1', sessionId = 's1') => ({
+      ...entry('tool', text, AT, toolCallId),
+      sessionId,
+      tool,
+    });
+
+    await it('projects a line written before the structured record exactly as before, with call null', async () => {
+      const items = toTranscriptItems([entry('tool', 'read a.ts — completed', AT, 'call_1')]);
+      expect(items).toStrictEqual([
+        { kind: 'tool', summary: 'read a.ts — completed', detail: null, expanded: false, at: AT, call: null },
+      ]);
+    });
+
+    await it('folds field by field, and keeps the title through an update that had none', async () => {
+      const items = toTranscriptItems([
+        line('execute — pending', { kind: 'other', title: 'execute', status: 'pending', rawInput: {} }),
+        line('— in_progress', {
+          status: 'in_progress',
+          rawInput: { code: 'tools.probe.probe_echo({})' },
+          mcp: [{ server: 'probe', tool: 'probe_echo', source: 'code' }],
+        }),
+        line('— completed', {
+          status: 'completed',
+          mcp: [{ server: 'probe', tool: 'probe_echo', source: 'reported', status: 'completed' }],
+        }),
+      ]);
+      // Still one row per line: the fold is beside the rows, not instead of them.
+      expect(items.length).toBe(3);
+      const last = items[2];
+      if (last?.kind !== 'tool') throw new Error('expected a tool item');
+      expect(last.call).toStrictEqual({
+        toolCallId: 'call_1',
+        kind: 'other',
+        title: 'execute',
+        status: 'completed',
+        rawInput: { code: 'tools.probe.probe_echo({})' },
+        mcp: [{ server: 'probe', tool: 'probe_echo', source: 'reported', status: 'completed' }],
+      });
+      // The first row's view is the state as of that row, not the final one.
+      const first = items[0];
+      if (first?.kind !== 'tool') throw new Error('expected a tool item');
+      expect(first.call?.status).toBe('pending');
+      expect(first.call?.mcp).toStrictEqual([]);
+    });
+
+    await it('lets a later "omitted" replace an earlier input', async () => {
+      const items = toTranscriptItems([
+        line('write — pending', { title: 'write', rawInput: { a: 1 } }),
+        line('write — completed', { status: 'completed', rawInputOmitted: true }),
+      ]);
+      const last = items[1];
+      if (last?.kind !== 'tool') throw new Error('expected a tool item');
+      expect(last.call?.rawInput).toBe(undefined);
+      expect(last.call?.rawInputOmitted).toBe(true);
+    });
+
+    await it('folds a blank line into the next one that has text', async () => {
+      const items = toTranscriptItems([
+        line('', { title: 'execute' }),
+        line('— completed', { status: 'completed' }),
+      ]);
+      expect(items.length).toBe(1);
+      if (items[0]?.kind !== 'tool') throw new Error('expected a tool item');
+      expect(items[0].call?.title).toBe('execute');
+    });
+
+    await it('keeps the same id in two agent sessions apart', async () => {
+      const items = toTranscriptItems([
+        line('a — pending', { title: 'a' }, 'call_1', 's1'),
+        line('— completed', { status: 'completed' }, 'call_1', 's2'),
+      ]);
+      if (items[1]?.kind !== 'tool') throw new Error('expected a tool item');
+      expect(items[1].call?.title).toBe(undefined);
+    });
+
+    await it('does not fold a line with no id into anything', async () => {
+      const items = toTranscriptItems([
+        { ...entry('tool', 'a'), tool: { title: 'a' } },
+        { ...entry('tool', 'b'), tool: { status: 'completed' } },
+      ]);
+      if (items[1]?.kind !== 'tool') throw new Error('expected a tool item');
+      expect(items[1].call).toStrictEqual({ toolCallId: null, status: 'completed', mcp: [] });
+    });
+  });
+
+  await describe('toTranscriptItems — host lines', async () => {
+    await it('becomes a HostItem and is never merged with the next host line', async () => {
+      const items = toTranscriptItems([
+        { ...entry('host', 'Order placed'), host: { type: 'order', data: { id: 7 }, icon: 'cart-symbolic' } },
+        { ...entry('host', 'Order shipped', LATER), host: { type: 'order' } },
+      ]);
+      expect(items).toStrictEqual([
+        { kind: 'host', type: 'order', text: 'Order placed', data: { id: 7 }, icon: 'cart-symbolic', at: AT },
+        { kind: 'host', type: 'order', text: 'Order shipped', data: undefined, icon: null, at: LATER },
+      ]);
+    });
+
+    await it('survives a host line whose record was dropped as unreadable', async () => {
+      const items = toTranscriptItems([entry('host', 'something happened')]);
+      expect(items).toStrictEqual([
+        { kind: 'host', type: '', text: 'something happened', data: undefined, icon: null, at: AT },
+      ]);
+    });
+  });
 };

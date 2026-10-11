@@ -37,24 +37,35 @@
  * row becomes ` — completed`. The record has the lines; this projection does not second-guess the
  * agent's protocol with them. One row per recorded line, and the summary is that line.
  *
+ * **The fold lives beside the rows, not instead of them.** Since lines carry a structured `tool`
+ * record, each `ToolItem` also has `call`: the call's state folded field by field across every line
+ * of the same id up to this one. Field by field is what the text-level collapse above could not do —
+ * an update without a title keeps the earlier title, because an absent field is "unchanged" in the
+ * record and not an empty string. A surface that wants one row per call can now draw only the last
+ * row of each id; this projection still does not make that choice for it.
+ *
  * **A tool line has no body, and that is the honest outcome rather than a missing feature.** A
- * `tool_call` carries `rawInput` and `rawOutput` in whatever shape the agent's tool used, and
- * `toTranscript` deliberately keeps neither (its own file header is about this), so lotse holds a
- * tool call's title and status and nothing else. The first version put the recorded line, the agent's
- * `toolCallId` and the raw ISO timestamp in the body — which is the summary again, an internal id,
- * and a timestamp no surface renders. Repeating the summary behind a disclosure and calling it a
- * body is a control that points at nothing, so a tool line is now its summary and a surface draws
- * it as a plain row.
+ * `tool_call` carries `rawOutput` in whatever shape the agent's tool used, and `toTranscript`
+ * deliberately does not keep it (its own file header is about this). The input it does keep is for a
+ * host to recognise its own call through `call`, not a body to print: a code-mode script or a JSON
+ * blob behind a disclosure is not something a person reads. The first version put the recorded line,
+ * the agent's `toolCallId` and the raw ISO timestamp in the body — which is the summary again, an
+ * internal id, and a timestamp no surface renders. Repeating the summary behind a disclosure and
+ * calling it a body is a control that points at nothing, so a tool line is its summary and a surface
+ * draws it as a plain row.
+ *
+ * **A host line is never merged.** See `HostItem`.
  */
 
-import type { EntryKind, TranscriptEntry } from '@lotse/session';
+import type { EntryKind, McpCall, TranscriptEntry } from '@lotse/session';
 
 /**
  * Kinds whose adjacent entries are one message rather than several — see decision 1.
  *
- * `tool` is the only kind left out, and the reason is in the file header: a `tool_call` and its
- * updates are separate *protocol* lines, and how to fold them is a question about the agent's
- * stream that this module does not get to answer for it.
+ * `tool` is left out, and the reason is in the file header: a `tool_call` and its updates are
+ * separate *protocol* lines, and how to fold them is a question about the agent's stream that this
+ * module does not get to answer for it. `host` is left out because a host line is not a stream
+ * fragment at all — each one is a whole thing the host did.
  */
 const MERGED_KINDS: ReadonlySet<EntryKind> = new Set<EntryKind>(['user', 'agent', 'thought', 'system']);
 
@@ -121,12 +132,31 @@ export interface ThoughtItem extends DisclosureItem {
 }
 
 /**
- * A tool call, closed by default — and with no body, because lotse records the line and not the
- * call's payload. See the file header; the `detail` a future one would carry is a tool's output, and
- * `TranscriptEntry` is where it would have to arrive.
+ * A tool call's state as of one line: every earlier line of the same call folded in, newer fields
+ * winning. What a host presenter is handed (`LotseChatOptions.toolPresenter`), so it can recognise
+ * its own MCP call without replaying the stream itself.
+ */
+export interface ToolCallView {
+  /** `null` for a line that carried no id — then the view is that line alone. */
+  readonly toolCallId: string | null;
+  readonly kind?: string;
+  readonly title?: string;
+  readonly status?: string;
+  readonly rawInput?: unknown;
+  readonly rawInputOmitted?: true;
+  /** From the latest line that named any; empty when none did. */
+  readonly mcp: readonly McpCall[];
+}
+
+/**
+ * A tool call, closed by default — and with no body, because lotse records the line and the call's
+ * input, never its output. See the file header; the `detail` a future one would carry is a tool's
+ * output, and `TranscriptEntry` is where it would have to arrive.
  */
 export interface ToolItem extends DisclosureItem {
   readonly kind: 'tool';
+  /** The folded call, or `null` for a line written before lines carried a structured record. */
+  readonly call: ToolCallView | null;
 }
 
 /** Bookkeeping the conversation did with itself: a mode change, a plan, an unknown update. */
@@ -136,8 +166,23 @@ export interface SystemItem {
   readonly at: string;
 }
 
+/**
+ * A line the embedding application recorded (`LotseChat.appendHostItem`). Never merged: two host
+ * lines are two things the host did, and joining them would make one claim out of two.
+ */
+export interface HostItem {
+  readonly kind: 'host';
+  /** The host's own type name; empty when the stored record was unreadable and dropped. */
+  readonly type: string;
+  readonly text: string;
+  readonly data: unknown;
+  /** The icon the host asked for, or `null` for none. */
+  readonly icon: string | null;
+  readonly at: string;
+}
+
 /** A control that passed the projection. Nothing else reaches a surface. */
-export type TranscriptItem = UserItem | AgentItem | ThoughtItem | ToolItem | SystemItem;
+export type TranscriptItem = UserItem | AgentItem | ThoughtItem | ToolItem | SystemItem | HostItem;
 
 /** One run of adjacent entries of a single kind, before it is turned into an item. */
 interface Run {
@@ -152,6 +197,10 @@ interface Run {
   readonly at: string;
   /** Raw chunks, untrimmed, in arrival order. See decision 2. */
   readonly chunks: string[];
+  /** The entry the run started with — the only one, for a kind that is never merged. */
+  readonly entry: TranscriptEntry;
+  /** The folded call as of `entry`, for a `tool` run. */
+  readonly call: ToolCallView | null;
 }
 
 /**
@@ -164,7 +213,11 @@ interface Run {
  */
 export function toTranscriptItems(entries: readonly TranscriptEntry[]): TranscriptItem[] {
   const runs: Run[] = [];
+  const calls = new Map<string, ToolCallView>();
   for (const entry of entries) {
+    // Folded before the blank test, so a line with nothing to read still contributes its state to
+    // the next one that has.
+    const call = entry.kind === 'tool' ? foldCall(calls, entry) : null;
     // The raw chunk, not a trimmed one. An ACP chunk is a stream fragment and can split mid-word
     // (measured: `RESUME-` then `OK`), so the spaces in it are part of the message — trimming here
     // is exactly the bug decision 2 is about. The blank test below is on the trimmed value only to
@@ -180,9 +233,46 @@ export function toTranscriptItems(entries: readonly TranscriptEntry[]): Transcri
       kind: entry.kind,
       at: entry.at,
       chunks: [chunk],
+      entry,
+      call,
     });
   }
   return runs.map(toItem);
+}
+
+/**
+ * Fold one tool line into the state of its call, and return that state as of this line.
+ *
+ * Keyed by agent session and `toolCallId`, because an id is only unique within the session that
+ * issued it and one record can span a `session/load` into a new one. A line with no id, or written
+ * before lines carried a `tool` record, is not folded: `null` is the honest "the record does not
+ * say", and a view built from the text would be `parseToolLine` again in a second place.
+ */
+function foldCall(calls: Map<string, ToolCallView>, entry: TranscriptEntry): ToolCallView | null {
+  const record = entry.tool;
+  if (!record) return null;
+  const key = entry.toolCallId === undefined ? null : `${entry.sessionId ?? ''}\u0000${entry.toolCallId}`;
+  const before = key === null ? undefined : calls.get(key);
+  const next: { -readonly [K in keyof ToolCallView]: ToolCallView[K] } = {
+    toolCallId: entry.toolCallId ?? null,
+    mcp: before?.mcp ?? [],
+  };
+  for (const field of ['kind', 'title', 'status'] as const) {
+    const value = record[field] ?? before?.[field];
+    if (value !== undefined) next[field] = value;
+  }
+  // A newer input and a newer "omitted" each replace the other: they are two answers to the same
+  // question, and keeping both would claim an input the agent later said was too large, or the
+  // reverse.
+  if (record.rawInput !== undefined) next.rawInput = record.rawInput;
+  else if (record.rawInputOmitted) next.rawInputOmitted = true;
+  else if (before?.rawInput !== undefined) next.rawInput = before.rawInput;
+  else if (before?.rawInputOmitted) next.rawInputOmitted = true;
+  // Replaced, never merged: a later line's list is the agent's fuller account of the same run (the
+  // code reading while it runs, the reported calls once it is done), not further calls.
+  if (record.mcp && record.mcp.length > 0) next.mcp = record.mcp;
+  if (key !== null) calls.set(key, next);
+  return next;
 }
 
 function toItem(run: Run): TranscriptItem {
@@ -208,9 +298,19 @@ function toItem(run: Run): TranscriptItem {
         kind: 'tool',
         summary: oneLine(text),
         // `null`, not the recorded line again: the summary IS that line, and `toTranscript` keeps no
-        // payload for the body to be anything else. See the file header.
+        // output for the body to be anything else. See the file header.
         detail: null,
         expanded: false,
+        at: run.at,
+        call: run.call,
+      };
+    case 'host':
+      return {
+        kind: 'host',
+        type: run.entry.host?.type ?? '',
+        text,
+        data: run.entry.host?.data,
+        icon: run.entry.host?.icon || null,
         at: run.at,
       };
   }

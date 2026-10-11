@@ -131,6 +131,14 @@ Authorisation stays with your server: pass credentials as `env` or `headers` onl
 may do. Do not rely on the agent's permission dialog to protect your tools; enforce access in the
 server (step 6 narrows what the dialog is offered, nothing more).
 
+To show your calls in your own words ("Order placed" instead of `execute`), pass `toolPresenter`. It
+receives each tool call folded into a `ToolCallView`, whose `mcp` list names the server and tool the
+call reached (with opencode's code mode, the agent's own report once it completed). Return
+`{ title, subtitle?, icon? }`, or `null` for lotse's row; the status always stays the agent's, and a
+presenter that throws falls back to lotse's row. To record something your app did into the
+conversation, call `chat.appendHostItem({ type, text, data?, icon? })`. Details:
+[`@lotse/widget`](../packages/widget/README.md#toolpresenter-renames-a-row-it-never-restatuses-it).
+
 ## 6. Add your permission gate
 
 The agent asks before it acts; the person answers in a dialog. If your app has a policy of its own, pass

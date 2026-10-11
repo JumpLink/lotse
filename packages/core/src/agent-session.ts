@@ -37,7 +37,7 @@ import type {
   SessionId,
   SessionUpdate,
 } from '@lotse/acp/types';
-import type { AgentSource, SessionRecord, TranscriptEntry } from '@lotse/session';
+import type { AgentSource, HostRecord, SessionRecord, TranscriptEntry } from '@lotse/session';
 
 import { sameCommand, type RecordedResolution } from './agents/resolve.ts';
 import type { AgentCommand } from './agents/stdio.ts';
@@ -592,6 +592,41 @@ export class AgentSession {
    */
   refresh(): void {
     this.#emit();
+  }
+
+  /**
+   * Record a line the host wrote into the conversation on screen, and draw it.
+   *
+   * Goes through the same `#record` as the agent's lines — persisted first, then drawn — so a host
+   * line sits in the transcript in the order it happened and survives a resume. **Throws when there
+   * is no session yet**: a new conversation has no record until its first prompt answers, and a line
+   * drawn but filed nowhere would vanish on the next resume, which is the silent loss a host most
+   * needs to hear about. Also throws for an empty `type` or `text`, which no surface could show.
+   */
+  appendHostEntry(input: { type: string; text: string; data?: unknown; icon?: string }): TranscriptEntry {
+    if (typeof input.type !== 'string' || input.type === '') throw new Error('a host entry needs a type');
+    if (typeof input.text !== 'string' || input.text.trim() === '')
+      throw new Error('a host entry needs a text');
+    if (input.icon !== undefined && typeof input.icon !== 'string')
+      throw new Error('a host entry icon is a name');
+    const session = this.#session;
+    if (!session) {
+      throw new Error(
+        'no session to record a host entry in: a new conversation is filed after its first prompt is answered',
+      );
+    }
+    const host: HostRecord = { type: input.type };
+    if (input.data !== undefined) host.data = input.data;
+    if (input.icon) host.icon = input.icon;
+    const entry: TranscriptEntry = {
+      kind: 'host',
+      text: input.text,
+      at: this.#now(),
+      sessionId: session.id,
+      host,
+    };
+    this.#record(session.id, [entry]);
+    return entry;
   }
 
   /**

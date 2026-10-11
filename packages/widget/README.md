@@ -111,6 +111,7 @@ This is `app/tests/examples/embed.ts`, which is type-checked with the app. Each 
 | `noAgentPage` | `Gtk.Widget` | Your "no agent found" page. Absent: that state renders nothing. |
 | `gate` | `(question) => 'ask' \| 'decline' \| Promise<…>` | Your permission policy, asked **before** the person. See below. |
 | `modelPolicy` | `(model: string) => 'allow' \| 'deny'` | Which models your data may reach. Absent: every model, which is lotse's own window. See below. |
+| `toolPresenter` | `(call: ToolCallView) => ToolPresentation \| null` | Draw your own MCP calls in your words. Absent: every tool row is lotse's. See below. |
 | `providerOnboarding` | `boolean` | Off by default. On: a new chat with no provider connected shows "Connect a provider" first. |
 | `onConversation` | `(record, current) => void` | A new conversation has its session and record; list it. Runs before the widget updates its own view. |
 | `onNotice` | `(message) => void` | A line from the agent that is not a transcript entry (it is also logged). |
@@ -175,6 +176,34 @@ id, however new — it does not look inside a provider, so pair it with `denyFre
 that matters. Or write your own predicate; it is the same one-line option. The genuinely uncertain case, "which model is even in
 use?", is caught by the fail-closed rule above and not by this one.
 
+### `toolPresenter` renames a row, it never restatuses it
+
+Every tool line in the transcript written by this version carries a structured record: ACP kind, title, status,
+the input up to 8 KiB (larger is replaced by `rawInputOmitted: true`), and `mcp` — the MCP tools the
+call reached. For opencode's code-mode `execute`, `mcp` comes from the agent's own report once the call
+completed (`source: 'reported'`, with `input` and `status`), and from reading the code while it runs
+(`source: 'code'`, names only). The presenter gets the call folded across all its lines so far:
+
+```ts
+toolPresenter: (call) => {
+  const order = call.mcp.find((m) => m.server === 'shop' && m.tool === 'place_order');
+  return order ? { title: 'Order placed', subtitle: String((order.input as { sku?: string })?.sku ?? ''), icon: 'cart-symbolic' } : null;
+},
+```
+
+`null` draws lotse's row. **The status stays the agent's**: a host that could restyle a failed call
+could hide that it failed. A presenter that throws, or returns no non-empty `title` or a field of the
+wrong type, falls back to lotse's row and logs one `lotse:` warning — a broken hook must never make a
+tool call vanish. Lines written by older lotse versions carry no record and never reach the presenter.
+
+### Host entries
+
+`chat.appendHostItem({ type, text, data?, icon? })` records something your app did into the open
+conversation — kind `'host'`, persisted through `appendTurns` like any line and shown on resume as a
+small row with your icon. `data` is yours (keep it JSON). It rejects when no session is open yet (a new
+chat is filed after its first prompt) or when `type` or `text` is empty, instead of drawing a row that
+would be lost.
+
 ### `providerOnboarding`
 
 When on, the widget starts a private login server once (bounded to 10 s) to read which providers the agent
@@ -196,6 +225,7 @@ After a successful login the agent restarts. Nothing here reads or keeps a crede
 | `prompt(text)`, `clearDraft()`, `stop()` | Drive the composer from code. |
 | `snapshot`, `turnRunning`, `agentRunning`, `hasChat`, `openSessionId`, `sendReason` | Read-only state, for enabling your own controls. |
 | `dismissPermission(reason)`, `closePermission()`, `closeFailure()`, `closeLogin()` | Take a dialog down, e.g. when your window closes. Call `dismissPermission` first so the reason is recorded. |
+| `appendHostItem({ type, text, data?, icon? })` | Record a line of your own in the open conversation. Returns `Promise<void>`; rejects with no session open. See above. |
 | `shutdown()` | **Async.** Aborts the onboarding probe, cancels the running turn, waits, then terminates the agent. Call it from your window's close path and wait for it. |
 
 `stageOnboarding`, `stagePermissionRequest`, `stageConfigOption`, `openModelDropdown`,
@@ -212,6 +242,7 @@ terminates only afterwards. Terminating first would lose the work of the turn in
 |---|---|
 | `HostGateAnswer` | `'ask' \| 'decline'`. |
 | `LotseChatOptions` | The options above. |
+| `ToolPresenter`, `ToolPresentation`, `ToolCallView`, `McpCall`, `HostItem` | The types `toolPresenter` and host entries use. |
 | `CSS` | The widget's class-name map, for a host that styles its own widgets next to the chat. The stylesheet itself is installed by `LotseChat`; a host needs no CSS of its own. |
 
 ## Related

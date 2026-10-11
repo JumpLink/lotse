@@ -23,6 +23,15 @@ and also records changes that are not a release of their own.
   `NOTHING` is recorded as outcome `nothing`.
 - **`SERVE_CONFIG_SCHEMA`** (`@lotse/core`): the task file as a JSON Schema with a title and a
   description on every field. The parser takes its allowed keys from it.
+- **Structured tool calls in the transcript** (#43). Each tool line now also stores `tool`: ACP kind,
+  title, status, the input up to 8 KiB (`rawInputOmitted` above that) and `mcp`, the MCP tools the
+  call reached (opencode's code-mode report, or a reading of the code while it runs). `text` is
+  unchanged, and older files read as before. `ToolItem.call` folds a call across its lines;
+  `mcpCallsOf` and `fitsInputCap` are exported from `@lotse/core`.
+- **`LotseChatOptions.toolPresenter`**: a host draws its own MCP calls with its own title, subtitle
+  and icon. The status stays the agent's; a presenter that throws falls back to lotse's row.
+- **Host entries**: `LotseChat.appendHostItem({type, text, data?, icon?})` (core:
+  `AgentSession.appendHostEntry`) records a line of kind `host` in the open conversation.
 
 ### Changed
 

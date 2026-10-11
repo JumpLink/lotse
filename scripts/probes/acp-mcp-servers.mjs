@@ -9,7 +9,13 @@
  *
  * A second `session/new` names a server whose command does not exist and prints what comes back.
  *
- * Usage: node scripts/probes/acp-mcp-servers.mjs [opencode-binary]
+ * With `--prompt <model>` it also sends one prompt asking for `probe_echo` and prints every
+ * `tool_call` / `tool_call_update` the agent reports for it, as received: what a client can learn
+ * about an MCP call (server and tool name, `rawInput`, `kind`, `title`, `content`). That needs a
+ * model, so pick a free one that needs no login (`opencode/big-pickle`); the prompt and the tool's
+ * answer are synthetic.
+ *
+ * Usage: node scripts/probes/acp-mcp-servers.mjs [opencode-binary] [--prompt <model>]
  * Exit code 0 = honoured, 1 = not honoured.
  */
 import { spawn } from 'node:child_process';
@@ -57,13 +63,16 @@ function runMcpServer() {
           ],
         },
       });
+    } else if (m.method === 'tools/call') {
+      const text = `echo: ${m.params?.arguments?.text ?? ''}`;
+      send({ jsonrpc: '2.0', id: m.id, result: { content: [{ type: 'text', text }] } });
     } else if (m.id !== undefined && m.method) {
       send({ jsonrpc: '2.0', id: m.id, result: {} });
     }
   });
 }
 
-async function probe(binary) {
+async function probe(binary, model) {
   const root = mkdtempSync(join(tmpdir(), 'lotse-probe-'));
   const log = join(root, 'mcp.log');
   const env = {
@@ -83,11 +92,25 @@ async function probe(binary) {
     while ((i = buffer.indexOf('\n')) >= 0) {
       const line = buffer.slice(0, i);
       buffer = buffer.slice(i + 1);
+      let m;
       try {
-        const m = JSON.parse(line);
-        waiting.get(m.id)?.(m);
+        m = JSON.parse(line);
       } catch {
-        /* not a response */
+        continue;
+      }
+      if (m.method === 'session/request_permission') {
+        const allow = m.params.options.find((o) => o.kind.startsWith('allow')) ?? m.params.options[0];
+        console.log('request_permission', JSON.stringify(m.params.toolCall));
+        agent.stdin.write(
+          `${JSON.stringify({ jsonrpc: '2.0', id: m.id, result: { outcome: { outcome: 'selected', optionId: allow.optionId } } })}\n`,
+        );
+      } else if (m.method === 'session/update') {
+        const update = m.params.update;
+        if (update.sessionUpdate === 'tool_call' || update.sessionUpdate === 'tool_call_update') {
+          console.log(update.sessionUpdate, JSON.stringify(update));
+        }
+      } else if (m.id !== undefined) {
+        waiting.get(m.id)?.(m);
       }
     }
   });
@@ -117,6 +140,16 @@ async function probe(binary) {
     await new Promise((resolve) => setTimeout(resolve, 5000));
     const seen = existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n') : [];
     console.log('mcp server saw:', seen.length ? seen.join(' | ') : '(nothing)');
+    if (model && !session.error) {
+      const sessionId = session.result.sessionId;
+      const set = await call('session/set_config_option', { sessionId, configId: 'model', value: model });
+      console.log('set model', set.error ? `error ${JSON.stringify(set.error)}` : 'ok');
+      const turn = await call('session/prompt', {
+        sessionId,
+        prompt: [{ type: 'text', text: 'Call the probe_echo tool once with text "hello", then stop.' }],
+      });
+      console.log('prompt', turn.error ? `error ${JSON.stringify(turn.error)}` : JSON.stringify(turn.result));
+    }
     // A server that cannot start: reported, or dropped silently? Only what the agent says is recorded.
     const broken = await call('session/new', {
       cwd: root,
@@ -138,7 +171,10 @@ async function probe(binary) {
 if (process.argv[2] === '--mcp') {
   runMcpServer();
 } else {
-  const honoured = await probe(process.argv[2] ?? 'opencode');
+  const args = process.argv.slice(2);
+  const at = args.indexOf('--prompt');
+  const model = at >= 0 ? args.splice(at, 2)[1] : undefined;
+  const honoured = await probe(args[0] ?? 'opencode', model);
   console.log(honoured ? 'RESULT: mcpServers honoured' : 'RESULT: mcpServers NOT honoured');
   process.exit(honoured ? 0 : 1);
 }

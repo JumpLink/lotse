@@ -72,6 +72,7 @@ import { FailureDialog } from './failure-dialog.ts';
 import { LoginDialog } from './login-dialog.ts';
 import { OnboardingPage } from './onboarding-page.ts';
 import { PermissionDialog } from './permission-dialog.ts';
+import type { ToolPresenter } from './tool-line.ts';
 import { TranscriptView } from './transcript-view.ts';
 import Template from './chat.blp';
 
@@ -170,6 +171,20 @@ export interface LotseChatOptions {
    *   denied — or an unverifiable — model around this surface.
    */
   readonly modelPolicy?: ModelPolicy;
+  /**
+   * How the host wants its own tool calls drawn.
+   *
+   * Asked for every tool line that carries a structured record, with the call folded across its lines
+   * so far (`ToolCallView`: title, status, ACP kind, input, and the MCP tools it reached). Return a
+   * title — and optionally a subtitle and an icon — for a call the host recognises, `null` for one it
+   * does not. The status capsule stays the agent's either way.
+   *
+   * **Fail-closed toward lotse's own line, never toward hiding**: a presenter that throws or returns
+   * something without a usable title is treated as having returned `null`, with one `lotse:` warning
+   * on stderr, the way `gate` and `modelPolicy` treat a broken host hook as no answer. Absent: every
+   * tool line is drawn as lotse draws it.
+   */
+  readonly toolPresenter?: ToolPresenter;
   /**
    * A new conversation has its session and its record — the host's chance to list it.
    *
@@ -282,7 +297,9 @@ export class LotseChat extends Adw.Bin {
     // sessions would otherwise mean thirty scrollers and a composer whose entry and scroll position
     // are rebuilt on every click. One view, `setEntries` on each open, is also the reason a session
     // switch cannot leak a row from the previous transcript — the rebuild is total, not a diff.
-    this.#transcript = new TranscriptView();
+    this.#transcript = new TranscriptView(
+      options.toolPresenter ? { toolPresenter: options.toolPresenter } : {},
+    );
     // **Named now rather than at `open()`.** A first prompt creates its session inside the
     // controller, so that path never calls `open()` — and a caption only `open()` filled would leave
     // the *first* answer of a new chat with a bare timestamp and no speaker. `open()` still overrides
@@ -552,7 +569,8 @@ export class LotseChat extends Adw.Bin {
    */
   #onEntries(entries: TranscriptEntry[]): void {
     this.#transcript.appendEntries(entries);
-    this.#streamed += entries.filter((entry) => entry.kind !== 'user').length;
+    // Neither the person's own lines nor the host's: `streamed` counts what the *agent* said.
+    this.#streamed += entries.filter((entry) => entry.kind !== 'user' && entry.kind !== 'host').length;
     // A session that was showing `'empty'` has just said something. Left as it is, the pane keeps
     // the "Nothing here yet" status page *underneath* the new bubble, and the sentence contradicts
     // what is on top of it. The same for a new chat, whose first line is drawn before its session
@@ -720,6 +738,28 @@ export class LotseChat extends Adw.Bin {
   prompt(text: string): void {
     this.#composer.clearDraft();
     void this.#agent.prompt(text);
+  }
+
+  /**
+   * Record a line of the host's own into the conversation on screen, and draw it.
+   *
+   * For something the host did that belongs in the transcript beside the agent's lines — an order
+   * placed from a tool call, a draft saved. Persisted through `appendTurns` before it is drawn, so it
+   * comes back on resume in the order it happened; `type` and `data` are stored for the host and
+   * never read by lotse, `icon` is a themed icon name drawn before `text`.
+   *
+   * **Rejects when no session exists yet** — nothing open, or a new chat whose first prompt has not
+   * been answered — because there is no record to file the line in, and a line drawn but never
+   * stored would silently vanish on the next resume. Also rejects for an empty `type` or `text`, or
+   * when the host's `appendTurns` throws. A promise so a host can await the write and catch either.
+   */
+  appendHostItem(item: { type: string; text: string; data?: unknown; icon?: string }): Promise<void> {
+    try {
+      this.#agent.appendHostEntry(item);
+    } catch (error) {
+      return Promise.reject(error instanceof Error ? error : new Error(String(error)));
+    }
+    return Promise.resolve();
   }
 
   /** Empty the entry. */

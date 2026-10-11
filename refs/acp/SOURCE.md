@@ -40,6 +40,24 @@ Three things about it belong here, next to the schema:
 - `mcpCapabilities` is `{"http":true,"sse":false}`, which is why a host's own MCP server may be
   stdio or HTTP but not SSE.
 
+### How opencode reports an MCP tool call
+
+Measured 2026-10-11 against `opencode acp` 2.0.25, model `opencode/big-pickle`, with
+`scripts/probes/acp-mcp-servers.mjs --prompt opencode/big-pickle` (one stdio MCP server, `probe`,
+with one tool, `probe_echo`). opencode does not call an MCP tool directly: it calls its code-mode tool
+**`execute`**, whose script calls `tools.<server>.<tool>(…)`. The stream for one call:
+
+- one `tool_call`: `title: "execute"`, `kind: "other"`, `status: "pending"`, `rawInput: {}`;
+- three identical `tool_call_update`s: `status: "in_progress"`,
+  `rawInput: {"code":"return await tools.probe.probe_echo({ text: \"hello\" })"}`;
+- one `tool_call_update`, `status: "completed"`, content text `echo: hello`, and
+  `rawOutput.metadata.toolCalls: [{"tool":"probe.probe_echo","status":"completed","input":{"text":"hello"}}]`
+  with `rawOutput.metadata.truncated: false`.
+
+No `session/request_permission` was sent. The title alone says `execute` for every MCP call, so
+`mcpCallsOf` in `packages/core/src/transcript.ts` reads `metadata.toolCalls` (split at the first dot)
+and, before that arrives, the `tools.…(` calls in `rawInput.code`.
+
 ## Why v1
 
 `opencode acp` negotiates `protocolVersion: 1`. The upstream repository also carries

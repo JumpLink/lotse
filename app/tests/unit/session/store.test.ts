@@ -4,7 +4,7 @@ import { mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { createSessionStore, newSession } from '@lotse/session';
+import { createSessionStore, newSession, type TranscriptEntry } from '@lotse/session';
 
 const AT = '2026-09-30T10:00:00.000Z';
 
@@ -137,6 +137,72 @@ export default async () => {
         writeFileSync(file, JSON.stringify({ version: 1, sessions: [record] }));
         const store = createSessionStore(file);
         expect(() => store.all()).toThrow(/may not carry "allow"/);
+      });
+    });
+  });
+
+  await describe('createSessionStore — structured tool and host records (#43)', async () => {
+    await it('round-trips a host entry and a tool record unchanged', async () => {
+      await withTempDir(async (dir) => {
+        const file = join(dir, 'sessions.json');
+        const store = createSessionStore(file);
+        store.create(newSession({ id: 'a', agent: 'opencode', cwd: '/tmp', at: AT }));
+        const turns: TranscriptEntry[] = [
+          {
+            kind: 'host',
+            text: 'Order placed',
+            at: AT,
+            host: { type: 'order', data: { id: 7 }, icon: 'cart-symbolic' },
+          },
+          {
+            kind: 'tool',
+            text: 'execute — completed',
+            at: AT,
+            toolCallId: 'call_1',
+            tool: {
+              status: 'completed',
+              rawInput: { code: 'tools.shop.place_order({})' },
+              mcp: [{ server: 'shop', tool: 'place_order', source: 'reported', input: { sku: 'A1' } }],
+            },
+          },
+        ];
+        store.append('a', turns);
+        expect(createSessionStore(file).get('a')?.turns).toStrictEqual(turns);
+      });
+    });
+
+    await it('reads a file written before the records existed exactly as before', async () => {
+      await withTempDir(async (dir) => {
+        const file = join(dir, 'sessions.json');
+        const turns = [
+          { kind: 'tool', text: 'read a.ts — completed', at: AT, toolCallId: 'call_1' },
+          { kind: 'agent', text: 'done', at: AT },
+        ];
+        const record = { ...newSession({ id: 'a', agent: 'opencode', cwd: '/tmp', at: AT }), turns };
+        writeFileSync(file, JSON.stringify({ version: 1, sessions: [record] }));
+        expect(createSessionStore(file).get('a')?.turns).toStrictEqual(turns);
+      });
+    });
+
+    await it('drops an unreadable record and keeps the line, rather than rejecting the file', async () => {
+      await withTempDir(async (dir) => {
+        const file = join(dir, 'sessions.json');
+        const turns = [
+          { kind: 'tool', text: 'a — completed', at: AT, tool: 'garbage' },
+          { kind: 'tool', text: 'b — completed', at: AT, tool: { mcp: [{ server: 1 }] } },
+          { kind: 'tool', text: 'c — completed', at: AT, tool: { rawInputOmitted: false } },
+          { kind: 'host', text: 'd', at: AT, host: { type: '' } },
+          { kind: 'host', text: 'e', at: AT, host: { type: 'x', icon: 3 } },
+        ];
+        const record = { ...newSession({ id: 'a', agent: 'opencode', cwd: '/tmp', at: AT }), turns };
+        writeFileSync(file, JSON.stringify({ version: 1, sessions: [record] }));
+        expect(createSessionStore(file).get('a')?.turns).toStrictEqual([
+          { kind: 'tool', text: 'a — completed', at: AT },
+          { kind: 'tool', text: 'b — completed', at: AT },
+          { kind: 'tool', text: 'c — completed', at: AT },
+          { kind: 'host', text: 'd', at: AT },
+          { kind: 'host', text: 'e', at: AT },
+        ]);
       });
     });
   });
