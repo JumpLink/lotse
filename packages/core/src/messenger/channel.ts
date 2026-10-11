@@ -186,16 +186,19 @@ export interface ChannelRoute {
  * The opened channels, each message sent only to those its task allows (`deliveryOf`), and to the
  * messenger as a notice when the task asks for one. A message without a task — serve's own news — goes
  * to all of them. A task none of whose channels is open sends nothing: its question waits in the store.
+ * `config` may be a function, read per message, so a reloaded task file routes by its new tasks.
  */
 export function routeChannels(
   routes: readonly ChannelRoute[],
-  config: ServeConfig,
+  config: ServeConfig | (() => ServeConfig),
   onFailure?: ChannelFailure,
 ): ServeChannel {
   return {
     name: routes.map((route) => route.channel.name).join(' + '),
     async send(user, message) {
-      const delivery = message.task ? deliveryOf(config, message.task) : null;
+      const delivery = message.task
+        ? deliveryOf(typeof config === 'function' ? config() : config, message.task)
+        : null;
       const allowed = routes.filter((route) => !delivery?.channels || delivery.channels.includes(route.name));
       if (allowed.length === 0) return;
       const notice = delivery?.messengerDetail === 'notice' ? noticeOf(message) : null;

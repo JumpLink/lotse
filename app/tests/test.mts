@@ -67,6 +67,7 @@ import serveGate from './unit/serve/gate.test.ts';
 import serveState from './unit/serve/serve-state.test.ts';
 import serveRunner from './unit/serve/runner.test.ts';
 import serveMessenger from './unit/serve/messenger.test.ts';
+import serveReload from './unit/serve/reload.test.ts';
 
 import hookValue from './unit/gui/hook-value.test.ts';
 import modelPolicyHook from './unit/gui/model-policy-hook.test.ts';
@@ -136,6 +137,7 @@ run({
   serveState,
   serveRunner,
   serveMessenger,
+  serveReload,
   hookValue,
   modelPolicyHook,
   toolLine,

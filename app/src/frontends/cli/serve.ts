@@ -5,9 +5,9 @@
  * record how it ended, sleep until the next one is due. Runs of different tasks overlap; runs of the
  * same task never do (the `running` set here, the lock file across processes).
  *
- * Before every pass the configuration hash is checked. A changed file stops `serve` — with exit
- * code 0 and a message on the channel — because an edit is meant to take effect on a restart the
- * person performs (ADR 0002 §3), and the shipped unit restarts only on failure.
+ * Before every pass the configuration hash is checked. A changed file is reloaded in place
+ * (`serve-reload.ts`): runs that are going finish with the definition they started with, later runs use
+ * the new one, and a file that no longer parses leaves the previous tasks in force.
  */
 
 import type { CommandModule } from 'yargs';
@@ -41,12 +41,13 @@ import {
 
 import { currentDialogCommand, openAnswerDialog } from '../../core/answer-dialog.ts';
 import type { ServePaths } from '../../core/paths.ts';
-import { currentTasksHash } from '../../core/serve-config.ts';
+import { currentTasksHash, loadTasks } from '../../core/serve-config.ts';
 import { runState } from '../../core/serve-state.ts';
 import { fileCursorStore, messengerCursorFile } from '../../core/messenger-state.ts';
 import { activeChannels, desktopMode, messengerSettings, readSettings } from '../../core/settings.ts';
 import { stderrChannel } from '../../core/stderr-channel.ts';
 import { err, pickArgv } from './output.ts';
+import { createReloader, liveDeps } from './serve-reload.ts';
 import { readTasks, serveDeps, trackedAgents } from './serve-deps.ts';
 
 const FAILED = new Set(['unknown', 'dropped', 'expired', 'busy', 'invalid']);
@@ -139,7 +140,7 @@ interface OpenedChannels {
  */
 async function openChannels(
   paths: LotsePaths,
-  config: ServeConfig,
+  config: () => ServeConfig,
   deps: () => ServeDeps | null,
 ): Promise<OpenedChannels> {
   const settings = readSettings(paths.settingsFile).settings;
@@ -166,7 +167,7 @@ async function openChannels(
     opened.unshift({ name: 'desktop', channel: desktop });
   }
   for (const note of unreachableTaskNotes(
-    config,
+    config(),
     opened.map((route) => route.name),
   ))
     err(`  ${note}`);
@@ -207,16 +208,39 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     if (!loaded) return;
     for (const note of freeModelNotes(loaded.config)) err(`  ${note}`);
     let ready: ServeDeps | null = null;
-    const opened = await openChannels(paths, loaded.config, () => ready);
+    let activeConfig = loaded.config;
+    const opened = await openChannels(
+      paths,
+      () => activeConfig,
+      () => ready,
+    );
     const channel = opened.channel;
     const agents = trackedAgents();
     const deps = serveDeps({ paths, serve, loaded, channel, open: agents.open, quiet });
     if (!deps) return;
-    ready = deps;
+    const reloader = createReloader(
+      {
+        tasksFile: serve.tasksFile,
+        load: loadTasks,
+        hashNow: currentTasksHash,
+        build: (next) => {
+          // Building deps resolves agents, which sets the exit code when one is missing; a refused
+          // reload must not turn a serve that keeps running into a failed one.
+          const exitCode = process.exitCode;
+          const built = serveDeps({ paths, serve, loaded: next, channel, open: agents.open, quiet });
+          if (!built) process.exitCode = exitCode;
+          return built;
+        },
+      },
+      { loaded, deps },
+    );
+    // The receive loop and the notification buttons outlive a reload, so they read the current deps.
+    const live = liveDeps(() => reloader.current().deps);
+    ready = live;
     const runs = runState(serve.stateDir);
     const clock = attemptClock((id) => runs.lastRun(id));
 
-    const dropped = cancelOrphanedPermissions(deps);
+    const dropped = cancelOrphanedPermissions(live);
     if (dropped > 0) err(`  ${dropped} permission question(s) from an earlier serve cancelled`);
     err(
       `lotse serve — ${loaded.config.tasks.length} task(s), questions via ${channel.name}, state in ${serve.stateDir}`,
@@ -239,7 +263,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
             link: opened.messenger.link,
             settings: opened.messenger.settings,
             channel: opened.messenger.channel,
-            serve: deps,
+            serve: live,
             cursor: fileCursorStore(messengerCursorFile(serve.stateDir)),
             signal: abort.signal,
             log: (line) => err(`  ${line}`),
@@ -252,8 +276,8 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     process.on('SIGTERM', onSignal);
 
     const running = new Map<string, Promise<void>>();
-    const start = (task: ServeTask) => {
-      const done = runTask(task, deps)
+    const start = (task: ServeTask, runDeps: ServeDeps) => {
+      const done = runTask(task, runDeps)
         .then((result) => {
           if (result.outcome === 'skipped') clock.skipped(task.id, new Date(result.startedAt));
           else runs.record(result);
@@ -276,18 +300,42 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
 
     try {
       while (!stopping) {
-        if (currentTasksHash(serve.tasksFile, loaded.config) !== loaded.hash) {
-          const why = `${serve.tasksFile} changed; restart serve to use it`;
-          for (const user of loaded.config.users) {
-            await channel.send(user, { title: 'lotse serve stopped', body: why, questionId: null });
-          }
-          stop(why);
-          break;
+        const change = reloader.check();
+        if (change.kind === 'reloaded') {
+          const { loaded: fresh, deps: freshDeps } = reloader.current();
+          activeConfig = fresh.config;
+          if (fresh.warning) err(`  ${fresh.warning}`);
+          const parts = [
+            change.added.length > 0 ? `added ${change.added.join(', ')}` : '',
+            change.removed.length > 0
+              ? `removed ${change.removed.join(', ')} (a run in progress finishes)`
+              : '',
+            change.changed.length > 0 ? `changed ${change.changed.join(', ')} (from its next run)` : '',
+          ].filter(Boolean);
+          err(
+            `  ${serve.tasksFile} reloaded — ${fresh.config.tasks.length} task(s)${parts.length > 0 ? `: ${parts.join('; ')}` : ''}`,
+          );
+          freshDeps.log?.({
+            event: 'reload',
+            task: '-',
+            detail: { tasks: String(fresh.config.tasks.length) },
+          });
+        } else if (change.kind === 'rejected') {
+          const message = `${serve.tasksFile} not reloaded, keeping the previous tasks: ${change.message}`;
+          err(`  ${message}`);
+          reloader.current().deps.log?.({
+            event: 'error',
+            task: '-',
+            detail: { kind: 'reload', message: change.message.slice(0, 200) },
+          });
         }
-        const now = deps.now();
-        for (const task of dueTasks(loaded.config, clock.lastRun, new Set(running.keys()), now)) start(task);
+        const current = reloader.current().deps;
+        const now = current.now();
+        for (const task of dueTasks(current.config, clock.lastRun, new Set(running.keys()), now)) {
+          start(task, current);
+        }
         if (once) break;
-        const ms = nextWakeMs(loaded.config, clock.lastRun, deps.now());
+        const ms = nextWakeMs(current.config, clock.lastRun, current.now());
         await new Promise<void>((resolve) => {
           const timer = setTimeout(() => {
             wake = null;
