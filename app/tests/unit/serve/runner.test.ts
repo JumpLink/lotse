@@ -7,7 +7,9 @@ import {
   OPENCODE_COMMAND,
   answerQuestion,
   cancelOrphanedPermissions,
+  attemptClock,
   dueTasks,
+  nextWakeMs,
   parseServeConfig,
   parseVerdict,
   precheckText,
@@ -409,6 +411,16 @@ export default async () => {
       expect(dueTasks(serveConfig, () => null, new Set(), now).length).toBe(1);
       expect(dueTasks(serveConfig, () => null, new Set(['t']), now).length).toBe(0);
       expect(dueTasks(serveConfig, () => now, new Set(), now).length).toBe(0);
+    });
+
+    await it('counts a skip, so a task at its ceiling is not due again at once', async () => {
+      const serveConfig = config();
+      const now = new Date(START);
+      const clock = attemptClock(() => new Date(now.getTime() - 2 * 3_600_000));
+      expect(dueTasks(serveConfig, clock.lastRun, new Set(), now).length).toBe(1);
+      clock.skipped('t', now);
+      expect(dueTasks(serveConfig, clock.lastRun, new Set(), now).length).toBe(0);
+      expect(nextWakeMs(serveConfig, clock.lastRun, now)).toBe(60_000);
     });
   });
 };

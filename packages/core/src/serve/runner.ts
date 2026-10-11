@@ -470,6 +470,27 @@ export async function answerQuestion(idText: string, text: string, deps: ServeDe
   }
 }
 
+/**
+ * The schedule's view of the last run: the recorded one, or a later skip. A skip stays out of
+ * `runs.json`, where it would hide the run a question belongs to, but the schedule has to count it:
+ * otherwise a task at its question ceiling is due again at once and `serve` spins.
+ */
+export function attemptClock(recorded: (task: string) => Date | null): {
+  readonly skipped: (task: string, at: Date) => void;
+  readonly lastRun: (task: string) => Date | null;
+} {
+  const skips = new Map<string, Date>();
+  return {
+    skipped: (task, at) => void skips.set(task, at),
+    lastRun: (task) => {
+      const run = recorded(task);
+      const skip = skips.get(task) ?? null;
+      if (!run || !skip) return run ?? skip;
+      return skip.getTime() > run.getTime() ? skip : run;
+    },
+  };
+}
+
 /** The tasks due now that are not already running. */
 export function dueTasks(
   config: ServeConfig,
