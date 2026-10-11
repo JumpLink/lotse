@@ -6,12 +6,24 @@
 
 import { describe, expect, it } from '@gjsify/unit';
 
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
   CUSTOM_PRESETS,
+  LOCK_STALE_MS,
+  ProvidersFileBusyError,
+  RESERVED_PROVIDER_IDS,
   bundledCommand,
   checkEndpoint,
   connectionFacts,
@@ -26,8 +38,11 @@ import {
   parseModelSpecs,
   parseProvidersDocument,
   planCustomProvider,
+  planWithListedModels,
   probeModels,
+  providerEntry,
   readProvidersDocument,
+  updateProvidersDocument,
   withProvider,
   withoutProvider,
   writeProvidersDocument,
@@ -167,6 +182,12 @@ export default async () => {
       expect(hostReach('8.8.8.8')).toBe('remote');
       expect(hostReach('2001:db8::1')).toBe('remote');
     });
+
+    await it('counts only the exact name localhost as loopback, not a name under it', async () => {
+      expect(hostReach('localhost.')).toBe('loopback');
+      expect(hostReach('evil.localhost')).toBe('remote');
+      expect(checkEndpoint('http://evil.localhost:11434/v1').ok).toBe(false);
+    });
   });
 
   await describe('contextWarning', async () => {
@@ -260,6 +281,80 @@ export default async () => {
         expect(readProvidersDocument(file).ok).toBe(false);
       });
     });
+
+    await it('keeps a model whose id is __proto__', async () => {
+      const entry = providerEntry({
+        id: 'p',
+        name: 'P',
+        baseUrl: 'http://127.0.0.1:1/v1',
+        models: [{ id: '__proto__' }, { id: 'm' }],
+      });
+      const models = entry['models'] as Record<string, unknown>;
+      expect(Object.keys(models)).toStrictEqual(['__proto__', 'm']);
+      expect(Object.keys(JSON.parse(JSON.stringify(entry))['models'])).toStrictEqual(['__proto__', 'm']);
+    });
+
+    await it('writes through a temp file of its own and leaves nothing behind', async () => {
+      withTempDir((dir) => {
+        const file = join(dir, 'lotse-providers.json');
+        writeProvidersDocument(file, { providers: {} });
+        updateProvidersDocument(file, (raw) => ({ ...raw, theme: 'x' }));
+        expect(readdirSync(dir)).toStrictEqual(['lotse-providers.json']);
+      });
+    });
+
+    await it('applies a change to the file as it is at write time, not an earlier read', async () => {
+      withTempDir((dir) => {
+        const file = join(dir, 'lotse-providers.json');
+        const model = { baseUrl: 'http://127.0.0.1:1/v1', models: [{ id: 'm' }] };
+        const before = readProvidersDocument(file);
+        // The other writer (the GUI, say) saves while this one is still on the network.
+        writeProvidersDocument(file, withProvider({}, { id: 'from-gui', name: 'G', ...model }));
+        expect(before.ok).toBe(true);
+        updateProvidersDocument(file, (fresh) =>
+          withProvider(fresh, { id: 'from-cli', name: 'C', ...model }),
+        );
+        const after = readProvidersDocument(file);
+        expect(after.ok && documentProviderIds(after.raw)).toStrictEqual(['from-gui', 'from-cli']);
+      });
+    });
+
+    await it('refuses while another writer holds the lock, and takes over a stale one', async () => {
+      withTempDir((dir) => {
+        const file = join(dir, 'lotse-providers.json');
+        const lock = `${file}.lock`;
+        writeFileSync(lock, '1\n');
+        let busy: unknown = null;
+        try {
+          updateProvidersDocument(file, (raw) => ({ ...raw, a: 1 }));
+        } catch (error) {
+          busy = error;
+        }
+        expect(busy instanceof ProvidersFileBusyError).toBe(true);
+        expect(existsSync(file)).toBe(false);
+        const old = (Date.now() - LOCK_STALE_MS - 1000) / 1000;
+        utimesSync(lock, old, old);
+        updateProvidersDocument(file, (raw) => ({ ...raw, a: 1 }));
+        expect(JSON.parse(readFileSync(file, 'utf8'))).toStrictEqual({ a: 1 });
+        expect(existsSync(lock)).toBe(false);
+      });
+    });
+
+    await it('releases the lock and writes nothing when the change throws or the file is unreadable', async () => {
+      withTempDir((dir) => {
+        const file = join(dir, 'lotse-providers.json');
+        writeFileSync(file, '{oops');
+        let threw = false;
+        try {
+          updateProvidersDocument(file, (raw) => raw);
+        } catch {
+          threw = true;
+        }
+        expect(threw).toBe(true);
+        expect(readFileSync(file, 'utf8')).toBe('{oops');
+        expect(existsSync(`${file}.lock`)).toBe(false);
+      });
+    });
   });
 
   await describe('createProviderApi', async () => {
@@ -323,6 +418,23 @@ export default async () => {
         'http://127.0.0.1:11434/v1/models none',
         'https://llm.example/v1/models Bearer synthetic-key',
       ]);
+    });
+
+    await it('gives up on a server that never answers the model list', async () => {
+      let signalled = false;
+      const hangs = (_url: string, init: { signal?: AbortSignal }) =>
+        new Promise<never>((_resolve, reject) => {
+          signalled = init.signal !== undefined;
+          init.signal?.addEventListener('abort', () => reject(new Error('timed out')));
+        });
+      let threw = false;
+      try {
+        await probeModels('http://127.0.0.1:11434/v1', hangs, undefined, 20);
+      } catch {
+        threw = true;
+      }
+      expect(signalled).toBe(true);
+      expect(threw).toBe(true);
     });
 
     await it('throws on a config body that is not documents', async () => {
@@ -391,6 +503,57 @@ export default async () => {
 
     await it('keeps every preset clear of the ids opencode ships', async () => {
       for (const preset of CUSTOM_PRESETS) expect(['ollama', 'lmstudio'].includes(preset.id)).toBe(false);
+      for (const preset of CUSTOM_PRESETS) expect(RESERVED_PROVIDER_IDS.has(preset.id)).toBe(false);
+    });
+
+    await it('refuses a well-known id even when opencode listed none (catalog not loaded)', async () => {
+      const blind: CustomProviderFacts = { knownIds: new Set(), ownIds: new Set(['openai']) };
+      for (const id of [
+        'openai',
+        'anthropic',
+        'google',
+        'xai',
+        'mistral',
+        'groq',
+        'openrouter',
+        'opencode',
+      ]) {
+        const plan = planCustomProvider(
+          { id, baseUrl: 'http://127.0.0.1:1/v1', models: [{ id: 'm' }], confirmedLan: false },
+          blind,
+        );
+        expect(plan.kind).toBe('refused');
+      }
+    });
+
+    await it('asks the server for its models only once the plan is ok', async () => {
+      const asked: string[] = [];
+      const list = async (baseUrl: string) => {
+        asked.push(baseUrl);
+        return ['m-1', 'm-2'];
+      };
+      const lan = { id: 'gpu-box', baseUrl: 'http://192.168.1.20:8000/v1', models: [] };
+      const unconfirmed = await planWithListedModels({ ...lan, confirmedLan: false }, FACTS, list);
+      expect(unconfirmed.plan.kind).toBe('confirm');
+      const shadow = await planWithListedModels(
+        { id: 'openai', baseUrl: 'https://llm.example/v1', models: [], confirmedLan: false },
+        FACTS,
+        list,
+      );
+      expect(shadow.plan.kind).toBe('refused');
+      expect(asked).toStrictEqual([]);
+      const confirmed = await planWithListedModels({ ...lan, confirmedLan: true }, FACTS, list);
+      expect(asked).toStrictEqual(['http://192.168.1.20:8000/v1']);
+      expect(confirmed.listed).toBe(2);
+      expect(confirmed.plan.kind === 'ok' && confirmed.plan.provider.models).toStrictEqual([
+        { id: 'm-1' },
+        { id: 'm-2' },
+      ]);
+      const broken = await planWithListedModels({ ...lan, confirmedLan: true }, FACTS, async () => {
+        throw new Error('refused');
+      });
+      expect(broken.listProblem).toBe('refused');
+      expect(broken.plan.kind).toBe('refused');
     });
   });
 

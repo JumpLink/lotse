@@ -47,7 +47,9 @@ export function hostReach(host: string): EndpointReach {
     .toLowerCase()
     .replace(/^\[|\]$/g, '')
     .replace(/\.$/, '');
-  if (name === 'localhost' || name.endsWith('.localhost') || name === '::1') return 'loopback';
+  // Only the exact name: `*.localhost` is loopback by RFC 6761, but whether it resolves there is the
+  // resolver's choice, and a name that does not would send a prompt in clear text to wherever it points.
+  if (name === 'localhost' || name === '::1') return 'loopback';
   const v4 = ipv4(name.startsWith('::ffff:') ? name.slice(7) : name);
   if (v4) {
     const [a, b] = v4 as [number, number, number, number];

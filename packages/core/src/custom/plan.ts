@@ -3,8 +3,44 @@
  * settings group both ask this, with the facts they gathered, and only then write.
  */
 
+import { LOGIN_POLICY } from '../login/providers.ts';
+
 import { CUSTOM_PRESETS, checkEndpoint, contextWarning, type EndpointReach } from './endpoint.ts';
 import { providerIdProblem, type CustomModel, type CustomProvider } from './file.ts';
+
+/**
+ * Provider ids no custom provider may take, whatever opencode answered. `knownIds` comes from a running
+ * server, and what it lists depends on whether its catalog loaded (offline, a blocked models.dev): a
+ * custom `openai` written then would shadow the real one the day the catalog is back. The login
+ * policy's own lists plus the well-known catalog and auto-detected ids; checked **in addition to**
+ * `knownIds`, never instead of it.
+ */
+export const RESERVED_PROVIDER_IDS: ReadonlySet<string> = new Set([
+  ...LOGIN_POLICY.preferred,
+  ...LOGIN_POLICY.europe,
+  ...LOGIN_POLICY.excluded.keys(),
+  'amazon-bedrock',
+  'anthropic',
+  'azure',
+  'cerebras',
+  'deepinfra',
+  'deepseek',
+  'fireworks-ai',
+  'github-copilot',
+  'google',
+  'google-vertex',
+  'groq',
+  'huggingface',
+  'lmstudio',
+  'mistral',
+  'ollama',
+  'openai',
+  'opencode',
+  'openrouter',
+  'perplexity',
+  'togetherai',
+  'xai',
+]);
 
 export interface CustomProviderInput {
   /** Defaults to the preset's id. */
@@ -56,7 +92,9 @@ export function planCustomProvider(
   const idProblem = providerIdProblem(id);
   if (idProblem) return { kind: 'refused', reason: idProblem };
   const replaces = facts.ownIds.has(id);
-  if (!replaces && facts.knownIds.has(id)) {
+  // A reserved id is refused even in lotse's own file: an entry there (by hand, or from an older lotse)
+  // shadows the catalog's all the same.
+  if (RESERVED_PROVIDER_IDS.has(id) || (!replaces && facts.knownIds.has(id))) {
     return {
       kind: 'refused',
       reason: `"${id}" is already one of opencode's providers — a custom one may not shadow it; pick another id`,
@@ -93,6 +131,46 @@ export function planCustomProvider(
     replaces,
     privacyNote: endpoint.privacyNote,
     notes,
+  };
+}
+
+/** `<baseUrl>/models` on the person's server; the caller closes over the key, if any. */
+export type ModelLister = (baseUrl: string) => Promise<string[]>;
+
+export interface ListedPlan {
+  readonly plan: CustomProviderPlan;
+  /** How many models the server listed; `null` when it was not asked. */
+  readonly listed: number | null;
+  /** Why the list failed, as thrown (the caller redacts a key from it). */
+  readonly listProblem: string | null;
+}
+
+/**
+ * `planCustomProvider`, filling the models from the server when none are given — and asking the server
+ * **only once the plan is otherwise ok**. A LAN http URL the person has not confirmed, a remote http one
+ * or a shadowing id never get a request, so a key never crosses an unencrypted network before the yes.
+ */
+export async function planWithListedModels(
+  input: CustomProviderInput,
+  facts: CustomProviderFacts,
+  list: ModelLister,
+): Promise<ListedPlan> {
+  if (input.models.length > 0)
+    return { plan: planCustomProvider(input, facts), listed: null, listProblem: null };
+  // A stand-in model so the plan answers everything but "no models" before anything leaves the machine.
+  const first = planCustomProvider({ ...input, models: [{ id: '-' }] }, facts);
+  if (first.kind !== 'ok') return { plan: first, listed: null, listProblem: null };
+  let models: CustomModel[] = [];
+  let listProblem: string | null = null;
+  try {
+    models = (await list(first.provider.baseUrl)).map((id) => ({ id }));
+  } catch (error) {
+    listProblem = error instanceof Error ? error.message : String(error);
+  }
+  return {
+    plan: planCustomProvider({ ...input, models }, facts),
+    listed: listProblem === null ? models.length : null,
+    listProblem,
   };
 }
 

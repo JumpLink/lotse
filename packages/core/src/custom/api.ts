@@ -189,13 +189,23 @@ export type FetchLike = (
   init: { headers: Record<string, string>; signal?: AbortSignal },
 ) => Promise<{ readonly status: number; json(): Promise<unknown> }>;
 
+/** How long `<baseUrl>/models` may take. A server that accepts and never answers would hang the add. */
+export const MODELS_TIMEOUT_MS = 5000;
+
 /**
  * The models a server lists at `<baseUrl>/models` (the OpenAI shape every local server answers). `key`,
- * when the person gave one, goes to that URL only, in this call only. Rejects on anything but a list.
+ * when the person gave one, goes to that URL only, in this call only. Rejects on anything but a list, and
+ * after `timeoutMs` (`AbortSignal.timeout`, which GJS has through `@gjsify/abort-controller`).
  */
-export async function probeModels(baseUrl: string, fetchFn: FetchLike, key?: string): Promise<string[]> {
+export async function probeModels(
+  baseUrl: string,
+  fetchFn: FetchLike,
+  key?: string,
+  timeoutMs = MODELS_TIMEOUT_MS,
+): Promise<string[]> {
   const response = await fetchFn(`${baseUrl}/models`, {
     headers: key ? { authorization: `Bearer ${key}` } : {},
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (response.status < 200 || response.status >= 300) {
     throw new Error(`${baseUrl}/models answered HTTP ${response.status}`);
