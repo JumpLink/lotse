@@ -22,11 +22,13 @@ import {
   freeModelNotes,
   McpLink,
   messengerChannel,
+  type MessengerChannel,
   messengerCommand,
   messengerProblem,
   nextWakeMs,
   runReceiveLoop,
   runTask,
+  type ChannelFailure,
   type LotsePaths,
   type ServeChannel,
   type ServeDeps,
@@ -121,7 +123,11 @@ async function openDesktop(
 interface OpenedChannels {
   readonly channel: ServeChannel;
   /** Present when the messenger is active and complete: the receive loop runs on this link. */
-  readonly messenger: { readonly link: McpLink; readonly settings: MessengerSettings } | null;
+  readonly messenger: {
+    readonly link: McpLink;
+    readonly settings: MessengerSettings;
+    readonly channel: MessengerChannel;
+  } | null;
 }
 
 /** The channels settings.json asks for, read once at start (a change needs a restart). */
@@ -140,15 +146,30 @@ async function openChannels(paths: LotsePaths, deps: () => ServeDeps | null): Pr
       const link = new McpLink(() =>
         connectMcp(messengerCommand(config), { onStderr: (line) => err(`  messenger: ${line}`) }),
       );
-      messenger = { link, settings: config };
-      opened.push(messengerChannel(link, config));
+      const channel = messengerChannel(link, config);
+      messenger = { link, settings: config, channel };
+      opened.push(channel);
     }
   }
   if (useDesktop || opened.length === 0) {
     desktop = await openDesktop(paths, deps, () => desktop);
     opened.unshift(desktop);
   }
-  return { channel: combineChannels(opened), messenger };
+  // A channel that failed while another delivered is told here, nowhere else: stderr and serve.log.
+  const failed: ChannelFailure = (name, error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    err(`  ${name}: ${message}`);
+    deps()?.log?.({
+      event: 'error',
+      task: '-',
+      detail: {
+        channel: name,
+        kind: error instanceof Error ? error.name : 'Error',
+        message: message.slice(0, 200),
+      },
+    });
+  };
+  return { channel: combineChannels(opened, failed), messenger };
 }
 
 const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
@@ -202,6 +223,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
         ? runReceiveLoop({
             link: opened.messenger.link,
             settings: opened.messenger.settings,
+            channel: opened.messenger.channel,
             serve: deps,
             cursor: fileCursorStore(messengerCursorFile(serve.stateDir)),
             signal: abort.signal,
