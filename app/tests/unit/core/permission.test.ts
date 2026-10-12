@@ -20,7 +20,6 @@ import {
   permissionView,
   usableOptions,
   type NotAnsweredReason,
-  type PermissionDecision,
   type PermissionQuestion,
 } from '@lotse/core';
 

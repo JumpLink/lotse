@@ -20,7 +20,6 @@ import {
 } from './gate.ts';
 import {
   MessageReader,
-  ProtocolError,
   RpcError,
   encodeFailure,
   encodeNotification,

@@ -10,7 +10,7 @@
  */
 
 import Adw from '@girs/adw-1';
-import Gtk from '@girs/gtk-4.0';
+import type Gtk from '@girs/gtk-4.0';
 
 import type { FailureNotice } from '@lotse/core';
 

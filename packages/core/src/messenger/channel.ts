@@ -9,7 +9,7 @@
 import type { ServeChannel, ServeMessage } from '../serve/channel.ts';
 import { deliveryOf, type ServeConfig, type ServeUser } from '../serve/config.ts';
 import { formatQuestionId } from '../serve/questions.ts';
-import { McpLink } from './link.ts';
+import type { McpLink } from './link.ts';
 import { McpToolError } from './mcp-client.ts';
 import type { ChannelName, MessengerSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
@@ -124,7 +124,8 @@ export function messengerChannel(
     },
     async retryUnsent(isOpen, onFailure) {
       const delivered: string[] = [];
-      for (const [key, entry] of [...unsent]) {
+      // A snapshot: sends await, and an entry queued meanwhile waits for the next pass.
+      for (const [key, entry] of Array.from(unsent)) {
         const questionId = entry.message.questionId!;
         if (!isOpen(entry.user.id, questionId)) {
           unsent.delete(key);
