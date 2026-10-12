@@ -72,6 +72,7 @@ export interface ServeLogEntry {
     | 'reload'
     | 'request'
     | 'run-summary'
+    | 'retry'
     | 'error';
   readonly task: string;
   readonly detail: Readonly<Record<string, string>>;
@@ -94,6 +95,8 @@ export interface ServeDeps {
   readonly sleep: (ms: number) => Promise<void>;
   /** How often a waiting permission request looks for an answer. Default 2 s. */
   readonly pollMs?: number;
+  /** How long to wait before the one retry after the agent did not offer the model. Default 15 s. */
+  readonly modelRetryMs?: number;
   /** Take the task's run lock; `null` when another run of it holds it. Absent: no cross-process lock. */
   readonly lock?: (task: string) => (() => void) | null;
   readonly log?: (entry: ServeLogEntry) => void;
@@ -153,6 +156,7 @@ export class ModelUnavailableError extends Error {
 }
 
 const DEFAULT_POLL_MS = 2_000;
+const DEFAULT_MODEL_RETRY_MS = 15_000;
 const HOUR_MS = 3_600_000;
 
 export function userOf(config: ServeConfig, profile: ServeProfile): ServeUser {
@@ -295,18 +299,30 @@ async function runPrecheck(
   });
   deps.log?.({ event: 'precheck', task: task.id, detail: { phase: 'start', profile: profile.id } });
   try {
-    handle = await deps.open({
-      command: deps.commandFor(profile),
-      gate: { permission: gate },
-      ...(deps.onAgentLog ? { onLog: deps.onAgentLog } : {}),
-    });
-    const session = await withAuthHint('session/new', () =>
-      handle!.client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers] }),
-    );
-    sessionId = session.sessionId;
-    await pinModel(handle.client, session.sessionId, session.configOptions ?? null, profile);
+    let session!: Awaited<ReturnType<AcpClient['newSession']>>;
+    for (let attempt = 0; ; attempt += 1) {
+      handle = await deps.open({
+        command: deps.commandFor(profile),
+        gate: { permission: gate },
+        ...(deps.onAgentLog ? { onLog: deps.onAgentLog } : {}),
+      });
+      session = await withAuthHint('session/new', () =>
+        handle!.client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers] }),
+      );
+      sessionId = session.sessionId;
+      try {
+        await pinModel(handle.client, session.sessionId, session.configOptions ?? null, profile);
+        break;
+      } catch (error) {
+        if (!(error instanceof ModelUnavailableError) || attempt > 0) throw error;
+        await retryAfterUnavailable(task, deps, handle, 'precheck');
+        handle = null;
+        sessionId = null;
+      }
+    }
+    const agentClient = handle!.client;
     let message = '';
-    const { stopReason } = await runTurn(handle.client, {
+    const { stopReason } = await runTurn(agentClient, {
       sessionId: session.sessionId,
       text: precheckText(
         deps.precheckPromptFor ? deps.precheckPromptFor(task) : (check.prompt ?? ''),
@@ -667,15 +683,26 @@ async function runSession(
   });
   deps.log?.({ event: 'run', task: task.id, detail: { phase: 'start' } });
   try {
-    handle = await deps.open({
-      command: deps.commandFor(profile),
-      gate: { permission: gate },
-      ...(deps.onAgentLog ? { onLog: deps.onAgentLog } : {}),
-    });
-    const agent = handle;
-    const started = await start(agent.client);
-    sessionId = started.sessionId;
-    await pinModel(agent.client, started.sessionId, started.configOptions, profile);
+    let started!: Started;
+    for (let attempt = 0; ; attempt += 1) {
+      handle = await deps.open({
+        command: deps.commandFor(profile),
+        gate: { permission: gate },
+        ...(deps.onAgentLog ? { onLog: deps.onAgentLog } : {}),
+      });
+      started = await start(handle.client);
+      sessionId = started.sessionId;
+      try {
+        await pinModel(handle.client, started.sessionId, started.configOptions, profile);
+        break;
+      } catch (error) {
+        if (!(error instanceof ModelUnavailableError) || attempt > 0) throw error;
+        await retryAfterUnavailable(task, deps, handle, 'run');
+        handle = null;
+        sessionId = null;
+      }
+    }
+    const agent = handle!;
 
     let message = '';
     const { stopReason } = await runTurn(agent.client, {
@@ -789,6 +816,22 @@ export function followUpPrompt(task: ServeTask, question: Question, answer: stri
     'The person answered:',
     answer,
   ].join('\n');
+}
+
+/**
+ * The agent may refresh its model list while a session starts, so a model it offers can be missing
+ * for a moment. Close this agent and wait; the caller opens a fresh session with the SAME model —
+ * still no fallback (ADR 0002 §5).
+ */
+async function retryAfterUnavailable(
+  task: ServeTask,
+  deps: ServeDeps,
+  handle: AgentHandle,
+  phase: 'run' | 'precheck',
+): Promise<void> {
+  deps.log?.({ event: 'retry', task: task.id, detail: { kind: 'ModelUnavailableError', phase } });
+  await handle.close();
+  await deps.sleep(deps.modelRetryMs ?? DEFAULT_MODEL_RETRY_MS);
 }
 
 async function pinModel(

@@ -22,6 +22,8 @@ file at mode `0600`; `serve` warns when it is readable by others.
 - **profiles**: `{id, user, agent?, model?, data, channels?, messengerDetail?}`. `data` is `private` or `public` and is required.
   `model` is optional: leave it out and the agent's default model applies. A private profile on a
   free model gets a note at start. That choice is yours, so `serve` does not block it.
+  When the agent does not offer the pinned model, `serve` retries once after about 15 s with the same
+  model and a fresh session (the agent may be refreshing its list), then fails; there is no fallback model.
 - **tasks**: `{id, profile, schedule, prompt | promptFile, cwd, mcpServers, rights, released,
   questions, notify, precheck?, channels?, messengerDetail?}`. A `promptFile` resolves relative to the task file. `mcpServers` is passed to
   `session/new` unchanged. `answerMcpServers` (optional) replaces it for the turn that continues
