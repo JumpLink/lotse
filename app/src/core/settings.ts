@@ -160,6 +160,7 @@ const REQUEST_KEYS = [
   'rights',
   'followUpMinutes',
   'maxConcurrent',
+  'personNeededMinutes',
 ] as const;
 
 const REQUEST_SERVER_KEYS = ['name', 'command', 'args', 'env'] as const;
@@ -227,6 +228,9 @@ function parseRequests(value: unknown): RequestSettings | string {
   const maxConcurrent = pick('maxConcurrent');
   if (typeof maxConcurrent !== 'number' || !Number.isInteger(maxConcurrent) || maxConcurrent < 1)
     return `"${path}.maxConcurrent" must be a whole number, 1 or more`;
+  const personNeededMinutes = pick('personNeededMinutes');
+  if (typeof personNeededMinutes !== 'number' || !Number.isInteger(personNeededMinutes) || personNeededMinutes < 1)
+    return `"${path}.personNeededMinutes" must be a whole number of minutes, 1 or more`;
   const rawServers = pick('mcpServers');
   if (!Array.isArray(rawServers)) return `"${path}.mcpServers" must be a list`;
   const mcpServers: RequestMcpServer[] = [];
@@ -245,6 +249,7 @@ function parseRequests(value: unknown): RequestSettings | string {
     rights,
     followUpMinutes,
     maxConcurrent,
+    personNeededMinutes,
   };
 }
 
