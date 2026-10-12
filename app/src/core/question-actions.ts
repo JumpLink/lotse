@@ -20,6 +20,27 @@ export const DEFAULT_ACTION = 'default';
 export const DIALOG_ACTION = 'answer';
 const REPLY_PREFIX = 'reply:';
 
+/**
+ * The desktop entry every notification names (`desktop-entry` hint), so the shell files them under one
+ * app — its name, its icon, one group — instead of one source per process. The GUI's `APP_ID`; written
+ * out rather than imported because `core/` does not reach into `frontends/` (a test keeps them equal).
+ * It only groups where the entry is installed (`npm run packaging:install`).
+ */
+export const DESKTOP_ENTRY = 'eu.jumplink.Lotse';
+
+export interface NotificationHints {
+  readonly desktopEntry: string;
+  /**
+   * Shown as a banner but not kept in the notification list. Everything except a question: a report
+   * needs no action, and a list full of them hides the one question that does.
+   */
+  readonly transient: boolean;
+}
+
+export function notificationHints(asks: QuestionKind | undefined): NotificationHints {
+  return { desktopEntry: DESKTOP_ENTRY, transient: !asks };
+}
+
 export type QuickReply = 'yes' | 'no';
 
 /**
