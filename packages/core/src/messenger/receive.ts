@@ -24,7 +24,7 @@ import { deliveryOf } from '../serve/config.ts';
 import { answerQuestion, type AnswerResult, type ServeDeps } from '../serve/runner.ts';
 import { formatQuestionId, openQuestions, parseAnswer } from '../serve/questions.ts';
 import { localDeadline, sendToPeer, type MessengerChannel } from './channel.ts';
-import { McpLink } from './link.ts';
+import type { McpLink } from './link.ts';
 import { listIds, openIds, parseReply } from './reply.ts';
 import { matchPrefix, type ChatRequests } from './requests.ts';
 import type { MessengerSettings } from './settings.ts';

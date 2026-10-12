@@ -163,7 +163,7 @@ export function parseLine(line: string): JsonRpcMessage {
   let value: unknown;
   try {
     value = JSON.parse(line);
-  } catch (cause) {
+  } catch {
     throw new ProtocolError('not JSON', line);
   }
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
