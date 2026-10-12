@@ -71,6 +71,7 @@ export interface ServeLogEntry {
     | 'dropped'
     | 'reload'
     | 'request'
+    | 'run-summary'
     | 'error';
   readonly task: string;
   readonly detail: Readonly<Record<string, string>>;
@@ -623,6 +624,15 @@ interface Started {
   readonly text: string;
 }
 
+/** How much of a run's final message the log keeps. */
+export const SUMMARY_CHARS = 300;
+
+/** The final message on one line, cut to `SUMMARY_CHARS`. */
+export function summaryOf(message: string): string {
+  const flat = message.replace(/\s+/g, ' ').trim();
+  return flat.length > SUMMARY_CHARS ? `${flat.slice(0, SUMMARY_CHARS - 1)}…` : flat;
+}
+
 async function runSession(
   task: ServeTask,
   deps: ServeDeps,
@@ -699,6 +709,12 @@ async function runSession(
       task: task.id,
       detail: { phase: 'end', session: started.sessionId, stopReason, outcome },
     });
+    if (task.id !== REQUEST_TASK && message.trim())
+      deps.log?.({
+        event: 'run-summary',
+        task: task.id,
+        detail: { session: started.sessionId, outcome, summary: summaryOf(message) },
+      });
     return result(task, outcome, startedAt, deps.now(), {
       sessionId,
       stopReason,

@@ -423,4 +423,26 @@ export default async () => {
       expect(nextWakeMs(serveConfig, clock.lastRun, now)).toBe(60_000);
     });
   });
+  await describe('run-summary', async () => {
+    await it('a scheduled run logs its final message, flattened and cut', async () => {
+      const long = `Line one.\n\n${'word '.repeat(200)}`;
+      const h = harness(config(), { chunks: [long] });
+      await runTask(h.deps.config.tasks[0]!, h.deps);
+      const entry = h.log.find((item) => item.event === 'run-summary');
+      expect(entry?.task).toBe('t');
+      const summary = String(entry?.detail?.['summary']);
+      expect(summary.startsWith('Line one. word')).toBe(true);
+      expect(summary.includes('\n')).toBe(false);
+      expect(summary.length <= 301).toBe(true);
+      expect(entry?.detail?.['outcome']).toBe('done');
+      expect(h.log.findIndex((item) => item.event === 'run')).toBeLessThan(
+        h.log.findIndex((item) => item.event === 'run-summary'),
+      );
+    });
+    await it('no summary event when the agent said nothing', async () => {
+      const h = harness(config(), { chunks: [''] });
+      await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(h.log.some((item) => item.event === 'run-summary')).toBe(false);
+    });
+  });
 };
