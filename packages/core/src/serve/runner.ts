@@ -30,6 +30,7 @@ import { runTurn, withAuthHint, type AgentHandle, type OpenAgentOptions } from '
 import type { ServeChannel } from './channel.ts';
 import {
   DEFAULT_QUESTION_LIMITS,
+  PERSON_NEEDED_OFF,
   profileOf,
   type ServeConfig,
   type ServeProfile,
@@ -50,6 +51,21 @@ import {
   type QuestionAction,
   type QuestionKind,
 } from './questions.ts';
+import {
+  DEFAULT_PERSON_TIMEOUT_MIN,
+  holdPerson,
+  isHeld,
+  offerCode,
+  parsePersonReply,
+  peekCode,
+  personRefusal,
+  personText,
+  releasePerson,
+  type PersonHost,
+  type PersonNeededInput,
+  type PersonOutcome,
+} from './person.ts';
+import { STRINGS, msg } from '../messenger/strings.ts';
 import { nextRun } from './schedule.ts';
 
 /** The question list, wherever it lives. Read fresh on every look: another process writes it too. */
@@ -95,6 +111,10 @@ export interface ServeDeps {
   readonly sleep: (ms: number) => Promise<void>;
   /** How often a waiting permission request looks for an answer. Default 2 s. */
   readonly pollMs?: number;
+  /** Where a run's agent finds `person_needed`. Absent: the tool is not offered. */
+  readonly personHost?: PersonHost;
+  /** Minutes `person_needed` waits when neither the call nor the task says. Default 30. */
+  readonly personDefaultMin?: number;
   /** How long to wait before the one retry after the agent did not offer the model. Default 15 s. */
   readonly modelRetryMs?: number;
   /** Take the task's run lock; `null` when another run of it holds it. Absent: no cross-process lock. */
@@ -217,9 +237,9 @@ export async function runTask(task: ServeTask, deps: ServeDeps): Promise<RunResu
         });
       }
     }
-    const run = await runSession(task, deps, startedAt, async (client) => {
+    const run = await runSession(task, deps, startedAt, async (client, extra) => {
       const session = await withAuthHint('session/new', () =>
-        client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers] }),
+        client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers, ...extra] }),
       );
       return {
         sessionId: session.sessionId,
@@ -435,6 +455,54 @@ export async function answerQuestion(idText: string, text: string, deps: ServeDe
     };
   }
 
+  let personDone = false;
+  if (question.kind === 'person') {
+    const reply = parsePersonReply(text, question.acceptsCode === true);
+    if (reply.kind === 'invalid')
+      return none(
+        'invalid',
+        msg(STRINGS.personNeedsAnswer, {
+          id: label,
+          orCode: question.acceptsCode && !question.deferred ? ' or the code' : '',
+        }),
+        question,
+      );
+    const held = isHeld(question.user, question.id);
+    // Not held and not deferred: the waiting call lives in another process (`serve`), which reads the store.
+    if (held || !question.deferred) {
+      if (reply.kind === 'code') {
+        if (!held || !offerCode(question.user, question.id, reply.code))
+          return none('invalid', msg(STRINGS.personCodeRefused, { id: label }), question);
+      }
+      const answer = reply.kind === 'declined' ? 'no' : reply.kind === 'code' ? 'text' : 'yes';
+      const answered = update(deps, question, {
+        status: 'answered',
+        answer,
+        answeredAt: now.toISOString(),
+        resolution: reply.kind === 'code' ? 'code received' : reply.kind === 'declined' ? 'declined' : 'done',
+      });
+      deps.log?.({ event: 'answer', task: question.task, detail: { question: question.id, answer } });
+      return {
+        mode: reply.kind === 'declined' ? 'declined' : 'allowed',
+        message: `${label} ${reply.kind === 'code' ? 'code received' : reply.kind}; the waiting run picks it up`,
+        question: answered,
+        run: null,
+      };
+    }
+    if (reply.kind === 'code') return none('invalid', msg(STRINGS.personCodeRefused, { id: label }), question);
+    if (reply.kind === 'declined') {
+      const closed = update(deps, question, {
+        status: 'answered',
+        answer: 'no',
+        answeredAt: now.toISOString(),
+        resolution: 'declined',
+      });
+      deps.log?.({ event: 'answer', task: question.task, detail: { question: question.id, answer: 'no' } });
+      return { mode: 'declined', message: `${label} declined`, question: closed, run: null };
+    }
+    personDone = true;
+  }
+
   const task = deps.config.tasks.find((candidate) => candidate.id === question.task);
   if (!task) {
     update(deps, question, { status: 'cancelled', resolution: 'its task is no longer configured' });
@@ -461,16 +529,23 @@ export async function answerQuestion(idText: string, text: string, deps: ServeDe
     });
     deps.log?.({ event: 'answer', task: task.id, detail: { question: question.id, answer: parsed.kind } });
     let how: 'loaded' | 'resumed' | 'follow-up' = 'loaded';
-    const answerText = parsed.kind === 'text' ? parsed.text : text.trim();
-    const run = await runSession(task, deps, now, async (client) => {
-      const continued = await continueSession(client, task, question.sessionId);
+    const answerText = personDone
+      ? 'I have done it myself; you can continue.'
+      : parsed.kind === 'text'
+        ? parsed.text
+        : text.trim();
+    const run = await runSession(task, deps, now, async (client, extra) => {
+      const continued = await continueSession(client, task, question.sessionId, extra);
       if (continued) {
         how = continued.how;
         return { sessionId: question.sessionId, configOptions: continued.configOptions, text: answerText };
       }
       how = 'follow-up';
       const session = await withAuthHint('session/new', () =>
-        client.newSession({ cwd: task.cwd, mcpServers: [...(task.answerMcpServers ?? task.mcpServers)] }),
+        client.newSession({
+          cwd: task.cwd,
+          mcpServers: [...(task.answerMcpServers ?? task.mcpServers), ...extra],
+        }),
       );
       return {
         sessionId: session.sessionId,
@@ -545,6 +620,7 @@ export function requestTask(request: Omit<RequestRun, 'text' | 'sessionId' | 'pr
     released: [],
     questions: DEFAULT_QUESTION_LIMITS,
     notify: 'questions',
+    personNeeded: PERSON_NEEDED_OFF,
     channels: null,
     messengerDetail: null,
   };
@@ -565,9 +641,9 @@ export async function runRequest(request: RequestRun, deps: ServeDeps): Promise<
     task,
     deps,
     deps.now(),
-    async (client) => {
+    async (client, extra) => {
       if (request.sessionId) {
-        const continued = await continueSession(client, task, request.sessionId);
+        const continued = await continueSession(client, task, request.sessionId, extra);
         if (continued) {
           how = continued.how;
           return { sessionId: request.sessionId, configOptions: continued.configOptions, text: request.text };
@@ -575,7 +651,7 @@ export async function runRequest(request: RequestRun, deps: ServeDeps): Promise<
         how = 'fresh';
       }
       const session = await withAuthHint('session/new', () =>
-        client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers] }),
+        client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers, ...extra] }),
       );
       return { sessionId: session.sessionId, configOptions: session.configOptions ?? null, text: opening };
     },
@@ -653,7 +729,7 @@ async function runSession(
   task: ServeTask,
   deps: ServeDeps,
   startedAt: Date,
-  start: (client: AcpClient) => Promise<Started>,
+  start: (client: AcpClient, extra: readonly McpServer[]) => Promise<Started>,
   options: { readonly replyQuestions: boolean } = { replyQuestions: true },
 ): Promise<RunResult> {
   const profile = profileOf(deps.config, task);
@@ -681,8 +757,14 @@ async function runSession(
       });
     },
   });
+  let person: { readonly server: McpServer; detach(): void } | null = null;
   deps.log?.({ event: 'run', task: task.id, detail: { phase: 'start' } });
   try {
+    if (task.personNeeded.enabled && deps.personHost) {
+      person = await deps.personHost.attach((input) =>
+        personNeeded(task, profile, user, () => sessionId, input, deps),
+      );
+    }
     let started!: Started;
     for (let attempt = 0; ; attempt += 1) {
       handle = await deps.open({
@@ -690,7 +772,7 @@ async function runSession(
         gate: { permission: gate },
         ...(deps.onAgentLog ? { onLog: deps.onAgentLog } : {}),
       });
-      started = await start(handle.client);
+      started = await start(handle.client, person ? [person.server] : []);
       sessionId = started.sessionId;
       try {
         await pinModel(handle.client, started.sessionId, started.configOptions, profile);
@@ -765,6 +847,7 @@ async function runSession(
     }
     return result(task, 'failed', startedAt, deps.now(), { sessionId, reason });
   } finally {
+    person?.detach();
     if (sessionId) cancelHeldQuestions(deps, sessionId);
     await handle?.close();
   }
@@ -775,8 +858,9 @@ async function continueSession(
   client: AcpClient,
   task: ServeTask,
   sessionId: string,
+  extra: readonly McpServer[],
 ): Promise<{ how: 'loaded' | 'resumed'; configOptions: SessionConfigOption[] | null } | null> {
-  const params = { cwd: task.cwd, mcpServers: [...(task.answerMcpServers ?? task.mcpServers)] };
+  const params = { cwd: task.cwd, mcpServers: [...(task.answerMcpServers ?? task.mcpServers), ...extra] };
   if (client.supportsLoadSession) {
     try {
       const loaded = await withAuthHint('session/load', () => client.loadSession({ sessionId, ...params }));
@@ -979,13 +1063,83 @@ async function ask(
   }
 }
 
+/**
+ * `person_needed`: one `person` question, then a poll like `ask`'s. The code, if one comes, is read from
+ * the in-memory `waiting` map and returned to the agent; nothing here logs or stores it. On no reply in
+ * time the question stays open as `deferred` — the open item `lotse questions` lists — and the call
+ * returns `timeout`.
+ */
+async function personNeeded(
+  task: ServeTask,
+  profile: ServeProfile,
+  user: ServeUser,
+  sessionOf: () => string | null,
+  input: PersonNeededInput,
+  deps: ServeDeps,
+): Promise<PersonOutcome> {
+  const refusal = personRefusal(task, profile, input);
+  if (refusal) throw new Error(refusal);
+  const sessionId = sessionOf();
+  if (!sessionId) throw new Error('the session has not started yet');
+  const now = deps.now();
+  const book = deps.questions.read();
+  if (
+    openQuestions(book, now).some(
+      (question) => question.kind === 'person' && question.sessionId === sessionId && !question.deferred,
+    )
+  )
+    throw new Error('another person_needed is already waiting in this conversation');
+  const ceiling = ceilingReached(task, book, now);
+  if (ceiling) {
+    deps.log?.({ event: 'skip', task: task.id, detail: { why: 'ceiling', session: sessionId } });
+    throw new Error(`the person cannot be asked now: ${ceiling}`);
+  }
+  const waitMin =
+    input.timeoutMin ?? task.personNeeded.timeoutMin ?? deps.personDefaultMin ?? DEFAULT_PERSON_TIMEOUT_MIN;
+  const deadline = now.getTime() + waitMin * 60_000;
+  const created = newQuestion(book, task, user, 'person', sessionId, null, personText(input), now);
+  const question: Question = {
+    ...created,
+    acceptsCode: input.acceptsCode,
+    expiresAt: new Date(deadline + task.questions.expiresMs).toISOString(),
+  };
+  deps.questions.write([...book, question]);
+  holdPerson(user.id, question.id, input.acceptsCode);
+  deps.log?.({
+    event: 'question',
+    task: task.id,
+    detail: { question: question.id, kind: 'person', session: sessionId },
+  });
+  try {
+    await notify(question, user, deps);
+    for (;;) {
+      const current = findQuestions(deps.questions.read(), question.id, user.id)[0];
+      if (!current || current.status === 'cancelled' || current.status === 'expired')
+        return { outcome: 'timeout' };
+      if (current.status === 'answered') {
+        if (current.answer === 'no') return { outcome: 'declined' };
+        const code = current.answer === 'text' ? peekCode(user.id, question.id) : null;
+        return code ? { outcome: 'code', code } : { outcome: 'done' };
+      }
+      if (deps.now().getTime() >= deadline) {
+        update(deps, current, { deferred: true, resolution: 'no reply in time; the task went on without you' });
+        deps.log?.({ event: 'expired', task: task.id, detail: { question: current.id, why: 'deferred' } });
+        return { outcome: 'timeout' };
+      }
+      await deps.sleep(deps.pollMs ?? DEFAULT_POLL_MS);
+    }
+  } finally {
+    releasePerson(user.id, question.id);
+  }
+}
+
 /** The run is over: a permission question still open for its session has nothing left to answer. */
 function cancelHeldQuestions(deps: ServeDeps, sessionId: string): void {
   const book = deps.questions.read();
   let changed = false;
   const next = book.map((question) => {
-    if (question.kind !== 'permission' || question.status !== 'open' || question.sessionId !== sessionId)
-      return question;
+    if (question.status !== 'open' || question.sessionId !== sessionId) return question;
+    if (question.kind === 'reply' || (question.kind === 'person' && question.deferred)) return question;
     changed = true;
     return { ...question, status: 'cancelled' as const, resolution: 'the run ended before an answer' };
   });

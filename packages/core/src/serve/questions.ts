@@ -11,10 +11,15 @@
  *   resumes the session with the person's text (`session/load`, else `session/resume`, else a
  *   follow-up run that carries the context — ADR 0003).
  *
+ * - **`person`** — a running task called `person_needed`: only the person can go on (a login, a
+ *   code, an approval). While the run waits the question is held like a permission; when the wait
+ *   times out it is `deferred` — it stays open, the run is gone, and a "done" continues the session
+ *   like a reply does. A code handed over in the chat lives in memory only (`person.ts`).
+ *
  * Pure over its arguments: the list is a value, the clock a parameter.
  */
 
-export type QuestionKind = 'permission' | 'reply';
+export type QuestionKind = 'permission' | 'reply' | 'person';
 export type QuestionStatus = 'open' | 'answered' | 'expired' | 'cancelled';
 
 /** What a yes to a permission question allows: these fields, enforced by the gate, verbatim. */
@@ -43,6 +48,10 @@ export interface Question {
   readonly answeredAt: string | null;
   /** What `serve` did, as one sentence. `lotse answer` prints it. */
   readonly resolution: string | null;
+  /** `person` only: the wait ran out, the run is gone, and an answer continues the session. */
+  readonly deferred?: boolean;
+  /** `person` only: the person may reply with a code instead of "done". Never the code itself. */
+  readonly acceptsCode?: boolean;
 }
 
 export type AnswerKind = 'yes' | 'no' | 'text';
@@ -92,7 +101,7 @@ export function parseAnswer(text: string): ParsedAnswer {
  * guessed "yes" would put words in their mouth.
  */
 export function quickReplies(kind: QuestionKind): readonly ('yes' | 'no')[] {
-  return kind === 'permission' ? ['yes', 'no'] : [];
+  return kind === 'permission' ? ['yes', 'no'] : kind === 'person' ? ['yes'] : [];
 }
 
 /**
@@ -161,7 +170,7 @@ function isQuestion(value: unknown): value is Question {
     typeof record['id'] === 'string' &&
     typeof record['user'] === 'string' &&
     typeof record['task'] === 'string' &&
-    (record['kind'] === 'permission' || record['kind'] === 'reply') &&
+    (record['kind'] === 'permission' || record['kind'] === 'reply' || record['kind'] === 'person') &&
     typeof record['sessionId'] === 'string' &&
     typeof record['text'] === 'string' &&
     typeof record['createdAt'] === 'string' &&

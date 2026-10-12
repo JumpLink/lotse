@@ -444,6 +444,26 @@ export { noticeDue, NOTICE_IDS, type NoticeId } from './notices.ts';
 
 // ── `lotse serve`: scheduled tasks, questions to a person, the channel seam (ADR 0003) ──────────
 export {
+  DEFAULT_PERSON_TIMEOUT_MIN,
+  PERSON_KINDS,
+  REDACTED,
+  holdPerson,
+  isHeld,
+  offerCode,
+  parsePersonReply,
+  peekCode,
+  personRefusal,
+  personText,
+  releasePerson,
+  type PersonHandler,
+  type PersonHost,
+  type PersonKind,
+  type PersonNeededInput,
+  type PersonOutcome,
+  type PersonReply,
+} from './serve/person.ts';
+export { PERSON_TOOL, createPersonHost } from './serve/person-server.ts';
+export {
   MIN_INTERVAL_MS,
   isDue,
   nextRun,
@@ -454,6 +474,7 @@ export {
 } from './serve/schedule.ts';
 export {
   DEFAULT_QUESTION_LIMITS,
+  PERSON_NEEDED_OFF,
   ServeConfigError,
   configHash,
   deliveryOf,
@@ -462,6 +483,7 @@ export {
   profileOf,
   unreachableTaskNotes,
   type MessengerDetail,
+  type PersonNeededConfig,
   type QuestionLimits,
   type ReleasedArea,
   type RightsLevel,

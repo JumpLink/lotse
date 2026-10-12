@@ -69,6 +69,8 @@ export interface RequestSettings {
   readonly followUpMinutes: number;
   /** Runs at the same time; more requests wait in a queue. */
   readonly maxConcurrent: number;
+  /** Minutes `person_needed` waits for the person when neither the call nor the task says. */
+  readonly personNeededMinutes: number;
 }
 
 export const REQUEST_DEFAULTS: RequestSettings = {
@@ -81,6 +83,7 @@ export const REQUEST_DEFAULTS: RequestSettings = {
   rights: 'read',
   followUpMinutes: 30,
   maxConcurrent: 1,
+  personNeededMinutes: 30,
 };
 
 export const MESSENGER_DEFAULTS: MessengerSettings = {
