@@ -55,8 +55,9 @@ own value.
 
 ## 3. Choose the agent
 
-The widget needs an `AgentCommand`. Resolve it with core, which prefers the person's own install and
-falls back to a bundled copy:
+The widget needs an `AgentCommand`. Resolve it with core, which prefers the bundled copy (own config and login, set up by whoever ships the app) and falls back to the
+person's own install only where no copy is bundled. The person's own global opencode is an explicit opt-in
+(`agent.source: "host"`), so an app never picks up a personal config unasked:
 
 ```ts
 const found = resolveDefault(gatherResolveContext(paths, false)); // null: nothing found

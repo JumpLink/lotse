@@ -105,7 +105,7 @@ const settingsNotes: string[] = [];
  * and `hooks.ts` exists precisely so that every environment read happens once at startup and can be
  * reasoned about as a whole. An unknown id prints its line here, where a person watching the terminal
  * will see it, and falls back rather than refusing to start. With no hook the agent is resolved as the CLI
- * resolves it: the saved setting if it is available, else the person's own install, else the bundled copy.
+ * resolves it: the saved setting if it is available, else the bundled copy, else the person's own install.
  */
 let nothingFound = false;
 const agent = chooseAgent(hooks.agent, () => {

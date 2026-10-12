@@ -103,8 +103,8 @@ gjsify workspace lotse-cli build:app      # → app/dist/lotse-app.gjs.mjs
 gjsify run app/dist/lotse-app.gjs.mjs
 ```
 
-It picks its agent the same way the CLI does — your own copy of `opencode` first, a bundled one
-otherwise, the choice in `settings.json` above both. An empty session file opens on a live composer:
+It picks its agent the same way the CLI does — the bundled `opencode` (its own isolated config and login), your own
+global install only as an opt-in (`lotse agents --use opencode:host`, or **Preferences**, `<Ctrl>comma`: "Your own opencode (global configuration)"; in `settings.json` it is `{"agent": {"id": "opencode", "source": "host"}}`); the setting wins over both. An empty session file opens on a live composer:
 your first prompt starts the session. Every dev hook, the stand-in agent that needs no model, and the
 measured GTK behaviour are in [docs/dev-fixtures.md](docs/dev-fixtures.md).
 

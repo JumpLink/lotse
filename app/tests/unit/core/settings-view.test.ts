@@ -49,9 +49,9 @@ function view(agent: Settings['agent'], problem: string | null = null) {
 
 export default async function run(): Promise<void> {
   await describe('the preferences choices view', async () => {
-    await it('lists Automatic first, then each host install, then each bundled copy', async () => {
+    await it('lists Automatic first, then each bundled copy, then each host install', async () => {
       const keys = view(null).rows.map((row) => row.key);
-      expect(keys.join(',')).toBe('auto,alpha:host,beta:host,alpha:bundled,beta:bundled');
+      expect(keys.join(',')).toBe('auto,alpha:bundled,beta:bundled,alpha:host,beta:host');
     });
 
     await it('selects Automatic when nothing is saved, and says what it would start', async () => {
@@ -62,14 +62,14 @@ export default async function run(): Promise<void> {
           .map((row) => row.key)
           .join(','),
       ).toBe('auto');
-      expect(rows[0]?.subtitle.includes('Installed (ALPHA 1.2.3)')).toBe(true);
+      expect(rows[0]?.subtitle.includes('Now: Bundled BETA 9.9.9 (recommended)')).toBe(true);
       expect(note).toBe(null);
     });
 
     await it('titles the bundled copy with its pinned version and the host one with its own', async () => {
       const byKey = new Map(view(null).rows.map((row) => [row.key, row]));
-      expect(byKey.get('beta:bundled')?.title).toBe('Bundled (BETA 9.9.9)');
-      expect(byKey.get('alpha:host')?.title).toBe('Installed (ALPHA 1.2.3)');
+      expect(byKey.get('beta:bundled')?.title).toBe('Bundled BETA 9.9.9 (recommended)');
+      expect(byKey.get('alpha:host')?.title).toBe('Your own ALPHA 1.2.3 (global configuration)');
       expect(byKey.get('alpha:host')?.subtitle).toBe('/usr/bin/alpha');
     });
 
@@ -97,7 +97,7 @@ export default async function run(): Promise<void> {
       const { rows, note } = view({ id: 'beta', source: 'host' });
       expect(rows.find((row) => row.selected)?.key).toBe('beta:host');
       expect(note?.includes('not available here')).toBe(true);
-      expect(note?.includes('Installed (ALPHA 1.2.3)')).toBe(true);
+      expect(note?.includes('Bundled BETA 9.9.9 (recommended)')).toBe(true);
     });
 
     await it('gives a saved id this build does not know a row of its own', async () => {

@@ -81,17 +81,20 @@ only in `app/src/core/desktop-channel.ts`, which `serve.ts` imports lazily so `a
 `serve/schema.ts` (`SERVE_CONFIG_SCHEMA`) is the one list of allowed keys, and the parser derives
 from it: a new field goes there first, with a title and a description.
 
-**Host before bundled, and the bundled copy is off PATH.** A Flatpak build unpacks the agents in
+**Bundled before host, and the bundled copy is off PATH.** A Flatpak build unpacks the agents in
 `packages/core/data/bundled-agents.json` under `BUNDLED_PREFIX` (`agents/catalog.ts` there, the one place the
 prefix is written), never `/app/bin` — there it would shadow the person's own opencode, which carries
 their login. The prefix is `/app/extra/agents`, not `/app/libexec`: the archive is Flatpak `extra-data`,
 fetched at *install* time, and `apply_extra` can write only `/app/extra` (data/README.md).
 `detectAgents` ignores a host hit under the prefix; `resolveAgent` takes the setting, else the first
-host install, else the first bundled copy (`agents/detect.ts`, pure over facts gathered by
-`probe.ts`). The catalog's `env` is flags only, never a credential.
+bundled copy, else the first host install (`agents/detect.ts`, pure over facts gathered by
+`probe.ts`). **The bundled copy is the default because other people configure the shipped opencode (own
+isolated config and login); the person's own global opencode is an explicit opt-in, `agent.source: "host"`**,
+and host is the default only where nothing is bundled (a dev checkout). A setting that cannot be honoured
+falls back to that same default. The catalog's `env` is flags only, never a credential.
 The person's choice (`{id, source}`, so "bundled opencode" ≠ "my opencode") is `app/src/core/settings.ts`, in
 `$XDG_CONFIG_HOME/lotse/settings.json` (`LOTSE_SETTINGS_FILE`), 0600/0700, an allowlist that accepts no secret;
-precedence is `--agent` (CLI) / `LOTSE_APP_AGENT` (GUI dev hook) > setting > host > bundled, and a setting that names something
+precedence is `--agent` (CLI) / `LOTSE_APP_AGENT` (GUI dev hook) > setting > bundled > host, and a setting that names something
 unavailable is reported (`note`), never skipped silently; a corrupt file falls back to defaults and says so.
 `lotse agents --use <id>[:bundled|host]|none` writes it.
 The GUI writes it from Preferences (`<Ctrl>comma`); a change applies the next time lotse starts, and a settings file lotse could not read is never destroyed by a save (`saveDecision`). The dialog's rows, its Flatpak async path and the hooks `LOTSE_APP_PREFERENCES[_AGENT]`: docs/dev-fixtures.md#the-preferences-dialog.

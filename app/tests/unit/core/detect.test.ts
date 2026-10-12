@@ -162,12 +162,13 @@ export default async () => {
       expect(found.note).toBe(null);
     });
 
-    await it('reports a host setting that is not on the host, and falls to the first host', async () => {
+    await it('reports a host setting that is not on the host, and falls to the bundled default', async () => {
       const detections = [detection('alpha', 'bundled'), detection('beta', 'host')];
       const found = pick({ setting: host('alpha'), detections });
-      expect(found.detection!.id).toBe('beta');
+      expect(found.detection!.id).toBe('alpha');
+      expect(found.detection!.source).toBe('bundled');
       expect(found.note).toContain('your own alpha');
-      expect(found.note).toContain('using beta (host) instead');
+      expect(found.note).toContain('using alpha (bundled) instead');
     });
 
     await it('a host setting is not satisfied by a bundled copy of the same id', async () => {
@@ -176,7 +177,7 @@ export default async () => {
       expect(found.note).toContain('your own alpha');
     });
 
-    await it('reports a bundled setting that is not shipped, and falls to the first host', async () => {
+    await it('reports a bundled setting that is not shipped, and falls to the host install when none is bundled', async () => {
       const detections = [detection('alpha', 'host'), detection('beta', 'none')];
       const found = pick({ setting: bundled('beta'), detections });
       expect(found.detection!.id).toBe('alpha');
@@ -189,10 +190,34 @@ export default async () => {
       expect(found.note).toContain('your own gamma');
     });
 
-    await it('takes the first host when there is no setting, with no note', async () => {
+    await it('takes the bundled copy over a host install when there is no setting, with no note', async () => {
       const detections = [detection('alpha', 'bundled'), detection('beta', 'host')];
       const found = pick({ setting: null, detections });
+      expect(found.detection!.id).toBe('alpha');
+      expect(found.detection!.source).toBe('bundled');
+      expect(found.note).toBe(null);
+    });
+
+    await it('takes the bundled copy even when a host install of the same id shadows it', async () => {
+      const detections = [detection('beta', 'host')];
+      const found = pick({ setting: null, detections, bundledAvailable: (id) => id === 'beta' });
+      expect(found.detection!.source).toBe('bundled');
+      expect(found.detection!.version).toBe('9.9.9');
+      expect(found.note).toBe(null);
+    });
+
+    await it('falls back to the host install when nothing is bundled', async () => {
+      const detections = [detection('alpha', 'none'), detection('beta', 'host')];
+      const found = pick({ setting: null, detections, bundledAvailable: () => false });
       expect(found.detection!.id).toBe('beta');
+      expect(found.detection!.source).toBe('host');
+      expect(found.note).toBe(null);
+    });
+
+    await it('an explicit host setting still runs the host install over a bundled copy', async () => {
+      const detections = [detection('beta', 'host')];
+      const found = pick({ setting: host('beta'), detections, bundledAvailable: (id) => id === 'beta' });
+      expect(found.detection!.source).toBe('host');
       expect(found.note).toBe(null);
     });
 

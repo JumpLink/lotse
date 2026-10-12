@@ -2,7 +2,7 @@
  * From "which agent" to the `AgentCommand` that starts it — pure over detections.
  *
  * Three questions, kept apart: an **explicit** id (`--agent`, `LOTSE_APP_AGENT`) wins and is the launcher as
- * written; **no choice** goes through `resolveAgent` (the setting, else host install, else the bundled copy); a **recorded**
+ * written; **no choice** goes through `resolveAgent` (the setting, else the bundled copy, else a host install); a **recorded**
  * agent (resume, cancel) is the session's own id, never a re-resolution to some other agent.
  *
  * A bundled detection becomes a `bundledCommand`: the program under `BUNDLED_PREFIX`, run in the sandbox,
@@ -93,7 +93,7 @@ export interface DefaultResolution {
 }
 
 /**
- * The agent to start when the person said nothing: the setting, else host, else bundled. `agent: null`
+ * The agent to start when the person said nothing: the setting, else bundled, else host. `agent: null`
  * means there is none — the caller prints `NO_AGENT_MESSAGE` — and `note` may still say why the setting
  * could not be honoured.
  */

@@ -4,6 +4,18 @@ Notable changes to lotse. The per-release notes that ship in the AppStream metai
 from the `gjsify.flatpak.releases` block in `package.json`; this file is the developer-facing view
 and also records changes that are not a release of their own.
 
+## Unreleased
+
+### Changed
+
+- **The bundled opencode is the default agent; your own is an opt-in.** With no `agent` setting, lotse
+  now starts the shipped opencode (own isolated config and login) and falls back to an opencode on your
+  `PATH` only where no copy is bundled, such as a dev checkout. Other people configure the shipped
+  copy; your own global opencode is never picked up unasked. To keep using it, choose **Your own opencode
+  (global configuration)** in Preferences or run `lotse agents --use opencode:host`. A setting that
+  names something unavailable now falls back to the same default. Sessions recorded on your own
+  opencode still resume on it. Preferences lists the bundled copy first, marked *recommended*.
+
 ## 0.3.0 — 2026-10-11
 
 First release published by CI with provenance: the app and the four libraries share this version.

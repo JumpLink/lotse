@@ -77,7 +77,7 @@ its own `LotsePaths`, normally with `lotsePathsUnder`.
 | `LAUNCHERS`, `DEFAULT_AGENT`, `findLauncher`, `requireLauncher`, `launcherIds` | The agent commands lotse can start from `PATH` (opencode today). |
 | `AgentCommand` | How one agent process is started: `id`, `title`, `program`, `args`, optional `cwd`, `env`, `bundled`. |
 | `gatherResolveContext(paths, readVersions?, probeHost?)` / `gatherResolveContextAsync(paths)` | Probe this machine once: which agents exist on `PATH`, which bundled copies exist. The async form never blocks, for a sandboxed app. |
-| `resolveDefault(context, setting?)` / `resolveDefaultWithNote` | The agent to start when nobody chose: the setting, else the person's own install, else the bundled copy. `null` means none; the `…WithNote` form also says why a setting was not honoured. |
+| `resolveDefault(context, setting?)` / `resolveDefaultWithNote` | The agent to start when nobody chose: the setting, else the bundled copy, else the person's own install (an explicit opt-in, `agent.source: "host"`). `null` means none; the `…WithNote` form also says why a setting was not honoured. |
 | `resolveRecorded(id, source, context)` | The agent a stored session names, on the copy that held its history. Returns `{ agent }` or `{ problem }`; never swaps one agent for another. |
 | `ResolvedAgent` | `{ command, source: 'host' \| 'bundled', version, isolation }`. |
 | `detectAgents`, `parseVersionOutput`, `resolveAgent`, `gatherAgentFacts[Async]`, `gatherCwdFacts` | The pure and impure halves of detection, for a custom resolver. |

@@ -2,7 +2,7 @@
  * Which agent a command starts — the shared step of `start`, `resume`, `cancel` and `auth`.
  *
  * An explicit `--agent` is the launcher as written, as before. With none, `resolveDefaultWithNote` picks the
- * available setting, else the person's own install, else the bundled copy. A session that recorded its agent gets that agent back
+ * available setting, else the bundled copy, else the person's own install. A session that recorded its agent gets that agent back
  * (`resolveRecorded`), never a fresh resolution. Each function prints its reason and sets the exit code
  * when it has nothing to return, so a handler only has to stop.
  */
