@@ -8,6 +8,10 @@ and also records changes that are not a release of their own.
 
 ### Changed
 
+- **Chat messages are styled for XMPP and carry images.** The messenger channel turns the agent's Markdown
+  into XEP-0393 styling (`*bold*`, `_italic_`, `• ` lists, `text: url` links) and sends a standalone
+  `![alt](https://…)` line as its own image message (curlew's `send_message` `image_url`), in order, at most
+  8 per message. A server without `image_url` gets the plain link.
 - **The bundled opencode is the default agent; your own is an opt-in.** With no `agent` setting, lotse
   now starts the shipped opencode (own isolated config and login) and falls back to an opencode on your
   `PATH` only where no copy is bundled, such as a dev checkout. Other people configure the shipped

@@ -534,6 +534,7 @@ export {
 } from './messenger/requests.ts';
 export { McpToolError, connectMcp, type McpTools } from './messenger/mcp-client.ts';
 export { McpLink } from './messenger/link.ts';
+export { MAX_IMAGES, renderForXmpp, type Segment } from './messenger/xmpp-style.ts';
 export {
   RETRY_DELAYS_MS,
   combineChannels,

@@ -67,6 +67,7 @@ import serveGate from './unit/serve/gate.test.ts';
 import serveState from './unit/serve/serve-state.test.ts';
 import serveRunner from './unit/serve/runner.test.ts';
 import serveMessenger from './unit/serve/messenger.test.ts';
+import serveXmppStyle from './unit/serve/xmpp-style.test.ts';
 import serveRequests from './unit/serve/requests.test.ts';
 import serveReload from './unit/serve/reload.test.ts';
 
@@ -138,6 +139,7 @@ run({
   serveState,
   serveRunner,
   serveMessenger,
+  serveXmppStyle,
   serveRequests,
   serveReload,
   hookValue,
