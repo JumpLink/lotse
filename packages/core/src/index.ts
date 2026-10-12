@@ -516,6 +516,7 @@ export {
   requestSettings,
   type ChannelName,
   type MessengerSettings,
+  type RequestEnvVariable,
   type RequestMcpServer,
   type RequestSettings,
 } from './messenger/settings.ts';
@@ -524,8 +525,11 @@ export {
   PART_CHARS,
   chatRequests,
   matchPrefix,
+  recoverPending,
   splitForChat,
   type ChatRequests,
+  type PendingRequest,
+  type PendingStore,
   type ChatRequestsOptions,
 } from './messenger/requests.ts';
 export { McpToolError, connectMcp, type McpTools } from './messenger/mcp-client.ts';

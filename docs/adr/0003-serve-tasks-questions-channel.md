@@ -68,7 +68,7 @@ channel can be added without changing a task.
    Curlew/XMPP channel is a second implementation and adds reading answers off the channel.
 7. **State lives under `$XDG_STATE_HOME/lotse`** (`LOTSE_STATE_DIR` overrides it):
    `questions.json` and `runs.json` (last run, outcome, session per task) are `state`; the
-   action log `serve.log` (JSON lines, ids and kinds only — no prompt, message or argument) is
+   action log `serve.log` (JSON lines, ids and kinds only — no prompt, message or argument; the one exception is `run-summary`, a truncated final message of a scheduled run) is
    `state`; `locks/` is transient. Files are mode 0600 in a 0700 directory and declared in
    `.werkstatt-state.json`.
 

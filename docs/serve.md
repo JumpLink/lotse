@@ -134,7 +134,7 @@ a promise or on the agent asking permission for an MCP tool.
 `$XDG_STATE_HOME/lotse/` (`LOTSE_STATE_DIR` overrides it), mode `0600` in a `0700` directory:
 `questions.json`, `runs.json` (last run, outcome, precheck verdict and session per task; outcome is
 `done`, `asked`, `declined`, `nothing`, `skipped` or `failed`), `serve.log` (JSON lines, ids and
-kinds only, never a prompt or a reply) and `locks/`. Closed questions are kept for 7 days.
+kinds only, never a prompt or a reply — the one exception is `run-summary`: the final message of each scheduled run, flattened and cut to 300 characters), `pending-requests.json` (ids and times of chat requests not yet answered, never their text) and `locks/`. Closed questions are kept for 7 days.
 
 ## Running it as a service
 
@@ -253,7 +253,7 @@ result's cursor.
 The position in the conversation is kept in `messenger-cursor.json` in the state directory, so a
 restart neither replays old replies nor loses one. The first start begins at "now". If the MCP
 server dies, `serve` restarts it with a growing pause (5 s up to 5 min). There is no receive loop in
-`serve --once`: that run ends before anyone could reply. A channel that fails while another one
+`serve --once`: after its runs it makes ONE receive pass (a poll of at most 5 s, answers and requests in it are handled, a request it starts is awaited) and exits; nothing is waited for beyond that. A channel that fails while another one
 delivers is never silent: `serve` prints `<channel>: <error>` on stderr and writes an `error` entry
 (channel, kind, message) to `serve.log`. A question the messenger could not send is sent again by the
 receive loop after 30 s, 1, 2, 5 and 10 min, while it is still open; after the last try `serve` says
@@ -320,7 +320,7 @@ characters; beyond that the last is cut short with a note.
 | `profile` | — | A profile id of `tasks.json`: agent, model, user. Required when enabled. |
 | `preamble` | `""` | Put before the first message of a new session. |
 | `cwd` | `""` | The session's working directory; empty: the home directory. |
-| `mcpServers` | `[]` | Stdio MCP servers the session gets (`name`, `command`, `args`; no `env`). |
+| `mcpServers` | `[]` | Stdio MCP servers the session gets (`name`, `command`, `args`, optional `env` as `[{name, value}]` like tasks.json; a credential-looking name is refused). |
 | `rights` | `read` | `read`: every permission request is declined, nothing is asked. `confirm`: each one becomes a question in the chat (and on the desktop), and a write needs your yes. |
 | `followUpMinutes` | `30` | How long after an answer a plain message continues that session; `0`: never. |
 | `maxConcurrent` | `1` | Requests running at the same time. |
@@ -333,12 +333,12 @@ lotse messenger --requests on --request-profile assistant --request-rights confi
 ```
 
 The other flags are `--request-prefix`, `--request-preamble`, `--request-cwd` and
-`--max-concurrent`; `--request-mcp-server none` clears the list. The same fields are under
-*Preferences → Requests from the chat*. `serve` reads them once at start: restart it to apply a
-change. A profile `tasks.json` does not define is reported at start, and the chat then answers
-questions only.
+`--max-concurrent`; `--request-mcp-server none` clears the list. `--request-mcp-env 'calendar:NAME=value; …'` sets the servers' environment (`none` clears it); setting servers again keeps the env of servers with the same name. The same fields are under
+*Preferences → Requests from the chat*. A running `serve` applies a change within a minute, like tasks.json: a request in progress finishes as it was started, new messages use the new settings, and a `reload` entry is logged. A profile `tasks.json` does not define is reported, and the chat then answers questions only.
+
+Requests accepted and not yet answered are noted in `pending-requests.json`. If `serve` dies meanwhile, its next start tells the chat once "not completed, please send it again"; it never re-runs a request, since it may already have written something.
 
 `serve.log` gets a `request` entry when a request is queued, starts and ends (request number,
 profile, `new`/`loaded`/`resumed`/`fresh`, outcome, session id, number of messages sent) and an
 `error` entry (`phase: request`) when a run throws — never what was asked or answered. A request
-runs as the synthetic task `@chat`; `serve --once` takes none, since it has no receive loop.
+runs as the synthetic task `@chat` (no `run-summary`). `serve --once` handles requests that arrive during its one receive pass.

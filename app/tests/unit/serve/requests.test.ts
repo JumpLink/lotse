@@ -9,6 +9,7 @@ import {
   connectMcp,
   matchPrefix,
   parseServeConfig,
+  recoverPending,
   runReceiveLoop,
   sendToPeer,
   splitForChat,
@@ -16,6 +17,7 @@ import {
   type Cursor,
   type CursorStore,
   type MessengerSettings,
+  type PendingRequest,
   type Question,
   type RequestRun,
   type RequestRunResult,
@@ -25,12 +27,15 @@ import {
   type ServeLogEntry,
 } from '@lotse/core';
 import {
+  formatEnvSpecs,
   formatServerSpecs,
+  parseEnvSpecs,
   parseServerSpecs,
   parseSettings,
   withRequests,
 } from '../../../src/core/settings.ts';
 import { applyRequestFlags } from '../../../src/frontends/cli/messenger.ts';
+import { createRequestsHolder } from '../../../src/frontends/cli/serve-requests.ts';
 import { withFakeMcp, type FakeMcp } from '../../support/fake-mcp.ts';
 
 const SETTINGS: MessengerSettings = {
@@ -531,6 +536,251 @@ export default async () => {
       });
       expect('problem' in applyRequestFlags(ON, { maxConcurrent: 0 })).toBe(true);
       expect('problem' in applyRequestFlags(ON, { prefix: ' ' })).toBe(true);
+    });
+  });
+  await describe('request MCP server environment', async () => {
+    const SERVER = {
+      name: 'cal',
+      command: 'reminder',
+      args: ['mcp'],
+      env: [{ name: 'REMINDER_HOME', value: '/data x' }],
+    };
+    await it('reaches the run as ACP env variables', async () => {
+      const runner = fakeRunner();
+      const requests = chatRequests({
+        settings: { ...ON, mcpServers: [SERVER] },
+        serve: serveDeps({ value: [] }),
+        defaultCwd: '/home/example',
+        send: async () => {},
+        run: runner.run,
+      });
+      requests.submit('hi', true);
+      await until(() => runner.calls.length === 1, 'the run');
+      expect(runner.calls[0]!.request.mcpServers).toStrictEqual([SERVER]);
+      runner.calls[0]!.release(result());
+      await requests.idle();
+    });
+    await it('round-trips through settings.json; a credential-looking name is refused', async () => {
+      const saved = withRequests({ version: 1, agent: null }, { ...ON, mcpServers: [SERVER] });
+      expect(parseSettings(JSON.stringify(saved))).toStrictEqual({ settings: saved });
+      const bad = parseSettings(
+        '{"version":1,"channel":{"messenger":{"requests":{"mcpServers":[{"name":"a","command":"b","env":[{"name":"API_TOKEN","value":"x"}]}]}}}}',
+      );
+      expect('problem' in bad).toBe(true);
+    });
+    await it('the CLI setter replaces the env and keeps it when servers are re-set', async () => {
+      const withServer = { ...ON, mcpServers: [{ name: 'cal', command: 'reminder', args: ['mcp'] }] };
+      const set = applyRequestFlags(withServer, { mcpEnv: 'cal:REMINDER_HOME=/data x' });
+      expect(set).toStrictEqual({
+        ...withServer,
+        mcpServers: [{ ...withServer.mcpServers[0], env: [{ name: 'REMINDER_HOME', value: '/data x' }] }],
+      });
+      const again = applyRequestFlags(set as RequestSettings, { mcpServers: 'cal=reminder mcp --x' });
+      expect(formatEnvSpecs((again as RequestSettings).mcpServers)).toBe('cal:REMINDER_HOME=/data x');
+      const cleared = applyRequestFlags(set as RequestSettings, { mcpEnv: 'none' });
+      expect(formatEnvSpecs((cleared as RequestSettings).mcpServers)).toBe('');
+      expect('problem' in applyRequestFlags(withServer, { mcpEnv: 'other:A=1' })).toBe(true);
+      expect('problem' in applyRequestFlags(withServer, { mcpEnv: 'cal:API_KEY=1' })).toBe(true);
+      expect('problem' in (parseEnvSpecs('nonsense') as object)).toBe(true);
+    });
+  });
+
+  await describe('requests left unfinished by a restart', async () => {
+    const memory = (start: PendingRequest[] = []) => {
+      const store = {
+        value: start,
+        read: () => store.value,
+        write: (list: readonly PendingRequest[]) => void (store.value = [...list]),
+      };
+      return store;
+    };
+    await it('a request is noted by id and time only, and forgotten when it ends', async () => {
+      const runner = fakeRunner();
+      const pending = memory();
+      const requests = chatRequests({
+        settings: ON,
+        serve: serveDeps({ value: [] }),
+        defaultCwd: '/home/example',
+        send: async () => {},
+        pending,
+        run: runner.run,
+      });
+      requests.submit('write the secret plan', true);
+      await until(() => runner.calls.length === 1, 'the run');
+      expect(pending.value.length).toBe(1);
+      expect(JSON.stringify(pending.value)).not.toContain('plan');
+      runner.calls[0]!.release(result());
+      await requests.idle();
+      expect(pending.value.length).toBe(0);
+    });
+    await it('one message for one or several, then the list is empty; nothing is run', async () => {
+      const sent: string[] = [];
+      const one = memory([{ id: 'a', at: BEFORE }]);
+      expect(await recoverPending(one, async (text) => void sent.push(text))).toBe(1);
+      expect(sent[0]).toContain('not completed');
+      expect(sent[0]).toContain('send it again');
+      expect(one.value.length).toBe(0);
+      const many = memory([
+        { id: 'a', at: BEFORE },
+        { id: 'b', at: BEFORE },
+      ]);
+      expect(await recoverPending(many, async (text) => void sent.push(text))).toBe(2);
+      expect(sent[1]).toContain('2');
+      expect(many.value.length).toBe(0);
+      expect(await recoverPending(many, async (text) => void sent.push(text))).toBe(0);
+      expect(sent.length).toBe(2);
+    });
+    await it('a message that cannot be sent still clears the list', async () => {
+      const store = memory([{ id: 'a', at: BEFORE }]);
+      const lines: string[] = [];
+      await recoverPending(
+        store,
+        async () => {
+          throw new Error('down');
+        },
+        (line) => void lines.push(line),
+      );
+      expect(store.value.length).toBe(0);
+      expect(lines.length).toBe(1);
+    });
+  });
+
+  await describe('reloading the request settings', async () => {
+    const holderFor = (
+      state: { settings: RequestSettings | null; profiles: string[] },
+      built: RequestSettings[],
+    ) =>
+      createRequestsHolder({
+        read: () => state.settings,
+        profiles: () => state.profiles,
+        build: (settings) => {
+          built.push(settings);
+          return { prefix: settings.prefix, submit: () => {}, idle: async () => {} };
+        },
+      });
+    await it('builds on first sight, rebuilds on a change, drops on off, ignores the same', async () => {
+      const built: RequestSettings[] = [];
+      const state = { settings: ON as RequestSettings | null, profiles: ['p'] };
+      const holder = holderFor(state, built);
+      expect(holder.check().kind).toBe('changed');
+      const first = holder.current();
+      expect(first?.prefix).toBe('/ask');
+      expect(holder.check().kind).toBe('unchanged');
+      state.settings = { ...ON, prefix: '/do' };
+      expect(holder.check().kind).toBe('changed');
+      expect(holder.current()?.prefix).toBe('/do');
+      expect(holder.current()).not.toBe(first);
+      state.settings = null;
+      expect(holder.check().kind).toBe('unchanged');
+      expect(holder.current()?.prefix).toBe('/do');
+      state.settings = { ...ON, enabled: false };
+      expect(holder.check().kind).toBe('changed');
+      expect(holder.current()).toBe(undefined);
+      expect(built.length).toBe(2);
+    });
+    await it('a profile tasks.json lacks is a problem, and a later tasks.json can fix it', async () => {
+      const state = { settings: ON as RequestSettings | null, profiles: ['other'] };
+      const holder = holderFor(state, []);
+      expect(holder.check().kind).toBe('problem');
+      expect(holder.current()).toBe(undefined);
+      state.profiles = ['p'];
+      expect(holder.check().kind).toBe('changed');
+      expect(holder.current()).not.toBe(undefined);
+    });
+    await it('a request running in the old instance finishes there; new messages use the new one', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const runner = fakeRunner();
+        const link = new McpLink(() => connectMcp(fake.command));
+        const abort = new AbortController();
+        const deps = serveDeps({ value: [] });
+        let current = chatRequests({
+          settings: ON,
+          serve: deps,
+          defaultCwd: '/h',
+          send: (t) => sendToPeer(link, SETTINGS, t),
+          run: runner.run,
+        });
+        const loop = runReceiveLoop({
+          link,
+          settings: SETTINGS,
+          serve: deps,
+          cursor: memoryCursor(BEFORE),
+          signal: abort.signal,
+          timeoutS: 1,
+          minCycleMs: 0,
+          sleep: (_ms, signal) => abortableSleep(10, signal),
+          requests: () => current,
+        });
+        try {
+          fake.deliver('2026-10-10T11:30:00.000Z', '/ask one');
+          await until(() => runner.calls.length === 1, 'the first run');
+          current = chatRequests({
+            settings: { ...ON, prefix: '/do' },
+            serve: deps,
+            defaultCwd: '/h',
+            send: (t) => sendToPeer(link, SETTINGS, t),
+            run: runner.run,
+          });
+          fake.deliver('2026-10-10T11:31:00.000Z', '/do two');
+          await until(() => runner.calls.length === 2, 'the second run');
+          expect(runner.calls[1]!.request.text).toBe('two');
+        } finally {
+          for (const call of runner.calls) call.release(result());
+          await current.idle();
+          abort.abort();
+          await loop;
+          await link.close();
+        }
+      });
+    });
+  });
+
+  await describe('the receive loop with once', async () => {
+    await it('handles what is there and returns without a loop', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const runner = fakeRunner();
+        const link = new McpLink(() => connectMcp(fake.command));
+        const deps = serveDeps({ value: [] });
+        const requests = chatRequests({
+          settings: ON,
+          serve: deps,
+          defaultCwd: '/h',
+          send: (t) => sendToPeer(link, SETTINGS, t),
+          run: runner.run,
+        });
+        fake.deliver('2026-10-10T11:30:00.000Z', '/ask now');
+        await runReceiveLoop({
+          link,
+          settings: SETTINGS,
+          serve: deps,
+          cursor: memoryCursor(BEFORE),
+          signal: new AbortController().signal,
+          timeoutS: 1,
+          requests,
+          once: true,
+        });
+        expect(runner.calls.length).toBe(1);
+        runner.calls[0]!.release(result());
+        await requests.idle();
+        await link.close();
+        expect(texts(fake)).toStrictEqual(['Three events today.']);
+      });
+    });
+    await it('returns after one poll when nothing arrives', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const link = new McpLink(() => connectMcp(fake.command));
+        await runReceiveLoop({
+          link,
+          settings: SETTINGS,
+          serve: serveDeps({ value: [] }),
+          cursor: memoryCursor(BEFORE),
+          signal: new AbortController().signal,
+          timeoutS: 1,
+          once: true,
+        });
+        await link.close();
+        expect(fake.calls().filter((call) => call.tool === 'xmpp_wait_reply').length).toBe(1);
+      });
     });
   });
 };

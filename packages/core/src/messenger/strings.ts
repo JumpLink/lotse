@@ -40,6 +40,8 @@ export const STRINGS = {
   requestNoAnswer: 'Done, but the agent gave no answer.',
   followUpFresh: 'That conversation could not be continued; this is a new one.',
   followUpExpired: 'More than {minutes} min since the last answer, so this is a new conversation.',
+  requestInterrupted: 'Your last request was not completed (serve restarted). Please send it again.',
+  requestsInterrupted: '{count} requests were not completed (serve restarted). Please send them again.',
   answerShortened: '[shortened, {count} more characters]',
   answerPart: '({part}/{parts})',
 } as const;

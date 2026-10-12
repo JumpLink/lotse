@@ -19,11 +19,10 @@ import {
   attemptClock,
   cancelOrphanedPermissions,
   chatRequests,
+  recoverPending,
   connectMcp,
-  requestProblem,
   requestSettings,
   sendToPeer,
-  type ChatRequests,
   dueTasks,
   freeModelNotes,
   McpLink,
@@ -50,11 +49,17 @@ import { currentDialogCommand, openAnswerDialog } from '../../core/answer-dialog
 import type { ServePaths } from '../../core/paths.ts';
 import { currentTasksHash, loadTasks } from '../../core/serve-config.ts';
 import { runState } from '../../core/serve-state.ts';
-import { fileCursorStore, messengerCursorFile } from '../../core/messenger-state.ts';
+import {
+  fileCursorStore,
+  filePendingStore,
+  messengerCursorFile,
+  pendingRequestsFile,
+} from '../../core/messenger-state.ts';
 import { activeChannels, desktopMode, messengerSettings, readSettings } from '../../core/settings.ts';
 import { stderrChannel } from '../../core/stderr-channel.ts';
 import { err, pickArgv } from './output.ts';
 import { createReloader, liveDeps } from './serve-reload.ts';
+import { createRequestsHolder } from './serve-requests.ts';
 import { readTasks, serveDeps, trackedAgents } from './serve-deps.ts';
 
 const FAILED = new Set(['unknown', 'dropped', 'expired', 'busy', 'invalid']);
@@ -195,37 +200,8 @@ async function openChannels(
   return { channel: routeChannels(opened, config, failed), messenger };
 }
 
-/**
- * Requests from the chat, when settings.json turns them on and names a profile tasks.json has. Read
- * once at start, like the channels; a problem is said and the chat answers questions only.
- */
-function withChatRequests(
-  messenger: NonNullable<OpenedChannels['messenger']>,
-  serve: ServeDeps,
-): { requests?: ChatRequests } {
-  const settings = requestSettings(messenger.settings);
-  if (!settings.enabled) return {};
-  const problem = requestProblem(
-    settings,
-    serve.config.profiles.map((profile) => profile.id),
-  );
-  if (problem) {
-    err(`  chat requests not started: ${problem}`);
-    return {};
-  }
-  err(
-    `  chat requests on: profile ${settings.profile}, rights ${settings.rights}, prefix ${settings.prefix}`,
-  );
-  return {
-    requests: chatRequests({
-      settings,
-      serve,
-      defaultCwd: homedir(),
-      send: (text) => sendToPeer(messenger.link, messenger.settings, text),
-      log: (line) => err(`  ${line}`),
-    }),
-  };
-}
+/** How long `serve --once` waits for a reply once its runs are done. */
+const ONCE_WAIT_S = 5;
 
 const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
   command: 'serve',
@@ -295,22 +271,61 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
       abort.abort();
       wake?.();
     };
-    // `--once` ends before a person could reply, so the receive loop belongs to the long-running serve.
-    const receiving =
-      opened.messenger && !once
-        ? runReceiveLoop({
-            link: opened.messenger.link,
-            settings: opened.messenger.settings,
-            channel: opened.messenger.channel,
-            serve: live,
-            cursor: fileCursorStore(messengerCursorFile(serve.stateDir)),
-            signal: abort.signal,
-            ...withChatRequests(opened.messenger, live),
-            log: (line) => err(`  ${line}`),
-          }).catch((error: unknown) =>
-            err(`  messenger: ${error instanceof Error ? error.message : String(error)}`),
-          )
-        : null;
+    const messenger = opened.messenger;
+    const pending = filePendingStore(pendingRequestsFile(serve.stateDir));
+    const holder = messenger
+      ? createRequestsHolder({
+          read: () => {
+            const read = readSettings(paths.settingsFile);
+            return read.problem ? null : requestSettings(messengerSettings(read.settings));
+          },
+          profiles: () => reloader.current().deps.config.profiles.map((profile) => profile.id),
+          build: (settings) =>
+            chatRequests({
+              settings,
+              serve: live,
+              defaultCwd: homedir(),
+              pending,
+              send: (text) => sendToPeer(messenger.link, messenger.settings, text),
+              log: (line) => err(`  ${line}`),
+            }),
+        })
+      : null;
+    const checkRequests = () => {
+      const change = holder?.check();
+      if (!change || change.kind === 'unchanged') return;
+      err(`  ${change.line}`);
+      live.log?.({
+        event: 'reload',
+        task: '-',
+        detail: { requests: change.kind === 'changed' && change.on ? 'on' : 'off' },
+      });
+    };
+    checkRequests();
+    if (messenger && holder?.current()) {
+      const left = await recoverPending(
+        pending,
+        (text) => sendToPeer(messenger.link, messenger.settings, text),
+        (line) => err(`  ${line}`),
+      );
+      if (left > 0)
+        err(`  ${left} chat request(s) from an earlier serve were not completed; the chat was told`);
+    }
+    // `--once` has no loop: after its runs, the receive loop makes one bounded pass (below).
+    const receive = (extra: { once?: boolean; timeoutS?: number; signal: AbortSignal }) =>
+      runReceiveLoop({
+        link: messenger!.link,
+        settings: messenger!.settings,
+        channel: messenger!.channel,
+        serve: live,
+        cursor: fileCursorStore(messengerCursorFile(serve.stateDir)),
+        requests: () => holder?.current(),
+        log: (line) => err(`  ${line}`),
+        ...extra,
+      }).catch((error: unknown) =>
+        err(`  messenger: ${error instanceof Error ? error.message : String(error)}`),
+      );
+    const receiving = messenger && !once ? receive({ signal: abort.signal }) : null;
     const onSignal = () => stop('signal');
     process.on('SIGINT', onSignal);
     process.on('SIGTERM', onSignal);
@@ -369,6 +384,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
             detail: { kind: 'reload', message: change.message.slice(0, 200) },
           });
         }
+        checkRequests();
         const current = reloader.current().deps;
         const now = current.now();
         for (const task of dueTasks(current.config, clock.lastRun, new Set(running.keys()), now)) {
@@ -391,6 +407,11 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
       // `--once` waits for its runs; a stop ends the agents, which ends their runs as failed.
       if (stopping) await agents.closeAll();
       await Promise.all(running.values());
+      // `--once`: one bounded look for answers to what the runs asked, then the requests it started.
+      if (once && messenger && !stopping) {
+        await receive({ once: true, timeoutS: ONCE_WAIT_S, signal: abort.signal });
+        await holder?.current()?.idle();
+      }
     } finally {
       process.off('SIGINT', onSignal);
       process.off('SIGTERM', onSignal);

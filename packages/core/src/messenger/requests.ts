@@ -31,7 +31,49 @@ export const PART_CHARS = 1500;
 /** The most messages one answer becomes; the rest is cut off with a note. */
 export const MAX_PARTS = 3;
 
+/**
+ * Requests that were accepted and not yet answered, kept on disk so a crash is not silent. It holds an id
+ * and a time — never what was asked — and a restart only tells the person to send it again; a request is
+ * never run again by itself, because it may have written something before it died.
+ */
+export interface PendingStore {
+  read(): readonly PendingRequest[];
+  write(list: readonly PendingRequest[]): void;
+}
+
+export interface PendingRequest {
+  readonly id: string;
+  readonly at: string;
+}
+
+/**
+ * Tell the chat about the requests an earlier `serve` left unfinished, then forget them. One message
+ * however many there were. Returns how many. A message that cannot be sent is logged and the list is
+ * still cleared: the next start must not repeat it.
+ */
+export async function recoverPending(
+  store: PendingStore,
+  send: (text: string) => Promise<void>,
+  log: (line: string) => void = () => {},
+): Promise<number> {
+  const left = store.read();
+  if (left.length === 0) return 0;
+  store.write([]);
+  const text =
+    left.length === 1
+      ? msg(STRINGS.requestInterrupted)
+      : msg(STRINGS.requestsInterrupted, { count: String(left.length) });
+  try {
+    await send(text);
+  } catch (error) {
+    log(`messenger: reply not sent (${error instanceof Error ? error.message : String(error)})`);
+  }
+  return left.length;
+}
+
 export interface ChatRequestsOptions {
+  /** Where unanswered requests are noted. Absent: nothing is kept across a restart. */
+  readonly pending?: PendingStore;
   readonly settings: RequestSettings;
   /** Read per run, so a reloaded tasks.json is seen. */
   readonly serve: ServeDeps;
@@ -112,6 +154,8 @@ export function splitForChat(text: string, max = PART_CHARS, maxParts = MAX_PART
 
 interface Pending {
   readonly n: number;
+  /** The id in the pending store, unique across the instances a reload creates. */
+  readonly key: string;
   readonly text: string;
   /** The session to continue, or `null` for a new one. */
   readonly sessionId: string | null;
@@ -124,7 +168,7 @@ function toMcpServers(settings: RequestSettings): McpServer[] {
     name: server.name,
     command: server.command,
     args: [...server.args],
-    env: [],
+    env: (server.env ?? []).map(({ name, value }) => ({ name, value })),
   }));
 }
 
@@ -134,6 +178,7 @@ export function chatRequests(options: ChatRequestsOptions): ChatRequests {
   const run = options.run ?? runRequest;
   const maxConcurrent = Math.max(1, Math.floor(settings.maxConcurrent));
   const windowMs = Math.max(0, settings.followUpMinutes) * 60_000;
+  const instance = `${serve.now().getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const queue: Pending[] = [];
   const running = new Set<Pending>();
   let counter = 0;
@@ -149,6 +194,17 @@ export function chatRequests(options: ChatRequestsOptions): ChatRequests {
       await options.send(text);
     } catch (error) {
       log(`messenger: reply not sent (${error instanceof Error ? error.message : String(error)})`);
+    }
+  };
+
+  const note = (change: (list: readonly PendingRequest[]) => PendingRequest[]) => {
+    if (!options.pending) return;
+    try {
+      options.pending.write(change(options.pending.read()));
+    } catch (error) {
+      log(
+        `messenger: pending requests not saved (${error instanceof Error ? error.message : String(error)})`,
+      );
     }
   };
 
@@ -214,6 +270,7 @@ export function chatRequests(options: ChatRequestsOptions): ChatRequests {
       const [item] = queue.splice(index, 1);
       running.add(item!);
       void execute(item!).finally(() => {
+        note((list) => list.filter((entry) => entry.id !== item!.key));
         running.delete(item!);
         pump();
         settle();
@@ -227,13 +284,20 @@ export function chatRequests(options: ChatRequestsOptions): ChatRequests {
       counter += 1;
       const now = serve.now().getTime();
       const open = !fresh && last !== null && now < last.until;
-      const note =
+      const hint =
         !fresh && !open && last !== null
           ? msg(STRINGS.followUpExpired, { minutes: String(settings.followUpMinutes) })
           : null;
-      const item: Pending = { n: counter, text, sessionId: open ? last!.sessionId : null, note };
+      const item: Pending = {
+        n: counter,
+        key: `${instance}-${counter}`,
+        text,
+        sessionId: open ? last!.sessionId : null,
+        note: hint,
+      };
+      note((list) => [...list, { id: item.key, at: serve.now().toISOString() }]);
       // Said once: the next plain message is simply a new request.
-      if (note) last = null;
+      if (hint) last = null;
       queue.push(item);
       pump();
       if (queue.includes(item)) {

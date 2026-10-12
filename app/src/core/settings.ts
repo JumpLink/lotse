@@ -31,6 +31,7 @@ import {
   type AgentChoice,
   type ChannelName,
   type MessengerSettings,
+  type RequestEnvVariable,
   type RequestMcpServer,
   type RequestSettings,
 } from '@lotse/core';
@@ -81,6 +82,7 @@ export type ParsedSettings =
   | { readonly problem: string; readonly kind: SettingsProblemKind };
 
 const ID_PATTERN = /^[a-z0-9][a-z0-9._-]*$/i;
+const ENV_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const SECRET_LOOKING = /token|secret|password|passwd|credential|auth|api[-_]?key|key/i;
 
 function unknownField(path: string, key: string): string {
@@ -160,7 +162,7 @@ const REQUEST_KEYS = [
   'maxConcurrent',
 ] as const;
 
-const REQUEST_SERVER_KEYS = ['name', 'command', 'args'] as const;
+const REQUEST_SERVER_KEYS = ['name', 'command', 'args', 'env'] as const;
 
 function parseRequestServer(value: unknown, index: number): RequestMcpServer | string {
   const path = `channel.messenger.requests.mcpServers[${index}]`;
@@ -175,7 +177,30 @@ function parseRequestServer(value: unknown, index: number): RequestMcpServer | s
     return `"${path}.command" must be a non-empty string`;
   if (!Array.isArray(args) || !args.every((arg) => typeof arg === 'string'))
     return `"${path}.args" must be a list of strings`;
-  return { name, command, args: args as string[] };
+  const env = parseEnv(value['env'], `${path}.env`);
+  if (typeof env === 'string') return env;
+  return { name, command, args: args as string[], ...(env.length > 0 ? { env } : {}) };
+}
+
+/** `env` as tasks.json declares it, a list of `{name, value}`; a secret-looking name is refused. */
+function parseEnv(value: unknown, path: string): RequestEnvVariable[] | string {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) return `"${path}" must be a list of {name, value}`;
+  const env: RequestEnvVariable[] = [];
+  for (const [index, item] of value.entries()) {
+    const where = `${path}[${index}]`;
+    if (!isRecord(item)) return `"${where}" must be an object with a name and a value`;
+    for (const key of Object.keys(item)) {
+      if (key !== 'name' && key !== 'value') return unknownField(`${where}.`, key);
+    }
+    const { name, value: text } = item;
+    if (typeof name !== 'string' || !ENV_NAME.test(name)) return `"${where}.name" must be a variable name`;
+    if (typeof text !== 'string') return `"${where}.value" must be a string`;
+    if (SECRET_LOOKING.test(name))
+      return `"${where}.name" looks like a credential — settings hold none, so it is never accepted`;
+    env.push({ name, value: text });
+  }
+  return env;
 }
 
 /** `channel.messenger.requests`: every key optional, the rest from `REQUEST_DEFAULTS`. */
@@ -363,6 +388,62 @@ export function parseServerSpecs(text: string): RequestMcpServer[] | { readonly 
     });
   }
   return servers;
+}
+
+/**
+ * `server:NAME=value`, several separated by `;` — the environment of the request's MCP servers, written
+ * beside `parseServerSpecs` because a value may hold spaces. Empty text or `none`: no variables.
+ */
+export function parseEnvSpecs(
+  text: string,
+): ReadonlyMap<string, RequestEnvVariable[]> | { readonly problem: string } {
+  const trimmed = text.trim();
+  const byServer = new Map<string, RequestEnvVariable[]>();
+  if (trimmed === '' || trimmed === 'none') return byServer;
+  for (const spec of trimmed.split(';')) {
+    if (spec.trim() === '') continue;
+    const match = /^\s*([^:=\s]+)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.exec(spec);
+    if (!match) return { problem: `"${spec.trim()}" is not server:NAME=value` };
+    if (SECRET_LOOKING.test(match[2]!))
+      return { problem: `${match[2]} looks like a credential — settings hold none` };
+    byServer.set(match[1]!, [
+      ...(byServer.get(match[1]!) ?? []),
+      { name: match[2]!, value: match[3]!.trim() },
+    ]);
+  }
+  return byServer;
+}
+
+/** `servers` with the environment replaced from `byServer`; a name no server has is a problem. */
+export function withServerEnv(
+  servers: readonly RequestMcpServer[],
+  byServer: ReadonlyMap<string, RequestEnvVariable[]>,
+): RequestMcpServer[] | { readonly problem: string } {
+  for (const name of byServer.keys()) {
+    if (!servers.some((server) => server.name === name)) return { problem: `no MCP server named "${name}"` };
+  }
+  return servers.map(({ env: _old, ...server }) => {
+    const env = byServer.get(server.name) ?? [];
+    return env.length > 0 ? { ...server, env } : server;
+  });
+}
+
+/** Freshly parsed servers with the environment `previous` already had for the same names. */
+export function keepServerEnv(
+  servers: readonly RequestMcpServer[],
+  previous: readonly RequestMcpServer[],
+): RequestMcpServer[] {
+  return servers.map((server) => {
+    const env = previous.find((old) => old.name === server.name)?.env;
+    return env && env.length > 0 ? { ...server, env } : server;
+  });
+}
+
+/** The environment as `parseEnvSpecs` reads it. */
+export function formatEnvSpecs(servers: readonly RequestMcpServer[]): string {
+  return servers
+    .flatMap((server) => (server.env ?? []).map((item) => `${server.name}:${item.name}=${item.value}`))
+    .join('; ');
 }
 
 export function formatServerSpecs(servers: readonly RequestMcpServer[]): string {
