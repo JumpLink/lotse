@@ -188,6 +188,12 @@ build:app`) and is looked up next to the CLI bundle, else as `lotse-app` beside 
 
 ### Answering in a chat (the messenger channel)
 
+Everything sent to the chat goes through one renderer: Markdown becomes XEP-0393 styling (`**x**` and
+headings → `*x*`, `*x*` → `_x_`, lists → `• `, `[t](url)` → `t: url`, code and fences unchanged). A line that is
+only `![alt](https://…)` splits the message: the text before it, the image as its own message through the
+send tool's `image_url` (curlew shows it inline), then the rest, in order — at most 8 images per message.
+If the server refuses `image_url`, the image goes out as a plain link instead.
+
 lotse speaks no XMPP. The channel is an MCP client: it starts the configured MCP server (curlew's
 `curlew mcp` by default) over stdio, sends a question with the server's send tool, and long-polls its
 wait-for-reply tool for the answer. Any MCP server with those two tools fits; their names are settings.

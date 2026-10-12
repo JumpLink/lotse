@@ -10,8 +10,10 @@ import type { ServeChannel, ServeMessage } from '../serve/channel.ts';
 import { deliveryOf, type ServeConfig, type ServeUser } from '../serve/config.ts';
 import { formatQuestionId } from '../serve/questions.ts';
 import { McpLink } from './link.ts';
+import { McpToolError } from './mcp-client.ts';
 import type { ChannelName, MessengerSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
+import { renderForXmpp } from './xmpp-style.ts';
 
 /** A deadline as the person's clock shows it ("Tue, 10/13, 18:14"); an unreadable one stays as it came. */
 /** `locale` is for tests; people get the host's. */
@@ -41,11 +43,28 @@ export function messengerText(message: ServeMessage): string {
   return parts.join('\n\n');
 }
 
-/** Send `text` to the configured peer. */
+/**
+ * Send `text` (Markdown) to the configured peer, styled for XMPP (`renderForXmpp`). An image line
+ * goes out as its own message through the server's `image_url`; a server without it (the call is
+ * refused) gets that image and the rest as a plain link in the text, so nothing is lost.
+ */
 export async function sendToPeer(link: McpLink, settings: MessengerSettings, text: string): Promise<void> {
-  await link.use((tools) =>
-    tools.call(settings.sendTool, { account: settings.account, to: settings.peer, text }),
-  );
+  const target = { account: settings.account, to: settings.peer };
+  let imagesWork = true;
+  for (const segment of renderForXmpp(text)) {
+    if (segment.kind === 'image' && imagesWork) {
+      try {
+        await link.use((tools) => tools.call(settings.sendTool, { ...target, image_url: segment.url }));
+        continue;
+      } catch (error) {
+        if (!(error instanceof McpToolError)) throw error;
+        imagesWork = false;
+      }
+    }
+    const body =
+      segment.kind === 'text' ? segment.text : segment.alt ? `${segment.alt}: ${segment.url}` : segment.url;
+    await link.use((tools) => tools.call(settings.sendTool, { ...target, text: body }));
+  }
 }
 
 /** A question message that did not reach the chat, kept in memory until it does or stops being open. */
