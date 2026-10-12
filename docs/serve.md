@@ -131,6 +131,40 @@ and the writing one in `answerMcpServers`: the agent proposes a whole batch in o
 the write tools exist only in the turn that your answer starts. Nothing depends on the model keeping
 a promise or on the agent asking permission for an MCP tool.
 
+### When only you can continue: `person_needed`
+
+A task with `personNeeded: {enabled: true, timeoutMin?}` gets an MCP tool, `person_needed`, served by
+`serve` itself on 127.0.0.1 (a random path per run, never written to disk). The agent calls it when a
+step is yours alone, for example a beifahrer recipe that returns `status: "needs_person"`:
+
+```
+person_needed({kind: "login"|"code"|"approval"|"device", origin, prompt, acceptsCode, timeoutMin?})
+  → {outcome: "done" | "code" | "timeout" | "declined", code?}
+```
+
+You get "I need you: <origin> wants <kind>." through every channel and a `person` question (`#A3`).
+The run waits (default 30 min; the call's `timeoutMin`, else the task's `personNeeded.timeoutMin`, else
+Preferences → "Wait for you", `lotse messenger --person-needed-minutes`).
+
+- Reply `done` (`fertig`): you did it yourself → `done`. `no` → `declined`.
+- With `acceptsCode: true` you may reply with the code (4–10 letters or digits) → `code`, and the agent
+  enters it. The code lives only in `serve`'s memory: never in the question store, the log, a transcript or a
+  message from lotse (`••••`).
+- No reply in time → `timeout`. The run goes on without you and the question stays open as *deferred*:
+  `lotse questions` lists it. A later `done` continues the session; a late code is refused.
+
+Prompt it like this:
+
+> If a beifahrer `recipe_run` returns `needs_person`, call `person_needed` with its `person` fields
+> (`acceptsCode` from `person.acceptsCode`). On `done`, `recipe_run` again with `from: <next>`. On `code`,
+> the same with the code as the param named `person.codeParam`. On `timeout` or `declined`, stop and
+> report what is still open. Never call it twice in a row.
+
+Rules: only one waiting call per conversation. A task that may receive a code must not run on a free or
+hosted-for-free model, and the profile must name its model; otherwise the call is refused with a clear
+error. The deferred item reaches the daily reminder task only if its prompt reads `lotse questions`
+(the reminder MCP has no write tool).
+
 ## Where the state lives
 
 `$XDG_STATE_HOME/lotse/` (`LOTSE_STATE_DIR` overrides it), mode `0600` in a `0700` directory:
