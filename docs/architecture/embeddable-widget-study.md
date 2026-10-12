@@ -149,8 +149,8 @@ shipped, and the differences are all in the same direction — fewer things the 
 - **Prefix:** `BUNDLED_PREFIX = '/app/extra/agents'` in `packages/core/src/agents/catalog.ts` (the only place it is written;
   `installPath` must equal `${BUNDLED_PREFIX}/${id}`, validated by `parseBundledCatalog`). Not `/app/bin`, so it doesn't
   shadow a host opencode. `/app/extra` because the archive is Flatpak `extra-data` and `apply_extra` can only write there.
-- **Detection:** `detect.ts` (pure) ignores any host hit under the prefix; `resolve.ts` picks setting > first host > first
-  bundled; `probe.ts` gathers the facts. A bundled copy runs inside the sandbox (`AgentCommand.bundled`, no `toHostCommand`).
+- **Detection:** `detect.ts` (pure) ignores any host hit under the prefix; `resolve.ts` picks setting > first bundled > first
+  host (the person's own opencode is an opt-in); `probe.ts` gathers the facts. A bundled copy runs inside the sandbox (`AgentCommand.bundled`, no `toHostCommand`).
 - **Manifest recipe** (from `eu.jumplink.Lotse.json`), what a host app must copy:
   1. An `opencode` module: `extra-data` sources per arch (url, sha256, size) + a script source `apply_extra` that does
      `mkdir -p /app/extra/agents/opencode`, untars, `chmod 0755 …/package/bin/opencode`, removes the tarball.

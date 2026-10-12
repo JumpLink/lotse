@@ -71,16 +71,19 @@ export interface Resolution {
 }
 
 /**
- * The agent lotse would use now: the setting if that agent is available, else the first host install,
- * else the first bundled copy, else `null`.
+ * The agent lotse would use now: the setting if that agent is available, else the first bundled copy,
+ * else the first host install (no bundle in a dev checkout), else `null`.
  *
  * A setting names an id *and* a source. `host` is available when the id was found on the person's PATH;
  * `bundled` when the shipped copy exists — even if a host install of the same id shadows it in
  * `detections`, which is why `bundledAvailable` is asked separately. **A setting that cannot be honoured is
  * never skipped quietly:** the fallback is chosen and `note` says what was asked and what runs instead.
  *
- * A person's own install comes before the bundled one because it is the one that carries their login and
- * config; lotse cannot tell whether either is logged in and does not try (AGENTS.md § Privacy).
+ * **The bundled copy is the default, the person's own install is an opt-in** (`agent.source: "host"`): the
+ * shipped opencode has its own isolated config and login (`isolation.ts`), so other people configure
+ * it and the own global opencode is never picked up unasked. A host install is the default only where
+ * no bundled copy exists. A setting that cannot be honoured falls back to the same default.
+ * lotse cannot tell whether either is logged in and does not try (AGENTS.md § Privacy).
  */
 export function resolveAgent(input: {
   readonly setting: AgentChoice | null;
@@ -102,10 +105,22 @@ export function resolveAgent(input: {
       };
     }
   }
-  const fallback =
+  const catalog = input.catalog ?? BUNDLED_AGENTS;
+  // The default, also what an unavailable setting falls back to: the shipped copy, whether or not a host install of the same id shadows it in `detections`.
+  const shippedDefault = (): AgentDetection | null => {
+    for (const { id } of detections) {
+      const entry = catalog.find((candidate) => candidate.id === id);
+      if (entry && bundledAvailable(id)) {
+        return { id, source: 'bundled', path: bundledProgram(entry), version: entry.version };
+      }
+    }
+    return null;
+  };
+  const hostFirst = () =>
     detections.find((entry) => entry.source === 'host') ??
     detections.find((entry) => entry.source === 'bundled') ??
     null;
+  const fallback = shippedDefault() ?? hostFirst();
   if (!setting) return { detection: fallback, note: null };
   const asked = `your setting names ${describeChoice(setting)}, which is not available here`;
   return {

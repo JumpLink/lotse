@@ -10,6 +10,10 @@
  * dialog that is meant to explain it. A saved choice that names an id this build does not know gets a row
  * of its own for the same reason.
  *
+ * **The bundled copy is the recommended one and what Automatic starts**: it has its own isolated config and
+ * login. The person's own global install is listed as "Your own … (global configuration)" and is an
+ * explicit opt-in.
+ *
  * Row keys are `auto`, `<id>:host` and `<id>:bundled`; `lotse agents --use` takes the last two as they
  * are and spells Automatic `none`.
  *
@@ -78,11 +82,11 @@ export function choiceFromKey(key: string): AgentChoice | null | undefined {
 }
 
 function hostTitle(name: string, version: string | null): string {
-  return `Installed (${name}${version ? ` ${version}` : ''})`;
+  return `Your own ${name}${version ? ` ${version}` : ''} (global configuration)`;
 }
 
 function bundledTitle(name: string, version: string | null): string {
-  return `Bundled (${name}${version ? ` ${version}` : ''})`;
+  return `Bundled ${name}${version ? ` ${version}` : ''} (recommended)`;
 }
 
 export function settingsChoicesView(
@@ -99,6 +103,16 @@ export function settingsChoicesView(
 
   const hostPending = facts.hostPending === true;
   const rows: Omit<ChoiceRow, 'selected'>[] = [];
+  for (const entry of catalog) {
+    const available = bundledAvailable(entry.id);
+    rows.push({
+      key: `${entry.id}:bundled`,
+      title: bundledTitle(entry.title, entry.version),
+      subtitle: available ? bundledProgram(entry) : 'Not included in this install',
+      available,
+      pending: false,
+    });
+  }
   for (const detection of detections) {
     const found = detection.source === 'host';
     const pending = hostPending && !found;
@@ -112,16 +126,6 @@ export function settingsChoicesView(
           : 'Not found on this machine',
       available: found,
       pending,
-    });
-  }
-  for (const entry of catalog) {
-    const available = bundledAvailable(entry.id);
-    rows.push({
-      key: `${entry.id}:bundled`,
-      title: bundledTitle(entry.title, entry.version),
-      subtitle: available ? bundledProgram(entry) : 'Not included in this install',
-      available,
-      pending: false,
     });
   }
   if (!rows.some((row) => row.key === selectedKey) && settings.agent) {
@@ -150,7 +154,7 @@ export function settingsChoicesView(
   const automaticRow: Omit<ChoiceRow, 'selected'> = {
     key: AUTOMATIC_KEY,
     title: 'Automatic',
-    subtitle: `Your own install first, else the bundled one. Now: ${
+    subtitle: `The bundled one, else your own install. Now: ${
       hostPending ? 'checking…' : (nowTitle ?? 'no agent is available')
     }`,
     available: true,

@@ -42,7 +42,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       })
       .option('agent', {
         type: 'string',
-        describe: 'which agent launcher to start (default: your own install, else the bundled copy)',
+        describe: 'which agent launcher to start (default: the bundled copy, else your own install)',
       })
       .option('cwd', {
         type: 'string',

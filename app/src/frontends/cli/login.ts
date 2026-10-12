@@ -131,7 +131,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       })
       .option('agent', {
         type: 'string',
-        describe: 'which agent (default: your own install, else the bundled copy)',
+        describe: 'which agent (default: the bundled copy, else your own install)',
       })
       .strict(),
   handler: async (argv) => {

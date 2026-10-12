@@ -22,7 +22,7 @@ export function embedChat(window: Adw.ApplicationWindow, dataRoot: string, proje
   const paths = lotsePathsUnder(dataRoot);
   const store = createSessionStore(paths.sessionsFile);
 
-  // The agent: the person's own install, else a bundled copy. `null` means none was found.
+  // The agent: a bundled copy, else the person's own install. `null` means none was found.
   const found = resolveDefault(gatherResolveContext(paths, false));
   const empty = emptyStateView({ agent: found });
 

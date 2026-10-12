@@ -34,7 +34,7 @@ const command = (paths: LotsePaths): CommandModule => ({
     yargs
       .option('agent', {
         type: 'string',
-        describe: 'which agent to log in (default: your own install, else the bundled copy)',
+        describe: 'which agent to log in (default: the bundled copy, else your own install)',
       })
       .option('quiet', { type: 'boolean', describe: "do not echo the agent's log lines" })
       .strict(),

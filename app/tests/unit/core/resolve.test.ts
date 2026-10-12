@@ -106,7 +106,7 @@ export default async () => {
   });
 
   await describe('resolveDefault', async () => {
-    await it('takes the host install, as the launcher, with no isolation', async () => {
+    await it('falls back to the host install, as the launcher, with no isolation, when nothing is bundled', async () => {
       const found = resolveDefault(context([detection('alpha', 'host', '1.0.0')]))!;
       expect(found.source).toBe('host');
       expect(found.command).toBe(LAUNCHERS_SYNTHETIC[0]);
@@ -120,6 +120,13 @@ export default async () => {
       expect(found.source).toBe('bundled');
       expect(found.command.bundled).toBe(true);
       expect(found.command.program).toBe(bundledProgram(ALPHA));
+      expect(found.isolation).toStrictEqual(isolationDirs(DATA, 'alpha'));
+    });
+
+    await it('takes the bundled copy over a host install of the same agent', async () => {
+      const found = resolveDefault(context([detection('alpha', 'host', '1.0.0')], ['alpha']))!;
+      expect(found.source).toBe('bundled');
+      expect(found.command.bundled).toBe(true);
       expect(found.isolation).toStrictEqual(isolationDirs(DATA, 'alpha'));
     });
 
