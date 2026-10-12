@@ -17,7 +17,12 @@ import GLib from '@girs/glib-2.0';
 
 import type { ServeChannel, ServeMessage, ServeUser } from '@lotse/core';
 
-import { deliveryFor, notificationActions, NotificationRegistry } from './question-actions.ts';
+import {
+  deliveryFor,
+  notificationActions,
+  notificationHints,
+  NotificationRegistry,
+} from './question-actions.ts';
 import type { DesktopMode } from './settings.ts';
 import { stderrChannel } from './stderr-channel.ts';
 
@@ -80,6 +85,7 @@ export function desktopChannel(options: DesktopChannelOptions): ServeChannel {
         return;
       }
       const actions = questionId ? notificationActions(asks, capabilities, options.dialog) : [];
+      const hints = notificationHints(asks);
       try {
         const reply = bus.call_sync(
           NAME,
@@ -87,13 +93,17 @@ export function desktopChannel(options: DesktopChannelOptions): ServeChannel {
           NAME,
           'Notify',
           new GLib.Variant('(susssasa{sv}i)', [
-            'lotse',
+            'Lotse',
             0,
-            questionId ? 'dialog-question' : 'dialog-information',
+            // Only used when the shell finds no app for the desktop entry; the symbolic names exist in Adwaita.
+            questionId ? 'dialog-question-symbolic' : 'dialog-information-symbolic',
             message.title,
             message.body,
             actions,
-            {},
+            {
+              'desktop-entry': new GLib.Variant('s', hints.desktopEntry),
+              transient: new GLib.Variant('b', hints.transient),
+            },
             -1,
           ]),
           null,

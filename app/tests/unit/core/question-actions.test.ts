@@ -5,10 +5,13 @@
 
 import { describe, expect, it } from '@gjsify/unit';
 
+import { APP_ID } from '../../../src/frontends/gui/constants.ts';
 import {
   actionIntent,
+  DESKTOP_ENTRY,
   deliveryFor,
   notificationActions,
+  notificationHints,
   NotificationRegistry,
   quickReplyLabel,
 } from '../../../src/core/question-actions.ts';
@@ -107,6 +110,21 @@ export default async () => {
       registry.closed(7);
       expect(registry.size).toBe(0);
       expect(registry.invoked(7, 'reply:yes')).toBeNull();
+    });
+  });
+
+  await describe('notificationHints', async () => {
+    await it('keeps a question in the list', async () => {
+      expect(notificationHints('reply')).toStrictEqual({ desktopEntry: DESKTOP_ENTRY, transient: false });
+      expect(notificationHints('permission').transient).toBe(false);
+    });
+
+    await it('keeps a report out of the list', async () => {
+      expect(notificationHints(undefined)).toStrictEqual({ desktopEntry: DESKTOP_ENTRY, transient: true });
+    });
+
+    await it('names the entry the GUI registers', async () => {
+      expect(DESKTOP_ENTRY).toBe(APP_ID);
     });
   });
 

@@ -161,6 +161,11 @@ window; a permission question also gets **Allow once** and **Decline**. A button
 same `answerQuestion` as `lotse answer <id> yes|no`, so the run that waits picks it up as before. A
 server without actions gets the plain notification, whose text still names `lotse answer`.
 
+Every notification carries the `desktop-entry` hint `eu.jumplink.Lotse`, so the shell files them
+under one "Lotse" app instead of one source per process. That only works where the desktop entry is
+installed (`npm run packaging:install`). Only questions stay in the notification list; reports are
+transient and show as a banner only.
+
 The answer window shows the task, the question (selectable, scrolls when it is long) and when it
 expires. A reply question gets a text field; a permission question gets only its two buttons.
 <kbd>Ctrl</kbd>+<kbd>Enter</kbd> sends, <kbd>Esc</kbd> or **Later** closes it and leaves the
