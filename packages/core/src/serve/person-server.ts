@@ -11,7 +11,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 
 import {
   PERSON_KINDS,
@@ -155,20 +155,24 @@ export function createPersonHost(): PersonHost {
   };
 
   const start = (): Promise<number> => {
-    starting ??= new Promise<number>((resolve, reject) => {
-      const created = createServer((request, response) => {
-        handle(request, response).catch(() => {
-          if (!response.headersSent) response.writeHead(500);
-          response.end();
-        });
-      });
-      created.once('error', reject);
-      created.listen(0, '127.0.0.1', () => {
-        server = created;
-        const address = created.address();
-        resolve(typeof address === 'object' && address ? address.port : 0);
-      });
-    });
+    // Loaded here, not at the top: under GJS `node:http` pulls in Soup, which a test run never needs.
+    starting ??= import('node:http').then(
+      ({ createServer }) =>
+        new Promise<number>((resolve, reject) => {
+          const created = createServer((request, response) => {
+            handle(request, response).catch(() => {
+              if (!response.headersSent) response.writeHead(500);
+              response.end();
+            });
+          });
+          created.once('error', reject);
+          created.listen(0, '127.0.0.1', () => {
+            server = created;
+            const address = created.address();
+            resolve(typeof address === 'object' && address ? address.port : 0);
+          });
+        }),
+    );
     return starting;
   };
 
