@@ -229,7 +229,11 @@ function parseRequests(value: unknown): RequestSettings | string {
   if (typeof maxConcurrent !== 'number' || !Number.isInteger(maxConcurrent) || maxConcurrent < 1)
     return `"${path}.maxConcurrent" must be a whole number, 1 or more`;
   const personNeededMinutes = pick('personNeededMinutes');
-  if (typeof personNeededMinutes !== 'number' || !Number.isInteger(personNeededMinutes) || personNeededMinutes < 1)
+  if (
+    typeof personNeededMinutes !== 'number' ||
+    !Number.isInteger(personNeededMinutes) ||
+    personNeededMinutes < 1
+  )
     return `"${path}.personNeededMinutes" must be a whole number of minutes, 1 or more`;
   const rawServers = pick('mcpServers');
   if (!Array.isArray(rawServers)) return `"${path}.mcpServers" must be a list`;

@@ -88,7 +88,8 @@ export function answerView(question: Question | null, idText: string, now: Date)
     subtitle: `from task ${question.task}`,
     text: question.text,
     expiry: describeExpiry(question.expiresAt, now),
-    entry: open && (question.kind === 'reply' || (question.kind === 'person' && question.acceptsCode === true)),
+    entry:
+      open && (question.kind === 'reply' || (question.kind === 'person' && question.acceptsCode === true)),
     // The suggested button last: GNOME puts the affirmative action at the end of a row.
     quickReplies: open
       ? quickReplies(question.kind)

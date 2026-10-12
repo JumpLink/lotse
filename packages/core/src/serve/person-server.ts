@@ -35,7 +35,8 @@ const TOOL = {
       prompt: { type: 'string', description: 'One sentence: what the person has to do.' },
       acceptsCode: {
         type: 'boolean',
-        description: 'The person may reply with the code (4-10 letters or digits) instead of doing it themselves.',
+        description:
+          'The person may reply with the code (4-10 letters or digits) instead of doing it themselves.',
       },
       timeoutMin: { type: 'integer', minimum: 1, description: 'Minutes to wait. Omit for the default.' },
     },
@@ -52,8 +53,12 @@ function parseInput(value: unknown): PersonNeededInput | string {
   const { origin, prompt, acceptsCode, timeoutMin } = args;
   if (typeof origin !== 'string' || origin.trim() === '') return 'origin must be a non-empty string';
   if (typeof prompt !== 'string') return 'prompt must be a string';
-  if (acceptsCode !== undefined && typeof acceptsCode !== 'boolean') return 'acceptsCode must be true or false';
-  if (timeoutMin !== undefined && (typeof timeoutMin !== 'number' || !Number.isInteger(timeoutMin) || timeoutMin < 1))
+  if (acceptsCode !== undefined && typeof acceptsCode !== 'boolean')
+    return 'acceptsCode must be true or false';
+  if (
+    timeoutMin !== undefined &&
+    (typeof timeoutMin !== 'number' || !Number.isInteger(timeoutMin) || timeoutMin < 1)
+  )
     return 'timeoutMin must be a whole number of minutes, 1 or more';
   return {
     kind: kind as PersonKind,
@@ -92,7 +97,8 @@ async function rpc(message: Record<string, unknown>, handler: PersonHandler): Pr
   switch (message['method']) {
     case 'initialize':
       return ok({
-        protocolVersion: typeof params['protocolVersion'] === 'string' ? params['protocolVersion'] : '2025-03-26',
+        protocolVersion:
+          typeof params['protocolVersion'] === 'string' ? params['protocolVersion'] : '2025-03-26',
         capabilities: { tools: {} },
         serverInfo: { name: 'lotse-person', version: '1' },
       });
@@ -131,10 +137,18 @@ export function createPersonHost(): PersonHost {
     try {
       message = JSON.parse(await readBody(request));
     } catch {
-      return send(response, 400, { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } });
+      return send(response, 400, {
+        jsonrpc: '2.0',
+        id: null,
+        error: { code: -32700, message: 'parse error' },
+      });
     }
     if (typeof message !== 'object' || message === null || Array.isArray(message))
-      return send(response, 400, { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'one request per POST' } });
+      return send(response, 400, {
+        jsonrpc: '2.0',
+        id: null,
+        error: { code: -32600, message: 'one request per POST' },
+      });
     const record = message as Record<string, unknown>;
     if (record['id'] === undefined) return send(response, 202);
     send(response, 200, await rpc(record, handler));
@@ -164,7 +178,12 @@ export function createPersonHost(): PersonHost {
       const token = randomBytes(24).toString('hex');
       routes.set(token, handler);
       return {
-        server: { type: 'http', name: 'lotse-person', url: `http://127.0.0.1:${port}/person/${token}`, headers: [] },
+        server: {
+          type: 'http',
+          name: 'lotse-person',
+          url: `http://127.0.0.1:${port}/person/${token}`,
+          headers: [],
+        },
         detach: () => {
           routes.delete(token);
           if (routes.size > 0) return;

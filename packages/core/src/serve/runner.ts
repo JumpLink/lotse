@@ -489,7 +489,8 @@ export async function answerQuestion(idText: string, text: string, deps: ServeDe
         run: null,
       };
     }
-    if (reply.kind === 'code') return none('invalid', msg(STRINGS.personCodeRefused, { id: label }), question);
+    if (reply.kind === 'code')
+      return none('invalid', msg(STRINGS.personCodeRefused, { id: label }), question);
     if (reply.kind === 'declined') {
       const closed = update(deps, question, {
         status: 'answered',
@@ -1122,7 +1123,10 @@ async function personNeeded(
         return code ? { outcome: 'code', code } : { outcome: 'done' };
       }
       if (deps.now().getTime() >= deadline) {
-        update(deps, current, { deferred: true, resolution: 'no reply in time; the task went on without you' });
+        update(deps, current, {
+          deferred: true,
+          resolution: 'no reply in time; the task went on without you',
+        });
         deps.log?.({ event: 'expired', task: task.id, detail: { question: current.id, why: 'deferred' } });
         return { outcome: 'timeout' };
       }

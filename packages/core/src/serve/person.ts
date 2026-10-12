@@ -104,7 +104,11 @@ export function parsePersonReply(text: string, acceptsCode: boolean): PersonRepl
 }
 
 /** Why this call is refused, or `null`. An unset model is unknown, so a code is refused there too. */
-export function personRefusal(task: ServeTask, profile: ServeProfile, input: PersonNeededInput): string | null {
+export function personRefusal(
+  task: ServeTask,
+  profile: ServeProfile,
+  input: PersonNeededInput,
+): string | null {
   if (!task.personNeeded.enabled) return `task "${task.id}" does not have person_needed enabled`;
   if (!input.acceptsCode) return null;
   if (!profile.model)

@@ -69,7 +69,14 @@ interface Harness {
  */
 function harness(serveConfig: ServeConfig, calls: (call: PersonHandler) => Promise<unknown>): Harness {
   let at = START;
-  const h: Harness = { sent: [], log: [], returns: [], book: [], onSleep: () => {}, step: 60_000 } as unknown as Harness;
+  const h: Harness = {
+    sent: [],
+    log: [],
+    returns: [],
+    book: [],
+    onSleep: () => {},
+    step: 60_000,
+  } as unknown as Harness;
   (h as { deps: ServeDeps }).deps = {
     config: serveConfig,
     open: async (options) => {
@@ -120,7 +127,10 @@ export default async () => {
   await describe('person_needed', async () => {
     await it('"done" returns done and the question is answered', async () => {
       let outcome: PersonOutcome | null = null;
-      const h = harness(config(), async (call) => void (outcome = await call({ ...INPUT, acceptsCode: false })));
+      const h = harness(
+        config(),
+        async (call) => void (outcome = await call({ ...INPUT, acceptsCode: false })),
+      );
       h.onSleep = async () => {
         if (h.book[0]?.status === 'open') await answerQuestion('#A1', 'fertig', h.deps);
       };
@@ -151,7 +161,10 @@ export default async () => {
     await it('a code is not taken when the call did not accept one', async () => {
       let outcome: PersonOutcome | null = null;
       let refused = '';
-      const h = harness(config(), async (call) => void (outcome = await call({ ...INPUT, acceptsCode: false })));
+      const h = harness(
+        config(),
+        async (call) => void (outcome = await call({ ...INPUT, acceptsCode: false })),
+      );
       h.onSleep = async () => {
         if (h.book[0]?.status !== 'open') return;
         const first = await answerQuestion('#A1', CODE, h.deps);
@@ -174,7 +187,7 @@ export default async () => {
       expect(h.book[0]!.acceptsCode).toBe(true);
     });
 
-    await it('the task\'s own wait wins over the default, the call\'s over the task\'s', async () => {
+    await it("the task's own wait wins over the default, the call's over the task's", async () => {
       let polls = 0;
       const h = harness(
         config({}, { personNeeded: { enabled: true, timeoutMin: 3 } }),
@@ -241,7 +254,12 @@ export default async () => {
       expect(none).toContain('names its model');
       expect(personRefusal(task, config().profiles[0]!, INPUT)).toBe(null);
       // "done" carries no credential, so a free model may ask for it.
-      expect(personRefusal(task, config({ model: 'opencode/some-model-free' }).profiles[0]!, { ...INPUT, acceptsCode: false })).toBe(null);
+      expect(
+        personRefusal(task, config({ model: 'opencode/some-model-free' }).profiles[0]!, {
+          ...INPUT,
+          acceptsCode: false,
+        }),
+      ).toBe(null);
     });
 
     await it('the handler throws the refusal on a profile without a model', async () => {
