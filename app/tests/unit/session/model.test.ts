@@ -34,12 +34,12 @@ export default async () => {
         cwd: '/tmp',
         at: AT,
         principal: 'pascal',
-        boundTo: 'postbote:chat-1',
+        boundTo: 'curlew:chat-1',
         title: 'Fix the parser',
         reattach: 'resume',
       });
       expect(record.principal).toBe('pascal');
-      expect(record.boundTo).toBe('postbote:chat-1');
+      expect(record.boundTo).toBe('curlew:chat-1');
       expect(record.title).toBe('Fix the parser');
       expect(record.reattach).toBe('resume');
     });

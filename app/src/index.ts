@@ -1,7 +1,7 @@
 /**
  * The `lotse` binary.
  *
- * The yargs chrome is copied from postbote's entrypoint, including the three comments that explain
+ * The yargs chrome is copied from curlew's entrypoint, including the three comments that explain
  * the non-obvious options — they are not decoration, each one fixes a failure that a plain yargs
  * setup produces *on GJS specifically*:
  *

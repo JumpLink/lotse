@@ -12,7 +12,7 @@ on:
 permissions:
   contents: read
 
-# The gjsify toolchain, as in postbote/troedler/beifahrer: `gjsify install --immutable`, the bundled
+# The gjsify toolchain, as in curlew/troedler/beifahrer: `gjsify install --immutable`, the bundled
 # `gjsify tsc` type-check, `gjsify build` for the app, and the unit tests under BOTH gjs and node.
 #
 # The GJS half is the point, not a bonus. A pure Node suite would be green and would not answer the
