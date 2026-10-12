@@ -261,3 +261,84 @@ it gave up (`lotse questions` still lists it). The retry list lives in memory, s
 `serve` drops it. lotse adds no encryption of its own: a
 question is as private as the messenger path it travels, and it names the task and the action. To
 keep a task's questions out of the chat, set its `channels` or `messengerDetail: "notice"`.
+
+The position is a time plus the ids of the messages already read at that millisecond, so two
+messages sent in the same millisecond are both read even when the server lists them in different
+polls (`{"cursor": "…", "seen": ["…"]}`; a file with `cursor` alone still reads). Handling a reply
+never waits for an agent: an answer that continues a session runs beside the receive loop, and the
+next message is read at once.
+
+### Requests from the chat
+
+With `channel.messenger.requests.enabled`, a message that answers no question starts an agent
+session, and its final answer comes back over the same chat. It is off by default.
+
+Which message is a request is decided without a model, in this order:
+
+1. A message that starts with the `prefix` (default `/ask`, any case; a prefix ending in a letter or
+   digit must be followed by a space or the end) is **always** a new request, never an answer. The
+   bare prefix gets a short "what should I do?".
+2. Otherwise the message is read as a reply, exactly as above.
+3. When that finds **no open question in this chat**, the message is a request — unless it is a bare
+   yes or no (`yes`, `ja`, `nein`, `decline`, …), which still hears "No question is waiting".
+
+So with one question open, plain text answers it (rule 2); a request then needs the prefix. A
+message that starts like an id (`A4 …`) is read as one. With `enabled: false` nothing of this applies
+and replies work as before.
+
+**Follow-ups.** For `followUpMinutes` after an answer reached the chat, a request without the prefix
+continues that session (`session/load`, else `session/resume`). A request with the prefix always
+starts a new one. After the window, or when the session can no longer be continued, a new session
+starts and the answer says so first.
+
+**Runs never block the chat.** At most `maxConcurrent` requests run at a time; another one is queued
+and hears "Busy with another request; yours is queued (position n)". Two follow-ups of one session
+never run at once. A long answer is sent as up to three numbered messages of at most 1,500
+characters; beyond that the last is cut short with a note.
+
+```json
+"messenger": {
+  "…": "…",
+  "requests": {
+    "enabled": true,
+    "prefix": "/ask",
+    "profile": "assistant",
+    "preamble": "Answer briefly; the reply is read on a phone.",
+    "cwd": "",
+    "mcpServers": [{ "name": "calendar", "command": "reminder", "args": ["mcp"] }],
+    "rights": "read",
+    "followUpMinutes": 30,
+    "maxConcurrent": 1
+  }
+}
+```
+
+| Key | Default | Meaning |
+|---|---|---|
+| `enabled` | `false` | Requests on or off. |
+| `prefix` | `/ask` | Marks a message as a new request. |
+| `profile` | — | A profile id of `tasks.json`: agent, model, user. Required when enabled. |
+| `preamble` | `""` | Put before the first message of a new session. |
+| `cwd` | `""` | The session's working directory; empty: the home directory. |
+| `mcpServers` | `[]` | Stdio MCP servers the session gets (`name`, `command`, `args`; no `env`). |
+| `rights` | `read` | `read`: every permission request is declined, nothing is asked. `confirm`: each one becomes a question in the chat (and on the desktop), and a write needs your yes. |
+| `followUpMinutes` | `30` | How long after an answer a plain message continues that session; `0`: never. |
+| `maxConcurrent` | `1` | Requests running at the same time. |
+
+Set them from the CLI with `lotse messenger` (without flags it shows them):
+
+```sh
+lotse messenger --requests on --request-profile assistant --request-rights confirm \
+  --request-mcp-server 'calendar=reminder mcp; mail=curlew mcp' --follow-up-minutes 30
+```
+
+The other flags are `--request-prefix`, `--request-preamble`, `--request-cwd` and
+`--max-concurrent`; `--request-mcp-server none` clears the list. The same fields are under
+*Preferences → Requests from the chat*. `serve` reads them once at start: restart it to apply a
+change. A profile `tasks.json` does not define is reported at start, and the chat then answers
+questions only.
+
+`serve.log` gets a `request` entry when a request is queued, starts and ends (request number,
+profile, `new`/`loaded`/`resumed`/`fresh`, outcome, session id, number of messages sent) and an
+`error` entry (`phase: request`) when a run throws — never what was asked or answered. A request
+runs as the synthetic task `@chat`; `serve --once` takes none, since it has no receive loop.

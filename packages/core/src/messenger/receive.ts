@@ -4,6 +4,12 @@
  * - **A cursor survives restarts** (`CursorStore`). First start: now, so an old conversation is not
  *   replayed as answers. It advances after each handled message — at least once: a crash between
  *   handling and writing re-reads the message, and the second `answerQuestion` is dropped as "answered".
+ *   It holds the ids seen at its millisecond too, so two messages sent in the same one are both read.
+ * - **Handling never waits for an agent.** An answer that continues a session and a request from the
+ *   chat both run beside the loop; the cursor moves when they start, so a crash mid-run loses that run.
+ * - **Request or answer** (with `requests`): a message starting with the prefix is a request; any other
+ *   is read as an answer (`parseReply`) and becomes a request only when no question is open — unless it
+ *   is a bare yes or no, which then hears that nothing is waiting.
  * - **The server may die.** Any failure drops the link and waits (5 s, doubling to 5 min) before a
  *   fresh start; a success resets the wait. An abort ends the loop wherever it is.
  * - **Only the questions the chat may see.** A task whose `channels` leave out the messenger never sent
@@ -12,12 +18,15 @@
  *   first channel to answer wins and the other hears what the runner says: already answered.
  */
 
+import { createHash } from 'node:crypto';
+
 import { deliveryOf } from '../serve/config.ts';
 import { answerQuestion, type AnswerResult, type ServeDeps } from '../serve/runner.ts';
-import { formatQuestionId, openQuestions } from '../serve/questions.ts';
+import { formatQuestionId, openQuestions, parseAnswer } from '../serve/questions.ts';
 import { localDeadline, sendToPeer, type MessengerChannel } from './channel.ts';
 import { McpLink } from './link.ts';
 import { listIds, openIds, parseReply } from './reply.ts';
+import { matchPrefix, type ChatRequests } from './requests.ts';
 import type { MessengerSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
 
@@ -50,9 +59,19 @@ export function chatSays(questionId: string, result: AnswerResult): string {
   }
 }
 
+/**
+ * How far the chat has been read: the newest `sentAt` handled, and the keys of the messages handled at
+ * exactly that time. A message the server lists late with the same millisecond is then still read, and
+ * one already read is not read twice.
+ */
+export interface Cursor {
+  readonly at: string;
+  readonly seen: readonly string[];
+}
+
 export interface CursorStore {
-  read(): string | null;
-  write(cursor: string): void;
+  read(): Cursor | null;
+  write(cursor: Cursor): void;
 }
 
 export interface ReceiveOptions {
@@ -72,9 +91,13 @@ export interface ReceiveOptions {
   readonly backoff?: { readonly initialMs: number; readonly maxMs: number };
   /** Resolves after `ms`, or early on abort. */
   readonly sleep?: (ms: number, signal: AbortSignal) => Promise<void>;
+  /** When given, a message that answers nothing is a request (`requests.ts`). Absent: requests are off. */
+  readonly requests?: ChatRequests;
 }
 
 interface WaitMessage {
+  /** The server's message id; `null` when it gives none. */
+  readonly id: string | null;
   readonly bodyText: string;
   /** `null` when the server could not say; the loop then moves the cursor by other means. */
   readonly sentAt: string | null;
@@ -99,6 +122,19 @@ export function abortableSleep(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
+/** What tells two messages of one millisecond apart: the server's id, else a hash — never the text. */
+export function messageKey(message: {
+  readonly id: string | null;
+  readonly sentAt: string | null;
+  readonly bodyText: string;
+}): string {
+  if (message.id !== null) return message.id;
+  return `#${createHash('sha256')
+    .update(`${message.sentAt ?? ''}\n${message.bodyText}`)
+    .digest('hex')
+    .slice(0, 16)}`;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -114,6 +150,7 @@ export function parseWaitResult(value: unknown): WaitResult {
   for (const item of raw) {
     if (!isRecord(item)) continue;
     messages.push({
+      id: typeof item['id'] === 'string' && item['id'] !== '' ? item['id'] : null,
       bodyText: typeof item['bodyText'] === 'string' ? item['bodyText'] : '',
       sentAt: typeof item['sentAt'] === 'string' ? item['sentAt'] : null,
       fromSelf: item['fromSelf'] === true,
@@ -130,18 +167,29 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
   const backoff = options.backoff ?? { initialMs: 5000, maxMs: 300_000 };
   const sleep = options.sleep ?? abortableSleep;
 
-  let cursor = options.cursor.read();
-  if (cursor === null) {
-    cursor = serve.now().toISOString();
-    options.cursor.write(cursor);
-  }
-  // Only forward: an older value (a message the server lists late) must not re-open what was read.
-  const remember = (next: string) => {
-    const [to, from] = [Date.parse(next), Date.parse(cursor ?? '')];
-    if (next === cursor || (!Number.isNaN(to) && !Number.isNaN(from) && to <= from)) return;
+  const stored = options.cursor.read();
+  let cursor: Cursor = stored ?? { at: serve.now().toISOString(), seen: [] };
+  if (stored === null) options.cursor.write(cursor);
+  const save = (next: Cursor) => {
     cursor = next;
     options.cursor.write(next);
   };
+  // Only forward: an older time (a message the server lists late) must not re-open what was read. The
+  // same time adds the message to `seen`; a later one starts a new `seen`.
+  const remember = (at: string, key: string | null) => {
+    const [to, from] = [Date.parse(at), Date.parse(cursor.at)];
+    const same = at === cursor.at || (!Number.isNaN(to) && to === from);
+    if (same) {
+      if (key !== null && !cursor.seen.includes(key)) save({ at: cursor.at, seen: [...cursor.seen, key] });
+      return;
+    }
+    if (!Number.isNaN(to) && !Number.isNaN(from) && to < from) return;
+    save({ at, seen: key === null ? [] : [key] });
+  };
+  const isSeen = (message: WaitMessage) =>
+    message.sentAt !== null &&
+    Date.parse(message.sentAt) === Date.parse(cursor.at) &&
+    cursor.seen.includes(messageKey(message));
 
   const reply = async (text: string) => {
     try {
@@ -156,7 +204,28 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
     return !channels || channels.includes('messenger');
   };
 
+  // An answer can continue a whole session: it runs beside the loop. `answerQuestion` marks the
+  // question answered before its first await, so a second reply to it already reads "answered".
+  const answer = (questionId: string, text: string) => {
+    void answerQuestion(questionId, text, serve)
+      .then((result) => {
+        log(`messenger: ${formatQuestionId(questionId)}: ${result.message}`);
+        return reply(chatSays(questionId, result));
+      })
+      .catch((error: unknown) => {
+        const reason = error instanceof Error ? error.message : String(error);
+        log(`messenger: ${formatQuestionId(questionId)}: ${reason}`);
+        return reply(msg(STRINGS.answerFailed, { reason }));
+      });
+  };
+
   const handle = async (text: string) => {
+    const requests = options.requests;
+    if (requests) {
+      const asked = matchPrefix(text, requests.prefix);
+      if (asked === '') return reply(msg(STRINGS.askWhat, { prefix: requests.prefix }));
+      if (asked !== null) return requests.submit(asked, true);
+    }
     const book = serve.questions.read();
     const open = openQuestions(book, serve.now()).filter((question) => inChat(question.task));
     const intent = parseReply(text, openIds(open));
@@ -164,6 +233,8 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
       case 'ignore':
         return;
       case 'nothing-open':
+        // A bare yes or no has nothing to say to an agent: it was meant for a question that is gone.
+        if (requests && parseAnswer(text).kind === 'text') return requests.submit(text.trim(), false);
         return reply(msg(STRINGS.noQuestionOpen));
       case 'ambiguous': {
         const first = formatQuestionId(intent.open[0]!);
@@ -179,9 +250,7 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
       case 'answer': {
         const hidden = book.some((question) => question.id === intent.questionId && !inChat(question.task));
         if (hidden) return reply(msg(STRINGS.notHere, { id: formatQuestionId(intent.questionId) }));
-        const result = await answerQuestion(intent.questionId, intent.text, serve);
-        log(`messenger: ${formatQuestionId(intent.questionId)}: ${result.message}`);
-        return reply(chatSays(intent.questionId, result));
+        return answer(intent.questionId, intent.text);
       }
     }
   };
@@ -222,26 +291,39 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
     try {
       await retryUnsent();
       const tools = await link.acquire();
-      const value = await tools.call(
-        settings.waitTool,
-        {
-          account: settings.account,
-          peer: settings.peer,
-          after: cursor,
-          timeout_s: timeoutS,
-          include_bodies: true,
-        },
-        { timeoutMs: (timeoutS + 20) * 1000, signal },
-      );
-      const result = parseWaitResult(value);
+      const poll = async (after: string, timeout: number) =>
+        parseWaitResult(
+          await tools.call(
+            settings.waitTool,
+            {
+              account: settings.account,
+              peer: settings.peer,
+              after,
+              timeout_s: timeout,
+              include_bodies: true,
+            },
+            { timeoutMs: (timeout + 20) * 1000, signal },
+          ),
+        );
+      // The wait tool reads `after` strictly. With messages seen at the cursor's millisecond, a look one
+      // millisecond earlier, without waiting, finds one that shares it and was listed late; only when
+      // that finds nothing new does the long wait start.
+      let result: WaitResult | null = null;
+      const earlier = new Date(Date.parse(cursor.at) - 1).toISOString();
+      if (cursor.seen.length > 0 && !Number.isNaN(Date.parse(cursor.at))) {
+        const quick = await poll(earlier, 0);
+        if (quick.messages.some((message) => !isSeen(message))) result = quick;
+      }
+      result ??= await poll(cursor.at, timeoutS);
       for (const message of result.messages) {
         if (signal.aborted) return;
+        if (isSeen(message)) continue;
         if (!message.fromSelf) await handle(message.bodyText);
         // No `sentAt`: the server's cursor, else now. Assumes the message is not seen again — a
         // restart before the write re-reads it, and the second answer is dropped as already answered.
-        remember(message.sentAt ?? result.cursor ?? serve.now().toISOString());
+        remember(message.sentAt ?? result.cursor ?? serve.now().toISOString(), messageKey(message));
       }
-      if (result.messages.length > 0 && result.cursor) remember(result.cursor);
+      if (result.messages.length > 0 && result.cursor) remember(result.cursor, null);
       delay = backoff.initialMs;
       const spent = Date.now() - started;
       if (spent < minCycleMs) await sleep(minCycleMs - spent, signal);

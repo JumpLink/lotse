@@ -27,9 +27,12 @@ import { chmodSync, readFileSync, renameSync } from 'node:fs';
 import {
   CHANNEL_NAMES,
   MESSENGER_DEFAULTS,
+  REQUEST_DEFAULTS,
   type AgentChoice,
   type ChannelName,
   type MessengerSettings,
+  type RequestMcpServer,
+  type RequestSettings,
 } from '@lotse/core';
 
 import { writePrivateFile } from './private-file.ts';
@@ -143,12 +146,93 @@ export function parseSettings(raw: string): ParsedSettings {
   return withChannel({ id, source });
 }
 
-const MESSENGER_KEYS = ['command', 'args', 'account', 'peer', 'sendTool', 'waitTool'] as const;
+const MESSENGER_KEYS = ['command', 'args', 'account', 'peer', 'sendTool', 'waitTool', 'requests'] as const;
+
+const REQUEST_KEYS = [
+  'enabled',
+  'prefix',
+  'profile',
+  'preamble',
+  'cwd',
+  'mcpServers',
+  'rights',
+  'followUpMinutes',
+  'maxConcurrent',
+] as const;
+
+const REQUEST_SERVER_KEYS = ['name', 'command', 'args'] as const;
+
+function parseRequestServer(value: unknown, index: number): RequestMcpServer | string {
+  const path = `channel.messenger.requests.mcpServers[${index}]`;
+  if (!isRecord(value)) return `"${path}" must be an object with a name, a command and args`;
+  for (const key of Object.keys(value)) {
+    if (!(REQUEST_SERVER_KEYS as readonly string[]).includes(key)) return unknownField(`${path}.`, key);
+  }
+  const { name, command } = value;
+  const args = value['args'] ?? [];
+  if (typeof name !== 'string' || name.trim() === '') return `"${path}.name" must be a non-empty string`;
+  if (typeof command !== 'string' || command.trim() === '')
+    return `"${path}.command" must be a non-empty string`;
+  if (!Array.isArray(args) || !args.every((arg) => typeof arg === 'string'))
+    return `"${path}.args" must be a list of strings`;
+  return { name, command, args: args as string[] };
+}
+
+/** `channel.messenger.requests`: every key optional, the rest from `REQUEST_DEFAULTS`. */
+function parseRequests(value: unknown): RequestSettings | string {
+  const path = 'channel.messenger.requests';
+  if (!isRecord(value)) return `"${path}" must be an object`;
+  for (const key of Object.keys(value)) {
+    if (!(REQUEST_KEYS as readonly string[]).includes(key)) return unknownField(`${path}.`, key);
+  }
+  const pick = <K extends keyof RequestSettings>(key: K): unknown => value[key] ?? REQUEST_DEFAULTS[key];
+  const enabled = pick('enabled');
+  if (typeof enabled !== 'boolean') return `"${path}.enabled" must be true or false`;
+  const text: Record<string, string> = {};
+  for (const key of ['prefix', 'profile', 'preamble', 'cwd'] as const) {
+    const field = pick(key);
+    if (typeof field !== 'string') return `"${path}.${key}" must be a string`;
+    text[key] = field;
+  }
+  const rights = pick('rights');
+  if (rights !== 'read' && rights !== 'confirm') return `"${path}.rights" must be "read" or "confirm"`;
+  const followUpMinutes = pick('followUpMinutes');
+  if (typeof followUpMinutes !== 'number' || !Number.isInteger(followUpMinutes) || followUpMinutes < 0)
+    return `"${path}.followUpMinutes" must be a whole number of minutes, 0 or more`;
+  const maxConcurrent = pick('maxConcurrent');
+  if (typeof maxConcurrent !== 'number' || !Number.isInteger(maxConcurrent) || maxConcurrent < 1)
+    return `"${path}.maxConcurrent" must be a whole number, 1 or more`;
+  const rawServers = pick('mcpServers');
+  if (!Array.isArray(rawServers)) return `"${path}.mcpServers" must be a list`;
+  const mcpServers: RequestMcpServer[] = [];
+  for (const [index, raw] of rawServers.entries()) {
+    const server = parseRequestServer(raw, index);
+    if (typeof server === 'string') return server;
+    mcpServers.push(server);
+  }
+  return {
+    enabled,
+    prefix: text['prefix']!,
+    profile: text['profile']!,
+    preamble: text['preamble']!,
+    cwd: text['cwd']!,
+    mcpServers,
+    rights,
+    followUpMinutes,
+    maxConcurrent,
+  };
+}
 
 function parseMessenger(value: unknown): MessengerSettings | string {
   if (!isRecord(value)) return '"channel.messenger" must be an object';
   for (const key of Object.keys(value)) {
     if (!(MESSENGER_KEYS as readonly string[]).includes(key)) return unknownField('channel.messenger.', key);
+  }
+  let requests: RequestSettings | undefined;
+  if (value['requests'] !== undefined && value['requests'] !== null) {
+    const parsed = parseRequests(value['requests']);
+    if (typeof parsed === 'string') return parsed;
+    requests = parsed;
   }
   const text = (key: 'command' | 'account' | 'peer' | 'sendTool' | 'waitTool'): string | null => {
     const field = value[key];
@@ -165,7 +249,11 @@ function parseMessenger(value: unknown): MessengerSettings | string {
   if (!Array.isArray(args) || !args.every((arg) => typeof arg === 'string')) {
     return '"channel.messenger.args" must be a list of strings';
   }
-  return { ...(out as unknown as MessengerSettings), args: args as string[] };
+  return {
+    ...(out as unknown as MessengerSettings),
+    args: args as string[],
+    ...(requests ? { requests } : {}),
+  };
 }
 
 /**
@@ -253,6 +341,41 @@ export function withMessenger(
 ): Settings {
   const desktop = settings.channel?.desktop ?? { mode: DEFAULT_DESKTOP_MODE };
   return { ...settings, channel: { desktop, active: [...new Set(active)], messenger } };
+}
+
+/**
+ * `name=command arg …`, several separated by `;` — how the CLI and the settings page write a request's
+ * MCP servers. Empty text or `none`: no servers. Arguments split on whitespace; one with a space in it
+ * belongs in settings.json directly.
+ */
+export function parseServerSpecs(text: string): RequestMcpServer[] | { readonly problem: string } {
+  const trimmed = text.trim();
+  if (trimmed === '' || trimmed === 'none') return [];
+  const servers: RequestMcpServer[] = [];
+  for (const spec of trimmed.split(';')) {
+    if (spec.trim() === '') continue;
+    const match = /^\s*([^=\s]+)\s*=\s*(\S+)(.*)$/.exec(spec);
+    if (!match) return { problem: `"${spec.trim()}" is not name=command [args]` };
+    servers.push({
+      name: match[1]!,
+      command: match[2]!,
+      args: match[3]!.trim().split(/\s+/).filter(Boolean),
+    });
+  }
+  return servers;
+}
+
+export function formatServerSpecs(servers: readonly RequestMcpServer[]): string {
+  return servers.map((server) => [`${server.name}=${server.command}`, ...server.args].join(' ')).join('; ');
+}
+
+/** The messenger's request settings replaced, everything else of the messenger and the channels kept. */
+export function withRequests(settings: Settings, requests: RequestSettings): Settings {
+  const desktop = settings.channel?.desktop ?? { mode: DEFAULT_DESKTOP_MODE };
+  return {
+    ...settings,
+    channel: { ...settings.channel, desktop, messenger: { ...messengerSettings(settings), requests } },
+  };
 }
 
 /**

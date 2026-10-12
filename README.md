@@ -82,6 +82,7 @@ lotse login [provider]                     # log in through the agent's OAuth fl
 lotse provider list|add|remove [id]        # local models / OpenAI-compatible endpoints for the bundled opencode
 lotse agents                               # the launchers that are registered, and whether the binary is on PATH
 lotse serve [--once]                       # run scheduled tasks; notify when an agent has a question
+lotse messenger [--requests on|off …]      # show or set the requests serve takes from the chat
 lotse questions [--all] [--json]           # the questions agents are waiting on
 lotse answer <id> [text…] [--dialog]       # yes/no, a reply, or the answer window
 ```

@@ -9,7 +9,8 @@
  * - `send_message {account, to, text}` → `{conversationId, sentAt}`, listed unless `noSend`.
  * - `xmpp_wait_reply {account, peer, after, timeout_s}` → `{status:'reply', messages, cursor}` for the
  *   inbox entries sent after `after`, else `{status:'timeout', cursor}` after a short wait (the
- *   fixture waits `waitMs`, not `timeout_s` — the tests are not meant to sit).
+ *   fixture waits `waitMs`, not `timeout_s` — the tests are not meant to sit; `timeout_s: 0` checks once).
+ *   `after` is strict, as curlew's is: a message sent in the cursor's millisecond is not served again.
  *
  * Every call is appended to the `calls` file as one JSON line, so a test reads what the client sent.
  * The inbox is a file too: a test appends to it while the loop is polling. `dieAfterWaits` ends the
@@ -53,7 +54,7 @@ async function call(name, args) {
       fs.writeFileSync(dir + '/died', '1');
       process.exit(3);
     }
-    const deadline = Date.now() + (opts.waitMs ?? 40);
+    const deadline = Date.now() + (args.timeout_s === 0 ? 0 : (opts.waitMs ?? 40));
     for (;;) {
       // A message without sentAt is served once, then counts as read.
       const all = inbox();
@@ -102,8 +103,8 @@ export interface FakeMcp {
   readonly command: AgentCommand;
   /** Every tool call the server received, oldest first. */
   calls(): { tool: string; args: Record<string, unknown> }[];
-  /** A message from the peer, as curlew's `xmpp_wait_reply` shapes it. */
-  deliver(sentAt: string | null, bodyText: string): void;
+  /** A message from the peer, as curlew's `xmpp_wait_reply` shapes it. `id` defaults to `m<n>`. */
+  deliver(sentAt: string | null, bodyText: string, id?: string): void;
   readonly dir: string;
 }
 
@@ -117,7 +118,7 @@ export async function withFakeMcp(
     const script = join(dir, 'server.cjs');
     writeFileSync(script, SERVER);
     writeFileSync(join(dir, 'calls'), '');
-    const inbox: { sentAt: string | null; bodyText: string; fromSelf: boolean }[] = [];
+    const inbox: { id: string; sentAt: string | null; bodyText: string; fromSelf: boolean }[] = [];
     writeFileSync(join(dir, 'inbox'), '[]');
     await run({
       dir,
@@ -133,8 +134,8 @@ export async function withFakeMcp(
           .split('\n')
           .filter((line) => line !== '')
           .map((line) => JSON.parse(line) as { tool: string; args: Record<string, unknown> }),
-      deliver: (sentAt, bodyText) => {
-        inbox.push({ sentAt, bodyText, fromSelf: false });
+      deliver: (sentAt, bodyText, id) => {
+        inbox.push({ id: id ?? `m${inbox.length + 1}`, sentAt, bodyText, fromSelf: false });
         writeFileSync(join(dir, 'inbox'), JSON.stringify(inbox));
       },
     });

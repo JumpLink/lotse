@@ -80,12 +80,24 @@ Any MCP server that offers these two tools works in Curlew's place:
 | Call | Arguments lotse sends | Result lotse reads |
 |---|---|---|
 | `sendTool` | `{account, to, text}` | anything; an error result counts as not sent |
-| `waitTool` | `{account, peer, after, timeout_s: 60, include_bodies: true}` | `{status: "reply" \| "timeout", messages: [{bodyText, sentAt, fromSelf}], cursor}` |
+| `waitTool` | `{account, peer, after, timeout_s, include_bodies: true}` | `{status: "reply" \| "timeout", messages: [{id, bodyText, sentAt, fromSelf}], cursor}` |
 
 `after` is an ISO 8601 time: on the first start, the time `serve` started, and from then on the
 `cursor` the wait tool returned (else the `sentAt` of the last handled message), kept in
-`messenger-cursor.json`. A message with `fromSelf: true`
-is skipped. lotse reads the result from `structuredContent`, else from the first text block as JSON.
+`messenger-cursor.json`. The tool must return only messages sent strictly after `after`. A message
+with `fromSelf: true` is skipped. lotse reads the result from `structuredContent`, else from the
+first text block as JSON.
+
+`timeout_s` is 60 for the long wait. Two messages can share a millisecond, and a server may list the
+second one only in a later poll, after the cursor already reached that time. So lotse remembers the
+`id` of every message read at the cursor's millisecond, and before each long wait it looks once, with
+`after` one millisecond earlier and `timeout_s: 0` (return at once), for a message of that
+millisecond it has not read yet. A server without `id` works too: lotse then tells messages apart by
+a hash of `sentAt` and the text, so two identical texts in one millisecond count as one.
+
+With [requests from the chat](serve.md#requests-from-the-chat) on, a message that answers no question
+starts an agent session, and the answer comes back through `sendTool`. A request that should reach
+Curlew's own tools (or another server) names it in `requests.mcpServers`.
 
 ## Keep private tasks out of the chat
 

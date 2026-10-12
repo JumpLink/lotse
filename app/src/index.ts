@@ -23,6 +23,7 @@ import {
   authCommand,
   cancelCommand,
   loginCommand,
+  messengerCommand,
   providerCommand,
   questionsCommand,
   resumeCommand,
@@ -56,6 +57,7 @@ const parseArgs = () =>
     .command(loginCommand(paths))
     .command(providerCommand(paths))
     .command(agentsCommand(paths))
+    .command(messengerCommand(paths))
     .command(serveCommand(paths, serve))
     .command(questionsCommand(paths, serve))
     .command(answerCommand(paths, serve))

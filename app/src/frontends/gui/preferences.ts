@@ -1,5 +1,6 @@
 /**
- * The preferences dialog: which agent lotse connects to, and how `lotse serve` asks on the desktop.
+ * The preferences dialog: which agent lotse connects to, how `lotse serve` asks, and which chat requests
+ * it takes.
  *
  * **Action rows with radio check buttons, not an `Adw.ComboRow`.** A combo row shows one line per item
  * and no subtitle, so the path and version that tell "my opencode" from "the bundled one" would be lost —
@@ -24,8 +25,15 @@ import Adw from '@girs/adw-1';
 import GLib from '@girs/glib-2.0';
 import Gtk from '@girs/gtk-4.0';
 
-import type { AgentChoice, ChannelName, MessengerSettings, ResolveContext } from '@lotse/core';
-import type { DesktopMode } from '../../core/settings.ts';
+import {
+  requestSettings,
+  type AgentChoice,
+  type ChannelName,
+  type MessengerSettings,
+  type RequestSettings,
+  type ResolveContext,
+} from '@lotse/core';
+import { formatServerSpecs, parseServerSpecs, type DesktopMode } from '../../core/settings.ts';
 import { choiceFromKey, type ChoicesView } from '../../core/settings-view.ts';
 
 /** What the host detection found; the part of a `ResolveContext` the rows are built from. */
@@ -94,6 +102,19 @@ const MESSENGER_FIELDS: readonly { readonly field: MessengerField; readonly titl
   { field: 'waitTool', title: 'Wait-for-reply tool' },
 ];
 
+const REQUESTS_LINE =
+  'A message that answers no question starts an agent run, and the answer comes back in the chat. A change applies the next time lotse serve starts.';
+
+type RequestField = 'prefix' | 'profile' | 'preamble' | 'cwd' | 'mcpServers';
+
+const REQUEST_FIELDS: readonly { readonly field: RequestField; readonly title: string }[] = [
+  { field: 'prefix', title: 'Prefix that always starts a request' },
+  { field: 'profile', title: 'Profile (from tasks.json)' },
+  { field: 'preamble', title: 'Preamble for a new session' },
+  { field: 'cwd', title: 'Working directory (empty: home)' },
+  { field: 'mcpServers', title: 'MCP servers (name=command args; …)' },
+];
+
 export class PreferencesDialog {
   readonly #actions: PreferencesActions;
   readonly #extraPages: () => Adw.PreferencesPage[];
@@ -104,6 +125,7 @@ export class PreferencesDialog {
   readonly #checks = new Map<string, Gtk.CheckButton>();
   #modes: Adw.PreferencesGroup | null = null;
   #messenger: Adw.PreferencesGroup | null = null;
+  #requests: Adw.PreferencesGroup | null = null;
   readonly #modeChecks = new Map<DesktopMode, Gtk.CheckButton>();
   #rendering = false;
   #error: string | null = null;
@@ -136,6 +158,7 @@ export class PreferencesDialog {
     page.add(group);
     page.add(this.#modeGroup());
     page.add(this.#messengerGroup());
+    page.add(this.#requestsGroup());
     dialog.add(page);
     for (const extra of this.#extraPages()) dialog.add(extra);
     this.#dialog = dialog;
@@ -150,6 +173,7 @@ export class PreferencesDialog {
       this.#checks.clear();
       this.#modes = null;
       this.#messenger = null;
+      this.#requests = null;
       this.#modeChecks.clear();
     });
     this.#render();
@@ -242,6 +266,7 @@ export class PreferencesDialog {
     // One file holds both choices, so a file lotse must not overwrite locks both groups.
     this.#modes?.set_sensitive(!view.readOnly);
     this.#messenger?.set_sensitive(!view.readOnly);
+    this.#requests?.set_sensitive(!view.readOnly);
     this.#modeChecks.get(this.#currentMode())?.set_active(true);
     this.#rendering = false;
     const moved = this.#backup === null ? null : `The earlier settings file was moved to ${this.#backup}.`;
@@ -309,6 +334,70 @@ export class PreferencesDialog {
     }
     this.#messenger = group;
     return group;
+  }
+
+  #requestsGroup(): Adw.PreferencesGroup {
+    const group = new Adw.PreferencesGroup({ title: 'Requests from the chat', description: REQUESTS_LINE });
+    const current = requestSettings(this.#currentMessenger().messenger);
+    const save = (change: Partial<RequestSettings>): void => {
+      const now = this.#currentMessenger();
+      const requests = { ...requestSettings(now.messenger), ...change };
+      this.#saveMessenger({ ...now, messenger: { ...now.messenger, requests } });
+    };
+    const enabled = new Adw.SwitchRow({ title: 'Start a run for a chat message', active: current.enabled });
+    enabled.connect('notify::active', () => {
+      if (!this.#rendering) save({ enabled: enabled.active });
+    });
+    group.add(enabled);
+    for (const { field, title } of REQUEST_FIELDS) {
+      const text = field === 'mcpServers' ? formatServerSpecs(current.mcpServers) : current[field];
+      const row = new Adw.EntryRow({ title, text, showApplyButton: true });
+      row.connect('apply', () => {
+        const value = row.get_text().trim();
+        if (field === 'mcpServers') {
+          const servers = parseServerSpecs(value);
+          if ('problem' in servers) return this.#showError(`MCP servers: ${servers.problem}`);
+          return save({ mcpServers: servers });
+        }
+        if (field === 'prefix' && value === '') return this.#showError('The prefix must not be empty.');
+        save({ [field]: value });
+      });
+      group.add(row);
+    }
+    const confirm = new Adw.SwitchRow({
+      title: 'Ask before a write',
+      subtitle: 'Off: a request may only read, and every permission request is declined.',
+      active: current.rights === 'confirm',
+    });
+    confirm.connect('notify::active', () => {
+      if (!this.#rendering) save({ rights: confirm.active ? 'confirm' : 'read' });
+    });
+    group.add(confirm);
+    const minutes = Adw.SpinRow.new_with_range(0, 1440, 5);
+    minutes.set_title('Follow-up window (minutes)');
+    minutes.set_subtitle('A message this soon after an answer continues that session. 0: never.');
+    minutes.set_value(current.followUpMinutes);
+    minutes.connect('notify::value', () => {
+      if (!this.#rendering) save({ followUpMinutes: Math.round(minutes.get_value()) });
+    });
+    group.add(minutes);
+    const concurrent = Adw.SpinRow.new_with_range(1, 16, 1);
+    concurrent.set_title('Runs at the same time');
+    concurrent.set_value(current.maxConcurrent);
+    concurrent.connect('notify::value', () => {
+      if (!this.#rendering) save({ maxConcurrent: Math.round(concurrent.get_value()) });
+    });
+    group.add(concurrent);
+    this.#requests = group;
+    return group;
+  }
+
+  #showError(message: string): void {
+    this.#error = message;
+    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+      if (this.#dialog) this.#render();
+      return GLib.SOURCE_REMOVE;
+    });
   }
 
   #currentMessenger(): MessengerForm {
