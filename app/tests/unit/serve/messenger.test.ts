@@ -15,6 +15,7 @@ import {
   parseServeConfig,
   routeChannels,
   runReceiveLoop,
+  type Cursor,
   type CursorStore,
   type MessengerSettings,
   type Question,
@@ -24,7 +25,7 @@ import {
 } from '@lotse/core';
 import { fileCursorStore } from '../../../src/core/messenger-state.ts';
 import { parseSettings, withMessenger } from '../../../src/core/settings.ts';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { withFakeMcp, type FakeMcp } from '../../support/fake-mcp.ts';
@@ -104,11 +105,11 @@ function serveDeps(book: { value: Question[] }): ServeDeps {
   } as unknown as ServeDeps;
 }
 
-function memoryCursor(initial: string | null): CursorStore & { value: string | null } {
+function memoryCursor(initial: string | null): CursorStore & { value: Cursor | null } {
   const store = {
-    value: initial,
+    value: initial === null ? null : ({ at: initial, seen: [] } as Cursor | null),
     read: () => store.value,
-    write: (cursor: string) => void (store.value = cursor),
+    write: (cursor: Cursor) => void (store.value = cursor),
   };
   return store;
 }
@@ -589,7 +590,7 @@ export default async () => {
         expect(book.value[0]!.status).toBe('answered');
         expect(book.value[0]!.answer).toBe('yes');
         expect(String(sent(fake)[0]!.args['text'])).toBe('Got it, #A1.');
-        expect(cursor.value).toBe('2026-10-10T11:30:00.000Z');
+        expect(cursor.value).toStrictEqual({ at: '2026-10-10T11:30:00.000Z', seen: ['m1'] });
       });
     });
 
@@ -618,9 +619,9 @@ export default async () => {
     await it('the cursor never moves back', async () => {
       await withFakeMcp({}, async (fake) => {
         const book = { value: [question('A1')] };
-        const writes: string[] = [];
+        const writes: Cursor[] = [];
         const cursor: CursorStore = {
-          read: () => BEFORE,
+          read: () => ({ at: BEFORE, seen: [] }),
           write: (next) => void writes.push(next),
         };
         await looping(fake, book, cursor, async () => {
@@ -628,7 +629,7 @@ export default async () => {
           fake.deliver('2026-10-10T11:30:00.000Z', 'A1 ja');
           fake.deliver('2026-10-10T11:10:00.000Z', 'A1 ja');
           await until(() => sent(fake).length >= 2, 'both replies');
-          expect(writes).toStrictEqual(['2026-10-10T11:30:00.000Z']);
+          expect(writes).toStrictEqual([{ at: '2026-10-10T11:30:00.000Z', seen: ['m1'] }]);
         });
       });
     });
@@ -788,7 +789,7 @@ export default async () => {
         await looping(fake, { value: [] }, cursor, async () => {
           await until(() => fake.calls().length > 0, 'the first poll');
         });
-        expect(cursor.value).toBe(new Date(NOW).toISOString());
+        expect(cursor.value).toStrictEqual({ at: new Date(NOW).toISOString(), seen: [] });
         expect(fake.calls()[0]!.args['after']).toBe(new Date(NOW).toISOString());
       });
     });
@@ -812,11 +813,16 @@ export default async () => {
         const path = join(dir, 'state', 'messenger-cursor.json');
         const store = fileCursorStore(path);
         expect(store.read()).toBe(null);
-        store.write(BEFORE);
-        expect(fileCursorStore(path).read()).toBe(BEFORE);
-        expect(readFileSync(path, 'utf8')).toContain(BEFORE);
-        store.write('2026-10-10T11:30:00.000Z');
-        expect(fileCursorStore(path).read()).toBe('2026-10-10T11:30:00.000Z');
+        store.write({ at: BEFORE, seen: [] });
+        expect(fileCursorStore(path).read()).toStrictEqual({ at: BEFORE, seen: [] });
+        expect(readFileSync(path, 'utf8')).toBe(`{"cursor":"${BEFORE}"}\n`);
+        store.write({ at: '2026-10-10T11:30:00.000Z', seen: ['m1', 'm2'] });
+        expect(fileCursorStore(path).read()).toStrictEqual({
+          at: '2026-10-10T11:30:00.000Z',
+          seen: ['m1', 'm2'],
+        });
+        writeFileSync(path, '{"cursor": 7}');
+        expect(fileCursorStore(path).read()).toBe(null);
       } finally {
         rmSync(dir, { recursive: true, force: true });
       }

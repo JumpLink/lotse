@@ -10,13 +10,20 @@
  * the new one, and a file that no longer parses leaves the previous tasks in force.
  */
 
+import { homedir } from 'node:os';
+
 import type { CommandModule } from 'yargs';
 
 import {
   answerQuestion,
   attemptClock,
   cancelOrphanedPermissions,
+  chatRequests,
   connectMcp,
+  requestProblem,
+  requestSettings,
+  sendToPeer,
+  type ChatRequests,
   dueTasks,
   freeModelNotes,
   McpLink,
@@ -188,6 +195,38 @@ async function openChannels(
   return { channel: routeChannels(opened, config, failed), messenger };
 }
 
+/**
+ * Requests from the chat, when settings.json turns them on and names a profile tasks.json has. Read
+ * once at start, like the channels; a problem is said and the chat answers questions only.
+ */
+function withChatRequests(
+  messenger: NonNullable<OpenedChannels['messenger']>,
+  serve: ServeDeps,
+): { requests?: ChatRequests } {
+  const settings = requestSettings(messenger.settings);
+  if (!settings.enabled) return {};
+  const problem = requestProblem(
+    settings,
+    serve.config.profiles.map((profile) => profile.id),
+  );
+  if (problem) {
+    err(`  chat requests not started: ${problem}`);
+    return {};
+  }
+  err(
+    `  chat requests on: profile ${settings.profile}, rights ${settings.rights}, prefix ${settings.prefix}`,
+  );
+  return {
+    requests: chatRequests({
+      settings,
+      serve,
+      defaultCwd: homedir(),
+      send: (text) => sendToPeer(messenger.link, messenger.settings, text),
+      log: (line) => err(`  ${line}`),
+    }),
+  };
+}
+
 const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
   command: 'serve',
   describe: 'run the scheduled tasks and ask the person when an agent has a question',
@@ -266,6 +305,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
             serve: live,
             cursor: fileCursorStore(messengerCursorFile(serve.stateDir)),
             signal: abort.signal,
+            ...withChatRequests(opened.messenger, live),
             log: (line) => err(`  ${line}`),
           }).catch((error: unknown) =>
             err(`  messenger: ${error instanceof Error ? error.message : String(error)}`),

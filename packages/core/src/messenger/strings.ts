@@ -34,4 +34,12 @@ export const STRINGS = {
   noticeMessage: '{task} has a message for you. Its text is not sent to this chat.',
   notHere: '{id} is not answered in this chat. Use `lotse answer` or the desktop.',
   linkDown: 'The messenger connection is down; retrying in {seconds} s.',
+  askWhat: 'What should I do? Write it after {prefix}, for example "{prefix} what is on my calendar today".',
+  requestQueued: 'Busy with another request; yours is queued (position {position}).',
+  requestFailed: 'The request failed. The serve log has the details.',
+  requestNoAnswer: 'Done, but the agent gave no answer.',
+  followUpFresh: 'That conversation could not be continued; this is a new one.',
+  followUpExpired: 'More than {minutes} min since the last answer, so this is a new conversation.',
+  answerShortened: '[shortened, {count} more characters]',
+  answerPart: '({part}/{parts})',
 } as const;

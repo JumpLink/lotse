@@ -3,6 +3,7 @@ export { answerCommand } from './answer.ts';
 export { authCommand } from './auth.ts';
 export { cancelCommand } from './cancel.ts';
 export { loginCommand } from './login.ts';
+export { messengerCommand } from './messenger.ts';
 export { providerCommand } from './provider.ts';
 export { questionsCommand } from './questions.ts';
 export { resumeCommand } from './resume.ts';

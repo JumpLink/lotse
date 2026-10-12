@@ -27,7 +27,51 @@ export interface MessengerSettings {
   readonly sendTool: string;
   /** The server's tool that waits for a reply `{account, peer, after, timeout_s, include_bodies}`. */
   readonly waitTool: string;
+  /** Requests the person starts from the chat. Absent: `REQUEST_DEFAULTS`, which is off. */
+  readonly requests?: RequestSettings;
 }
+
+/** A stdio MCP server an ad-hoc run gets. No `env`: settings.json holds no secret. */
+export interface RequestMcpServer {
+  readonly name: string;
+  readonly command: string;
+  readonly args: readonly string[];
+}
+
+/**
+ * A message from the peer that answers no question starts an agent run (`requests.ts`). The run is
+ * not a task of tasks.json: it borrows one of its profiles for the agent, the model and the user.
+ */
+export interface RequestSettings {
+  readonly enabled: boolean;
+  /** A message starting with this is always a new request, never an answer. */
+  readonly prefix: string;
+  /** A profile id of tasks.json. */
+  readonly profile: string;
+  /** Put in front of the person's first message of a session. */
+  readonly preamble: string;
+  /** The session's working directory. Empty: the home directory. */
+  readonly cwd: string;
+  readonly mcpServers: readonly RequestMcpServer[];
+  /** `read` declines every permission request without asking; `confirm` asks in the chat. */
+  readonly rights: 'read' | 'confirm';
+  /** How long after an answer a plain message continues that session. 0: never. */
+  readonly followUpMinutes: number;
+  /** Runs at the same time; more requests wait in a queue. */
+  readonly maxConcurrent: number;
+}
+
+export const REQUEST_DEFAULTS: RequestSettings = {
+  enabled: false,
+  prefix: '/ask',
+  profile: '',
+  preamble: '',
+  cwd: '',
+  mcpServers: [],
+  rights: 'read',
+  followUpMinutes: 30,
+  maxConcurrent: 1,
+};
 
 export const MESSENGER_DEFAULTS: MessengerSettings = {
   command: 'curlew',
@@ -37,6 +81,20 @@ export const MESSENGER_DEFAULTS: MessengerSettings = {
   sendTool: 'send_message',
   waitTool: 'xmpp_wait_reply',
 };
+
+export function requestSettings(settings: MessengerSettings): RequestSettings {
+  return settings.requests ?? REQUEST_DEFAULTS;
+}
+
+/** What keeps enabled requests from running, or `null` (also when they are off). */
+export function requestProblem(settings: RequestSettings, profiles: readonly string[]): string | null {
+  if (!settings.enabled) return null;
+  if (settings.profile.trim() === '') return 'channel.messenger.requests needs a profile';
+  if (!profiles.includes(settings.profile))
+    return `channel.messenger.requests names profile "${settings.profile}", which tasks.json does not define`;
+  if (settings.prefix.trim() === '') return 'channel.messenger.requests needs a prefix';
+  return null;
+}
 
 /** What is still missing for the messenger to run, or `null`. */
 export function messengerProblem(settings: MessengerSettings): string | null {

@@ -509,11 +509,25 @@ export type { ServeChannel, ServeMessage } from './serve/channel.ts';
 export {
   CHANNEL_NAMES,
   MESSENGER_DEFAULTS,
+  REQUEST_DEFAULTS,
   messengerCommand,
   messengerProblem,
+  requestProblem,
+  requestSettings,
   type ChannelName,
   type MessengerSettings,
+  type RequestMcpServer,
+  type RequestSettings,
 } from './messenger/settings.ts';
+export {
+  MAX_PARTS,
+  PART_CHARS,
+  chatRequests,
+  matchPrefix,
+  splitForChat,
+  type ChatRequests,
+  type ChatRequestsOptions,
+} from './messenger/requests.ts';
 export { McpToolError, connectMcp, type McpTools } from './messenger/mcp-client.ts';
 export { McpLink } from './messenger/link.ts';
 export {
@@ -534,8 +548,10 @@ export { openIds, parseReply, type ReplyIntent } from './messenger/reply.ts';
 export {
   abortableSleep,
   chatSays,
+  messageKey,
   parseWaitResult,
   runReceiveLoop,
+  type Cursor,
   type CursorStore,
   type ReceiveOptions,
 } from './messenger/receive.ts';
@@ -551,12 +567,18 @@ export {
   nextWakeMs,
   parseVerdict,
   precheckText,
+  REQUEST_TASK,
+  requestTask,
+  runRequest,
   runTask,
   userOf,
   type AnswerMode,
   type AnswerResult,
   type PrecheckVerdict,
   type QuestionBook,
+  type RequestMode,
+  type RequestRun,
+  type RequestRunResult,
   type RunOutcome,
   type RunResult,
   type ServeDeps,

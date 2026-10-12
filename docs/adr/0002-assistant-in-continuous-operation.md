@@ -121,6 +121,15 @@ Curlew backend later.
    waiting any more — the ordinary case is a `serve` that restarted in between — the answer is
    discarded and the person is told. It is never applied to a resumed session and never to a new
    one: the pending request is what the yes answers, and without it there is nothing to allow.
+
+   **Amended 2026-10-12: a message that answers nothing may start a request.** With
+   `channel.messenger.requests` on (off by default), a message that starts with a fixed prefix is a
+   new request, and one that the rules above match to no open question — other than a bare yes or
+   no — is a request too. Still no model decides: the order is prefix, then the reply rules, then
+   "nothing open". A request runs as an ad-hoc session with a configured profile and rights tier
+   (default `read`, which declines every permission request); with `confirm`, a write still needs a
+   yes through the questions of this section. Within a set time after its answer, a plain message
+   continues the same session. Set up in [serve.md](../serve.md#requests-from-the-chat).
 9. **The channel goes through Curlew, never through messenger code in lotse.** lotse defines a
    channel interface (send a text to an address, read new messages since a position). Its first
    implementation is an MCP client against Curlew's server, using the assistant's own account and

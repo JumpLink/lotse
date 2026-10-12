@@ -18,6 +18,7 @@ import {
   RpcError,
   UnsupportedCapabilityError,
   type AcpClient,
+  type McpServer,
   type SessionConfigOption,
   type StopReason,
 } from '@lotse/acp';
@@ -27,7 +28,14 @@ import { projectConfigOptions } from '../config.ts';
 import { chunkToText } from '../policy.ts';
 import { runTurn, withAuthHint, type AgentHandle, type OpenAgentOptions } from '../run.ts';
 import type { ServeChannel } from './channel.ts';
-import { profileOf, type ServeConfig, type ServeProfile, type ServeTask, type ServeUser } from './config.ts';
+import {
+  DEFAULT_QUESTION_LIMITS,
+  profileOf,
+  type ServeConfig,
+  type ServeProfile,
+  type ServeTask,
+  type ServeUser,
+} from './config.ts';
 import { serveGate, type AskOutcome, type GateDecision } from './gate.ts';
 import {
   createdSince,
@@ -62,6 +70,7 @@ export interface ServeLogEntry {
     | 'expired'
     | 'dropped'
     | 'reload'
+    | 'request'
     | 'error';
   readonly task: string;
   readonly detail: Readonly<Record<string, string>>;
@@ -473,6 +482,92 @@ export async function answerQuestion(idText: string, text: string, deps: ServeDe
 }
 
 /**
+ * The task id an ad-hoc run from the chat appears under — in the log, on its questions. The `@` is
+ * outside what a task id of tasks.json may hold, so it never collides with one.
+ */
+export const REQUEST_TASK = '@chat';
+
+/** One request from the chat, as `runRequest` takes it. */
+export interface RequestRun {
+  /** A profile id of tasks.json: agent, model and user. */
+  readonly profile: string;
+  readonly cwd: string;
+  readonly mcpServers: readonly McpServer[];
+  readonly rights: 'read' | 'confirm';
+  /** Put in front of `text` when the session is new. */
+  readonly preamble: string;
+  readonly text: string;
+  /** The session to continue; `null`: a new one. */
+  readonly sessionId: string | null;
+}
+
+/**
+ * `new` and the two continuations as in `answerQuestion`; `fresh` when a session was to be continued
+ * but the agent can neither load nor resume it, so a new one started.
+ */
+export type RequestMode = 'new' | 'loaded' | 'resumed' | 'fresh';
+
+export interface RequestRunResult {
+  readonly run: RunResult;
+  readonly how: RequestMode;
+}
+
+/** The task an ad-hoc run is: no schedule, no reply questions, its permission questions to every channel. */
+export function requestTask(request: Omit<RequestRun, 'text' | 'sessionId' | 'preamble'>): ServeTask {
+  return {
+    id: REQUEST_TASK,
+    profile: request.profile,
+    schedule: { kind: 'every', ms: 0, spec: 'on request' },
+    prompt: null,
+    promptFile: null,
+    cwd: request.cwd,
+    mcpServers: request.mcpServers,
+    answerMcpServers: null,
+    precheck: null,
+    rights: request.rights,
+    released: [],
+    questions: DEFAULT_QUESTION_LIMITS,
+    notify: 'questions',
+    channels: null,
+    messengerDetail: null,
+  };
+}
+
+/**
+ * One request from the chat: a turn in a new session, or in `sessionId` continued by `session/load`,
+ * else `session/resume`, else a new session. The agent's final message comes back as `run.reply` for
+ * the caller to deliver; the run never turns it into a reply question. Throws when the profile is not
+ * configured.
+ */
+export async function runRequest(request: RequestRun, deps: ServeDeps): Promise<RequestRunResult> {
+  const task = requestTask(request);
+  profileOf(deps.config, task);
+  let how: RequestMode = 'new';
+  const opening = request.preamble.trim() ? `${request.preamble.trim()}\n\n${request.text}` : request.text;
+  const run = await runSession(
+    task,
+    deps,
+    deps.now(),
+    async (client) => {
+      if (request.sessionId) {
+        const continued = await continueSession(client, task, request.sessionId);
+        if (continued) {
+          how = continued.how;
+          return { sessionId: request.sessionId, configOptions: continued.configOptions, text: request.text };
+        }
+        how = 'fresh';
+      }
+      const session = await withAuthHint('session/new', () =>
+        client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers] }),
+      );
+      return { sessionId: session.sessionId, configOptions: session.configOptions ?? null, text: opening };
+    },
+    { replyQuestions: false },
+  );
+  return { run, how };
+}
+
+/**
  * The schedule's view of the last run: the recorded one, or a later skip. A skip stays out of
  * `runs.json`, where it would hide the run a question belongs to, but the schedule has to count it:
  * otherwise a task at its question ceiling is due again at once and `serve` spins.
@@ -533,6 +628,7 @@ async function runSession(
   deps: ServeDeps,
   startedAt: Date,
   start: (client: AcpClient) => Promise<Started>,
+  options: { readonly replyQuestions: boolean } = { replyQuestions: true },
 ): Promise<RunResult> {
   const profile = profileOf(deps.config, task);
   const user = userOf(deps.config, profile);
@@ -582,7 +678,7 @@ async function runSession(
     });
 
     let questionId: string | null = null;
-    if (stopReason === 'end_turn' && isQuestionText(message)) {
+    if (options.replyQuestions && stopReason === 'end_turn' && isQuestionText(message)) {
       questionId = createReplyQuestion(task, user, started.sessionId, message.trim(), deps);
     } else if (stopReason === 'end_turn' && task.notify === 'always' && message.trim()) {
       await deps.channel.send(user, {
