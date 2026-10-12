@@ -5,7 +5,7 @@ An [ACP](https://agentclientprotocol.com) client: a command-line tool that start
 Protocol** — JSON-RPC 2.0 over stdio — and keeps a local record of your sessions.
 
 Lotse has no agent of its own and no model of its own. It runs on **GJS** (GNOME's JavaScript
-runtime) via [gjsify](https://github.com/gjsify/gjsify), like [postbote](../mail/README.md) and
+runtime) via [gjsify](https://github.com/gjsify/gjsify), like [curlew](../curlew/README.md) and
 [beifahrer](../beifahrer/README.md).
 
 > **Formerly Kurier.** Everything up to and including 0.1.1 was released under that name; the

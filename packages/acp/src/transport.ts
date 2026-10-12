@@ -7,7 +7,7 @@
  * so lotse can hand the same connection to a stdio child process on GJS, to a WebSocket in a
  * browser extension tomorrow, or to an in-process stub in a test, without the protocol noticing.
  *
- * This is postbote's `store`-knows-no-backend rule, one layer up.
+ * This is curlew's `store`-knows-no-backend rule, one layer up.
  */
 
 export type TransportListener = (data: string) => void;

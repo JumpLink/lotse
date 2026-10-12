@@ -12,7 +12,7 @@
  * TypeScript type cannot stop a later `{ ...session, grants: [...] }`. The canary is what makes
  * this type more than a comment.
  *
- * `boundTo` is optional **on purpose**: lotse has to run standalone, with no postbote anywhere
+ * `boundTo` is optional **on purpose**: lotse has to run standalone, with no curlew anywhere
  * near it. A messenger integration binds a session to a conversation later; a person at a terminal
  * does not. Nothing else changes.
  */
@@ -134,7 +134,7 @@ export interface SessionRecord {
   cwd: string;
   principal: Principal;
   /**
-   * What this session is bound to in the wider suite — a postbote conversation, later. `null`
+   * What this session is bound to in the wider suite — a curlew conversation, later. `null`
    * means standalone, and standalone is a first-class case, not a missing feature.
    */
   boundTo: string | null;

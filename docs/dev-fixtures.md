@@ -521,7 +521,7 @@ unusable, and `gjs -m scripts/probes/window-min-width.mjs [floor]` prints the sw
 number to reproduce a different floor, or nothing to see what the window does without one.
 
 **GJS is mandatory, not optional.** A pure Node test would be green and would not answer the real
-question. Both runtimes, as in postbote and beifahrer:
+question. Both runtimes, as in curlew and beifahrer:
 
 - **Node**: fast, injected `Transport` and `FixtureAgent` (`app/tests/support/fixture-agent.ts`), no
   subprocess. The fixture is a real ACP peer, not a mock — it speaks the protocol including the

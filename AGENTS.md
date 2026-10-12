@@ -9,7 +9,7 @@ is the lotse-specific layer and wins where they differ.
 
 An **ACP client**: a TypeScript app that starts coding agents as subprocesses over the [Agent
 Client Protocol](https://agentclientprotocol.com) (JSON-RPC 2.0 over stdio, Apache-2.0), manages
-their sessions, and binds them to a surface. Runs on **GJS via gjsify**, like postbote and
+their sessions, and binds them to a surface. Runs on **GJS via gjsify**, like curlew and
 beifahrer.
 
 No agent of its own, no model of its own, no policy engine of its own — ACP brings that in as the
@@ -29,7 +29,7 @@ layer, `fs/read_text_file`/`fs/write_text_file` can be refused outright, and `se
 
 **`packages/acp` does not know that subprocesses exist.** No `spawn`, no `node:child_process`, no
 `gi://`, no dependencies at all — the transport is an injected interface (`Transport` in
-`transport.ts`). That is postbote's `store`-knows-no-backend rule one layer up, and it is what lets
+`transport.ts`). That is curlew's `store`-knows-no-backend rule one layer up, and it is what lets
 the same protocol code run as the Node unit test and the GJS integration test.
 
 **There are two directories called core, and the difference is the whole point.** `packages/core/src` is
@@ -339,7 +339,7 @@ unusable. [docs/dev-fixtures.md](docs/dev-fixtures.md#gtk-behaviour-moved-from-a
 reproduction sweep and the cost to the config row.
 
 **GJS is mandatory, not optional.** A pure Node test would be green and would not answer the real
-question. Both runtimes, as in postbote and beifahrer:
+question. Both runtimes, as in curlew and beifahrer:
 
 - **Node**: fast, injected `Transport` and `FixtureAgent` (`app/tests/support/fixture-agent.ts`), no
   subprocess. The fixture is a real ACP peer, not a mock — it speaks the protocol including the
