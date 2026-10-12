@@ -20,7 +20,11 @@ import {
   type ServeLogEntry,
   type ServeMessage,
 } from '@lotse/core';
-import { FixtureAgent, type FixtureAgentOptions } from '../../support/fixture-agent.ts';
+import {
+  FixtureAgent,
+  opencodeConfigOptions,
+  type FixtureAgentOptions,
+} from '../../support/fixture-agent.ts';
 
 const START = Date.parse('2026-10-10T12:00:00.000Z');
 
@@ -64,6 +68,8 @@ interface Harness {
   book: Question[];
   /** Runs on every poll of a waiting permission request — where a test plays the person. */
   onSleep: () => Promise<void> | void;
+  /** Options for the n-th agent opened; absent: the harness's own. */
+  optionsFor?: (n: number) => FixtureAgentOptions;
   /** Advance the clock by this much per poll. */
   step: number;
 }
@@ -82,7 +88,7 @@ function harness(serveConfig: ServeConfig, agentOptions: FixtureAgentOptions = {
   (h as { deps: ServeDeps }).deps = {
     config: serveConfig,
     open: async (options) => {
-      const agent = new FixtureAgent(agentOptions);
+      const agent = new FixtureAgent(h.optionsFor?.(h.agents.length) ?? agentOptions);
       h.agents.push(agent);
       const client = new AcpClient({ transport: agent.transport, gate: options.gate });
       await client.initialize();
@@ -181,6 +187,30 @@ export default async () => {
       expect(run.outcome).toBe('failed');
       expect(run.reason).toContain('provider/not-offered');
       expect(h.sent[0]!.title).toContain('stopped');
+    });
+
+    await it('a model missing on the first attempt is retried once with the same model', async () => {
+      const model = 'github-copilot/gpt-5.5-codex';
+      const h = harness(config({ profile: { data: 'private', model } }));
+      h.optionsFor = (n) =>
+        n === 0 ? { configOptions: opencodeConfigOptions().filter((o) => o.category !== 'model') } : {};
+      const run = await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(run.outcome).toBe('done');
+      expect(h.agents.length).toBe(2);
+      expect(h.agents[1]!.configSets[0]).toStrictEqual({ configId: 'model', value: model });
+      expect(h.log.filter((entry) => entry.event === 'retry').length).toBe(1);
+      expect(h.sent.length).toBe(0);
+    });
+
+    await it('a model missing on both attempts fails after one logged retry', async () => {
+      const h = harness(config({ profile: { data: 'private', model: 'provider/not-offered' } }));
+      const run = await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(run.outcome).toBe('failed');
+      expect(h.agents.length).toBe(2);
+      const retries = h.log.filter((entry) => entry.event === 'retry');
+      expect(retries.length).toBe(1);
+      expect(retries[0]!.detail).toStrictEqual({ kind: 'ModelUnavailableError', phase: 'run' });
+      expect(h.sent.length).toBe(1);
     });
 
     await it('a pinned model the agent offers is set on the session', async () => {
