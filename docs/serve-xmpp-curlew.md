@@ -151,8 +151,7 @@ Buttons for answering in the chat are planned
    ```
 
    A running `serve` picks up the saved task file within a minute, with no restart. The task has never run, so it waits for its
-   first due time; `lotse serve --once` in a second terminal runs it right away without the receive
-   loop.
+   first due time; `lotse serve --once` in a second terminal runs it right away, with one short receive pass at the end.
 3. The question arrives in your XMPP client as `lotse · messenger-test · #A1`. Reply `#A1 hello`.
 4. Within about a minute lotse answers in the chat with a short "Got it, #A1.", and
    `lotse questions --all` shows the question as answered.

@@ -9,12 +9,16 @@ import type { CommandModule } from 'yargs';
 
 import { messengerProblem, requestSettings, type LotsePaths, type RequestSettings } from '@lotse/core';
 import {
+  formatEnvSpecs,
   formatServerSpecs,
+  keepServerEnv,
   messengerSettings,
+  parseEnvSpecs,
   parseServerSpecs,
   readSettings,
   saveSettings,
   withRequests,
+  withServerEnv,
   type Settings,
 } from '../../core/settings.ts';
 
@@ -29,6 +33,7 @@ export interface RequestFlags {
   readonly cwd?: string;
   readonly rights?: string;
   readonly mcpServers?: string;
+  readonly mcpEnv?: string;
   readonly followUpMinutes?: number;
   readonly maxConcurrent?: number;
 }
@@ -59,6 +64,13 @@ export function applyRequestFlags(
   if (flags.mcpServers !== undefined) {
     const servers = parseServerSpecs(flags.mcpServers);
     if ('problem' in servers) return { problem: `--request-mcp-server: ${servers.problem}` };
+    next = { ...next, mcpServers: keepServerEnv(servers, current.mcpServers) };
+  }
+  if (flags.mcpEnv !== undefined) {
+    const byServer = parseEnvSpecs(flags.mcpEnv);
+    if ('problem' in byServer) return { problem: `--request-mcp-env: ${byServer.problem}` };
+    const servers = withServerEnv(next.mcpServers, byServer);
+    if ('problem' in servers) return { problem: `--request-mcp-env: ${servers.problem}` };
     next = { ...next, mcpServers: servers };
   }
   if (flags.followUpMinutes !== undefined) {
@@ -89,6 +101,7 @@ export function messengerReport(file: string, settings: Settings, problem: strin
     `  cwd               ${requests.cwd || '(home directory)'}`,
     `  rights            ${requests.rights}`,
     `  mcp servers       ${requests.mcpServers.length > 0 ? formatServerSpecs(requests.mcpServers) : 'none'}`,
+    `  mcp environment   ${formatEnvSpecs(requests.mcpServers) || 'none'}`,
     `  follow-up minutes ${requests.followUpMinutes}`,
     `  max concurrent    ${requests.maxConcurrent}`,
     `settings file: ${file}`,
@@ -123,6 +136,10 @@ const command = (paths: LotsePaths): CommandModule => ({
         type: 'string',
         describe: 'MCP servers for a request: name=command arg …; separated by ";", or none',
       })
+      .option('request-mcp-env', {
+        type: 'string',
+        describe: 'environment of those servers: server:NAME=value; …, or none (replaces all)',
+      })
       .option('follow-up-minutes', {
         type: 'number',
         describe: 'how long after an answer a message continues that session; 0: never',
@@ -140,6 +157,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       cwd: pickArgv<string>(raw, 'requestCwd', 'request-cwd'),
       rights: pickArgv<string>(raw, 'requestRights', 'request-rights'),
       mcpServers: pickArgv<string>(raw, 'requestMcpServer', 'request-mcp-server'),
+      mcpEnv: pickArgv<string>(raw, 'requestMcpEnv', 'request-mcp-env'),
       followUpMinutes: pickArgv<number>(raw, 'followUpMinutes', 'follow-up-minutes'),
       maxConcurrent: pickArgv<number>(raw, 'maxConcurrent', 'max-concurrent'),
     };

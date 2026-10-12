@@ -92,7 +92,12 @@ export interface ReceiveOptions {
   /** Resolves after `ms`, or early on abort. */
   readonly sleep?: (ms: number, signal: AbortSignal) => Promise<void>;
   /** When given, a message that answers nothing is a request (`requests.ts`). Absent: requests are off. */
-  readonly requests?: ChatRequests;
+  readonly requests?: ChatRequests | (() => ChatRequests | undefined);
+  /**
+   * One pass instead of a loop: poll once for `timeoutS` (a poll that waits no longer than that), handle
+   * what is there, return. For `serve --once`, which must end.
+   */
+  readonly once?: boolean;
 }
 
 interface WaitMessage {
@@ -220,7 +225,7 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
   };
 
   const handle = async (text: string) => {
-    const requests = options.requests;
+    const requests = typeof options.requests === 'function' ? options.requests() : options.requests;
     if (requests) {
       const asked = matchPrefix(text, requests.prefix);
       if (asked === '') return reply(msg(STRINGS.askWhat, { prefix: requests.prefix }));
@@ -325,11 +330,16 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
       }
       if (result.messages.length > 0 && result.cursor) remember(result.cursor, null);
       delay = backoff.initialMs;
+      if (options.once) return;
       const spent = Date.now() - started;
       if (spent < minCycleMs) await sleep(minCycleMs - spent, signal);
     } catch (error) {
       if (signal.aborted) return;
       await link.drop();
+      if (options.once) {
+        log(`messenger: ${error instanceof Error ? error.message : String(error)}`);
+        return;
+      }
       log(
         `messenger: ${error instanceof Error ? error.message : String(error)}. ${msg(STRINGS.linkDown, { seconds: String(Math.round(delay / 1000)) })}`,
       );

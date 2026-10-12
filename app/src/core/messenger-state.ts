@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { CursorStore } from '@lotse/core';
+import type { CursorStore, PendingRequest, PendingStore } from '@lotse/core';
 
 import { writePrivateFile } from './private-file.ts';
 
@@ -35,6 +35,37 @@ export function fileCursorStore(path: string): CursorStore {
     write(cursor) {
       const body = cursor.seen.length > 0 ? { cursor: cursor.at, seen: cursor.seen } : { cursor: cursor.at };
       writePrivateFile(path, `${JSON.stringify(body)}\n`, 'messenger-cursor');
+    },
+  };
+}
+
+export function pendingRequestsFile(stateDir: string): string {
+  return join(stateDir, 'pending-requests.json');
+}
+
+/**
+ * The requests accepted and not yet answered (`PendingStore`), in `<state dir>/pending-requests.json`: ids
+ * and times, never what was asked. A missing or unreadable file is an empty list.
+ */
+export function filePendingStore(path: string): PendingStore {
+  return {
+    read() {
+      try {
+        const value = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+        if (!Array.isArray(value)) return [];
+        return value.filter(
+          (item): item is PendingRequest =>
+            typeof item === 'object' &&
+            item !== null &&
+            typeof (item as PendingRequest).id === 'string' &&
+            typeof (item as PendingRequest).at === 'string',
+        );
+      } catch {
+        return [];
+      }
+    },
+    write(list) {
+      writePrivateFile(path, `${JSON.stringify(list)}\n`, 'pending-requests');
     },
   };
 }

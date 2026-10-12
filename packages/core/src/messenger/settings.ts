@@ -31,11 +31,21 @@ export interface MessengerSettings {
   readonly requests?: RequestSettings;
 }
 
-/** A stdio MCP server an ad-hoc run gets. No `env`: settings.json holds no secret. */
+/** One environment variable of an MCP server, the shape tasks.json and ACP use. */
+export interface RequestEnvVariable {
+  readonly name: string;
+  readonly value: string;
+}
+
+/**
+ * A stdio MCP server an ad-hoc run gets. `env` is declared like a tasks.json entry's, but a secret-looking
+ * name is refused: settings.json holds no credential.
+ */
 export interface RequestMcpServer {
   readonly name: string;
   readonly command: string;
   readonly args: readonly string[];
+  readonly env?: readonly RequestEnvVariable[];
 }
 
 /**

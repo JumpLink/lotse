@@ -33,7 +33,15 @@ import {
   type RequestSettings,
   type ResolveContext,
 } from '@lotse/core';
-import { formatServerSpecs, parseServerSpecs, type DesktopMode } from '../../core/settings.ts';
+import {
+  formatEnvSpecs,
+  formatServerSpecs,
+  keepServerEnv,
+  parseEnvSpecs,
+  parseServerSpecs,
+  withServerEnv,
+  type DesktopMode,
+} from '../../core/settings.ts';
 import { choiceFromKey, type ChoicesView } from '../../core/settings-view.ts';
 
 /** What the host detection found; the part of a `ResolveContext` the rows are built from. */
@@ -89,7 +97,7 @@ const MODE_ROWS: readonly {
 ];
 
 const MESSENGER_LINE =
-  'Also ask in a chat, through an MCP server such as curlew, and read the reply as the answer. The first answer wins. A change applies the next time lotse serve starts.';
+  'Also ask in a chat, through an MCP server such as curlew, and read the reply as the answer. The first answer wins. A change applies within a minute to a running lotse serve; runs under way finish as they were.';
 
 type MessengerField = 'command' | 'args' | 'account' | 'peer' | 'sendTool' | 'waitTool';
 
@@ -105,7 +113,7 @@ const MESSENGER_FIELDS: readonly { readonly field: MessengerField; readonly titl
 const REQUESTS_LINE =
   'A message that answers no question starts an agent run, and the answer comes back in the chat. A change applies the next time lotse serve starts.';
 
-type RequestField = 'prefix' | 'profile' | 'preamble' | 'cwd' | 'mcpServers';
+type RequestField = 'prefix' | 'profile' | 'preamble' | 'cwd' | 'mcpServers' | 'mcpEnv';
 
 const REQUEST_FIELDS: readonly { readonly field: RequestField; readonly title: string }[] = [
   { field: 'prefix', title: 'Prefix that always starts a request' },
@@ -113,6 +121,7 @@ const REQUEST_FIELDS: readonly { readonly field: RequestField; readonly title: s
   { field: 'preamble', title: 'Preamble for a new session' },
   { field: 'cwd', title: 'Working directory (empty: home)' },
   { field: 'mcpServers', title: 'MCP servers (name=command args; …)' },
+  { field: 'mcpEnv', title: 'MCP server environment (server:NAME=value; …)' },
 ];
 
 export class PreferencesDialog {
@@ -350,13 +359,33 @@ export class PreferencesDialog {
     });
     group.add(enabled);
     for (const { field, title } of REQUEST_FIELDS) {
-      const text = field === 'mcpServers' ? formatServerSpecs(current.mcpServers) : current[field];
+      const text =
+        field === 'mcpServers'
+          ? formatServerSpecs(current.mcpServers)
+          : field === 'mcpEnv'
+            ? formatEnvSpecs(current.mcpServers)
+            : current[field];
       const row = new Adw.EntryRow({ title, text, showApplyButton: true });
       row.connect('apply', () => {
         const value = row.get_text().trim();
         if (field === 'mcpServers') {
           const servers = parseServerSpecs(value);
           if ('problem' in servers) return this.#showError(`MCP servers: ${servers.problem}`);
+          return save({
+            mcpServers: keepServerEnv(
+              servers,
+              requestSettings(this.#currentMessenger().messenger).mcpServers,
+            ),
+          });
+        }
+        if (field === 'mcpEnv') {
+          const byServer = parseEnvSpecs(value);
+          if ('problem' in byServer) return this.#showError(`MCP server environment: ${byServer.problem}`);
+          const servers = withServerEnv(
+            requestSettings(this.#currentMessenger().messenger).mcpServers,
+            byServer,
+          );
+          if ('problem' in servers) return this.#showError(`MCP server environment: ${servers.problem}`);
           return save({ mcpServers: servers });
         }
         if (field === 'prefix' && value === '') return this.#showError('The prefix must not be empty.');
