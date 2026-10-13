@@ -21,6 +21,7 @@
  * conversation's, not this dialog's, so the window hands them in and this file only lays them out.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import Adw from '@girs/adw-1';
 import GLib from '@girs/glib-2.0';
 import Gtk from '@girs/gtk-4.0';
@@ -79,49 +80,58 @@ export interface MessengerForm {
 /** What `select` did, so a caller never claims a write that did not happen. */
 export type SelectOutcome = 'chose' | 'unchanged' | 'refused' | 'failed' | 'missing';
 
-const SCOPE_LINE = 'A change applies the next time lotse starts. This window keeps its agent.';
+const scopeLine = () => _('A change applies the next time lotse starts. This window keeps its agent.');
 
-const MODE_LINE = 'How lotse serve shows a question an agent asks. A change applies to the next question.';
+const modeLine = () =>
+  _('How lotse serve shows a question an agent asks. A change applies to the next question.');
 
-const MODE_ROWS: readonly {
+const modeRows = (): readonly {
   readonly mode: DesktopMode;
   readonly title: string;
   readonly subtitle: string;
-}[] = [
+}[] => [
   {
     mode: 'notification',
-    title: 'Notification',
-    subtitle: 'Buttons answer in a window, or allow and decline at once.',
+    title: _('Notification'),
+    subtitle: _('Buttons answer in a window, or allow and decline at once.'),
   },
-  { mode: 'dialog', title: 'Answer window', subtitle: 'The window opens as soon as a question arrives.' },
+  {
+    mode: 'dialog',
+    title: _('Answer window'),
+    subtitle: _('The window opens as soon as a question arrives.'),
+  },
 ];
 
-const MESSENGER_LINE =
-  'Also ask in a chat, through an MCP server such as curlew, and read the reply as the answer. The first answer wins. A change applies within a minute to a running lotse serve; runs under way finish as they were.';
+const messengerLine = () =>
+  _(
+    'Also ask in a chat, through an MCP server such as curlew, and read the reply as the answer. The first answer wins. A change applies within a minute to a running lotse serve; runs under way finish as they were.',
+  );
 
 type MessengerField = 'command' | 'args' | 'account' | 'peer' | 'sendTool' | 'waitTool';
 
-const MESSENGER_FIELDS: readonly { readonly field: MessengerField; readonly title: string }[] = [
-  { field: 'command', title: 'MCP server command' },
-  { field: 'args', title: 'Arguments (separated by spaces)' },
-  { field: 'account', title: 'Account' },
-  { field: 'peer', title: 'Send to' },
-  { field: 'sendTool', title: 'Send tool' },
-  { field: 'waitTool', title: 'Wait-for-reply tool' },
+const messengerFields = (): readonly { readonly field: MessengerField; readonly title: string }[] => [
+  { field: 'command', title: _('MCP server command') },
+  { field: 'args', title: _('Arguments (separated by spaces)') },
+  { field: 'account', title: _('Account') },
+  { field: 'peer', title: _('Send to') },
+  { field: 'sendTool', title: _('Send tool') },
+  { field: 'waitTool', title: _('Wait-for-reply tool') },
 ];
 
-const REQUESTS_LINE =
-  'A message that answers no question starts an agent run, and the answer comes back in the chat. A change applies the next time lotse serve starts.';
+const requestsLine = () =>
+  _(
+    'A message that answers no question starts an agent run, and the answer comes back in the chat. A change applies the next time lotse serve starts.',
+  );
 
 type RequestField = 'prefix' | 'profile' | 'preamble' | 'cwd' | 'mcpServers' | 'mcpEnv';
 
-const REQUEST_FIELDS: readonly { readonly field: RequestField; readonly title: string }[] = [
-  { field: 'prefix', title: 'Prefix that always starts a request' },
-  { field: 'profile', title: 'Profile (from tasks.json)' },
-  { field: 'preamble', title: 'Preamble for a new session' },
-  { field: 'cwd', title: 'Working directory (empty: home)' },
-  { field: 'mcpServers', title: 'MCP servers (name=command args; …)' },
-  { field: 'mcpEnv', title: 'MCP server environment (server:NAME=value; …)' },
+const requestFields = (): readonly { readonly field: RequestField; readonly title: string }[] => [
+  { field: 'prefix', title: _('Prefix that always starts a request') },
+  { field: 'profile', title: _('Profile (from tasks.json)') },
+  { field: 'preamble', title: _('Preamble for a new session') },
+  { field: 'cwd', title: _('Working directory (empty: home)') },
+  { field: 'mcpServers', title: _('MCP servers (name=command args; …)') },
+  { field: 'mcpEnv', title: _('MCP server environment (server:NAME=value; …)') },
 ];
 
 export class PreferencesDialog {
@@ -152,17 +162,17 @@ export class PreferencesDialog {
 
   show(parent: Gtk.Widget): void {
     if (this.#dialog) return;
-    const dialog = new Adw.PreferencesDialog({ title: 'Preferences' });
+    const dialog = new Adw.PreferencesDialog({ title: _('Preferences') });
     const page = new Adw.PreferencesPage({
       name: 'agent',
-      title: 'Agent',
+      title: _('Agent'),
       iconName: 'utilities-terminal-symbolic',
     });
     const noteGroup = new Adw.PreferencesGroup();
     // Plain text: the note carries paths and error messages, and a path may contain `&`.
     const note = new Gtk.Label({ wrap: true, xalign: 0, visible: false, useMarkup: false });
     noteGroup.add(note);
-    const group = new Adw.PreferencesGroup({ title: 'Agent', description: SCOPE_LINE });
+    const group = new Adw.PreferencesGroup({ title: _('Agent'), description: scopeLine() });
     page.add(noteGroup);
     page.add(group);
     page.add(this.#modeGroup());
@@ -241,7 +251,9 @@ export class PreferencesDialog {
     } catch (error) {
       view = {
         rows: [],
-        note: `Could not read the settings: ${error instanceof Error ? error.message : String(error)}`,
+        note: fmt(_('Could not read the settings: {reason}'), {
+          reason: error instanceof Error ? error.message : String(error),
+        }),
         readOnly: true,
       };
     }
@@ -278,7 +290,10 @@ export class PreferencesDialog {
     this.#requests?.set_sensitive(!view.readOnly);
     this.#modeChecks.get(this.#currentMode())?.set_active(true);
     this.#rendering = false;
-    const moved = this.#backup === null ? null : `The earlier settings file was moved to ${this.#backup}.`;
+    const moved =
+      this.#backup === null
+        ? null
+        : fmt(_('The earlier settings file was moved to {path}.'), { path: this.#backup });
     const lines = [this.#error, moved, view.note].filter((line): line is string => line !== null);
     note.set_label(lines.join('\n'));
     note.set_visible(lines.length > 0);
@@ -286,10 +301,10 @@ export class PreferencesDialog {
   }
 
   #modeGroup(): Adw.PreferencesGroup {
-    const group = new Adw.PreferencesGroup({ title: 'Questions', description: MODE_LINE });
+    const group = new Adw.PreferencesGroup({ title: _('Questions'), description: modeLine() });
     const current = this.#currentMode();
     let first: Gtk.CheckButton | null = null;
-    for (const entry of MODE_ROWS) {
+    for (const entry of modeRows()) {
       const check = new Gtk.CheckButton({ valign: Gtk.Align.CENTER, active: entry.mode === current });
       if (first) check.set_group(first);
       else first = check;
@@ -312,11 +327,11 @@ export class PreferencesDialog {
   }
 
   #messengerGroup(): Adw.PreferencesGroup {
-    const group = new Adw.PreferencesGroup({ title: 'Messenger', description: MESSENGER_LINE });
+    const group = new Adw.PreferencesGroup({ title: _('Messenger'), description: messengerLine() });
     const form = this.#currentMessenger();
     for (const name of ['desktop', 'messenger'] as const) {
       const row = new Adw.SwitchRow({
-        title: name === 'desktop' ? 'Ask on the desktop' : 'Ask in the messenger',
+        title: name === 'desktop' ? _('Ask on the desktop') : _('Ask in the messenger'),
         active: form.active.includes(name),
       });
       row.connect('notify::active', () => {
@@ -327,7 +342,7 @@ export class PreferencesDialog {
       });
       group.add(row);
     }
-    for (const { field, title } of MESSENGER_FIELDS) {
+    for (const { field, title } of messengerFields()) {
       const text = field === 'args' ? form.messenger.args.join(' ') : form.messenger[field];
       const row = new Adw.EntryRow({ title, text, showApplyButton: true });
       row.connect('apply', () => {
@@ -346,19 +361,25 @@ export class PreferencesDialog {
   }
 
   #requestsGroup(): Adw.PreferencesGroup {
-    const group = new Adw.PreferencesGroup({ title: 'Requests from the chat', description: REQUESTS_LINE });
+    const group = new Adw.PreferencesGroup({
+      title: _('Requests from the chat'),
+      description: requestsLine(),
+    });
     const current = requestSettings(this.#currentMessenger().messenger);
     const save = (change: Partial<RequestSettings>): void => {
       const now = this.#currentMessenger();
       const requests = { ...requestSettings(now.messenger), ...change };
       this.#saveMessenger({ ...now, messenger: { ...now.messenger, requests } });
     };
-    const enabled = new Adw.SwitchRow({ title: 'Start a run for a chat message', active: current.enabled });
+    const enabled = new Adw.SwitchRow({
+      title: _('Start a run for a chat message'),
+      active: current.enabled,
+    });
     enabled.connect('notify::active', () => {
       if (!this.#rendering) save({ enabled: enabled.active });
     });
     group.add(enabled);
-    for (const { field, title } of REQUEST_FIELDS) {
+    for (const { field, title } of requestFields()) {
       const text =
         field === 'mcpServers'
           ? formatServerSpecs(current.mcpServers)
@@ -385,17 +406,18 @@ export class PreferencesDialog {
             requestSettings(this.#currentMessenger().messenger).mcpServers,
             byServer,
           );
-          if ('problem' in servers) return this.#showError(`MCP server environment: ${servers.problem}`);
+          if ('problem' in servers)
+            return this.#showError(fmt(_('MCP server environment: {problem}'), { problem: servers.problem }));
           return save({ mcpServers: servers });
         }
-        if (field === 'prefix' && value === '') return this.#showError('The prefix must not be empty.');
+        if (field === 'prefix' && value === '') return this.#showError(_('The prefix must not be empty.'));
         save({ [field]: value });
       });
       group.add(row);
     }
     const confirm = new Adw.SwitchRow({
-      title: 'Ask before a write',
-      subtitle: 'Off: a request may only read, and every permission request is declined.',
+      title: _('Ask before a write'),
+      subtitle: _('Off: a request may only read, and every permission request is declined.'),
       active: current.rights === 'confirm',
     });
     confirm.connect('notify::active', () => {
@@ -403,15 +425,15 @@ export class PreferencesDialog {
     });
     group.add(confirm);
     const minutes = Adw.SpinRow.new_with_range(0, 1440, 5);
-    minutes.set_title('Follow-up window (minutes)');
-    minutes.set_subtitle('A message this soon after an answer continues that session. 0: never.');
+    minutes.set_title(_('Follow-up window (minutes)'));
+    minutes.set_subtitle(_('A message this soon after an answer continues that session. 0: never.'));
     minutes.set_value(current.followUpMinutes);
     minutes.connect('notify::value', () => {
       if (!this.#rendering) save({ followUpMinutes: Math.round(minutes.get_value()) });
     });
     group.add(minutes);
     const concurrent = Adw.SpinRow.new_with_range(1, 16, 1);
-    concurrent.set_title('Runs at the same time');
+    concurrent.set_title(_('Runs at the same time'));
     concurrent.set_value(current.maxConcurrent);
     concurrent.connect('notify::value', () => {
       if (!this.#rendering) save({ maxConcurrent: Math.round(concurrent.get_value()) });
@@ -440,7 +462,9 @@ export class PreferencesDialog {
       if (backup !== null) this.#backup = backup;
       this.#error = null;
     } catch (error) {
-      this.#error = `Could not save your choice: ${error instanceof Error ? error.message : String(error)}`;
+      this.#error = fmt(_('Could not save your choice: {reason}'), {
+        reason: error instanceof Error ? error.message : String(error),
+      });
     }
     GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
       if (this.#dialog) this.#render();
@@ -452,7 +476,7 @@ export class PreferencesDialog {
     try {
       return this.#actions.loadMode();
     } catch {
-      return MODE_ROWS[0]!.mode;
+      return modeRows()[0]!.mode;
     }
   }
 
@@ -463,7 +487,9 @@ export class PreferencesDialog {
       if (backup !== null) this.#backup = backup;
       this.#error = null;
     } catch (error) {
-      this.#error = `Could not save your choice: ${error instanceof Error ? error.message : String(error)}`;
+      this.#error = fmt(_('Could not save your choice: {reason}'), {
+        reason: error instanceof Error ? error.message : String(error),
+      });
     }
     GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
       if (this.#dialog) this.#render();
@@ -480,7 +506,9 @@ export class PreferencesDialog {
       this.#error = null;
       this.#saved = true;
     } catch (error) {
-      this.#error = `Could not save your choice: ${error instanceof Error ? error.message : String(error)}`;
+      this.#error = fmt(_('Could not save your choice: {reason}'), {
+        reason: error instanceof Error ? error.message : String(error),
+      });
     }
     // After the handler returns: the widget that emitted `toggled` must not be removed from inside it.
     GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {

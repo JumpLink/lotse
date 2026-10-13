@@ -20,6 +20,7 @@
  * that is not a preference but the only way to get what the window means by "open".
  */
 
+import { _ } from '../../i18n.ts';
 import Adw from '@girs/adw-1';
 import GLib from '@girs/glib-2.0';
 import Gtk from '@girs/gtk-4.0';
@@ -39,7 +40,7 @@ export interface SessionListOptions {
 type ListState = 'list' | 'empty' | 'error';
 
 /** Read after the row's name, which is where "the one you are looking at" belongs. See `#mark`. */
-const OPEN_SESSION_DESC = 'The session you are looking at.';
+const openSessionDesc = () => _('The session you are looking at.');
 
 export class SessionList {
   /** Pack this. The list, the empty state and the error state are its three children. */
@@ -80,7 +81,7 @@ export class SessionList {
 
     this.#error = new Adw.StatusPage({
       iconName: 'dialog-warning-symbolic',
-      title: 'Could not read the sessions',
+      title: _('Could not read the sessions'),
       vexpand: true,
       cssClasses: ['compact'],
     });
@@ -92,7 +93,7 @@ export class SessionList {
     // first row would, not in the middle of an empty pane.
     this.widget.add_named(
       new Gtk.Label({
-        label: 'No sessions yet',
+        label: _('No sessions yet'),
         useMarkup: false,
         wrap: true,
         valign: Gtk.Align.START,
@@ -196,7 +197,7 @@ export class SessionList {
     this.#marked = row;
     if (!row) return;
     row.add_css_class(CSS.openRow);
-    row.update_property([Gtk.AccessibleProperty.DESCRIPTION], [OPEN_SESSION_DESC]);
+    row.update_property([Gtk.AccessibleProperty.DESCRIPTION], [openSessionDesc()]);
   }
 
   #rowOf(id: string | null): Gtk.ListBoxRow | null {
