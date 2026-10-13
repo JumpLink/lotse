@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: eu.jumplink.Lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-13 08:16+0200\n"
+"POT-Creation-Date: 2026-10-13 08:19+0200\n"
 "Language-Team: German\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -71,14 +71,18 @@ msgid "Decline"
 msgstr "Ablehnen"
 
 #: app/src/core/question-actions.ts:53
+msgid "Done"
+msgstr "Erledigt"
+
+#: app/src/core/question-actions.ts:54
 msgid "Yes"
 msgstr "Ja"
 
-#: app/src/core/question-actions.ts:53
+#: app/src/core/question-actions.ts:54
 msgid "No"
 msgstr "Nein"
 
-#: app/src/core/question-actions.ts:67
+#: app/src/core/question-actions.ts:68
 msgid "Answer…"
 msgstr "Antworten…"
 
@@ -212,7 +216,7 @@ msgstr ""
 "merken, welcher Agent gestartet wird: <id>, <id>:host, <id>:bundled oder "
 "none zum Zurücksetzen"
 
-#: app/src/frontends/cli/agents.ts:105 app/src/frontends/cli/messenger.ts:178
+#: app/src/frontends/cli/agents.ts:105 app/src/frontends/cli/messenger.ts:191
 msgid "the earlier settings file was moved to {backup}"
 msgstr "die frühere Einstellungsdatei wurde nach {backup} verschoben"
 
@@ -282,7 +286,7 @@ msgstr ""
 "versuche es erneut"
 
 #: app/src/frontends/cli/auth.ts:70 app/src/frontends/cli/cancel.ts:64
-#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:108
+#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:118
 #: app/src/frontends/cli/start.ts:90
 msgid "  [agent] {line}"
 msgstr "  [agent] {line}"
@@ -354,7 +358,7 @@ msgid "  {line}"
 msgstr "  {line}"
 
 #: app/src/frontends/cli/choose.ts:38 app/src/frontends/cli/questions.ts:33
-#: app/src/frontends/cli/serve-deps.ts:103 app/src/frontends/cli/serve.ts:129
+#: app/src/frontends/cli/serve-deps.ts:111 app/src/frontends/cli/serve.ts:129
 msgid "  {problem}"
 msgstr "  {problem}"
 
@@ -439,53 +443,59 @@ msgstr "beim Login ist die Zeit abgelaufen — starte ihn erneut."
 msgid "cancelled."
 msgstr "abgebrochen."
 
-#: app/src/frontends/cli/messenger.ts:118
+#: app/src/frontends/cli/messenger.ts:126
 msgid "show or set the requests serve takes from the chat"
 msgstr "die Anfragen anzeigen oder festlegen, die serve aus dem Chat annimmt"
 
-#: app/src/frontends/cli/messenger.ts:121
+#: app/src/frontends/cli/messenger.ts:129
 msgid "start an agent run for a chat message: on or off"
 msgstr "für eine Chat-Nachricht einen Agentenlauf starten: on oder off"
 
-#: app/src/frontends/cli/messenger.ts:124
+#: app/src/frontends/cli/messenger.ts:132
 msgid "the tasks.json profile a request runs with"
 msgstr "das Profil aus tasks.json, mit dem eine Anfrage läuft"
 
-#: app/src/frontends/cli/messenger.ts:128
+#: app/src/frontends/cli/messenger.ts:136
 msgid "a message starting with this is always a request"
 msgstr "eine Nachricht, die so beginnt, ist immer eine Anfrage"
 
-#: app/src/frontends/cli/messenger.ts:132
+#: app/src/frontends/cli/messenger.ts:140
 msgid "text put before the first message of a session"
 msgstr "Text vor der ersten Nachricht einer Sitzung"
 
-#: app/src/frontends/cli/messenger.ts:134
+#: app/src/frontends/cli/messenger.ts:142
 msgid "working directory of a request; empty: home"
 msgstr "Arbeitsverzeichnis einer Anfrage; leer: Home"
 
-#: app/src/frontends/cli/messenger.ts:137
+#: app/src/frontends/cli/messenger.ts:145
 msgid "read: decline every permission request; confirm: ask in the chat"
 msgstr "read: jede Berechtigungsanfrage ablehnen; confirm: im Chat nachfragen"
 
-#: app/src/frontends/cli/messenger.ts:141
+#: app/src/frontends/cli/messenger.ts:149
 msgid ""
 "MCP servers for a request: name=command arg …; separated by \";\", or none"
 msgstr ""
 "MCP-Server für eine Anfrage: name=Befehl Arg …; getrennt durch „;“, oder none"
 
-#: app/src/frontends/cli/messenger.ts:145
+#: app/src/frontends/cli/messenger.ts:153
 msgid ""
 "environment of those servers: server:NAME=value; …, or none (replaces all)"
 msgstr "Umgebung dieser Server: server:NAME=Wert; …, oder none (ersetzt alles)"
 
-#: app/src/frontends/cli/messenger.ts:149
+#: app/src/frontends/cli/messenger.ts:157
 msgid "how long after an answer a message continues that session; 0: never"
 msgstr ""
 "wie lange nach einer Antwort eine Nachricht diese Sitzung fortsetzt; 0: nie"
 
-#: app/src/frontends/cli/messenger.ts:151
+#: app/src/frontends/cli/messenger.ts:159
 msgid "requests running at the same time"
 msgstr "gleichzeitig laufende Anfragen"
+
+#: app/src/frontends/cli/messenger.ts:162
+msgid "how long a task waits when only you can go on (person_needed)"
+msgstr ""
+"wie lange eine Aufgabe wartet, wenn nur du weitermachen kannst "
+"(person_needed)"
 
 #: app/src/frontends/cli/output.ts:62
 msgid "  {mark} {content}"
@@ -660,7 +670,7 @@ msgstr ""
 msgid "— {stopReason} —"
 msgstr "— {stopReason} —"
 
-#: app/src/frontends/cli/serve-deps.ts:27 app/src/frontends/cli/serve.ts:371
+#: app/src/frontends/cli/serve-deps.ts:30 app/src/frontends/cli/serve.ts:371
 msgid "  {warning}"
 msgstr "  {warning}"
 
@@ -976,9 +986,17 @@ msgstr ""
 msgid "Runs at the same time"
 msgstr "Gleichzeitige Läufe"
 
-#: app/src/frontends/gui/preferences.ts:465
-#: app/src/frontends/gui/preferences.ts:490
-#: app/src/frontends/gui/preferences.ts:509
+#: app/src/frontends/gui/preferences.ts:443
+msgid "Wait for you (minutes)"
+msgstr "Auf dich warten (Minuten)"
+
+#: app/src/frontends/gui/preferences.ts:444
+msgid "How long a task waits when only you can go on. Then it is deferred."
+msgstr "Wie lange eine Aufgabe wartet, wenn nur du weitermachen kannst. Danach wird sie zurückgestellt."
+
+#: app/src/frontends/gui/preferences.ts:473
+#: app/src/frontends/gui/preferences.ts:498
+#: app/src/frontends/gui/preferences.ts:517
 msgid "Could not save your choice: {reason}"
 msgstr "Deine Auswahl konnte nicht gespeichert werden: {reason}"
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: eu.jumplink.Lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-13 08:16+0200\n"
+"POT-Creation-Date: 2026-10-13 08:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -74,14 +74,18 @@ msgid "Decline"
 msgstr ""
 
 #: app/src/core/question-actions.ts:53
+msgid "Done"
+msgstr ""
+
+#: app/src/core/question-actions.ts:54
 msgid "Yes"
 msgstr ""
 
-#: app/src/core/question-actions.ts:53
+#: app/src/core/question-actions.ts:54
 msgid "No"
 msgstr ""
 
-#: app/src/core/question-actions.ts:67
+#: app/src/core/question-actions.ts:68
 msgid "Answer…"
 msgstr ""
 
@@ -209,7 +213,7 @@ msgid ""
 "clear"
 msgstr ""
 
-#: app/src/frontends/cli/agents.ts:105 app/src/frontends/cli/messenger.ts:178
+#: app/src/frontends/cli/agents.ts:105 app/src/frontends/cli/messenger.ts:191
 msgid "the earlier settings file was moved to {backup}"
 msgstr ""
 
@@ -267,7 +271,7 @@ msgid ""
 msgstr ""
 
 #: app/src/frontends/cli/auth.ts:70 app/src/frontends/cli/cancel.ts:64
-#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:108
+#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:118
 #: app/src/frontends/cli/start.ts:90
 msgid "  [agent] {line}"
 msgstr ""
@@ -331,7 +335,7 @@ msgid "  {line}"
 msgstr ""
 
 #: app/src/frontends/cli/choose.ts:38 app/src/frontends/cli/questions.ts:33
-#: app/src/frontends/cli/serve-deps.ts:103 app/src/frontends/cli/serve.ts:129
+#: app/src/frontends/cli/serve-deps.ts:111 app/src/frontends/cli/serve.ts:129
 msgid "  {problem}"
 msgstr ""
 
@@ -404,50 +408,54 @@ msgstr ""
 msgid "cancelled."
 msgstr ""
 
-#: app/src/frontends/cli/messenger.ts:118
+#: app/src/frontends/cli/messenger.ts:126
 msgid "show or set the requests serve takes from the chat"
 msgstr ""
 
-#: app/src/frontends/cli/messenger.ts:121
+#: app/src/frontends/cli/messenger.ts:129
 msgid "start an agent run for a chat message: on or off"
 msgstr ""
 
-#: app/src/frontends/cli/messenger.ts:124
+#: app/src/frontends/cli/messenger.ts:132
 msgid "the tasks.json profile a request runs with"
 msgstr ""
 
-#: app/src/frontends/cli/messenger.ts:128
+#: app/src/frontends/cli/messenger.ts:136
 msgid "a message starting with this is always a request"
 msgstr ""
 
-#: app/src/frontends/cli/messenger.ts:132
+#: app/src/frontends/cli/messenger.ts:140
 msgid "text put before the first message of a session"
 msgstr ""
 
-#: app/src/frontends/cli/messenger.ts:134
+#: app/src/frontends/cli/messenger.ts:142
 msgid "working directory of a request; empty: home"
 msgstr ""
 
-#: app/src/frontends/cli/messenger.ts:137
+#: app/src/frontends/cli/messenger.ts:145
 msgid "read: decline every permission request; confirm: ask in the chat"
 msgstr ""
 
-#: app/src/frontends/cli/messenger.ts:141
+#: app/src/frontends/cli/messenger.ts:149
 msgid ""
 "MCP servers for a request: name=command arg …; separated by \";\", or none"
 msgstr ""
 
-#: app/src/frontends/cli/messenger.ts:145
+#: app/src/frontends/cli/messenger.ts:153
 msgid ""
 "environment of those servers: server:NAME=value; …, or none (replaces all)"
 msgstr ""
 
-#: app/src/frontends/cli/messenger.ts:149
+#: app/src/frontends/cli/messenger.ts:157
 msgid "how long after an answer a message continues that session; 0: never"
 msgstr ""
 
-#: app/src/frontends/cli/messenger.ts:151
+#: app/src/frontends/cli/messenger.ts:159
 msgid "requests running at the same time"
+msgstr ""
+
+#: app/src/frontends/cli/messenger.ts:162
+msgid "how long a task waits when only you can go on (person_needed)"
 msgstr ""
 
 #: app/src/frontends/cli/output.ts:62
@@ -609,7 +617,7 @@ msgstr ""
 msgid "— {stopReason} —"
 msgstr ""
 
-#: app/src/frontends/cli/serve-deps.ts:27 app/src/frontends/cli/serve.ts:371
+#: app/src/frontends/cli/serve-deps.ts:30 app/src/frontends/cli/serve.ts:371
 msgid "  {warning}"
 msgstr ""
 
@@ -899,9 +907,17 @@ msgstr ""
 msgid "Runs at the same time"
 msgstr ""
 
-#: app/src/frontends/gui/preferences.ts:465
-#: app/src/frontends/gui/preferences.ts:490
-#: app/src/frontends/gui/preferences.ts:509
+#: app/src/frontends/gui/preferences.ts:443
+msgid "Wait for you (minutes)"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:444
+msgid "How long a task waits when only you can go on. Then it is deferred."
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:473
+#: app/src/frontends/gui/preferences.ts:498
+#: app/src/frontends/gui/preferences.ts:517
 msgid "Could not save your choice: {reason}"
 msgstr ""
 
