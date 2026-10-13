@@ -79,6 +79,9 @@ export function stripQuote(text: string): string {
   let i = 0;
   while (i < lines.length && lines[i]!.startsWith('>')) i += 1;
   if (i === 0) return text;
-  const rest = lines.slice(i).join('\n').replace(/^\s*\n/, '');
+  const rest = lines
+    .slice(i)
+    .join('\n')
+    .replace(/^\s*\n/, '');
   return rest.trim() === '' ? text : rest;
 }

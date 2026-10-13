@@ -71,7 +71,9 @@ export async function sendToPeerWithIds(
   for (const segment of renderForXmpp(text)) {
     if (segment.kind === 'image' && imagesWork) {
       try {
-        remember(await link.use((tools) => tools.call(settings.sendTool, { ...target, image_url: segment.url })));
+        remember(
+          await link.use((tools) => tools.call(settings.sendTool, { ...target, image_url: segment.url })),
+        );
         continue;
       } catch (error) {
         if (!(error instanceof McpToolError)) throw error;

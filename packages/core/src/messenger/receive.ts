@@ -247,7 +247,8 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
     const book = serve.questions.read();
     const open = openQuestions(book, serve.now()).filter((question) => inChat(question.task));
     const ref = replyToId === null ? null : findRef(refs, replyToId);
-    const target = ref && open.find((question) => question.id === ref.questionId && question.user === ref.user);
+    const target =
+      ref && open.find((question) => question.id === ref.questionId && question.user === ref.user);
     // Closed or kept off the chat: say so (unless the text names an id itself) instead of letting the
     // text answer whatever else is open.
     if (ref && !target && parseReply(text, []).kind === 'nothing-open') {
