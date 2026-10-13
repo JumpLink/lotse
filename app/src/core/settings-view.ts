@@ -68,6 +68,15 @@ export interface ChoicesFacts {
   readonly backupPath?: string;
   /** The host detection has not finished: host rows show "Checking…" instead of "Not found". */
   readonly hostPending?: boolean;
+  /** The person's home directory: a path under it is shown as `~/…`, so a screenshot carries no user name. */
+  readonly homeDir?: string;
+}
+
+function homeRelative(path: string, homeDir: string | undefined): string {
+  if (!homeDir || homeDir === '/') return path;
+  const home = homeDir.replace(/\/+$/, '');
+  if (path === home) return '~';
+  return path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path;
 }
 
 export function choiceKey(choice: AgentChoice | null): string {
@@ -121,7 +130,9 @@ export function settingsChoicesView(
       key: `${detection.id}:host`,
       title: hostTitle(nameOf(detection.id), found ? detection.version : null),
       subtitle: found
-        ? (detection.path ?? _('On your PATH'))
+        ? detection.path
+          ? homeRelative(detection.path, facts.homeDir)
+          : _('On your PATH')
         : pending
           ? _('Checking…')
           : _('Not found on this machine'),

@@ -23,6 +23,7 @@
 
 import '../../i18n-gettext.ts';
 import { _ } from '../../i18n.ts';
+import GLib from '@girs/glib-2.0';
 import Gtk from '@girs/gtk-4.0';
 import { runAdwaitaApp } from '@gjsify/adwaita-app';
 
@@ -242,6 +243,7 @@ const status = await runAdwaitaApp({
             problemKind,
             backupPath: backupPath(file),
             hostPending: detected === null && sandboxed,
+            homeDir: GLib.get_home_dir(),
           });
         },
         detect: sandboxed

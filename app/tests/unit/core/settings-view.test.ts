@@ -194,5 +194,27 @@ export default async function run(): Promise<void> {
       expect(invalid.note?.includes('/x/settings.json.bak')).toBe(true);
       expect(view(null).readOnly).toBe(false);
     });
+
+    await it('shows a host path under the home directory as ~/…', async () => {
+      const home = [
+        { id: 'alpha', source: 'host' as const, path: '/home/someone/.opencode/bin/alpha', version: null },
+      ];
+      const shown = settingsChoicesView(home, CATALOG, settingsFor(null), {
+        bundledAvailable,
+        homeDir: '/home/someone',
+      });
+      expect(shown.rows.find((row) => row.key === 'alpha:host')?.subtitle).toBe('~/.opencode/bin/alpha');
+      const other = settingsChoicesView(DETECTIONS, CATALOG, settingsFor(null), {
+        bundledAvailable,
+        homeDir: '/home/someone',
+      });
+      expect(other.rows.find((row) => row.key === 'alpha:host')?.subtitle).toBe('/usr/bin/alpha');
+      const sibling = [{ id: 'alpha', source: 'host' as const, path: '/home/someone2/alpha', version: null }];
+      const kept = settingsChoicesView(sibling, CATALOG, settingsFor(null), {
+        bundledAvailable,
+        homeDir: '/home/someone',
+      });
+      expect(kept.rows.find((row) => row.key === 'alpha:host')?.subtitle).toBe('/home/someone2/alpha');
+    });
   });
 }
