@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-13 07:58+0200\n"
+"POT-Creation-Date: 2026-10-13 08:16+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -23,24 +23,24 @@ msgid ""
 "No agent is attached to this window yet, so there is nothing to send to."
 msgstr ""
 
-#: packages/core/src/composer-state.ts:102
+#: packages/core/src/composer-state.ts:103
 msgid ""
 "No session is open, so there is nowhere to send this. Pick one from the list."
 msgstr ""
 
-#: packages/core/src/composer-state.ts:127
+#: packages/core/src/composer-state.ts:129
 msgid "Working — the agent is answering."
 msgstr ""
 
-#: packages/core/src/composer-state.ts:127
+#: packages/core/src/composer-state.ts:130
 msgid "The agent is waiting for your answer."
 msgstr ""
 
-#: packages/core/src/composer-state.ts:148
+#: packages/core/src/composer-state.ts:151
 msgid "The agent exited. Press New chat to send another prompt."
 msgstr ""
 
-#: packages/core/src/composer-state.ts:200
+#: packages/core/src/composer-state.ts:203
 msgid "Stopped."
 msgstr ""
 
@@ -202,6 +202,12 @@ msgstr ""
 #: packages/core/src/permission.ts:379
 msgid "The agent calls these: {names}"
 msgstr ""
+
+#: packages/core/src/transcript-items.ts:359
+msgid "Thought"
+msgid_plural "{n} thoughts"
+msgstr[0] ""
+msgstr[1] ""
 
 #: packages/widget/src/chat.blp:66
 msgid "New chat"

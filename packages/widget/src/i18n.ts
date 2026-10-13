@@ -23,7 +23,7 @@
 
 import Gettext from 'gettext';
 
-import { LOTSE_TEXT_DOMAIN, setLibraryTranslator } from '@lotse/core';
+import { LOTSE_TEXT_DOMAIN, hasLibraryTranslator, setLibraryTranslator } from '@lotse/core';
 
 /**
  * Bind {@link LOTSE_TEXT_DOMAIN} and register its translator with `@lotse/core`.
@@ -59,4 +59,6 @@ function systemLocaleDir(): string | undefined {
   return process.platform === 'darwin' || process.platform === 'win32' ? undefined : '/usr/share/locale';
 }
 
-initWidgetI18n();
+// An app that bound the domain before this module loaded (lotse's own does) keeps its binding:
+// rebinding here would point the domain at the system directory and show English in a dev build.
+if (!hasLibraryTranslator()) initWidgetI18n();

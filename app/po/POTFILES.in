@@ -44,6 +44,7 @@ app/src/frontends/gui/preferences.ts
 app/src/frontends/gui/session-list.ts
 app/src/frontends/gui/window.blp
 app/src/frontends/gui/window.ts
+app/src/i18n-gettext.ts
 app/src/i18n.ts
 app/src/index.ts
 app/src/types/blp.d.ts

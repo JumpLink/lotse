@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-13 07:58+0200\n"
+"POT-Creation-Date: 2026-10-13 08:16+0200\n"
 "Language-Team: German\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -17,32 +17,39 @@ msgstr ""
 #: packages/core/src/composer-state.ts:100
 msgid ""
 "No agent is attached to this window yet, so there is nothing to send to."
-msgstr "An dieses Fenster ist noch kein Agent angebunden, also gibt es nichts zu senden."
+msgstr ""
+"An dieses Fenster ist noch kein Agent angebunden, also gibt es nichts zu "
+"senden."
 
-#: packages/core/src/composer-state.ts:102
+#: packages/core/src/composer-state.ts:103
 msgid ""
 "No session is open, so there is nowhere to send this. Pick one from the list."
-msgstr "Es ist keine Sitzung geöffnet, also gibt es kein Ziel für diese Nachricht. Wähle eine aus der Liste."
+msgstr ""
+"Es ist keine Sitzung geöffnet, also gibt es kein Ziel für diese Nachricht. "
+"Wähle eine aus der Liste."
 
-#: packages/core/src/composer-state.ts:127
+#: packages/core/src/composer-state.ts:129
 msgid "Working — the agent is answering."
 msgstr "Arbeitet — der Agent antwortet."
 
-#: packages/core/src/composer-state.ts:127
+#: packages/core/src/composer-state.ts:130
 msgid "The agent is waiting for your answer."
 msgstr "Der Agent wartet auf deine Antwort."
 
-#: packages/core/src/composer-state.ts:148
+#: packages/core/src/composer-state.ts:151
 msgid "The agent exited. Press New chat to send another prompt."
-msgstr "Der Agent wurde beendet. Wähle „Neuer Chat“, um einen weiteren Prompt zu senden."
+msgstr ""
+"Der Agent wurde beendet. Wähle „Neuer Chat“, um einen weiteren Prompt zu "
+"senden."
 
-#: packages/core/src/composer-state.ts:200
+#: packages/core/src/composer-state.ts:203
 msgid "Stopped."
 msgstr "Gestoppt."
 
 #: packages/core/src/config-row.ts:184
 msgid "The agent did not change this. Its previous value is still in use."
-msgstr "Der Agent hat dies nicht geändert. Der bisherige Wert ist weiter in Gebrauch."
+msgstr ""
+"Der Agent hat dies nicht geändert. Der bisherige Wert ist weiter in Gebrauch."
 
 #: packages/core/src/config-row.ts:225
 msgid "Choose…"
@@ -57,7 +64,10 @@ msgid ""
 "lotse starts a coding agent but found none on this machine. Install opencode "
 "with the command below, or install lotse from Flatpak, which bundles one. "
 "Then start lotse again."
-msgstr "lotse startet einen Coding-Agenten, hat aber auf diesem Rechner keinen gefunden. Installiere opencode mit dem Befehl unten oder installiere lotse aus Flatpak, das einen mitbringt. Starte lotse danach erneut."
+msgstr ""
+"lotse startet einen Coding-Agenten, hat aber auf diesem Rechner keinen "
+"gefunden. Installiere opencode mit dem Befehl unten oder installiere lotse "
+"aus Flatpak, das einen mitbringt. Starte lotse danach erneut."
 
 #: packages/core/src/empty-state.ts:43
 msgid "No agent found, so there is nothing to send to."
@@ -67,7 +77,10 @@ msgstr "Kein Agent gefunden, also gibt es nichts zu senden."
 msgid ""
 "Bundled OpenCode, free models: time-limited, and use without an account is "
 "undocumented. What you send goes to that provider."
-msgstr "Mitgeliefertes OpenCode, kostenlose Modelle: zeitlich begrenzt, und die Nutzung ohne Konto ist nicht dokumentiert. Was du sendest, geht an diesen Anbieter."
+msgstr ""
+"Mitgeliefertes OpenCode, kostenlose Modelle: zeitlich begrenzt, und die "
+"Nutzung ohne Konto ist nicht dokumentiert. Was du sendest, geht an diesen "
+"Anbieter."
 
 #: packages/core/src/empty-state.ts:63
 msgid "Got it"
@@ -81,7 +94,10 @@ msgstr "Der Agent möchte, dass du dich zuerst anmeldest"
 msgid ""
 "It cannot answer a prompt until somebody has logged in. Everything else "
 "keeps working; the prompt on screen was not sent."
-msgstr "Er kann keinen Prompt beantworten, bis sich jemand angemeldet hat. Alles andere funktioniert weiter; der Prompt auf dem Bildschirm wurde nicht gesendet."
+msgstr ""
+"Er kann keinen Prompt beantworten, bis sich jemand angemeldet hat. Alles "
+"andere funktioniert weiter; der Prompt auf dem Bildschirm wurde nicht "
+"gesendet."
 
 #: packages/core/src/failure.ts:309
 msgid "The model refused the request"
@@ -92,7 +108,10 @@ msgid ""
 "The provider turned this request down. It may be limited by region or rate, "
 "or it may need a login. Choose another model, or run lotse auth in a "
 "terminal."
-msgstr "Der Anbieter hat diese Anfrage abgewiesen. Sie ist möglicherweise nach Region oder Rate begrenzt, oder es braucht einen Login. Wähle ein anderes Modell oder führe lotse auth in einem Terminal aus."
+msgstr ""
+"Der Anbieter hat diese Anfrage abgewiesen. Sie ist möglicherweise nach "
+"Region oder Rate begrenzt, oder es braucht einen Login. Wähle ein anderes "
+"Modell oder führe lotse auth in einem Terminal aus."
 
 #: packages/core/src/failure.ts:326
 msgid "This model is not allowed here"
@@ -103,7 +122,10 @@ msgid ""
 "The app this chat is part of does not allow its data to be sent to this "
 "model, so the prompt was not sent. Choose another model from the list and "
 "send it again."
-msgstr "Die App, zu der dieser Chat gehört, erlaubt nicht, dass ihre Daten an dieses Modell gesendet werden, daher wurde der Prompt nicht gesendet. Wähle ein anderes Modell aus der Liste und sende ihn erneut."
+msgstr ""
+"Die App, zu der dieser Chat gehört, erlaubt nicht, dass ihre Daten an dieses "
+"Modell gesendet werden, daher wurde der Prompt nicht gesendet. Wähle ein "
+"anderes Modell aus der Liste und sende ihn erneut."
 
 #: packages/core/src/failure.ts:344
 msgid "The provider account has no credit"
@@ -113,7 +135,10 @@ msgstr "Das Konto beim Anbieter hat kein Guthaben"
 msgid ""
 "You are logged in, but the provider refused this request because the account "
 "has no credit. Choose a model that is free, or add credit at the provider."
-msgstr "Du bist angemeldet, aber der Anbieter hat diese Anfrage abgelehnt, weil das Konto kein Guthaben hat. Wähle ein kostenloses Modell oder lade Guthaben beim Anbieter auf."
+msgstr ""
+"Du bist angemeldet, aber der Anbieter hat diese Anfrage abgelehnt, weil das "
+"Konto kein Guthaben hat. Wähle ein kostenloses Modell oder lade Guthaben "
+"beim Anbieter auf."
 
 #: packages/core/src/failure.ts:356
 msgid "This agent cannot reopen this session"
@@ -124,18 +149,26 @@ msgid ""
 "It advertises neither session/load nor session/resume, so there is no way "
 "for lotse to attach it to a conversation that already exists. An agent lotse "
 "cannot reattach to is refused, not shown as an empty transcript."
-msgstr "Er bietet weder session/load noch session/resume an, daher kann lotse ihn nicht an eine bereits bestehende Unterhaltung anbinden. Ein Agent, an den sich lotse nicht wieder anbinden kann, wird abgelehnt statt als leeres Protokoll gezeigt."
+msgstr ""
+"Er bietet weder session/load noch session/resume an, daher kann lotse ihn "
+"nicht an eine bereits bestehende Unterhaltung anbinden. Ein Agent, an den "
+"sich lotse nicht wieder anbinden kann, wird abgelehnt statt als leeres "
+"Protokoll gezeigt."
 
 #: packages/core/src/model-policy.ts:208
 msgid ""
 "This model is not allowed here. Pick another one from the model list, then "
 "send."
-msgstr "Dieses Modell ist hier nicht erlaubt. Wähle ein anderes aus der Modellliste und sende dann."
+msgstr ""
+"Dieses Modell ist hier nicht erlaubt. Wähle ein anderes aus der Modellliste "
+"und sende dann."
 
 #: packages/core/src/model-policy.ts:213
 msgid ""
 "lotse cannot tell which model this agent would use, so nothing was sent."
-msgstr "lotse kann nicht erkennen, welches Modell dieser Agent verwenden würde, daher wurde nichts gesendet."
+msgstr ""
+"lotse kann nicht erkennen, welches Modell dieser Agent verwenden würde, "
+"daher wurde nichts gesendet."
 
 #: packages/core/src/onboarding.ts:80
 msgid "{n} provider"
@@ -159,7 +192,9 @@ msgstr "Anbieter verbinden"
 msgid ""
 "No provider is connected to this agent yet. Connect one to use your own "
 "models."
-msgstr "Mit diesem Agenten ist noch kein Anbieter verbunden. Verbinde einen, um deine eigenen Modelle zu nutzen."
+msgstr ""
+"Mit diesem Agenten ist noch kein Anbieter verbunden. Verbinde einen, um "
+"deine eigenen Modelle zu nutzen."
 
 #: packages/core/src/onboarding.ts:94
 msgid "Connect a provider…"
@@ -173,7 +208,9 @@ msgstr "Kostenlose gehostete Modelle nutzen"
 msgid ""
 "Free hosted models need no account. They are time-limited, and what you send "
 "goes to the provider that hosts them."
-msgstr "Kostenlose gehostete Modelle brauchen kein Konto. Sie sind zeitlich begrenzt, und was du sendest, geht an den Anbieter, der sie hostet."
+msgstr ""
+"Kostenlose gehostete Modelle brauchen kein Konto. Sie sind zeitlich "
+"begrenzt, und was du sendest, geht an den Anbieter, der sie hostet."
 
 #: packages/core/src/permission.ts:83
 msgid "Allow once"
@@ -198,6 +235,12 @@ msgstr "Erlauben"
 #: packages/core/src/permission.ts:379
 msgid "The agent calls these: {names}"
 msgstr "Der Agent ruft diese auf: {names}"
+
+#: packages/core/src/transcript-items.ts:359
+msgid "Thought"
+msgid_plural "{n} thoughts"
+msgstr[0] "Gedanke"
+msgstr[1] "{n} Gedanken"
 
 #: packages/widget/src/chat.blp:66
 msgid "New chat"
@@ -343,7 +386,9 @@ msgstr "Bei {provider} angemeldet."
 #: packages/widget/src/login-dialog.ts:213
 msgid ""
 "Send your prompt again; the agent has been restarted with the new login."
-msgstr "Sende deinen Prompt erneut; der Agent wurde mit dem neuen Login neu gestartet."
+msgstr ""
+"Sende deinen Prompt erneut; der Agent wurde mit dem neuen Login neu "
+"gestartet."
 
 #: packages/widget/src/login-dialog.ts:215
 #: packages/widget/src/provider-settings.ts:344
@@ -376,7 +421,9 @@ msgstr "Europa"
 msgid ""
 "Use your own subscription, account or API key. lotse stores nothing: the "
 "agent keeps it."
-msgstr "Nutze dein eigenes Abo, Konto oder deinen eigenen API-Schlüssel. lotse speichert nichts: Der Agent behält es."
+msgstr ""
+"Nutze dein eigenes Abo, Konto oder deinen eigenen API-Schlüssel. lotse "
+"speichert nichts: Der Agent behält es."
 
 #: packages/widget/src/login-dialog.ts:263
 msgid "Search providers"
@@ -449,7 +496,9 @@ msgstr "Von {provider} abmelden?"
 
 #: packages/widget/src/provider-settings.ts:180
 msgid "The agent forgets the login or key. You can connect again at any time."
-msgstr "Der Agent vergisst den Login oder Schlüssel. Du kannst dich jederzeit erneut verbinden."
+msgstr ""
+"Der Agent vergisst den Login oder Schlüssel. Du kannst dich jederzeit erneut "
+"verbinden."
 
 #: packages/widget/src/provider-settings.ts:190
 msgid "Custom providers"
@@ -459,7 +508,9 @@ msgstr "Eigene Anbieter"
 msgid ""
 "An OpenAI-compatible server of your own — Ollama, LM Studio, llama.cpp, vLLM "
 "or a gateway."
-msgstr "Ein eigener OpenAI-kompatibler Server — Ollama, LM Studio, llama.cpp, vLLM oder ein Gateway."
+msgstr ""
+"Ein eigener OpenAI-kompatibler Server — Ollama, LM Studio, llama.cpp, vLLM "
+"oder ein Gateway."
 
 #: packages/widget/src/provider-settings.ts:196
 msgid "Add…"

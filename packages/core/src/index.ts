@@ -30,6 +30,7 @@ export {
   N_,
   fmt,
   libraryTranslator,
+  hasLibraryTranslator,
   setLibraryTranslator,
   type LibraryTranslator,
 } from './i18n.ts';

@@ -61,6 +61,11 @@ export function setLibraryTranslator(translator: LibraryTranslator | null): void
   translate = translator ?? IDENTITY;
 }
 
+/** Whether a host or the app has registered a real translator already. */
+export function hasLibraryTranslator(): boolean {
+  return translate !== IDENTITY;
+}
+
 /** The registered translator, for a diagnostic or a test that wants to restore it. */
 export function libraryTranslator(): LibraryTranslator {
   return translate;
