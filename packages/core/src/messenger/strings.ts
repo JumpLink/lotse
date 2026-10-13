@@ -19,6 +19,7 @@ export const STRINGS = {
   missingText: 'Say what to answer after {id}, for example "{example}".',
   answerFailed: 'Could not apply the answer: {reason}',
   replyHintPermission: 'Reply: {id} yes or {id} no',
+  replyHintPerson: 'Reply: {id} done',
   replyHintReply: 'Reply: {id} <your answer>',
   validUntil: 'Valid until {time}',
   gotIt: 'Got it, {id}.',
@@ -44,4 +45,9 @@ export const STRINGS = {
   requestsInterrupted: '{count} requests were not completed (serve restarted). Please send them again.',
   answerShortened: '[shortened, {count} more characters]',
   answerPart: '({part}/{parts})',
+  personAsk: 'I need you: {origin} wants {kind}.',
+  personReplyCode: 'Reply "done" when you have done it yourself, or reply with the code and I will enter it.',
+  personReplyDone: 'Reply "done" when you are through.',
+  personCodeRefused: '{id} is no longer waiting for a code; reply "done" once you have done it yourself.',
+  personNeedsAnswer: '{id} needs "done"{orCode}.',
 } as const;

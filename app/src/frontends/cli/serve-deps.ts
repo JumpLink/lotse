@@ -5,14 +5,17 @@
  */
 
 import {
+  createPersonHost,
   openAgent,
   ServeConfigError,
   type AgentCommand,
   type AgentHandle,
   type LotsePaths,
   type ServeChannel,
+  requestSettings,
   type ServeDeps,
 } from '@lotse/core';
+import { messengerSettings, readSettings } from '../../core/settings.ts';
 
 import type { ServePaths } from '../../core/paths.ts';
 import { actionLog, questionBook, runState, taskLock } from '../../core/serve-state.ts';
@@ -82,6 +85,11 @@ export interface DepsOptions {
   readonly quiet: boolean;
 }
 
+function personDefaultMin(paths: LotsePaths): number {
+  const read = readSettings(paths.settingsFile);
+  return read.problem ? 30 : requestSettings(messengerSettings(read.settings)).personNeededMinutes;
+}
+
 export function serveDeps(options: DepsOptions): ServeDeps | null {
   const commands = agentsFor(options.paths, options.loaded);
   if (!commands) return null;
@@ -103,6 +111,8 @@ export function serveDeps(options: DepsOptions): ServeDeps | null {
     now,
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     lock: taskLock(stateDir),
+    personHost: createPersonHost(),
+    personDefaultMin: personDefaultMin(options.paths),
     log: actionLog(stateDir, now),
     ...(options.quiet ? {} : { onAgentLog: (line: string) => err(`  [agent] ${line}`) }),
   };

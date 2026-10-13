@@ -417,6 +417,14 @@ export class PreferencesDialog {
       if (!this.#rendering) save({ maxConcurrent: Math.round(concurrent.get_value()) });
     });
     group.add(concurrent);
+    const person = Adw.SpinRow.new_with_range(1, 1440, 5);
+    person.set_title('Wait for you (minutes)');
+    person.set_subtitle('How long a task waits when only you can go on. Then it is deferred.');
+    person.set_value(current.personNeededMinutes);
+    person.connect('notify::value', () => {
+      if (!this.#rendering) save({ personNeededMinutes: Math.round(person.get_value()) });
+    });
+    group.add(person);
     this.#requests = group;
     return group;
   }

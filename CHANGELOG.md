@@ -6,6 +6,14 @@ and also records changes that are not a release of their own.
 
 ## Unreleased
 
+### Added
+
+- **`person_needed`: a running task can ask for you.** A task with `personNeeded: {enabled}` tells you
+  that only you can go on (a login, a code, an approval), waits, and continues on `done` or on a code you
+  reply with. No reply in time leaves a deferred open question in `lotse questions`. The code never
+  reaches the store, the log or a transcript, and a task that may receive one is refused on a free model.
+  The wait is a setting (Preferences, `--person-needed-minutes`). See `docs/serve.md`.
+
 ### Changed
 
 - **Chat messages are styled for XMPP and carry images.** The messenger channel turns the agent's Markdown

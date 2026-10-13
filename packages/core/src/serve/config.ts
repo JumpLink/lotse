@@ -118,11 +118,20 @@ export interface ServeTask {
   readonly questions: QuestionLimits;
   /** `questions`: notify only when the agent asks. `always`: also send the run's answer. */
   readonly notify: 'questions' | 'always';
+  /** The `person_needed` tool. `timeoutMin` `null`: the settings' default. */
+  readonly personNeeded: PersonNeededConfig;
   /** Narrows the profile's `channels` (the intersection); `null`: the profile's. */
   readonly channels: readonly ChannelName[] | null;
   /** `notice` tightens the profile's `messengerDetail`, never loosens it; `null`: the profile's. */
   readonly messengerDetail: MessengerDetail | null;
 }
+
+export interface PersonNeededConfig {
+  readonly enabled: boolean;
+  readonly timeoutMin: number | null;
+}
+
+export const PERSON_NEEDED_OFF: PersonNeededConfig = { enabled: false, timeoutMin: null };
 
 export interface ServeConfig {
   readonly users: readonly ServeUser[];
@@ -170,6 +179,7 @@ const KEYS = {
   precheck: schemaKeys(SERVE_CONFIG_SCHEMA.$defs.precheck),
   released: schemaKeys(SERVE_CONFIG_SCHEMA.$defs.task.properties.released.items),
   questions: schemaKeys(SERVE_CONFIG_SCHEMA.$defs.task.properties.questions),
+  personNeeded: schemaKeys(SERVE_CONFIG_SCHEMA.$defs.task.properties.personNeeded),
 };
 
 /** Parse and validate. Throws `ServeConfigError` listing every problem. */
@@ -396,7 +406,23 @@ function parseTask(value: unknown, where: string, problems: string[]): ServeTask
     released,
     questions: parseLimits(record['questions'], label, problems),
     notify: notify === 'always' ? 'always' : 'questions',
+    personNeeded: parsePersonNeeded(record['personNeeded'], label, problems),
     ...parseDelivery(record, label, problems),
+  };
+}
+
+function parsePersonNeeded(value: unknown, label: string, problems: string[]): PersonNeededConfig {
+  if (value === undefined) return PERSON_NEEDED_OFF;
+  const where = `${label}.personNeeded`;
+  const record = object(value, where, problems, KEYS.personNeeded);
+  const enabled = record['enabled'] ?? false;
+  if (typeof enabled !== 'boolean') problems.push(`${where}.enabled must be true or false`);
+  const timeout = record['timeoutMin'];
+  if (timeout !== undefined && (typeof timeout !== 'number' || !Number.isInteger(timeout) || timeout < 1))
+    problems.push(`${where}.timeoutMin must be a whole number of minutes, 1 or more`);
+  return {
+    enabled: enabled === true,
+    timeoutMin: typeof timeout === 'number' && Number.isInteger(timeout) && timeout >= 1 ? timeout : null,
   };
 }
 
