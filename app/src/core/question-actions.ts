@@ -10,6 +10,7 @@
  * plain notification of before, whose body still names `lotse answer`.
  */
 
+import { _ } from '../i18n.ts';
 import { quickReplies, type QuestionKind } from '@lotse/core';
 
 import type { DesktopMode } from './settings.ts';
@@ -48,8 +49,8 @@ export type QuickReply = 'yes' | 'no';
  * and says so — the same words as the run's resolution, "allowed once".
  */
 export function quickReplyLabel(reply: QuickReply, kind: QuestionKind): string {
-  if (kind === 'permission') return reply === 'yes' ? 'Allow once' : 'Decline';
-  return reply === 'yes' ? 'Yes' : 'No';
+  if (kind === 'permission') return reply === 'yes' ? _('Allow once') : _('Decline');
+  return reply === 'yes' ? _('Yes') : _('No');
 }
 
 /**
@@ -63,7 +64,7 @@ export function notificationActions(
   dialog: boolean,
 ): string[] {
   if (!asks || !capabilities.includes('actions')) return [];
-  const actions = dialog ? [DEFAULT_ACTION, 'Answer…', DIALOG_ACTION, 'Answer…'] : [];
+  const actions = dialog ? [DEFAULT_ACTION, _('Answer…'), DIALOG_ACTION, _('Answer…')] : [];
   for (const reply of quickReplies(asks))
     actions.push(`${REPLY_PREFIX}${reply}`, quickReplyLabel(reply, asks));
   return actions;

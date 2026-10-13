@@ -4,7 +4,7 @@ import { newSession, type SessionRecord } from '@lotse/session';
 
 import {
   GROUP_ORDER,
-  GROUP_TITLES,
+  groupTitles,
   groupByDate,
   groupOf,
   timeLabelOf,
@@ -285,7 +285,7 @@ export default async () => {
     });
 
     await it('has a title for every section in GROUP_ORDER', async () => {
-      expect(GROUP_ORDER.map((label) => GROUP_TITLES[label])).toStrictEqual([
+      expect(GROUP_ORDER.map((label) => groupTitles()[label])).toStrictEqual([
         'Today',
         'Yesterday',
         'This week',

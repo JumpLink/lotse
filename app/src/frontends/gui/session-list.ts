@@ -29,7 +29,7 @@ import { basename } from 'node:path';
 
 import { labelOf, type SessionRecord } from '@lotse/session';
 
-import { GROUP_TITLES, groupByDate, groupOf, timeLabelOf } from '../../core/session-groups.ts';
+import { groupTitles, groupByDate, groupOf, timeLabelOf } from '../../core/session-groups.ts';
 import { CSS } from './css.ts';
 
 export interface SessionListOptions {
@@ -230,10 +230,10 @@ export class SessionList {
     // Rebuilt only when it changes: GTK calls this on every invalidation, and a new label each time
     // would churn widgets for a header that says the same word.
     const current = row.get_header();
-    if (current instanceof Gtk.Label && current.label === GROUP_TITLES[group]) return;
+    if (current instanceof Gtk.Label && current.label === groupTitles()[group]) return;
     row.set_header(
       new Gtk.Label({
-        label: GROUP_TITLES[group],
+        label: groupTitles()[group],
         xalign: 0,
         cssClasses: [CSS.dateHeader, CSS.dim],
       }),
