@@ -38,6 +38,11 @@ const TOOL = {
         description:
           'The person may reply with the code (4-10 letters or digits) instead of doing it themselves.',
       },
+      link: {
+        type: 'string',
+        description:
+          'Optional. A link the person must open or scan on their own device, exactly as the site showed it (for example the content of a login QR code). Pass it on unchanged; never log or repeat it elsewhere.',
+      },
       timeoutMin: { type: 'integer', minimum: 1, description: 'Minutes to wait. Omit for the default.' },
     },
     required: ['kind', 'origin', 'prompt'],
@@ -50,11 +55,13 @@ function parseInput(value: unknown): PersonNeededInput | string {
   const args = value as Record<string, unknown>;
   const kind = args['kind'];
   if (!PERSON_KINDS.includes(kind as PersonKind)) return `kind must be one of ${PERSON_KINDS.join(', ')}`;
-  const { origin, prompt, acceptsCode, timeoutMin } = args;
+  const { origin, prompt, acceptsCode, link, timeoutMin } = args;
   if (typeof origin !== 'string' || origin.trim() === '') return 'origin must be a non-empty string';
   if (typeof prompt !== 'string') return 'prompt must be a string';
   if (acceptsCode !== undefined && typeof acceptsCode !== 'boolean')
     return 'acceptsCode must be true or false';
+  if (link !== undefined && (typeof link !== 'string' || link.trim() === ''))
+    return 'link must be a non-empty string';
   if (
     timeoutMin !== undefined &&
     (typeof timeoutMin !== 'number' || !Number.isInteger(timeoutMin) || timeoutMin < 1)
@@ -65,6 +72,7 @@ function parseInput(value: unknown): PersonNeededInput | string {
     origin: origin.trim(),
     prompt,
     acceptsCode: acceptsCode === true,
+    ...(typeof link === 'string' ? { link: link.trim() } : {}),
     ...(typeof timeoutMin === 'number' ? { timeoutMin } : {}),
   };
 }

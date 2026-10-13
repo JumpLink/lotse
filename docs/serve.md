@@ -138,7 +138,7 @@ A task with `personNeeded: {enabled: true, timeoutMin?}` gets an MCP tool, `pers
 step is yours alone, for example a beifahrer recipe that returns `status: "needs_person"`:
 
 ```
-person_needed({kind: "login"|"code"|"approval"|"device", origin, prompt, acceptsCode, timeoutMin?})
+person_needed({kind: "login"|"code"|"approval"|"device", origin, prompt, acceptsCode, link?, timeoutMin?})
   → {outcome: "done" | "code" | "timeout" | "declined", code?}
 ```
 
@@ -150,17 +150,20 @@ Preferences → "Wait for you", `lotse messenger --person-needed-minutes`).
 - With `acceptsCode: true` you may reply with the code (4–10 letters or digits) → `code`, and the agent
   enters it. The code lives only in `serve`'s memory: never in the question store, the log, a transcript or a
   message from lotse (`••••`).
+- With `link` (a login QR code's content, from `person.link`) the message carries "Open or scan this: <link>".
+  It is a session challenge: it goes into the message only — not into the question store or the log — and,
+  like a code, is refused on a free or hosted-for-free model.
 - No reply in time → `timeout`. The run goes on without you and the question stays open as *deferred*:
   `lotse questions` lists it. A later `done` continues the session; a late code is refused.
 
 Prompt it like this:
 
 > If a beifahrer `recipe_run` returns `needs_person`, call `person_needed` with its `person` fields
-> (`acceptsCode` from `person.acceptsCode`). On `done`, `recipe_run` again with `from: <next>`. On `code`,
+> (`acceptsCode` from `person.acceptsCode`, `link` from `person.link` when there is one). On `done`, `recipe_run` again with `from: <next>`. On `code`,
 > the same with the code as the param named `person.codeParam`. On `timeout` or `declined`, stop and
 > report what is still open. Never call it twice in a row.
 
-Rules: only one waiting call per conversation. A task that may receive a code must not run on a free or
+Rules: only one waiting call per conversation. A task that may receive a code or a link must not run on a free or
 hosted-for-free model, and the profile must name its model; otherwise the call is refused with a clear
 error. The deferred item reaches the daily reminder task only if its prompt reads `lotse questions`
 (the reminder MCP has no write tool).

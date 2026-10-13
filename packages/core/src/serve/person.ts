@@ -34,6 +34,12 @@ export interface PersonNeededInput {
   readonly origin: string;
   readonly prompt: string;
   readonly acceptsCode: boolean;
+  /**
+   * A link the person has to open or scan on their own device (a login QR code's content). It is a
+   * session challenge: it goes into the message and nowhere else — not into the question book, not
+   * into a log — and a free hosted model may not carry it.
+   */
+  readonly link?: string;
   /** Minutes to wait. Absent: the task's, else the settings' default. */
   readonly timeoutMin?: number;
 }
@@ -110,19 +116,20 @@ export function personRefusal(
   input: PersonNeededInput,
 ): string | null {
   if (!task.personNeeded.enabled) return `task "${task.id}" does not have person_needed enabled`;
-  if (!input.acceptsCode) return null;
+  if (!input.acceptsCode && !input.link) return null;
   if (!profile.model)
-    return `person_needed with acceptsCode needs a profile that names its model: "${profile.id}" names none, so lotse cannot tell it is not a free hosted one`;
+    return `person_needed with acceptsCode or link needs a profile that names its model: "${profile.id}" names none, so lotse cannot tell it is not a free hosted one`;
   if (isFreeModel(profile.model))
-    return `person_needed with acceptsCode is refused on the free model "${profile.model}": a code must not reach a free hosted model`;
+    return `person_needed with acceptsCode or link is refused on the free model "${profile.model}": a code or link must not reach a free hosted model`;
   return null;
 }
 
-/** What the person is shown. */
-export function personText(input: PersonNeededInput): string {
+/** What the person is shown. `withLink` is false for the copy that is stored. */
+export function personText(input: PersonNeededInput, withLink = true): string {
   const lines = [
     msg(STRINGS.personAsk, { origin: input.origin, kind: input.kind }),
     input.prompt.trim(),
+    withLink && input.link ? msg(STRINGS.personLink, { link: input.link }) : '',
     msg(input.acceptsCode ? STRINGS.personReplyCode : STRINGS.personReplyDone),
   ];
   return lines.filter((line) => line !== '').join('\n');
