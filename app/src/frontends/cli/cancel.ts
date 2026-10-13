@@ -38,7 +38,7 @@ const command = (paths: LotsePaths): CommandModule => ({
     const record = store.get(id);
     const agentId = pickArgv<string>(raw, 'agent') ?? record?.agent;
     if (!agentId) {
-      err(fmt(_('no session with id {id} and no --agent — \`lotse sessions\` lists what lotse has'), { id }));
+      err(fmt(_('no session with id {id} and no --agent — `lotse sessions` lists what lotse has'), { id }));
       process.exitCode = 1;
       return;
     }
