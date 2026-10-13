@@ -39,6 +39,7 @@
  * chat is the way out: it retires the dead agent and the next prompt starts a fresh one.
  */
 
+import { _ } from './i18n.ts';
 import type { ModelBlock } from './model-policy.ts';
 import type { AgentStatus } from './turn.ts';
 
@@ -96,9 +97,9 @@ export interface ComposerView {
 }
 
 /** Nothing to send to yet, because nothing is started yet — but nothing is open either. */
-const NOTHING_TO_SEND_TO = 'No agent is attached to this window yet, so there is nothing to send to.';
+const nothingToSendTo = () => _('No agent is attached to this window yet, so there is nothing to send to.');
 /** An agent is one moment away, or a message has nowhere to go. Both block Send; both are said. */
-const NO_SESSION_OPEN = 'No session is open, so there is nowhere to send this. Pick one from the list.';
+const noSessionOpen = () => _('No session is open, so there is nowhere to send this. Pick one from the list.');
 
 /**
  * The whole render decision, in one function.
@@ -123,7 +124,7 @@ export function composerView(input: ComposerInput): ComposerView {
       // Not a reason for a sensitive button; the label says "Stop" and the status line says why.
       reason: '',
       status:
-        state === 'thinking' ? 'Working — the agent is answering.' : 'The agent is waiting for your answer.',
+        state === 'thinking' ? _('Working — the agent is answering.') : _('The agent is waiting for your answer.'),
     };
   }
 
@@ -144,7 +145,7 @@ export function composerView(input: ComposerInput): ComposerView {
       entryEditable: false,
       // The turn's own state is the reason here, not the agent's: the turn is what ended. The agent
       // sentence would say the same thing in words that belong to a different failure.
-      reason: 'The agent exited. Press New chat to send another prompt.',
+      reason: _('The agent exited. Press New chat to send another prompt.'),
       status: '',
     };
   }
@@ -158,7 +159,7 @@ export function composerView(input: ComposerInput): ComposerView {
       entryEditable: true,
       // The agent's own sentence when it has one; the fallback keeps a caller that forgot to say
       // anything from rendering an empty reason under a disabled button.
-      reason: agent.note || NOTHING_TO_SEND_TO,
+      reason: agent.note || nothingToSendTo(),
       status: '',
     };
   }
@@ -168,7 +169,7 @@ export function composerView(input: ComposerInput): ComposerView {
       action: 'send',
       buttonEnabled: false,
       entryEditable: true,
-      reason: NO_SESSION_OPEN,
+      reason: noSessionOpen(),
       // The empty state above the composer already says to pick or start a chat.
       reasonOnPage: true,
       status: '',
@@ -196,7 +197,7 @@ export function composerView(input: ComposerInput): ComposerView {
       // The one place a non-empty `status` sits next to a working button, and the reason it is
       // short: nothing is running, the turn ended early, and a person needs to know that their last
       // message was cut off rather than answered.
-      status: 'Stopped.',
+      status: _('Stopped.'),
     };
   }
 

@@ -15,6 +15,7 @@
  * **Log in…** button. Nothing here reads, keeps or logs a credential: it counts providers.
  */
 
+import { _, _n, fmt } from './i18n.ts';
 import type { ConfiguredProvider } from './custom/api.ts';
 import type { LoginProvider } from './login/providers.ts';
 
@@ -76,7 +77,7 @@ export interface OnboardingView {
   readonly freeNote: string;
 }
 
-const count = (n: number): string => `${n} provider${n === 1 ? '' : 's'}`;
+const count = (n: number): string => fmt(_n('{n} provider', '{n} providers', n), { n });
 
 /** The onboarding page, or `null` when the ordinary chat page is the right one. */
 export function onboardingView(input: OnboardingInput): OnboardingView | null {
@@ -84,15 +85,16 @@ export function onboardingView(input: OnboardingInput): OnboardingView | null {
   if (input.connection.kind !== 'none') return null;
   const { browser, key } = input.connection;
   const paths: OnboardingPath[] = [];
-  if (browser > 0) paths.push({ label: 'Browser login', detail: count(browser) });
-  if (key > 0) paths.push({ label: 'API key', detail: count(key) });
+  if (browser > 0) paths.push({ label: _('Browser login'), detail: count(browser) });
+  if (key > 0) paths.push({ label: _('API key'), detail: count(key) });
   return {
-    title: 'Connect a provider',
-    body: 'No provider is connected to this agent yet. Connect one to use your own models.',
+    title: _('Connect a provider'),
+    body: _('No provider is connected to this agent yet. Connect one to use your own models.'),
     paths,
-    connect: 'Connect a provider…',
-    free: 'Use free hosted models',
-    freeNote:
+    connect: _('Connect a provider…'),
+    free: _('Use free hosted models'),
+    freeNote: _(
       'Free hosted models need no account. They are time-limited, and what you send goes to the provider that hosts them.',
+    ),
   };
 }

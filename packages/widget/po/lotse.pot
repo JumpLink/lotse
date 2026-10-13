@@ -8,14 +8,67 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-12 23:39+0200\n"
+"POT-Creation-Date: 2026-10-13 07:54+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: packages/core/src/failure.ts:297
+msgid "The agent wants you to log in first"
+msgstr ""
+
+#: packages/core/src/failure.ts:299
+msgid ""
+"It cannot answer a prompt until somebody has logged in. Everything else "
+"keeps working; the prompt on screen was not sent."
+msgstr ""
+
+#: packages/core/src/failure.ts:309
+msgid "The model refused the request"
+msgstr ""
+
+#: packages/core/src/failure.ts:317
+msgid ""
+"The provider turned this request down. It may be limited by region or rate, "
+"or it may need a login. Choose another model, or run lotse auth in a "
+"terminal."
+msgstr ""
+
+#: packages/core/src/failure.ts:326
+msgid "This model is not allowed here"
+msgstr ""
+
+#: packages/core/src/failure.ts:334
+msgid ""
+"The app this chat is part of does not allow its data to be sent to this "
+"model, so the prompt was not sent. Choose another model from the list and "
+"send it again."
+msgstr ""
+
+#: packages/core/src/failure.ts:344
+msgid "The provider account has no credit"
+msgstr ""
+
+#: packages/core/src/failure.ts:348
+msgid ""
+"You are logged in, but the provider refused this request because the account "
+"has no credit. Choose a model that is free, or add credit at the provider."
+msgstr ""
+
+#: packages/core/src/failure.ts:356
+msgid "This agent cannot reopen this session"
+msgstr ""
+
+#: packages/core/src/failure.ts:358
+msgid ""
+"It advertises neither session/load nor session/resume, so there is no way "
+"for lotse to attach it to a conversation that already exists. An agent lotse "
+"cannot reattach to is refused, not shown as an empty transcript."
+msgstr ""
 
 #: packages/widget/src/chat.blp:66
 msgid "New chat"
@@ -31,4 +84,44 @@ msgstr ""
 
 #: packages/widget/src/chat.blp:105
 msgid "No prompt has been sent in this session yet. The first one starts it."
+msgstr ""
+
+#: packages/widget/src/composer.ts:101
+msgid "Send"
+msgstr ""
+
+#: packages/widget/src/composer.ts:102
+msgid "Stop"
+msgstr ""
+
+#: packages/widget/src/composer.ts:110
+msgid "Send this message to the agent."
+msgstr ""
+
+#: packages/widget/src/composer.ts:111
+msgid "Stop the running turn."
+msgstr ""
+
+#: packages/widget/src/composer.ts:114
+msgid "Ask the agent…"
+msgstr ""
+
+#: packages/widget/src/failure-dialog.ts:19
+msgid "Close"
+msgstr ""
+
+#: packages/widget/src/failure-dialog.ts:22
+msgid "Choose another model"
+msgstr ""
+
+#: packages/widget/src/failure-dialog.ts:24
+msgid "Log in…"
+msgstr ""
+
+#: packages/widget/src/failure-dialog.ts:86
+msgid "Or run `{command}` in a terminal."
+msgstr ""
+
+#: packages/widget/src/failure-dialog.ts:86
+msgid "Run `{command}` in a terminal."
 msgstr ""

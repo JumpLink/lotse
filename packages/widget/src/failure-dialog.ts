@@ -12,16 +12,16 @@
 import Adw from '@girs/adw-1';
 import type Gtk from '@girs/gtk-4.0';
 
-import type { FailureNotice } from '@lotse/core';
+import { _, fmt, type FailureNotice } from '@lotse/core';
 
 /** The dismissal, and the only string in here that is not part of a sentence. */
 const CLOSE_RESPONSE = 'close';
-const CLOSE_LABEL = 'Close';
+const closeLabel = () => _('Close');
 /** The one remedy a failure can offer, and lotse's own words for it. See `core/failure.ts`. */
 const MODEL_RESPONSE = 'choose-model';
-const MODEL_LABEL = 'Choose another model';
+const modelLabel = () => _('Choose another model');
 const LOGIN_RESPONSE = 'login';
-const LOGIN_LABEL = 'Log in…';
+const loginLabel = () => _('Log in…');
 
 /**
  * The callbacks this dialog may be given, one per `FailureAction`.
@@ -83,7 +83,7 @@ export class FailureDialog {
     // for this window). The sentence already names it.
     if (notice.command !== null) {
       const alternative = notice.action === 'login' && typeof actions.onLogin === 'function';
-      dialog.body = `${notice.body}\n\n${alternative ? 'Or run' : 'Run'} \`${notice.command}\` in a terminal.`;
+      dialog.body = `${notice.body}\n\n${fmt(alternative ? _('Or run `{command}` in a terminal.') : _('Run `{command}` in a terminal.'), { command: notice.command })}`;
     }
     // **Both halves of the availability test, and neither is the other's job.** `notice.action` is what
     // the failure offers (`core/failure.ts`'s `failureNotice`); the callback is whether *this* window
@@ -98,9 +98,9 @@ export class FailureDialog {
     // opposite reason: there, no button answered anything, so the safest one had to be the easiest to hit;
     // here one button is the whole point of the dialog and the other is Escape, which libadwaita binds to
     // `close` on its own.
-    dialog.add_response(CLOSE_RESPONSE, CLOSE_LABEL);
+    dialog.add_response(CLOSE_RESPONSE, closeLabel());
     if (chooseModel) {
-      dialog.add_response(MODEL_RESPONSE, MODEL_LABEL);
+      dialog.add_response(MODEL_RESPONSE, modelLabel());
       dialog.set_response_appearance(MODEL_RESPONSE, Adw.ResponseAppearance.SUGGESTED);
       // **Named, not left to the add order** — the same choice `buildDialog` makes in
       // `permission-dialog.ts`. Measured there: with no `default_response` libadwaita focuses the
@@ -116,7 +116,7 @@ export class FailureDialog {
     // The login button follows the same two-halves rule as the model button above: the notice offers it,
     // the callback says this window can do it. It is the remedy, so it is suggested and focused.
     if (notice.action === 'login' && typeof actions.onLogin === 'function') {
-      dialog.add_response(LOGIN_RESPONSE, LOGIN_LABEL);
+      dialog.add_response(LOGIN_RESPONSE, loginLabel());
       dialog.set_response_appearance(LOGIN_RESPONSE, Adw.ResponseAppearance.SUGGESTED);
       dialog.set_default_response(LOGIN_RESPONSE);
       dialog.connect('response', (_dialog: Adw.AlertDialog, response: string) => {

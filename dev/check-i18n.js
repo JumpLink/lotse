@@ -122,6 +122,7 @@ try {
         '--from-code=UTF-8',
         '--language=JavaScript',
         '--keyword=_',
+        '--keyword=N_',
         '--keyword=_n:1,2',
         '--keyword=_p:1c,2',
         '--keyword=C_:1c,2',

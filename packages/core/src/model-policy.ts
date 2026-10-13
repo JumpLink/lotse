@@ -45,6 +45,7 @@
  * from a model they never picked.
  */
 
+import { _, N_ } from './i18n.ts';
 import type { SessionConfigOption } from '@lotse/acp/types';
 
 import { MODEL_CATEGORY, projectConfigOptions } from './config.ts';
@@ -203,12 +204,14 @@ export interface ModelBlock {
  * repeating it in a caption adds a line of agent text to a label for no information. What a person
  * needs is the one thing they can do.
  */
-export const MODEL_DENIED_REASON =
-  'This model is not allowed here. Pick another one from the model list, then send.';
+export const MODEL_DENIED_REASON = N_(
+  'This model is not allowed here. Pick another one from the model list, then send.',
+);
 
 /** The sentence for a model lotse cannot name. It says what happened and does not blame the agent. */
-export const MODEL_UNKNOWN_REASON =
-  'lotse cannot tell which model this agent would use, so nothing was sent.';
+export const MODEL_UNKNOWN_REASON = N_(
+  'lotse cannot tell which model this agent would use, so nothing was sent.',
+);
 
 /**
  * Whether a prompt may go out, as data.
@@ -227,16 +230,16 @@ export function modelBlock(
 ): ModelBlock | null {
   if (policy === undefined) return null;
   if (options === null || options === undefined) {
-    return { cause: 'unknown', reason: MODEL_UNKNOWN_REASON };
+    return { cause: 'unknown', reason: _(MODEL_UNKNOWN_REASON) };
   }
   const control = projectConfigOptions(options).find(
     (candidate) => candidate.category === MODEL_CATEGORY && candidate.kind === 'select',
   );
   if (control === undefined || control.kind !== 'select') {
-    return { cause: 'unknown', reason: MODEL_UNKNOWN_REASON };
+    return { cause: 'unknown', reason: _(MODEL_UNKNOWN_REASON) };
   }
   if (modelAllowed(policy, control.currentValue)) return null;
-  return { cause: 'denied', reason: MODEL_DENIED_REASON };
+  return { cause: 'denied', reason: _(MODEL_DENIED_REASON) };
 }
 
 /**

@@ -27,6 +27,7 @@ export {
   _,
   _n,
   _p,
+  N_,
   fmt,
   libraryTranslator,
   setLibraryTranslator,

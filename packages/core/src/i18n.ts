@@ -66,6 +66,14 @@ export function libraryTranslator(): LibraryTranslator {
   return translate;
 }
 
+/**
+ * Mark a msgid that has to stay a constant (an exported one, or one a test compares against) and
+ * translate it where it is shown: `_(CONSTANT)`. Identity at run time; `dev/i18n.sh` collects it.
+ */
+export function N_(msgid: string): string {
+  return msgid;
+}
+
 /** Translate one string. */
 export function _(msgid: string): string {
   return translate(msgid);

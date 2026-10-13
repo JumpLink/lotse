@@ -36,6 +36,7 @@
  * and the no-timeout rule are what keep that button honest — the word "Always" is on it, and nobody
  * answered anything, so it was never chosen.
  */
+import { _, fmt } from './i18n.ts';
 import type {
   PermissionOption,
   RequestPermissionRequest,
@@ -78,12 +79,12 @@ export type PermissionView = {
  * whole point of showing `allow_always` is that a person can tell which promise they are making, so
  * the difference is the first thing they read: *once* against *always*.
  */
-const KIND_WORDS: Record<PermissionOption['kind'], string> = {
-  allow_once: 'Allow once',
-  allow_always: 'Always allow',
-  reject_once: 'Decline',
-  reject_always: 'Always decline',
-};
+const kindWords = (): Record<PermissionOption['kind'], string> => ({
+  allow_once: _('Allow once'),
+  allow_always: _('Always allow'),
+  reject_once: _('Decline'),
+  reject_always: _('Always decline'),
+});
 
 /**
  * How long each field may be before it is cut, and what "cut" looks like.
@@ -350,7 +351,7 @@ export function optionLabel(option: PermissionOption): string {
   // exactly four kinds and both surfaces filter to them, but this function is exported and a direct
   // caller can hold anything the type allows — so the fallback is lotse's own word, never the
   // agent's name on its own, which is the one thing this function exists to prevent.
-  const ours = KIND_WORDS[option.kind] ?? (option.kind.startsWith('allow') ? 'Allow' : 'Decline');
+  const ours = kindWords()[option.kind] ?? (option.kind.startsWith('allow') ? _('Allow') : _('Decline'));
   return escapeMnemonic(ours);
 }
 
@@ -371,11 +372,11 @@ export function agentNames(options: readonly PermissionOption[]): string | null 
   const extra: string[] = [];
   for (const option of options) {
     const theirs = option.name.trim();
-    if (theirs.length === 0 || saysTheSame(KIND_WORDS[option.kind] ?? '', theirs)) continue;
+    if (theirs.length === 0 || saysTheSame(kindWords()[option.kind] ?? '', theirs)) continue;
     extra.push(`"${cap(theirs, LIMITS.agentName)}"`);
   }
   if (extra.length === 0) return null;
-  return `The agent calls these: ${extra.join(', ')}`;
+  return fmt(_('The agent calls these: {names}'), { names: extra.join(', ') });
 }
 
 /** Whether the agent's name already states what the kind states, so repeating it adds nothing. */
