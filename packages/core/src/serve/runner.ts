@@ -991,15 +991,20 @@ function howToAnswer(question: Question): string {
     : `Answer: lotse answer ${id} <text> — expires ${question.expiresAt}`;
 }
 
-async function notify(question: Question, user: ServeUser, deps: ServeDeps): Promise<void> {
+async function notify(
+  question: Question,
+  user: ServeUser,
+  deps: ServeDeps,
+  shown: string = question.text,
+): Promise<void> {
   try {
     await deps.channel.send(user, {
       title: `lotse · ${question.task} · ${formatQuestionId(question.id)}`,
-      body: `${question.text}\n\n${howToAnswer(question)}`,
+      body: `${shown}\n\n${howToAnswer(question)}`,
       questionId: question.id,
       task: question.task,
       asks: question.kind,
-      text: question.text,
+      text: shown,
       expiresAt: question.expiresAt,
     });
   } catch (error) {
@@ -1114,7 +1119,7 @@ async function personNeeded(
   const waitMin =
     input.timeoutMin ?? task.personNeeded.timeoutMin ?? deps.personDefaultMin ?? DEFAULT_PERSON_TIMEOUT_MIN;
   const deadline = now.getTime() + waitMin * 60_000;
-  const created = newQuestion(book, task, user, 'person', sessionId, null, personText(input), now);
+  const created = newQuestion(book, task, user, 'person', sessionId, null, personText(input, false), now);
   const question: Question = {
     ...created,
     acceptsCode: input.acceptsCode,
@@ -1128,7 +1133,7 @@ async function personNeeded(
     detail: { question: question.id, kind: 'person', session: sessionId },
   });
   try {
-    await notify(question, user, deps);
+    await notify(question, user, deps, personText(input));
     for (;;) {
       const current = findQuestions(deps.questions.read(), question.id, user.id)[0];
       if (!current || current.status === 'cancelled' || current.status === 'expired')

@@ -143,6 +143,29 @@ export default async () => {
       expect(h.sent[0]!.text).toContain('example.test');
     });
 
+    await it('a link reaches the person in the message and nowhere else', async () => {
+      const LINK = 'https://example.test/qr?challenge=zz81';
+      const h = harness(config(), async (call) => void (await call({ ...INPUT, link: LINK })));
+      h.onSleep = async () => {
+        if (h.book[0]?.status === 'open') await answerQuestion('#A1', CODE, h.deps);
+      };
+      await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(h.sent[0]!.text).toContain(LINK);
+      expect(JSON.stringify([h.book, h.log]).includes('challenge=zz81')).toBe(false);
+    });
+
+    await it('a link is refused on a free model and on an unknown one', async () => {
+      const task = config().tasks[0]!;
+      const input = { ...INPUT, acceptsCode: false, link: 'https://example.test/qr' };
+      expect(
+        personRefusal(task, config({ model: 'opencode/some-model-free' }).profiles[0]!, input),
+      ).toContain('free model');
+      expect(personRefusal(task, { ...config().profiles[0]!, model: null }, input)).toContain(
+        'names its model',
+      );
+      expect(personRefusal(task, config().profiles[0]!, input)).toBe(null);
+    });
+
     await it('a code reply is handed to the call and kept out of every record', async () => {
       let outcome: PersonOutcome | null = null;
       let said = '';
