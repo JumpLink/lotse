@@ -99,7 +99,8 @@ export interface ComposerView {
 /** Nothing to send to yet, because nothing is started yet — but nothing is open either. */
 const nothingToSendTo = () => _('No agent is attached to this window yet, so there is nothing to send to.');
 /** An agent is one moment away, or a message has nowhere to go. Both block Send; both are said. */
-const noSessionOpen = () => _('No session is open, so there is nowhere to send this. Pick one from the list.');
+const noSessionOpen = () =>
+  _('No session is open, so there is nowhere to send this. Pick one from the list.');
 
 /**
  * The whole render decision, in one function.
@@ -124,7 +125,9 @@ export function composerView(input: ComposerInput): ComposerView {
       // Not a reason for a sensitive button; the label says "Stop" and the status line says why.
       reason: '',
       status:
-        state === 'thinking' ? _('Working — the agent is answering.') : _('The agent is waiting for your answer.'),
+        state === 'thinking'
+          ? _('Working — the agent is answering.')
+          : _('The agent is waiting for your answer.'),
     };
   }
 
