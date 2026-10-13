@@ -39,6 +39,8 @@ import type Gtk from '@girs/gtk-4.0';
 import type { AgentSource, SessionRecord, TranscriptEntry } from '@lotse/session';
 
 import {
+  _,
+  fmt,
   AgentSession,
   LoginController,
   ProviderSettingsController,
@@ -484,7 +486,7 @@ export class LotseChat extends Adw.Bin {
     this.#permissions.close();
     this.#transcript.setEntries([]);
     this._stack.visibleChildName = this.#unavailable ? 'no-agent' : this.#newPage();
-    this._cwdCaption.label = `Working in ${displayCwd(chat.cwd, chat.home)}`;
+    this._cwdCaption.label = fmt(_('Working in {path}'), { path: displayCwd(chat.cwd, chat.home) });
     this._cwdCaption.visible = !this.#unavailable;
   }
 
@@ -769,7 +771,7 @@ export class LotseChat extends Adw.Bin {
 
   /** The same page in a dialog of its own, for a host without a preferences dialog to put it in. */
   openProviderSettings(): void {
-    const dialog = new Adw.PreferencesDialog({ title: 'Providers' });
+    const dialog = new Adw.PreferencesDialog({ title: _('Providers') });
     dialog.add(this.providerSettingsPage());
     dialog.present(this);
   }

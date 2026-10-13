@@ -51,6 +51,7 @@ import Pango from '@girs/pango-1.0';
 import type { TranscriptEntry } from '@lotse/session';
 
 import {
+  _,
   followLanded,
   followTarget,
   isAtBottom,
@@ -708,7 +709,7 @@ function buildToolStatus(status: ToolLine['status']): Gtk.Widget {
   row.append(new Gtk.Image({ iconName: TOOL_FALLBACK_ICON, pixelSize: ROW_ICON_PX, cssClasses: [CSS.dim] }));
   row.append(
     status === null
-      ? buildLabel({ text: 'Tool call', xalign: 0, cssClasses: [CSS.dim, 'caption'] })
+      ? buildLabel({ text: _('Tool call'), xalign: 0, cssClasses: [CSS.dim, 'caption'] })
       : buildTonePill(status),
   );
   return row;

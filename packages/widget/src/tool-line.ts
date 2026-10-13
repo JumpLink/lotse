@@ -9,7 +9,7 @@
  * record. No `gi://` import, so Node can test both, and the host presenter's fallback with them.
  */
 
-import type { ToolCallView } from '@lotse/core';
+import { _, type ToolCallView } from '@lotse/core';
 
 export type ToolStatus = 'running' | 'done' | 'failed';
 
@@ -25,16 +25,16 @@ export interface ToolLine {
   readonly status: { readonly label: string; readonly tone: ToolStatus } | null;
 }
 
-const STATUSES: Record<string, { label: string; tone: ToolStatus }> = {
-  pending: { label: 'Pending', tone: 'running' },
-  in_progress: { label: 'Running', tone: 'running' },
-  completed: { label: 'Done', tone: 'done' },
-  failed: { label: 'Failed', tone: 'failed' },
-};
+const statuses = (): Record<string, { label: string; tone: ToolStatus }> => ({
+  pending: { label: _('Pending'), tone: 'running' },
+  in_progress: { label: _('Running'), tone: 'running' },
+  completed: { label: _('Done'), tone: 'done' },
+  failed: { label: _('Failed'), tone: 'failed' },
+});
 
 export function parseToolLine(summary: string): ToolLine {
   const match = /^(.*?)\s*— (\w+)$/su.exec(summary.trim());
-  const status = match?.[2] ? STATUSES[match[2]] : undefined;
+  const status = match?.[2] ? statuses()[match[2]] : undefined;
   if (!match || !status) return { title: summary.trim(), status: null };
   return { title: match[1]?.trim() ?? '', status };
 }
@@ -141,7 +141,7 @@ export function toolRow(
  * never carried a title — not a shape seen from an agent, but a hand-edited store can have it.
  */
 function lineOfCall(call: ToolCallView, summary: string): ToolLine {
-  const status = call.status === undefined ? null : (STATUSES[call.status] ?? null);
+  const status = call.status === undefined ? null : (statuses()[call.status] ?? null);
   const title = call.title === undefined ? parseToolLine(summary).title : call.title.trim();
   return { title, status };
 }
