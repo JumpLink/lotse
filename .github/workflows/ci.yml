@@ -30,11 +30,12 @@ jobs:
       image: fedora:44
     steps:
       # gjs only: the test bundle spawns a child process over stdio and nothing else. No GTK, no
-      # GI typelib — an ACP client has no widgets in Scheibe 1.
+      # GI typelib — an ACP client has no widgets in Scheibe 1. libsoup3: the bundle imports Soup at start,
+      # because `serve` hosts the person_needed endpoint on node:http.
       - name: Install system prerequisites
         run: >
           dnf install -y --setopt=install_weak_deps=False
-          git tar xz findutils gjs
+          git tar xz findutils gjs libsoup3
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
