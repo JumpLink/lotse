@@ -79,8 +79,11 @@ Any MCP server that offers these two tools works in Curlew's place:
 
 | Call | Arguments lotse sends | Result lotse reads |
 |---|---|---|
-| `sendTool` | `{account, to, text}` | anything; an error result counts as not sent |
-| `waitTool` | `{account, peer, after, timeout_s, include_bodies: true}` | `{status: "reply" \| "timeout", messages: [{id, bodyText, sentAt, fromSelf}], cursor}` |
+| `sendTool` | `{account, to, text}` | `originId`, the id a reply to that message will name (optional); an error result counts as not sent |
+| `waitTool` | `{account, peer, after, timeout_s, include_bodies: true}` | `{status: "reply" \| "timeout", messages: [{id, bodyText, sentAt, fromSelf, replyToId?}], cursor}` |
+
+`replyToId` is the id of the message a message replies to (XEP-0461); Curlew also removes the quoted
+fallback text (XEP-0428) from `bodyText`. See [Reply to the question's message](serve.md#reply-to-the-questions-message).
 
 `after` is an ISO 8601 time: on the first start, the time `serve` started, and from then on the
 `cursor` the wait tool returned (else the `sentAt` of the last handled message), kept in

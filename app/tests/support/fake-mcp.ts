@@ -6,7 +6,7 @@
  *
  * It behaves like curlew's two tools and nothing else:
  *
- * - `send_message {account, to, text}` → `{conversationId, sentAt}`, listed unless `noSend`.
+ * - `send_message {account, to, text}` → `{conversationId, sentAt, originId}` (`o1`, `o2`, …), listed unless `noSend`.
  * - `xmpp_wait_reply {account, peer, after, timeout_s}` → `{status:'reply', messages, cursor}` for the
  *   inbox entries sent after `after`, else `{status:'timeout', cursor}` after a short wait (the
  *   fixture waits `waitMs`, not `timeout_s` — the tests are not meant to sit; `timeout_s: 0` checks once).
@@ -46,7 +46,7 @@ async function call(name, args) {
     sends += 1;
     if (opts.sendFailures && sends <= opts.sendFailures) return { isError: true, content: [{ type: 'text', text: 'database is locked' }] };
     if (opts.sendError) return { isError: true, content: [{ type: 'text', text: opts.sendError }] };
-    return text({ conversationId: 'c1', sentAt: new Date().toISOString() });
+    return text({ conversationId: 'c1', sentAt: new Date().toISOString(), originId: 'o' + sends });
   }
   if (name === 'xmpp_wait_reply') {
     waits += 1;
@@ -104,7 +104,7 @@ export interface FakeMcp {
   /** Every tool call the server received, oldest first. */
   calls(): { tool: string; args: Record<string, unknown> }[];
   /** A message from the peer, as curlew's `xmpp_wait_reply` shapes it. `id` defaults to `m<n>`. */
-  deliver(sentAt: string | null, bodyText: string, id?: string): void;
+  deliver(sentAt: string | null, bodyText: string, id?: string, replyToId?: string): void;
   readonly dir: string;
 }
 
@@ -118,7 +118,13 @@ export async function withFakeMcp(
     const script = join(dir, 'server.cjs');
     writeFileSync(script, SERVER);
     writeFileSync(join(dir, 'calls'), '');
-    const inbox: { id: string; sentAt: string | null; bodyText: string; fromSelf: boolean }[] = [];
+    const inbox: {
+      id: string;
+      sentAt: string | null;
+      bodyText: string;
+      fromSelf: boolean;
+      replyToId: string | null;
+    }[] = [];
     writeFileSync(join(dir, 'inbox'), '[]');
     await run({
       dir,
@@ -134,8 +140,14 @@ export async function withFakeMcp(
           .split('\n')
           .filter((line) => line !== '')
           .map((line) => JSON.parse(line) as { tool: string; args: Record<string, unknown> }),
-      deliver: (sentAt, bodyText, id) => {
-        inbox.push({ id: id ?? `m${inbox.length + 1}`, sentAt, bodyText, fromSelf: false });
+      deliver: (sentAt, bodyText, id, replyToId) => {
+        inbox.push({
+          id: id ?? `m${inbox.length + 1}`,
+          sentAt,
+          bodyText,
+          fromSelf: false,
+          replyToId: replyToId ?? null,
+        });
         writeFileSync(join(dir, 'inbox'), JSON.stringify(inbox));
       },
     });

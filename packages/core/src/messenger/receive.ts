@@ -12,6 +12,10 @@
  *   is a bare yes or no, which then hears that nothing is waiting.
  * - **The server may die.** Any failure drops the link and waits (5 s, doubling to 5 min) before a
  *   fresh start; a success resets the wait. An abort ends the loop wherever it is.
+ * - **A reply to a question's message binds to that question** (XEP-0461: the wait tool's `replyToId`
+ *   is the id the send tool returned, kept in `refs`). It beats reading the text — a single open question,
+ *   several open ones — but not an id the text names itself. A question that is no longer open is said
+ *   so, never replaced by another one. The quote the client put before the text is dropped.
  * - **Only the questions the chat may see.** A task whose `channels` leave out the messenger never sent
  *   its question here, so a reply cannot answer it — not by plain text, not by its id.
  * - **Every answer is `answerQuestion`** — the same path as `lotse answer` and the dialog — so the
@@ -25,7 +29,8 @@ import { answerQuestion, type AnswerResult, type ServeDeps } from '../serve/runn
 import { formatQuestionId, openQuestions, parseAnswer } from '../serve/questions.ts';
 import { localDeadline, sendToPeer, type MessengerChannel } from './channel.ts';
 import type { McpLink } from './link.ts';
-import { listIds, openIds, parseReply } from './reply.ts';
+import { listIds, openIds, parseReply, stripQuote } from './reply.ts';
+import { findRef, memoryRefs, type RefStore } from './refs.ts';
 import { matchPrefix, type ChatRequests } from './requests.ts';
 import type { MessengerSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
@@ -98,6 +103,8 @@ export interface ReceiveOptions {
    * what is there, return. For `serve --once`, which must end.
    */
   readonly once?: boolean;
+  /** The sent question messages (`messengerChannel`'s `refs`); absent: replies are read by their text. */
+  readonly refs?: RefStore;
 }
 
 interface WaitMessage {
@@ -107,6 +114,8 @@ interface WaitMessage {
   /** `null` when the server could not say; the loop then moves the cursor by other means. */
   readonly sentAt: string | null;
   readonly fromSelf: boolean;
+  /** The id of the message this one replies to (XEP-0461), if it is a reply. */
+  readonly replyToId: string | null;
 }
 
 interface WaitResult {
@@ -159,6 +168,7 @@ export function parseWaitResult(value: unknown): WaitResult {
       bodyText: typeof item['bodyText'] === 'string' ? item['bodyText'] : '',
       sentAt: typeof item['sentAt'] === 'string' ? item['sentAt'] : null,
       fromSelf: item['fromSelf'] === true,
+      replyToId: typeof item['replyToId'] === 'string' && item['replyToId'] !== '' ? item['replyToId'] : null,
     });
   }
   return { messages, cursor };
@@ -224,7 +234,10 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
       });
   };
 
-  const handle = async (text: string) => {
+  const refs = options.refs ?? memoryRefs();
+
+  const handle = async (rawText: string, replyToId: string | null) => {
+    const text = replyToId === null ? rawText : stripQuote(rawText);
     const requests = typeof options.requests === 'function' ? options.requests() : options.requests;
     if (requests) {
       const asked = matchPrefix(text, requests.prefix);
@@ -233,7 +246,19 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
     }
     const book = serve.questions.read();
     const open = openQuestions(book, serve.now()).filter((question) => inChat(question.task));
-    const intent = parseReply(text, openIds(open));
+    const ref = replyToId === null ? null : findRef(refs, replyToId);
+    const target = ref && open.find((question) => question.id === ref.questionId && question.user === ref.user);
+    // Closed or kept off the chat: say so (unless the text names an id itself) instead of letting the
+    // text answer whatever else is open.
+    if (ref && !target && parseReply(text, []).kind === 'nothing-open') {
+      const settled = book.find((question) => question.id === ref.questionId && question.user === ref.user);
+      return reply(
+        settled && settled.status !== 'open'
+          ? msg(STRINGS.alreadySettled, { id: formatQuestionId(ref.questionId), status: settled.status })
+          : msg(STRINGS.noLongerWaiting, { id: formatQuestionId(ref.questionId) }),
+      );
+    }
+    const intent = parseReply(text, openIds(open), target ? target.id : null);
     switch (intent.kind) {
       case 'ignore':
         return;
@@ -323,7 +348,7 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
       for (const message of result.messages) {
         if (signal.aborted) return;
         if (isSeen(message)) continue;
-        if (!message.fromSelf) await handle(message.bodyText);
+        if (!message.fromSelf) await handle(message.bodyText, message.replyToId);
         // No `sentAt`: the server's cursor, else now. Assumes the message is not seen again — a
         // restart before the write re-reads it, and the second answer is dropped as already answered.
         remember(message.sentAt ?? result.cursor ?? serve.now().toISOString(), messageKey(message));

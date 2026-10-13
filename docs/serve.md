@@ -292,6 +292,19 @@ Replies are read like `lotse answer`:
 - A permission question takes `yes`, `no`, `ja`, `nein`, `allow`, `decline` (and `deny`); anything
   longer is refused with a reply.
 
+#### Reply to the question's message
+
+Use your messenger's *Reply* on the question's message: the answer then belongs to **that** question,
+whatever else is open. This beats the rules above (one open question, several open) but not an id you
+type yourself (`#A1 yes` still answers `#A1`). The quote the messenger puts before your text is dropped.
+
+- lotse keeps the id the send tool returned (`originId`) for each question message in
+  `messenger-refs.json` in the state directory (message id, user and question id, never a text; the
+  last 200), and matches it against the `replyToId` the wait tool returns.
+- A reply to the message of a question that is already settled, expired or kept off the chat is told so
+  ("#A1 is already answered."); it is never applied to another question.
+- A reply to any other message, or one the server gives no `replyToId` for, is read by its text as before.
+
 The deadline ("Valid until Tue, 10/13, 18:14") is shown in the machine's local time and locale. The
 chat hears a short "Got it, #A1." after an answer; how the session was continued goes to the log, not
 the chat. A reply the server delivers without a timestamp is still read, and the cursor moves to the
