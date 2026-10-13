@@ -396,7 +396,13 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
         checkRequests();
         const current = reloader.current().deps;
         const now = current.now();
-        for (const task of dueTasks(current.config, clock.lastRun, new Set(running.keys()), now, clock.since)) {
+        for (const task of dueTasks(
+          current.config,
+          clock.lastRun,
+          new Set(running.keys()),
+          now,
+          clock.since,
+        )) {
           start(task, current);
         }
         if (once) break;
