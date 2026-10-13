@@ -308,6 +308,16 @@ What it promises:
 - **Misuse throws, it does not reject.** A missing `modelPolicy` or a `timeoutMs` that is not a positive
   finite number up to 2^31-1 is a `TypeError` before anything starts; every other failure is a `JobError`.
 
+## Translations
+
+The widget's strings live in the gettext domain `lotse`. The `.po` files ship in the `@lotse/widget`
+package (`po/`); compile them with `msgfmt` into your own locale directory as
+`<dir>/<lang>/LC_MESSAGES/lotse.mo`. Importing `@lotse/widget` binds the domain to
+`GJSIFY_LOCALE_DIR`, else `/usr/share/locale`. To use another directory, call
+`initWidgetI18n(dir)` before building the first widget. A host that has already registered its own
+translator with `setLibraryTranslator` keeps it. Without a catalogue the widget shows English.
+Details: [i18n.md](i18n.md).
+
 ## Where to go next
 
 - [`@lotse/widget`](../packages/widget/README.md): every option and member.

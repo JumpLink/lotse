@@ -6,6 +6,13 @@ and also records changes that are not a release of their own.
 
 ## Unreleased
 
+### Added
+
+- **Translations.** The app, the widget, the CLI and the notifications are translated with gettext
+  (English msgids, German catalogue). Two domains: `eu.jumplink.Lotse` (app) and `lotse` (widget and core).
+  Hosts compile the shipped `.po` files themselves; see [docs/i18n.md](docs/i18n.md) and
+  [docs/embedding.md](docs/embedding.md#translations).
+
 ### Changed
 
 - **Chat messages are styled for XMPP and carry images.** The messenger channel turns the agent's Markdown
