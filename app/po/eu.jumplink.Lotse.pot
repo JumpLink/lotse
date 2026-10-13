@@ -8,14 +8,914 @@ msgid ""
 msgstr ""
 "Project-Id-Version: eu.jumplink.Lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-13 07:51+0200\n"
+"POT-Creation-Date: 2026-10-13 08:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: app/src/core/answer-view.ts:51
+msgid "in under a minute"
+msgstr ""
+
+#: app/src/core/answer-view.ts:54
+msgid "in {minutes} min"
+msgstr ""
+
+#: app/src/core/answer-view.ts:56
+msgid "in {hours} h"
+msgstr ""
+
+#: app/src/core/answer-view.ts:57
+msgid "in {hours} h {minutes} min"
+msgstr ""
+
+#: app/src/core/answer-view.ts:64
+msgid "Expiry unknown"
+msgstr ""
+
+#: app/src/core/answer-view.ts:66
+msgid "Expired at {time}"
+msgstr ""
+
+#: app/src/core/answer-view.ts:67
+msgid "Expires at {time}, {left}"
+msgstr ""
+
+#: app/src/core/answer-view.ts:73
+msgid "{label} has expired; nothing waits for an answer any more."
+msgstr ""
+
+#: app/src/core/answer-view.ts:75
+msgid "{label} is {status}{how}; nothing waits for an answer any more."
+msgstr ""
+
+#: app/src/core/answer-view.ts:86 app/src/core/answer-view.ts:97
+msgid "Question {label}"
+msgstr ""
+
+#: app/src/core/answer-view.ts:92
+msgid "There is no question {label}. `lotse questions` lists the open ones."
+msgstr ""
+
+#: app/src/core/answer-view.ts:98
+msgid "from task {task}"
+msgstr ""
+
+#: app/src/core/question-actions.ts:52
+msgid "Allow once"
+msgstr ""
+
+#: app/src/core/question-actions.ts:52
+msgid "Decline"
+msgstr ""
+
+#: app/src/core/question-actions.ts:53
+msgid "Yes"
+msgstr ""
+
+#: app/src/core/question-actions.ts:53
+msgid "No"
+msgstr ""
+
+#: app/src/core/question-actions.ts:67
+msgid "Answer…"
+msgstr ""
+
+#: app/src/core/session-groups.ts:44
+msgid "Today"
+msgstr ""
+
+#: app/src/core/session-groups.ts:45
+msgid "Yesterday"
+msgstr ""
+
+#: app/src/core/session-groups.ts:46
+msgid "This week"
+msgstr ""
+
+#: app/src/core/session-groups.ts:47
+msgid "Earlier"
+msgstr ""
+
+#: app/src/core/session-groups.ts:59
+msgctxt "weekday"
+msgid "Sun"
+msgstr ""
+
+#: app/src/core/session-groups.ts:60
+msgctxt "weekday"
+msgid "Mon"
+msgstr ""
+
+#: app/src/core/session-groups.ts:61
+msgctxt "weekday"
+msgid "Tue"
+msgstr ""
+
+#: app/src/core/session-groups.ts:62
+msgctxt "weekday"
+msgid "Wed"
+msgstr ""
+
+#: app/src/core/session-groups.ts:63
+msgctxt "weekday"
+msgid "Thu"
+msgstr ""
+
+#: app/src/core/session-groups.ts:64
+msgctxt "weekday"
+msgid "Fri"
+msgstr ""
+
+#: app/src/core/session-groups.ts:65
+msgctxt "weekday"
+msgid "Sat"
+msgstr ""
+
+#: app/src/core/settings-view.ts:86
+msgid "Your own {name} (global configuration)"
+msgstr ""
+
+#: app/src/core/settings-view.ts:90
+msgid "Bundled {name} (recommended)"
+msgstr ""
+
+#: app/src/core/settings-view.ts:112
+msgid "Not included in this install"
+msgstr ""
+
+#: app/src/core/settings-view.ts:124
+msgid "On your PATH"
+msgstr ""
+
+#: app/src/core/settings-view.ts:126
+msgid "Checking…"
+msgstr ""
+
+#: app/src/core/settings-view.ts:127
+msgid "Not found on this machine"
+msgstr ""
+
+#: app/src/core/settings-view.ts:137
+msgid "Not known to this version of lotse"
+msgstr ""
+
+#: app/src/core/settings-view.ts:157
+msgid "Automatic"
+msgstr ""
+
+#: app/src/core/settings-view.ts:158
+msgid "The bundled one, else your own install. Now: {now}"
+msgstr ""
+
+#: app/src/core/settings-view.ts:159
+msgid "checking…"
+msgstr ""
+
+#: app/src/core/settings-view.ts:159
+msgid "no agent is available"
+msgstr ""
+
+#: app/src/core/settings-view.ts:173
+msgid ""
+"lotse will not overwrite that file, so choosing an agent is turned off here."
+msgstr ""
+
+#: app/src/core/settings-view.ts:175
+msgid "Your next choice first moves that file to {path}."
+msgstr ""
+
+#: app/src/core/settings-view.ts:180
+msgid ""
+"Your saved choice, {choice}, is not available here, so lotse starts "
+"{instead} instead."
+msgstr ""
+
+#: app/src/core/settings-view.ts:182
+msgid "no agent (none is available)"
+msgstr ""
+
+#: app/src/frontends/cli/agents.ts:85
+msgid "list the agent launchers lotse knows how to start"
+msgstr ""
+
+#: app/src/frontends/cli/agents.ts:90
+msgid ""
+"remember which agent to start: <id>, <id>:host, <id>:bundled, or none to "
+"clear"
+msgstr ""
+
+#: app/src/frontends/cli/agents.ts:105 app/src/frontends/cli/messenger.ts:178
+msgid "the earlier settings file was moved to {backup}"
+msgstr ""
+
+#: app/src/frontends/cli/agents.ts:126
+msgid "* the default for --agent"
+msgstr ""
+
+#: app/src/frontends/cli/answer.ts:70
+msgid ""
+"answer a question from `lotse questions`; yes/no for a permission, text for "
+"a reply"
+msgstr ""
+
+#: app/src/frontends/cli/answer.ts:73
+msgid "the question id, like #A1 or A1"
+msgstr ""
+
+#: app/src/frontends/cli/answer.ts:77
+msgid ""
+"yes, no, or the reply; without it the answer window opens where there is a "
+"display"
+msgstr ""
+
+#: app/src/frontends/cli/answer.ts:79
+msgid "type the answer in a window"
+msgstr ""
+
+#: app/src/frontends/cli/answer.ts:80 app/src/frontends/cli/auth.ts:40
+#: app/src/frontends/cli/cancel.ts:30 app/src/frontends/cli/resume.ts:47
+#: app/src/frontends/cli/start.ts:56
+msgid "do not echo the agent's log lines"
+msgstr ""
+
+#: app/src/frontends/cli/answer.ts:89
+msgid "either text or --dialog, not both"
+msgstr ""
+
+#: app/src/frontends/cli/auth.ts:33
+msgid ""
+"arrange the login an agent asked for, so a session does not die on -32000"
+msgstr ""
+
+#: app/src/frontends/cli/auth.ts:38
+msgid ""
+"which agent to log in (default: the bundled copy, else your own install)"
+msgstr ""
+
+#: app/src/frontends/cli/auth.ts:50 app/src/frontends/cli/login.ts:167
+msgid "  a login here is kept in {data} and is not your own opencode login"
+msgstr ""
+
+#: app/src/frontends/cli/auth.ts:57 app/src/frontends/cli/login.ts:152
+msgid ""
+"{program} is not on PATH — install it, or point PATH at it, then try again"
+msgstr ""
+
+#: app/src/frontends/cli/auth.ts:70 app/src/frontends/cli/cancel.ts:64
+#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:108
+#: app/src/frontends/cli/start.ts:90
+msgid "  [agent] {line}"
+msgstr ""
+
+#: app/src/frontends/cli/auth.ts:73
+msgid ""
+"\n"
+"{message}"
+msgstr ""
+
+#: app/src/frontends/cli/auth.ts:78
+msgid "{title} needs no authentication."
+msgstr ""
+
+#: app/src/frontends/cli/auth.ts:88
+msgid ""
+"the agent advertised an auth method without an id — nothing lotse can do "
+"with it"
+msgstr ""
+
+#: app/src/frontends/cli/auth.ts:98
+msgid "login command exited with {code} — not authenticated"
+msgstr ""
+
+#: app/src/frontends/cli/auth.ts:102
+msgid "the agent did not accept the login: {message}"
+msgstr ""
+
+#: app/src/frontends/cli/cancel.ts:25
+msgid ""
+"send session/cancel for a session (Ctrl-C does the same inside a running "
+"turn)"
+msgstr ""
+
+#: app/src/frontends/cli/cancel.ts:28
+msgid "the session id to cancel"
+msgstr ""
+
+#: app/src/frontends/cli/cancel.ts:29
+msgid "the agent that owns the session"
+msgstr ""
+
+#: app/src/frontends/cli/cancel.ts:41
+msgid ""
+"no session with id {id} and no --agent — `lotse sessions` lists what lotse "
+"has"
+msgstr ""
+
+#: app/src/frontends/cli/cancel.ts:47
+msgid "session {id} belongs to agent \"{agent}\", not \"{agentId}\""
+msgstr ""
+
+#: app/src/frontends/cli/cancel.ts:76
+msgid "session/cancel sent for {id}"
+msgstr ""
+
+#: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/serve.ts:295
+#: app/src/frontends/cli/serve.ts:302 app/src/frontends/cli/serve.ts:314
+#: app/src/frontends/cli/serve.ts:332
+msgid "  {line}"
+msgstr ""
+
+#: app/src/frontends/cli/choose.ts:38 app/src/frontends/cli/questions.ts:33
+#: app/src/frontends/cli/serve-deps.ts:103 app/src/frontends/cli/serve.ts:129
+msgid "  {problem}"
+msgstr ""
+
+#: app/src/frontends/cli/choose.ts:40 app/src/frontends/cli/provider.ts:205
+#: app/src/frontends/cli/serve.ts:189 app/src/frontends/cli/serve.ts:228
+msgid "  {note}"
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:120
+msgid ""
+"log in to a provider (browser login or API key) through the agent, with no "
+"terminal login"
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:123
+msgid "which provider; none lists them"
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:126
+msgid "which way to log in; needed when there is more than one"
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:131
+msgid "a field the method asks for, as key=value"
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:135
+msgid "which agent (default: the bundled copy, else your own install)"
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:195
+msgid "this opencode has no login API (it needs v2) — run `lotse auth` instead"
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:210
+msgid "\"{wanted}\" is not a provider lotse offers a login for. These are:"
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:233
+msgid "{label} needs more before it can start:"
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:254 app/src/frontends/cli/login.ts:277
+msgid "logged in to {name}."
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:255 app/src/frontends/cli/login.ts:278
+msgid "  an agent that is already running may need a restart to see it."
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:261
+msgid ""
+"\n"
+"Open {url}"
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:262
+msgid "  {instructions}"
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:281
+msgid "the login failed: {message}"
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:284
+msgid "the login ran out of time — start it again."
+msgstr ""
+
+#: app/src/frontends/cli/login.ts:287
+msgid "cancelled."
+msgstr ""
+
+#: app/src/frontends/cli/messenger.ts:118
+msgid "show or set the requests serve takes from the chat"
+msgstr ""
+
+#: app/src/frontends/cli/messenger.ts:121
+msgid "start an agent run for a chat message: on or off"
+msgstr ""
+
+#: app/src/frontends/cli/messenger.ts:124
+msgid "the tasks.json profile a request runs with"
+msgstr ""
+
+#: app/src/frontends/cli/messenger.ts:128
+msgid "a message starting with this is always a request"
+msgstr ""
+
+#: app/src/frontends/cli/messenger.ts:132
+msgid "text put before the first message of a session"
+msgstr ""
+
+#: app/src/frontends/cli/messenger.ts:134
+msgid "working directory of a request; empty: home"
+msgstr ""
+
+#: app/src/frontends/cli/messenger.ts:137
+msgid "read: decline every permission request; confirm: ask in the chat"
+msgstr ""
+
+#: app/src/frontends/cli/messenger.ts:141
+msgid ""
+"MCP servers for a request: name=command arg …; separated by \";\", or none"
+msgstr ""
+
+#: app/src/frontends/cli/messenger.ts:145
+msgid ""
+"environment of those servers: server:NAME=value; …, or none (replaces all)"
+msgstr ""
+
+#: app/src/frontends/cli/messenger.ts:149
+msgid "how long after an answer a message continues that session; 0: never"
+msgstr ""
+
+#: app/src/frontends/cli/messenger.ts:151
+msgid "requests running at the same time"
+msgstr ""
+
+#: app/src/frontends/cli/output.ts:62
+msgid "  {mark} {content}"
+msgstr ""
+
+#: app/src/frontends/cli/output.ts:66
+msgid "  mode: {currentModeId}"
+msgstr ""
+
+#: app/src/frontends/cli/output.ts:89
+msgid "  id       {id}"
+msgstr ""
+
+#: app/src/frontends/cli/output.ts:90
+msgid "  agent    {agent}"
+msgstr ""
+
+#: app/src/frontends/cli/output.ts:91
+msgid "  cwd      {cwd}"
+msgstr ""
+
+#: app/src/frontends/cli/output.ts:93
+msgid "  updated  {updatedAt}"
+msgstr ""
+
+#: app/src/frontends/cli/output.ts:94
+msgid "  reattach {reattach}"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:71
+msgid ""
+"custom providers (local models, any OpenAI-compatible endpoint) for the "
+"bundled opencode"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:74
+msgid "list, add or remove"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:75
+msgid "the provider id (add: defaults to the preset’s)"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:79
+msgid "a local server: its URL, name and id"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:81
+msgid "the base URL, e.g. http://127.0.0.1:11434/v1"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:82
+msgid "the name shown in the model list"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:87
+msgid ""
+"a model id, optionally with its context: qwen3:4b=8192 (default: what the "
+"server lists)"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:90
+msgid "read an API key from stdin; opencode keeps it"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:91
+msgid "yes to plain http on the local network"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:92
+msgid "which agent (default: the resolved one)"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:101
+msgid "{title} has no custom providers lotse can manage"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:106
+msgid "{program} is not on PATH — install it, then try again"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:154
+msgid "    {model}"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:172 app/src/frontends/cli/provider.ts:231
+msgid "{file} could not be read ({problem}) — fix or remove it first"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:201 app/src/frontends/cli/provider.ts:204
+msgid "  {privacyNote}"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:202
+msgid "{question} Add --allow-lan to say yes."
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:206
+msgid "  {LOCAL_MODEL_HINT}"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:218
+msgid ""
+"{id} was written, but opencode did not list it in time — the key was not "
+"stored"
+msgstr ""
+
+#: app/src/frontends/cli/provider.ts:223
+msgid "  a chat that is already open shows it after a restart of the agent."
+msgstr ""
+
+#: app/src/frontends/cli/questions.ts:19
+msgid "list the questions agents are waiting on"
+msgstr ""
+
+#: app/src/frontends/cli/questions.ts:22
+msgid "also list answered, expired and cancelled questions"
+msgstr ""
+
+#: app/src/frontends/cli/questions.ts:23
+msgid "print the questions as JSON"
+msgstr ""
+
+#: app/src/frontends/cli/questions.ts:50
+msgid "    {line}"
+msgstr ""
+
+#: app/src/frontends/cli/questions.ts:52
+msgid "    → {resolution}"
+msgstr ""
+
+#: app/src/frontends/cli/resume.ts:33
+msgid "reattach a recorded session and optionally run one prompt turn"
+msgstr ""
+
+#: app/src/frontends/cli/resume.ts:36
+msgid "the session id from `lotse sessions`"
+msgstr ""
+
+#: app/src/frontends/cli/resume.ts:40
+msgid "the prompt; omit it to reattach and stop"
+msgstr ""
+
+#: app/src/frontends/cli/resume.ts:44
+msgid ""
+"must match the session's agent; the session's own agent is used when omitted"
+msgstr ""
+
+#: app/src/frontends/cli/resume.ts:46
+msgid "refuse every tool call without asking"
+msgstr ""
+
+#: app/src/frontends/cli/resume.ts:61
+msgid "no session with id {id} — `lotse sessions` lists what lotse has"
+msgstr ""
+
+#: app/src/frontends/cli/resume.ts:139 app/src/frontends/cli/start.ts:145
+msgid "— {stopReason} —"
+msgstr ""
+
+#: app/src/frontends/cli/serve-deps.ts:27 app/src/frontends/cli/serve.ts:371
+msgid "  {warning}"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:82
+msgid "  #{questionId}: {message}"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:112
+msgid "  #{questionId}: {reason}"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:169
+msgid "  messenger channel not started: {problem}"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:173
+msgid "  messenger: {line}"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:193
+msgid "  {name}: {message}"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:212
+msgid "run the scheduled tasks and ask the person when an agent has a question"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:217
+msgid "run the tasks that are due now, wait for them, and exit"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:219
+msgid "do not echo the agents' log lines"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:264
+msgid "  {dropped} permission question(s) from an earlier serve cancelled"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:275
+msgid "  stopping: {why}"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:318
+msgid ""
+"  {left} chat request(s) from an earlier serve were not completed; the chat "
+"was told"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:353
+msgid "  {id}: {outcome}{tail}"
+msgstr ""
+
+#: app/src/frontends/cli/serve.ts:389
+msgid "  {message}"
+msgstr ""
+
+#: app/src/frontends/cli/sessions.ts:20
+msgid "list the sessions lotse has recorded"
+msgstr ""
+
+#: app/src/frontends/cli/sessions.ts:23
+msgid "include sessions of other principals"
+msgstr ""
+
+#: app/src/frontends/cli/sessions.ts:24
+msgid "show the transcript, not one line per session"
+msgstr ""
+
+#: app/src/frontends/cli/sessions.ts:25
+msgid "whose sessions to list"
+msgstr ""
+
+#: app/src/frontends/cli/start.ts:36
+msgid "open a session with an agent and run one prompt turn"
+msgstr ""
+
+#: app/src/frontends/cli/start.ts:42
+msgid "the prompt; omit it to open a session and stop"
+msgstr ""
+
+#: app/src/frontends/cli/start.ts:46
+msgid ""
+"which agent launcher to start (default: the bundled copy, else your own "
+"install)"
+msgstr ""
+
+#: app/src/frontends/cli/start.ts:50
+msgid "the directory the session runs in (default: the current one)"
+msgstr ""
+
+#: app/src/frontends/cli/start.ts:54
+msgid "refuse every tool call without asking, even on a terminal"
+msgstr ""
+
+#: app/src/frontends/cli/start.ts:105
+msgid "{agentInfo} — session {sessionId} in {cwd}"
+msgstr ""
+
+#: app/src/frontends/gui/answer-window.ts:45
+msgid "Close"
+msgstr ""
+
+#: app/src/frontends/gui/answer-window.ts:49
+msgid "Nothing to answer"
+msgstr ""
+
+#: app/src/frontends/gui/answer-window.ts:76
+msgid "Later"
+msgstr ""
+
+#: app/src/frontends/gui/answer-window.ts:130
+msgid "Your answer"
+msgstr ""
+
+#: app/src/frontends/gui/answer-window.ts:133
+msgid "Send"
+msgstr ""
+
+#: app/src/frontends/gui/answer-window.ts:150
+msgid "Ctrl+Enter sends, Esc answers later."
+msgstr ""
+
+#: app/src/frontends/gui/main.ts:181
+msgid ""
+"An ACP client for GNOME: start a coding agent as a subprocess, watch it "
+"work, and answer the questions it asks. The agent brings its own model, its "
+"own tools and its own login — lotse shows what it offers and asks before it "
+"acts. The same kernel as the command line."
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:83
+msgid ""
+"A change applies the next time lotse starts. This window keeps its agent."
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:86
+msgid ""
+"How lotse serve shows a question an agent asks. A change applies to the next "
+"question."
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:95
+msgid "Notification"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:96
+msgid "Buttons answer in a window, or allow and decline at once."
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:100
+msgid "Answer window"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:101
+msgid "The window opens as soon as a question arrives."
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:107
+msgid ""
+"Also ask in a chat, through an MCP server such as curlew, and read the reply "
+"as the answer. The first answer wins. A change applies within a minute to a "
+"running lotse serve; runs under way finish as they were."
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:113
+msgid "MCP server command"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:114
+msgid "Arguments (separated by spaces)"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:115
+msgid "Account"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:116
+msgid "Send to"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:117
+msgid "Send tool"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:118
+msgid "Wait-for-reply tool"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:123
+msgid ""
+"A message that answers no question starts an agent run, and the answer comes "
+"back in the chat. A change applies the next time lotse serve starts."
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:129
+msgid "Prefix that always starts a request"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:130
+msgid "Profile (from tasks.json)"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:131
+msgid "Preamble for a new session"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:132
+msgid "Working directory (empty: home)"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:133
+msgid "MCP servers (name=command args; …)"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:134
+msgid "MCP server environment (server:NAME=value; …)"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:165
+#: app/src/frontends/gui/window.blp:245
+msgid "Preferences"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:168
+#: app/src/frontends/gui/preferences.ts:175
+msgid "Agent"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:254
+msgid "Could not read the settings: {reason}"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:296
+msgid "The earlier settings file was moved to {path}."
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:304
+msgid "Questions"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:330
+msgid "Messenger"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:334
+msgid "Ask on the desktop"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:334
+msgid "Ask in the messenger"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:365
+msgid "Requests from the chat"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:375
+msgid "Start a run for a chat message"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:410
+msgid "MCP server environment: {problem}"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:413
+msgid "The prefix must not be empty."
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:419
+msgid "Ask before a write"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:420
+msgid "Off: a request may only read, and every permission request is declined."
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:428
+msgid "Follow-up window (minutes)"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:429
+msgid "A message this soon after an answer continues that session. 0: never."
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:436
+msgid "Runs at the same time"
+msgstr ""
+
+#: app/src/frontends/gui/preferences.ts:465
+#: app/src/frontends/gui/preferences.ts:490
+#: app/src/frontends/gui/preferences.ts:509
+msgid "Could not save your choice: {reason}"
+msgstr ""
+
+#: app/src/frontends/gui/session-list.ts:43
+msgid "The session you are looking at."
+msgstr ""
+
+#: app/src/frontends/gui/session-list.ts:84
+msgid "Could not read the sessions"
+msgstr ""
+
+#: app/src/frontends/gui/session-list.ts:96
+msgid "No sessions yet"
+msgstr ""
 
 #: app/src/frontends/gui/window.blp:65 app/src/frontends/gui/window.blp:68
 #: app/src/frontends/gui/window.blp:163
@@ -34,8 +934,4 @@ msgstr ""
 
 #: app/src/frontends/gui/window.blp:226 app/src/frontends/gui/window.blp:235
 msgid "Copy"
-msgstr ""
-
-#: app/src/frontends/gui/window.blp:245
-msgid "Preferences"
 msgstr ""
