@@ -68,6 +68,16 @@ export default async () => {
       expect(isDue(at, SAT_15, SAT_15)).toBe(false);
     });
 
+    await it('a never-run task becomes due at its time once it was known before it', async () => {
+      const at = parseSchedule({ at: '09:01' });
+      const known = new Date(2026, 9, 13, 8, 57);
+      const tick = new Date(2026, 9, 13, 9, 1, 0, 300);
+      expect(nextRun(at, null, tick, known)).toStrictEqual(new Date(2026, 9, 13, 9, 1));
+      expect(isDue(at, null, tick, known)).toBe(true);
+      // Known only after the time: waits for tomorrow, does not run at once.
+      expect(isDue(at, null, tick, tick)).toBe(false);
+    });
+
     await it('skips the days that are not listed', async () => {
       const mondays = parseSchedule({ at: '07:30', days: ['mon'] });
       expect(nextRun(mondays, null, SAT_15)).toStrictEqual(new Date(2026, 9, 12, 7, 30));
