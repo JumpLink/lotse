@@ -5,6 +5,7 @@
  * `serve` runs and while it does not, because the store is the only place a question lives.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
 import { formatQuestionId, isOpen, type LotsePaths } from '@lotse/core';
@@ -15,11 +16,11 @@ import { err, out, pickArgv } from './output.ts';
 
 const command = (_paths: LotsePaths, serve: ServePaths): CommandModule => ({
   command: 'questions',
-  describe: 'list the questions agents are waiting on',
+  describe: _('list the questions agents are waiting on'),
   builder: (yargs) =>
     yargs
-      .option('all', { type: 'boolean', describe: 'also list answered, expired and cancelled questions' })
-      .option('json', { type: 'boolean', describe: 'print the questions as JSON' })
+      .option('all', { type: 'boolean', describe: _('also list answered, expired and cancelled questions') })
+      .option('json', { type: 'boolean', describe: _('print the questions as JSON') })
       .strict(),
   handler: (argv) => {
     const raw = argv as Record<string, unknown>;
@@ -29,7 +30,7 @@ const command = (_paths: LotsePaths, serve: ServePaths): CommandModule => ({
     const book = questionBook(
       serve.stateDir,
       () => now,
-      (problem) => err(`  ${problem}`),
+      (problem) => err(fmt(_('  {problem}'), { problem })),
     ).read();
     const shown = book
       .filter((question) => all || isOpen(question, now))
@@ -46,8 +47,9 @@ const command = (_paths: LotsePaths, serve: ServePaths): CommandModule => ({
     for (const question of shown) {
       const status = isOpen(question, now) ? `open until ${question.expiresAt}` : question.status;
       out(`${formatQuestionId(question.id)}  ${question.task}  ${question.kind}  ${status}`);
-      for (const line of question.text.split('\n')) out(`    ${line}`);
-      if (!isOpen(question, now) && question.resolution) out(`    → ${question.resolution}`);
+      for (const line of question.text.split('\n')) out(fmt(_('    {line}'), { line }));
+      if (!isOpen(question, now) && question.resolution)
+        out(fmt(_('    → {resolution}'), { resolution: question.resolution }));
     }
   },
 });

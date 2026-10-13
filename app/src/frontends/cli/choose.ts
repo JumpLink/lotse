@@ -7,6 +7,7 @@
  * when it has nothing to return, so a handler only has to stop.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import {
   NO_AGENT_MESSAGE,
   describeResolved,
@@ -24,7 +25,7 @@ import { err } from './output.ts';
 
 function announce(agent: ResolvedAgent): ResolvedAgent {
   const line = describeResolved(agent);
-  if (line) err(`  ${line}`);
+  if (line) err(fmt(_('  {line}'), { line }));
   return agent;
 }
 
@@ -34,9 +35,9 @@ export function agentForNew(paths: LotsePaths, explicit: string | undefined): Re
     return { command: requireLauncher(explicit), source: 'host', version: null, isolation: null };
   }
   const { settings, problem } = readSettings(paths.settingsFile);
-  if (problem) err(`  ${problem}`);
+  if (problem) err(fmt(_('  {problem}'), { problem }));
   const { agent: found, note } = resolveDefaultWithNote(gatherResolveContext(paths), settings.agent);
-  if (note) err(`  ${note}`);
+  if (note) err(fmt(_('  {note}'), { note }));
   if (!found) {
     err(NO_AGENT_MESSAGE);
     process.exitCode = 1;

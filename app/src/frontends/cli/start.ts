@@ -11,6 +11,7 @@
  * worst possible failure for a flag whose whole job is to stop things.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
 import {
@@ -32,27 +33,27 @@ import { processTerminal } from './terminal.ts';
 
 const command = (paths: LotsePaths): CommandModule => ({
   command: 'start [prompt..]',
-  describe: 'open a session with an agent and run one prompt turn',
+  describe: _('open a session with an agent and run one prompt turn'),
   builder: (yargs) =>
     yargs
       .positional('prompt', {
         type: 'string',
         array: true,
-        describe: 'the prompt; omit it to open a session and stop',
+        describe: _('the prompt; omit it to open a session and stop'),
       })
       .option('agent', {
         type: 'string',
-        describe: 'which agent launcher to start (default: the bundled copy, else your own install)',
+        describe: _('which agent launcher to start (default: the bundled copy, else your own install)'),
       })
       .option('cwd', {
         type: 'string',
-        describe: 'the directory the session runs in (default: the current one)',
+        describe: _('the directory the session runs in (default: the current one)'),
       })
       .option('deny-all', {
         type: 'boolean',
-        describe: 'refuse every tool call without asking, even on a terminal',
+        describe: _('refuse every tool call without asking, even on a terminal'),
       })
-      .option('quiet', { type: 'boolean', describe: "do not echo the agent's log lines" })
+      .option('quiet', { type: 'boolean', describe: _("do not echo the agent's log lines") })
       .strict(),
   handler: async (argv) => {
     const raw = argv as Record<string, unknown>;
@@ -86,7 +87,7 @@ const command = (paths: LotsePaths): CommandModule => ({
         command: launcher,
         gate: commandGate({ terminal, denyAll }),
         onLog: (line) => {
-          if (!quiet) err(`  [agent] ${line}`);
+          if (!quiet) err(fmt(_('  [agent] {line}'), { line }));
         },
         onNotice: (message) => err(message),
         onSpawn: (close) => {
@@ -100,7 +101,13 @@ const command = (paths: LotsePaths): CommandModule => ({
       const session = await withAuthHint('session/new', () =>
         agent.client.newSession({ cwd, mcpServers: [] }),
       );
-      err(`${agent.agentInfo} — session ${session.sessionId} in ${cwd}`);
+      err(
+        fmt(_('{agentInfo} — session {sessionId} in {cwd}'), {
+          agentInfo: agent.agentInfo,
+          sessionId: session.sessionId,
+          cwd,
+        }),
+      );
 
       const created = store.create(
         conversationRecord({
@@ -135,7 +142,7 @@ const command = (paths: LotsePaths): CommandModule => ({
 
       store.append(created.id, transcript);
       out();
-      err(`— ${stopReason} —`);
+      err(fmt(_('— {stopReason} —'), { stopReason }));
     } finally {
       interrupt.dispose();
       handle?.close();

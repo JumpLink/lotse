@@ -10,6 +10,7 @@
  * This command exists for the case where the first terminal is gone.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
 import { openAgent, type LotsePaths } from '@lotse/core';
@@ -21,12 +22,12 @@ import { err, out, pickArgv } from './output.ts';
 
 const command = (paths: LotsePaths): CommandModule => ({
   command: 'cancel <id>',
-  describe: 'send session/cancel for a session (Ctrl-C does the same inside a running turn)',
+  describe: _('send session/cancel for a session (Ctrl-C does the same inside a running turn)'),
   builder: (yargs) =>
     yargs
-      .positional('id', { type: 'string', describe: 'the session id to cancel' })
-      .option('agent', { type: 'string', describe: 'the agent that owns the session' })
-      .option('quiet', { type: 'boolean', describe: "do not echo the agent's log lines" })
+      .positional('id', { type: 'string', describe: _('the session id to cancel') })
+      .option('agent', { type: 'string', describe: _('the agent that owns the session') })
+      .option('quiet', { type: 'boolean', describe: _("do not echo the agent's log lines") })
       .strict(),
   handler: async (argv) => {
     const raw = argv as Record<string, unknown>;
@@ -37,12 +38,18 @@ const command = (paths: LotsePaths): CommandModule => ({
     const record = store.get(id);
     const agentId = pickArgv<string>(raw, 'agent') ?? record?.agent;
     if (!agentId) {
-      err(`no session with id ${id} and no --agent — \`lotse sessions\` lists what lotse has`);
+      err(fmt(_('no session with id {id} and no --agent — \`lotse sessions\` lists what lotse has'), { id }));
       process.exitCode = 1;
       return;
     }
     if (record && pickArgv<string>(raw, 'agent') && record.agent !== pickArgv<string>(raw, 'agent')) {
-      err(`session ${id} belongs to agent "${record.agent}", not "${agentId}"`);
+      err(
+        fmt(_('session {id} belongs to agent "{agent}", not "{agentId}"'), {
+          id,
+          agent: record.agent,
+          agentId,
+        }),
+      );
       process.exitCode = 1;
       return;
     }
@@ -54,7 +61,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       command: launcher,
       gate: silentGate(),
       onLog: (line) => {
-        if (!quiet) err(`  [agent] ${line}`);
+        if (!quiet) err(fmt(_('  [agent] {line}'), { line }));
       },
       onNotice: (message) => err(message),
     });
@@ -66,7 +73,7 @@ const command = (paths: LotsePaths): CommandModule => ({
         await handle.client.reattach(id, { cwd: record.cwd, mcpServers: [] });
       }
       handle.client.cancel({ sessionId: id });
-      out(`session/cancel sent for ${id}`);
+      out(fmt(_('session/cancel sent for {id}'), { id }));
       err(
         'A cancel is a request: the agent stops, flushes what it has, and answers the turn with ' +
           '`cancelled`. Nothing is written to the record here — the transcript is written by ' +

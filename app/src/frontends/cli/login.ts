@@ -18,6 +18,7 @@
  * "use `lotse auth`" rather than as a failure.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import { createInterface } from 'node:readline';
 import { Writable } from 'node:stream';
 
@@ -116,22 +117,22 @@ export async function readSecret(prompt: string): Promise<string | null> {
 
 const command = (paths: LotsePaths): CommandModule => ({
   command: 'login [provider]',
-  describe: 'log in to a provider (browser login or API key) through the agent, with no terminal login',
+  describe: _('log in to a provider (browser login or API key) through the agent, with no terminal login'),
   builder: (yargs) =>
     yargs
-      .positional('provider', { type: 'string', describe: 'which provider; none lists them' })
+      .positional('provider', { type: 'string', describe: _('which provider; none lists them') })
       .option('method', {
         type: 'string',
-        describe: 'which way to log in; needed when there is more than one',
+        describe: _('which way to log in; needed when there is more than one'),
       })
       .option('answer', {
         type: 'string',
         array: true,
-        describe: 'a field the method asks for, as key=value',
+        describe: _('a field the method asks for, as key=value'),
       })
       .option('agent', {
         type: 'string',
-        describe: 'which agent (default: the bundled copy, else your own install)',
+        describe: _('which agent (default: the bundled copy, else your own install)'),
       })
       .strict(),
   handler: async (argv) => {
@@ -147,7 +148,11 @@ const command = (paths: LotsePaths): CommandModule => ({
       return;
     }
     if (!which(agent.program)) {
-      err(`${agent.program} is not on PATH — install it, or point PATH at it, then try again`);
+      err(
+        fmt(_('{program} is not on PATH — install it, or point PATH at it, then try again'), {
+          program: agent.program,
+        }),
+      );
       process.exitCode = 1;
       return;
     }
@@ -158,7 +163,11 @@ const command = (paths: LotsePaths): CommandModule => ({
       return;
     }
     if (resolved.isolation) {
-      err(`  a login here is kept in ${resolved.isolation.data} and is not your own opencode login`);
+      err(
+        fmt(_('  a login here is kept in {data} and is not your own opencode login'), {
+          data: resolved.isolation.data,
+        }),
+      );
     }
 
     const server = await startServer(agent).catch((error: unknown) => {
@@ -183,7 +192,7 @@ const command = (paths: LotsePaths): CommandModule => ({
         providers = await api.providers();
       } catch (error) {
         if (error instanceof LoginApiError && error.httpStatus === 404) {
-          err(`this opencode has no login API (it needs v2) — run \`lotse auth\` instead`);
+          err(_(`this opencode has no login API (it needs v2) — run \`lotse auth\` instead`));
         } else {
           err(`could not read the provider list: ${error instanceof Error ? error.message : String(error)}`);
         }
@@ -198,7 +207,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       }
       const provider = providers.find((candidate) => candidate.id === wanted.toLowerCase());
       if (!provider) {
-        err(`"${wanted}" is not a provider lotse offers a login for. These are:`);
+        err(fmt(_('"{wanted}" is not a provider lotse offers a login for. These are:'), { wanted }));
         listProviders(providers);
         process.exitCode = 1;
         return;
@@ -221,7 +230,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       }
       const { answer, missing } = answersFor(method, given);
       if (missing.length > 0) {
-        err(`${method.label} needs more before it can start:`);
+        err(fmt(_('{label} needs more before it can start:'), { label: method.label }));
         for (const field of missing) err(`    --answer ${describeField(method, field.key)}`);
         process.exitCode = 1;
         return;
@@ -242,15 +251,15 @@ const command = (paths: LotsePaths): CommandModule => ({
           process.exitCode = 1;
           return;
         }
-        out(`logged in to ${provider.name}.`);
-        err('  an agent that is already running may need a restart to see it.');
+        out(fmt(_('logged in to {name}.'), { name: provider.name }));
+        err(_('  an agent that is already running may need a restart to see it.'));
         return;
       }
 
       const hooks: LoginHooks = {
         show: (prompt) => {
-          err(`\nOpen ${prompt.url}`);
-          if (prompt.instructions) err(`  ${prompt.instructions}`);
+          err(fmt(_('\nOpen {url}'), { url: prompt.url }));
+          if (prompt.instructions) err(fmt(_('  {instructions}'), { instructions: prompt.instructions }));
           err(
             prompt.mode === 'code'
               ? '  then paste the code the page shows you.'
@@ -265,17 +274,17 @@ const command = (paths: LotsePaths): CommandModule => ({
       const result = await runLogin(api, provider.id, method.id, answer, hooks);
       switch (result.kind) {
         case 'connected':
-          out(`logged in to ${provider.name}.`);
-          err('  an agent that is already running may need a restart to see it.');
+          out(fmt(_('logged in to {name}.'), { name: provider.name }));
+          err(_('  an agent that is already running may need a restart to see it.'));
           return;
         case 'failed':
-          err(`the login failed: ${result.message}`);
+          err(fmt(_('the login failed: {message}'), { message: result.message }));
           break;
         case 'expired':
-          err('the login ran out of time — start it again.');
+          err(_('the login ran out of time — start it again.'));
           break;
         case 'cancelled':
-          err('cancelled.');
+          err(_('cancelled.'));
           break;
       }
       process.exitCode = 1;

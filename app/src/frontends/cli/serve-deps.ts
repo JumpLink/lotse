@@ -4,6 +4,7 @@
  * nothing to return, the same contract as `choose.ts`, so a handler only has to stop.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import {
   openAgent,
   ServeConfigError,
@@ -23,7 +24,7 @@ import { err } from './output.ts';
 export function readTasks(serve: ServePaths): LoadedTasks | null {
   try {
     const loaded = loadTasks(serve.tasksFile);
-    if (loaded.warning) err(`  ${loaded.warning}`);
+    if (loaded.warning) err(fmt(_('  {warning}'), { warning: loaded.warning }));
     return loaded;
   } catch (error) {
     if (!(error instanceof ServeConfigError || error instanceof TasksFileMissingError)) throw error;
@@ -99,11 +100,11 @@ export function serveDeps(options: DepsOptions): ServeDeps | null {
     precheckPromptFor: (task) => options.loaded.precheckPromptFor(task),
     previousRun: (task) => runState(stateDir).all()[task] ?? null,
     channel: options.channel,
-    questions: questionBook(stateDir, now, (problem) => err(`  ${problem}`)),
+    questions: questionBook(stateDir, now, (problem) => err(fmt(_('  {problem}'), { problem }))),
     now,
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     lock: taskLock(stateDir),
     log: actionLog(stateDir, now),
-    ...(options.quiet ? {} : { onAgentLog: (line: string) => err(`  [agent] ${line}`) }),
+    ...(options.quiet ? {} : { onAgentLog: (line: string) => err(fmt(_('  [agent] {line}'), { line })) }),
   };
 }

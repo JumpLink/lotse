@@ -9,6 +9,7 @@
  * cannot open one from a process whose stdio is a pipe.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import { spawn } from 'node:child_process';
 
 import type { CommandModule } from 'yargs';
@@ -29,14 +30,14 @@ import { err, out, pickArgv } from './output.ts';
 
 const command = (paths: LotsePaths): CommandModule => ({
   command: 'auth',
-  describe: 'arrange the login an agent asked for, so a session does not die on -32000',
+  describe: _('arrange the login an agent asked for, so a session does not die on -32000'),
   builder: (yargs) =>
     yargs
       .option('agent', {
         type: 'string',
-        describe: 'which agent to log in (default: the bundled copy, else your own install)',
+        describe: _('which agent to log in (default: the bundled copy, else your own install)'),
       })
-      .option('quiet', { type: 'boolean', describe: "do not echo the agent's log lines" })
+      .option('quiet', { type: 'boolean', describe: _("do not echo the agent's log lines") })
       .strict(),
   handler: async (argv) => {
     const raw = argv as Record<string, unknown>;
@@ -45,10 +46,18 @@ const command = (paths: LotsePaths): CommandModule => ({
     if (!resolved) return;
     const launcher = resolved.command;
     if (resolved.isolation) {
-      err(`  a login here is kept in ${resolved.isolation.data} and is not your own opencode login`);
+      err(
+        fmt(_('  a login here is kept in {data} and is not your own opencode login'), {
+          data: resolved.isolation.data,
+        }),
+      );
     }
     if (!which(launcher.program)) {
-      err(`${launcher.program} is not on PATH — install it, or point PATH at it, then try again`);
+      err(
+        fmt(_('{program} is not on PATH — install it, or point PATH at it, then try again'), {
+          program: launcher.program,
+        }),
+      );
       process.exitCode = 1;
       return;
     }
@@ -58,15 +67,15 @@ const command = (paths: LotsePaths): CommandModule => ({
       gate: silentGate(),
       runLogin: runInteractively,
       onLog: (line) => {
-        if (!quiet) err(`  [agent] ${line}`);
+        if (!quiet) err(fmt(_('  [agent] {line}'), { line }));
       },
       onMethod: (method) => err(`  ${describeAuthMethod(method)}`),
-      onStep: (message) => err(`\n${message}`),
+      onStep: (message) => err(fmt(_('\n{message}'), { message })),
     });
 
     switch (result.kind) {
       case 'none':
-        out(`${launcher.title} needs no authentication.`);
+        out(fmt(_('{title} needs no authentication.'), { title: launcher.title }));
         return;
       case 'authenticated':
         out(
@@ -76,7 +85,7 @@ const command = (paths: LotsePaths): CommandModule => ({
         );
         return;
       case 'unusable':
-        err('the agent advertised an auth method without an id — nothing lotse can do with it');
+        err(_('the agent advertised an auth method without an id — nothing lotse can do with it'));
         process.exitCode = 1;
         return;
       case 'login-missing':
@@ -86,11 +95,11 @@ const command = (paths: LotsePaths): CommandModule => ({
         process.exitCode = 1;
         return;
       case 'login-failed':
-        err(`login command exited with ${result.code} — not authenticated`);
+        err(fmt(_('login command exited with {code} — not authenticated'), { code: result.code }));
         process.exitCode = result.code;
         return;
       case 'refused':
-        err(`the agent did not accept the login: ${result.message}`);
+        err(fmt(_('the agent did not accept the login: {message}'), { message: result.message }));
         process.exitCode = 1;
         return;
     }
