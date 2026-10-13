@@ -36,7 +36,14 @@ export function messengerText(message: ServeMessage): string {
   if (message.asks && message.questionId) {
     const id = formatQuestionId(message.questionId);
     parts.push(
-      msg(message.asks === 'permission' ? STRINGS.replyHintPermission : STRINGS.replyHintReply, { id }),
+      msg(
+        message.asks === 'permission'
+          ? STRINGS.replyHintPermission
+          : message.asks === 'person'
+            ? STRINGS.replyHintPerson
+            : STRINGS.replyHintReply,
+        { id },
+      ),
     );
     if (message.expiresAt) parts.push(msg(STRINGS.validUntil, { time: localDeadline(message.expiresAt) }));
   }

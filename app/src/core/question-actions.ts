@@ -50,6 +50,7 @@ export type QuickReply = 'yes' | 'no';
  */
 export function quickReplyLabel(reply: QuickReply, kind: QuestionKind): string {
   if (kind === 'permission') return reply === 'yes' ? _('Allow once') : _('Decline');
+  if (kind === 'person') return _('Done');
   return reply === 'yes' ? _('Yes') : _('No');
 }
 

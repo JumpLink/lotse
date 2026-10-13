@@ -335,6 +335,27 @@ export const SERVE_CONFIG_SCHEMA = {
           title: 'Notify',
           description: "questions: only when the agent asks. always: also the run's final message.",
         },
+        personNeeded: {
+          type: 'object',
+          title: 'Person needed',
+          description:
+            'Lets the task call person_needed when only you can go on (a login, a code, an approval). The run waits for your reply, or is deferred.',
+          additionalProperties: false,
+          properties: {
+            enabled: {
+              type: 'boolean',
+              default: false,
+              title: 'Enabled',
+              description: 'Give the agent the person_needed tool for this task.',
+            },
+            timeoutMin: {
+              type: 'integer',
+              minimum: 1,
+              title: 'Wait (minutes)',
+              description: 'How long to wait for your reply. Empty: the default from the settings (30).',
+            },
+          },
+        },
         ...DELIVERY,
       },
     },

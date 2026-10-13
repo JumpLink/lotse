@@ -37,6 +37,7 @@ export interface RequestFlags {
   readonly mcpEnv?: string;
   readonly followUpMinutes?: number;
   readonly maxConcurrent?: number;
+  readonly personNeededMinutes?: number;
 }
 
 /** `current` with the given flags applied, or what is wrong with one. Pure. */
@@ -86,6 +87,12 @@ export function applyRequestFlags(
       return { problem: '--max-concurrent takes a whole number, 1 or more' };
     next = { ...next, maxConcurrent: count };
   }
+  if (flags.personNeededMinutes !== undefined) {
+    const minutes = flags.personNeededMinutes;
+    if (!Number.isInteger(minutes) || minutes < 1)
+      return { problem: '--person-needed-minutes takes a whole number, 1 or more' };
+    next = { ...next, personNeededMinutes: minutes };
+  }
   return next;
 }
 
@@ -105,6 +112,7 @@ export function messengerReport(file: string, settings: Settings, problem: strin
     `  mcp environment   ${formatEnvSpecs(requests.mcpServers) || 'none'}`,
     `  follow-up minutes ${requests.followUpMinutes}`,
     `  max concurrent    ${requests.maxConcurrent}`,
+    `  person wait min   ${requests.personNeededMinutes}`,
     `settings file: ${file}`,
   ];
   const missing = messengerProblem(messenger);
@@ -149,6 +157,10 @@ const command = (paths: LotsePaths): CommandModule => ({
         describe: _('how long after an answer a message continues that session; 0: never'),
       })
       .option('max-concurrent', { type: 'number', describe: _('requests running at the same time') })
+      .option('person-needed-minutes', {
+        type: 'number',
+        describe: _('how long a task waits when only you can go on (person_needed)'),
+      })
       .strict(),
   handler: (argv) => {
     const file = paths.settingsFile;
@@ -164,6 +176,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       mcpEnv: pickArgv<string>(raw, 'requestMcpEnv', 'request-mcp-env'),
       followUpMinutes: pickArgv<number>(raw, 'followUpMinutes', 'follow-up-minutes'),
       maxConcurrent: pickArgv<number>(raw, 'maxConcurrent', 'max-concurrent'),
+      personNeededMinutes: pickArgv<number>(raw, 'personNeededMinutes', 'person-needed-minutes'),
     };
     if (Object.values(flags).some((value) => value !== undefined)) {
       const current = readSettings(file).settings;
