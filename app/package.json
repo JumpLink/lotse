@@ -28,6 +28,7 @@
     "dev:app": "gjsify run build:app && gjsify run start:app",
     "test": "gjsify test",
     "test:real-agent": "gjsify build tests/integration/acp-real-agent.ts --app gjs --outfile dist/acp-real-agent.gjs.mjs && gjsify run dist/acp-real-agent.gjs.mjs",
+    "test:i18n": "gjsify run i18n:compile && gjsify build tests/probes/i18n-de.ts --app gjs --outfile dist/i18n-de.gjs.mjs && LANGUAGE=de LANG=de_DE.UTF-8 gjsify run dist/i18n-de.gjs.mjs",
     "test:schema": "node ../scripts/check-schema.mjs"
   },
   "gjsify": {

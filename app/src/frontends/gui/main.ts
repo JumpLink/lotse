@@ -21,6 +21,7 @@
  * the same lifecycle, and the two surfaces disagreeing about it is a bug with two faces.
  */
 
+import '../../i18n-gettext.ts';
 import { _ } from '../../i18n.ts';
 import Gtk from '@girs/gtk-4.0';
 import { runAdwaitaApp } from '@gjsify/adwaita-app';
