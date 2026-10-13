@@ -34,7 +34,7 @@ jobs:
       - name: Install system prerequisites
         run: >
           dnf install -y --setopt=install_weak_deps=False
-          git tar xz findutils gjs
+          git tar xz findutils gjs gettext
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -76,6 +76,13 @@ jobs:
       # a field that became required is an agent that ignores what lotse sent.
       - name: Check the code against refs/acp/schema.v1.json
         run: node scripts/check-schema.mjs
+
+      # Every msgid translated in every catalogue, and the committed .pot in step with the sources.
+      # gettext fails soft — a missing translation is the English msgid, shown without a word of
+      # warning — so the only place that can catch it is here. Runs its own xgettext, which is why
+      # `gettext` is in the dnf line above.
+      - name: Check the catalogues (both domains)
+        run: node dev/check-i18n.js
 
       # -A includes the `private: true` workspaces — without it the packages are skipped and the
       # check silently covers only part of the tree.

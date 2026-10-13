@@ -18,6 +18,21 @@
  * a promise to the widget and to any host; an internal helper stays internal.
  */
 
+// ── Translation ─────────────────────────────────────────────────────────────────────────────────
+// The library's own gettext domain and the four call sites every string in here goes through. The
+// translator is registered by `@lotse/widget` (or by lotse's app), because core must stay importable
+// on Node where GJS's `gettext` module does not exist — ADR 0005.
+export {
+  LOTSE_TEXT_DOMAIN,
+  _,
+  _n,
+  _p,
+  fmt,
+  libraryTranslator,
+  setLibraryTranslator,
+  type LibraryTranslator,
+} from './i18n.ts';
+
 // ── Where lotse keeps things ────────────────────────────────────────────────────────────────────
 // The shape, and the layout a host gets. The app's own XDG/`LOTSE_*` resolver stays in the app,
 // and `envKnob` is how both sides read a knob under its new name and its old one.

@@ -1,0 +1,41 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the eu.jumplink.Lotse package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: eu.jumplink.Lotse\n"
+"Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
+"POT-Creation-Date: 2026-10-12 23:39+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: app/src/frontends/gui/window.blp:65 app/src/frontends/gui/window.blp:68
+#: app/src/frontends/gui/window.blp:163
+msgid "New chat"
+msgstr ""
+
+#: app/src/frontends/gui/window.blp:145
+msgid "No session open"
+msgstr ""
+
+#: app/src/frontends/gui/window.blp:150
+msgid ""
+"Pick a session from the list, or start a new chat. The agent starts when you "
+"send your first message."
+msgstr ""
+
+#: app/src/frontends/gui/window.blp:226 app/src/frontends/gui/window.blp:235
+msgid "Copy"
+msgstr ""
+
+#: app/src/frontends/gui/window.blp:245
+msgid "Preferences"
+msgstr ""

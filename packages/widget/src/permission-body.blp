@@ -1,5 +1,10 @@
 using Gtk 4.0;
 
+// The library's domain, not the host's default one — docs/adr/0005-two-gettext-domains.md.
+// No translatable string in this template today (every word is an agent's), but a template that
+// grows one must not be the place the rule is remembered.
+translation-domain "lotse";
+
 /**
  * The approval dialog's body: the rows, in the order a question needs them.
  *

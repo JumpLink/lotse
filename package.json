@@ -12,6 +12,9 @@
   "scripts": {
     "check": "gjsify foreach -A check",
     "check:schema": "node scripts/check-schema.mjs",
+    "check:i18n": "node dev/check-i18n.js",
+    "i18n:extract": "./dev/i18n.sh extract",
+    "i18n:compile": "./dev/i18n.sh compile",
     "lint": "gjsify foreach -A lint",
     "format": "gjsify foreach -A format",
     "format:check": "oxfmt --check .",
