@@ -8,6 +8,10 @@ and also records changes that are not a release of their own.
 
 ### Added
 
+- **Reply to the question's message in the chat.** A messenger reply (XEP-0461) binds the answer to
+  the question that message carried, ahead of the one-open-question guess; the quote fallback is dropped.
+  Needs a Curlew that returns `replyToId`. See [docs/serve.md](docs/serve.md#reply-to-the-questions-message).
+
 - **Translations.** The app, the widget, the CLI and the notifications are translated with gettext
   (English msgids, German catalogue). Two domains: `eu.jumplink.Lotse` (app) and `lotse` (widget and core).
   Hosts compile the shipped `.po` files themselves; see [docs/i18n.md](docs/i18n.md) and

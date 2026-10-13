@@ -588,7 +588,8 @@ export {
   type MessengerChannel,
   type MessengerChannelOptions,
 } from './messenger/channel.ts';
-export { openIds, parseReply, type ReplyIntent } from './messenger/reply.ts';
+export { openIds, parseReply, stripQuote, type ReplyIntent } from './messenger/reply.ts';
+export { findRef, memoryRefs, recordRefs, REF_LIMIT, type RefStore, type SentRef } from './messenger/refs.ts';
 export {
   abortableSleep,
   chatSays,

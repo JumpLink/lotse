@@ -8,6 +8,10 @@ import {
   combineChannels,
   connectMcp,
   localDeadline,
+  findRef,
+  memoryRefs,
+  recordRefs,
+  stripQuote,
   messengerChannel,
   messengerText,
   noticeOf,
@@ -18,6 +22,7 @@ import {
   type Cursor,
   type CursorStore,
   type MessengerSettings,
+  type RefStore,
   type Question,
   type ServeChannel,
   type ServeDeps,
@@ -132,6 +137,7 @@ async function looping(
   book: { value: Question[] },
   cursor: CursorStore,
   body: (link: McpLink, deps: ServeDeps) => Promise<void>,
+  refs?: RefStore,
 ): Promise<void> {
   const link = linkTo(fake);
   const abort = new AbortController();
@@ -142,6 +148,7 @@ async function looping(
     serve: deps,
     cursor,
     signal: abort.signal,
+    ...(refs ? { refs } : {}),
     timeoutS: 1,
     minCycleMs: 0,
     backoff: { initialMs: 10, maxMs: 40 },
@@ -574,6 +581,104 @@ export default async () => {
           await link.close();
         }
         expect(lines.some((line) => line.includes('#A4'))).toBe(true);
+      });
+    });
+  });
+
+  await describe('replies to a question message', async () => {
+    await it('stripQuote drops the leading quote and nothing else', async () => {
+      expect(stripQuote('> Allow it?\n\nyes')).toBe('yes');
+      expect(stripQuote('> a\n> b\nyes, but not > this')).toBe('yes, but not > this');
+      expect(stripQuote('yes')).toBe('yes');
+      expect(stripQuote('> only a quote')).toBe('> only a quote');
+    });
+
+    await it('the channel remembers the id of the message that carried the question', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const refs = memoryRefs();
+        const link = linkTo(fake);
+        const user = { id: 'me', addresses: [] };
+        const asks: ServeMessage = {
+          title: 't',
+          body: 'b',
+          text: 'Allow it?',
+          questionId: 'A4',
+          asks: 'permission',
+        };
+        try {
+          const channel = messengerChannel(link, SETTINGS, { refs });
+          await channel.send(user, asks);
+        } finally {
+          await link.close();
+        }
+        expect(findRef(refs, 'o1')).toStrictEqual({ messageId: 'o1', user: 'me', questionId: 'A4' });
+        expect(findRef(refs, 'other')).toBe(null);
+      });
+    });
+
+    await it('binds the answer to the replied-to question even with several open', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const refs = memoryRefs();
+        recordRefs(refs, 'me', 'A1', ['o-1']);
+        recordRefs(refs, 'me', 'A2', ['o-2']);
+        const book = { value: [question('A1'), question('A2')] };
+        await looping(
+          fake,
+          book,
+          memoryCursor(BEFORE),
+          async () => {
+            fake.deliver('2026-10-10T11:30:00.000Z', '> Allow it?\n\nyes', undefined, 'o-2');
+            await until(() => sent(fake).length === 1, 'the acknowledgement');
+          },
+          refs,
+        );
+        expect(book.value.map((q) => q.status).join()).toBe('open,answered');
+        expect(book.value[1]!.answer).toBe('yes');
+        expect(String(sent(fake)[0]!.args['text'])).toBe('Got it, #A2.');
+      });
+    });
+
+    await it('says so when the replied-to question is settled, and answers nothing else', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const refs = memoryRefs();
+        recordRefs(refs, 'me', 'A1', ['o-1']);
+        const book = { value: [question('A1', 'permission', { status: 'answered' }), question('A2')] };
+        await looping(
+          fake,
+          book,
+          memoryCursor(BEFORE),
+          async () => {
+            fake.deliver('2026-10-10T11:30:00.000Z', 'yes', undefined, 'o-1');
+            await until(() => sent(fake).length === 1, 'the notice');
+          },
+          refs,
+        );
+        expect(String(sent(fake)[0]!.args['text'])).toBe('#A1 is already answered.');
+        expect(book.value[1]!.status).toBe('open');
+      });
+    });
+
+    await it('an explicit id in the text still wins, and an unknown reply id reads as plain text', async () => {
+      await withFakeMcp({}, async (fake) => {
+        const refs = memoryRefs();
+        recordRefs(refs, 'me', 'A2', ['o-2']);
+        const book = { value: [question('A1'), question('A2')] };
+        await looping(
+          fake,
+          book,
+          memoryCursor(BEFORE),
+          async () => {
+            fake.deliver('2026-10-10T11:30:00.000Z', '#A1 no', undefined, 'o-2');
+            await until(() => sent(fake).length === 1, 'the first notice');
+            fake.deliver('2026-10-10T11:31:00.000Z', 'yes', undefined, 'unrelated');
+            await until(() => sent(fake).length === 2, 'the second notice');
+          },
+          refs,
+        );
+        // `#A1 no` beat the reply to A2's message; the unknown reply id then fell back to the one open question.
+        expect(book.value.map((q) => q.answer).join()).toBe('no,yes');
+        expect(String(sent(fake)[0]!.args['text'])).toBe('Got it, #A1.');
+        expect(String(sent(fake)[1]!.args['text'])).toBe('Got it, #A2.');
       });
     });
   });

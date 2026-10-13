@@ -10,6 +10,7 @@ import type { ServeChannel, ServeMessage } from '../serve/channel.ts';
 import { deliveryOf, type ServeConfig, type ServeUser } from '../serve/config.ts';
 import { formatQuestionId } from '../serve/questions.ts';
 import type { McpLink } from './link.ts';
+import { memoryRefs, recordRefs, type RefStore } from './refs.ts';
 import { McpToolError } from './mcp-client.ts';
 import type { ChannelName, MessengerSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
@@ -55,13 +56,24 @@ export function messengerText(message: ServeMessage): string {
  * goes out as its own message through the server's `image_url`; a server without it (the call is
  * refused) gets that image and the rest as a plain link in the text, so nothing is lost.
  */
-export async function sendToPeer(link: McpLink, settings: MessengerSettings, text: string): Promise<void> {
+export async function sendToPeerWithIds(
+  link: McpLink,
+  settings: MessengerSettings,
+  text: string,
+): Promise<string[]> {
   const target = { account: settings.account, to: settings.peer };
+  const ids: string[] = [];
+  const remember = (result: unknown) => {
+    const id = (result as { originId?: unknown } | null)?.originId;
+    if (typeof id === 'string' && id !== '') ids.push(id);
+  };
   let imagesWork = true;
   for (const segment of renderForXmpp(text)) {
     if (segment.kind === 'image' && imagesWork) {
       try {
-        await link.use((tools) => tools.call(settings.sendTool, { ...target, image_url: segment.url }));
+        remember(
+          await link.use((tools) => tools.call(settings.sendTool, { ...target, image_url: segment.url })),
+        );
         continue;
       } catch (error) {
         if (!(error instanceof McpToolError)) throw error;
@@ -70,8 +82,13 @@ export async function sendToPeer(link: McpLink, settings: MessengerSettings, tex
     }
     const body =
       segment.kind === 'text' ? segment.text : segment.alt ? `${segment.alt}: ${segment.url}` : segment.url;
-    await link.use((tools) => tools.call(settings.sendTool, { ...target, text: body }));
+    remember(await link.use((tools) => tools.call(settings.sendTool, { ...target, text: body })));
   }
+  return ids;
+}
+
+export async function sendToPeer(link: McpLink, settings: MessengerSettings, text: string): Promise<void> {
+  await sendToPeerWithIds(link, settings, text);
 }
 
 /** A question message that did not reach the chat, kept in memory until it does or stops being open. */
@@ -87,6 +104,8 @@ export interface MessengerChannelOptions {
   readonly now?: () => number;
   /** Delay before retry n (0-based); there are as many retries as entries. Default 30 s … 10 min. */
   readonly retryDelaysMs?: readonly number[];
+  /** Where the ids of the sent question messages are kept, for replies to them. Default: in memory. */
+  readonly refs?: RefStore;
 }
 
 export const RETRY_DELAYS_MS: readonly number[] = [30_000, 60_000, 120_000, 300_000, 600_000];
@@ -110,13 +129,18 @@ export function messengerChannel(
 ): MessengerChannel {
   const now = options.now ?? Date.now;
   const delays = options.retryDelaysMs ?? RETRY_DELAYS_MS;
+  const refs = options.refs ?? memoryRefs();
+  const sendQuestion = async (user: ServeUser, message: ServeMessage) => {
+    const ids = await sendToPeerWithIds(link, settings, messengerText(message));
+    if (message.asks && message.questionId) recordRefs(refs, user.id, message.questionId, ids);
+  };
   const unsent = new Map<string, Unsent>();
   const keyOf = (user: string, questionId: string) => `${user}/${questionId}`;
   return {
     name: 'messenger',
     async send(user: ServeUser, message: ServeMessage) {
       try {
-        await sendToPeer(link, settings, messengerText(message));
+        await sendQuestion(user, message);
       } catch (error) {
         // Only the message that asks is worth a retry; a report about a question is not.
         if (message.asks && message.questionId && delays.length > 0)
@@ -140,7 +164,7 @@ export function messengerChannel(
         }
         if (entry.due > now()) continue;
         try {
-          await sendToPeer(link, settings, messengerText(entry.message));
+          await sendQuestion(entry.user, entry.message);
           unsent.delete(key);
           delivered.push(questionId);
         } catch (error) {

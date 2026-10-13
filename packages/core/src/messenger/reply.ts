@@ -67,3 +67,21 @@ export function openIds(questions: readonly Question[]): string[] {
 export function listIds(ids: readonly string[]): string {
   return ids.map(formatQuestionId).join(', ');
 }
+
+/**
+ * The text of a message-reply without the quote the client put in front of it (XEP-0428 fallback):
+ * leading lines that start with `>`, and the blank line after them. curlew already removes the range
+ * the fallback element marks; this covers a server that does not. Text without a leading quote is
+ * returned as it came, and a message that is only a quote stays as it is.
+ */
+export function stripQuote(text: string): string {
+  const lines = text.split('\n');
+  let i = 0;
+  while (i < lines.length && lines[i]!.startsWith('>')) i += 1;
+  if (i === 0) return text;
+  const rest = lines
+    .slice(i)
+    .join('\n')
+    .replace(/^\s*\n/, '');
+  return rest.trim() === '' ? text : rest;
+}

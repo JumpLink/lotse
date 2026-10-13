@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { CursorStore, PendingRequest, PendingStore } from '@lotse/core';
+import type { CursorStore, PendingRequest, PendingStore, RefStore, SentRef } from '@lotse/core';
 
 import { writePrivateFile } from './private-file.ts';
 
@@ -66,6 +66,38 @@ export function filePendingStore(path: string): PendingStore {
     },
     write(list) {
       writePrivateFile(path, `${JSON.stringify(list)}\n`, 'pending-requests');
+    },
+  };
+}
+
+export function messengerRefsFile(stateDir: string): string {
+  return join(stateDir, 'messenger-refs.json');
+}
+
+/**
+ * The ids of the sent question messages (`RefStore`), in `<state dir>/messenger-refs.json`: message id,
+ * user and question id, never a text. A missing or unreadable file is an empty list.
+ */
+export function fileRefStore(path: string): RefStore {
+  return {
+    read() {
+      try {
+        const value = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+        if (!Array.isArray(value)) return [];
+        return value.filter(
+          (item): item is SentRef =>
+            typeof item === 'object' &&
+            item !== null &&
+            typeof (item as SentRef).messageId === 'string' &&
+            typeof (item as SentRef).user === 'string' &&
+            typeof (item as SentRef).questionId === 'string',
+        );
+      } catch {
+        return [];
+      }
+    },
+    write(list) {
+      writePrivateFile(path, `${JSON.stringify(list)}\n`, 'messenger-refs');
     },
   };
 }
