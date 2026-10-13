@@ -19,6 +19,12 @@ and also records changes that are not a release of their own.
   reaches the store, the log or a transcript, and a task that may receive one is refused on a free model.
   The wait is a setting (Preferences, `--person-needed-minutes`). See `docs/serve.md`.
 
+### Fixed
+
+- **A never-run `at` task now starts.** The schedule measured "after now" on every tick, so the candidate
+  time slipped past just as it arrived and the task moved to tomorrow forever. `serve` now fixes a task's
+  baseline when it first sees it (start or reload) and runs it at the first matching time after that.
+
 ### Changed
 
 - **Chat messages are styled for XMPP and carry images.** The messenger channel turns the agent's Markdown

@@ -669,9 +669,19 @@ export async function runRequest(request: RequestRun, deps: ServeDeps): Promise<
 export function attemptClock(recorded: (task: string) => Date | null): {
   readonly skipped: (task: string, at: Date) => void;
   readonly lastRun: (task: string) => Date | null;
+  readonly since: (task: string, now: Date) => Date;
 } {
   const skips = new Map<string, Date>();
+  const known = new Map<string, Date>();
   return {
+    // The first look at a task fixes its baseline: a never-run `at` task runs at its first matching
+    // time after that, not after every tick's `now` (which would keep it one step ahead forever).
+    since: (task, now) => {
+      const first = known.get(task);
+      if (first) return first;
+      known.set(task, now);
+      return now;
+    },
     skipped: (task, at) => void skips.set(task, at),
     lastRun: (task) => {
       const run = recorded(task);
@@ -688,10 +698,12 @@ export function dueTasks(
   lastRun: (task: string) => Date | null,
   running: ReadonlySet<string>,
   now: Date,
+  since: (task: string, now: Date) => Date = (_task, at) => at,
 ): ServeTask[] {
   return config.tasks.filter(
     (task) =>
-      !running.has(task.id) && nextRun(task.schedule, lastRun(task.id), now).getTime() <= now.getTime(),
+      !running.has(task.id) &&
+      nextRun(task.schedule, lastRun(task.id), now, since(task.id, now)).getTime() <= now.getTime(),
   );
 }
 
@@ -701,10 +713,14 @@ export function nextWakeMs(
   lastRun: (task: string) => Date | null,
   now: Date,
   maxMs = 60_000,
+  since: (task: string, now: Date) => Date = (_task, at) => at,
 ): number {
   let earliest = maxMs;
   for (const task of config.tasks) {
-    earliest = Math.min(earliest, nextRun(task.schedule, lastRun(task.id), now).getTime() - now.getTime());
+    earliest = Math.min(
+      earliest,
+      nextRun(task.schedule, lastRun(task.id), now, since(task.id, now)).getTime() - now.getTime(),
+    );
   }
   return Math.max(1_000, earliest);
 }

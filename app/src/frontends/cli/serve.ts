@@ -396,11 +396,11 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
         checkRequests();
         const current = reloader.current().deps;
         const now = current.now();
-        for (const task of dueTasks(current.config, clock.lastRun, new Set(running.keys()), now)) {
+        for (const task of dueTasks(current.config, clock.lastRun, new Set(running.keys()), now, clock.since)) {
           start(task, current);
         }
         if (once) break;
-        const ms = nextWakeMs(current.config, clock.lastRun, current.now());
+        const ms = nextWakeMs(current.config, clock.lastRun, current.now(), undefined, clock.since);
         await new Promise<void>((resolve) => {
           const timer = setTimeout(() => {
             wake = null;
