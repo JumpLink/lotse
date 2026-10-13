@@ -35,6 +35,7 @@
  * to the protocol boundary; announcing the capability and drawing the widget go in together, and
  * until then a switch would be a control the agent is not obliged to honour.
  */
+import { _, N_ } from './i18n.ts';
 import {
   configValue,
   MODEL_CATEGORY,
@@ -180,7 +181,7 @@ export function modelControl(view: ConfigRowView): ConfigRowControl | null {
  * (`AgentSession`), and this says the one thing that is both true and actionable: it did not change,
  * so what you see is what is in use. See `core/session-groups.ts` §2 on why this repo has no `Intl`.
  */
-export const REFUSED = 'The agent did not change this. Its previous value is still in use.';
+export const REFUSED = N_('The agent did not change this. Its previous value is still in use.');
 
 /**
  * The starting view, for a surface that has an agent but no answer yet.
@@ -221,7 +222,7 @@ export function configRowInput(input: ConfigRowInput): ConfigRowView {
  * something, and the word is deliberately not "model": the field is on every control, and a thought
  * level that ever reached this state must not be labelled with another control's noun.
  */
-const CHOOSE_PLACEHOLDER = 'Choose…';
+const choosePlaceholder = () => _('Choose…');
 
 /** Project, and keep only what the row can draw. See the header on why a switch is not that. */
 function projectSelects(
@@ -251,7 +252,7 @@ function projectSelects(
       // Paired with `selected` and never set on its own: a placeholder beside a real selection would
       // be a row the person can pick to mean nothing, and a missing one leaves the widget with no
       // honest thing to display (see the field).
-      placeholder: selected < 0 ? CHOOSE_PLACEHOLDER : null,
+      placeholder: selected < 0 ? choosePlaceholder() : null,
       searchable: control.searchable,
       selectable: true,
     });
@@ -323,7 +324,7 @@ export function configAfterSet(view: ConfigRowView, answer: SessionConfigOption[
   // An answer that is neither an `Error` nor a list cannot be projected, so there is nothing to show
   // and nothing to throw in a setter a widget calls — which is `REFUSED` as well.
   if (answer instanceof Error || !Array.isArray(answer)) {
-    return { ...view, busy: false, error: REFUSED };
+    return { ...view, busy: false, error: _(REFUSED) };
   }
   return configRowInput({ options: answer });
 }

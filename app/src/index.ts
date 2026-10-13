@@ -14,6 +14,8 @@
  *   threw an exception" and the hint would be printed twice.
  */
 
+import './i18n-gettext.ts';
+
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 

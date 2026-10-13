@@ -68,6 +68,7 @@
  * therefore *shown* — a dialog, and the caption under the entry — and neither is recorded.
  */
 
+import { _ } from './i18n.ts';
 import { isAuthRequired, RpcError, UnsupportedCapabilityError } from '@lotse/acp';
 
 import { ModelDeniedError } from './model-policy.ts';
@@ -293,10 +294,11 @@ export function failureNotice(kind: FailureKind): FailureNotice | null {
   switch (kind) {
     case 'auth':
       return {
-        heading: 'The agent wants you to log in first',
-        body:
+        heading: _('The agent wants you to log in first'),
+        body: _(
           'It cannot answer a prompt until somebody has logged in. Everything else keeps working; ' +
-          'the prompt on screen was not sent.',
+            'the prompt on screen was not sent.',
+        ),
         // Stays: the dialog names it as the way in when the window cannot log in itself (an agent that
         // has no login API lotse drives, or one outside the sandbox), and as the alternative otherwise.
         command: AUTH_COMMAND,
@@ -304,32 +306,34 @@ export function failureNotice(kind: FailureKind): FailureNotice | null {
       };
     case 'model':
       return {
-        heading: 'The model refused the request',
+        heading: _('The model refused the request'),
         // **Both remedies, in provider-neutral words, and neither of them asserted.** Three causes are
         // indistinguishable on this path — a region block, a rate limit and a login that expired
         // mid-turn all arrive as the same `-32000` — so the sentence names all three and does not pick
         // one. The `lotse auth` advice that used to stand alone here was *wrong* for the case it was
         // written for (issue #2), and dropping it entirely would be wrong for the case that remains; so
         // it stays, as one half of a sentence, and the button is the half lotse can actually perform.
-        body:
+        body: _(
           'The provider turned this request down. It may be limited by region or rate, or it may need ' +
-          'a login. Choose another model, or run lotse auth in a terminal.',
+            'a login. Choose another model, or run lotse auth in a terminal.',
+        ),
         // `null`, not `AUTH_COMMAND`: see `FailureNotice.command`. This dialog's remedy is a button.
         command: null,
         action: 'choose-model',
       };
     case 'denied':
       return {
-        heading: 'This model is not allowed here',
+        heading: _('This model is not allowed here'),
         // **A notice rather than `null`, and the composer is the reason.** `composerView` draws
         // `reason || status` and never an attached agent's `note` (`composer.ts`), so for the
         // `'unknown'` cause — the one the composer deliberately does **not** block on, because the
         // first prompt precedes any knowledge of the model — a `null` notice would make the refusal
         // silent: a prompt that went nowhere, and no sentence anywhere on screen. The words name no
         // model id and no host app, for `MODEL_DENIED_REASON`'s reason.
-        body:
+        body: _(
           'The app this chat is part of does not allow its data to be sent to this model, so the ' +
-          'prompt was not sent. Choose another model from the list and send it again.',
+            'prompt was not sent. Choose another model from the list and send it again.',
+        ),
         // `null`: there is no command, because nothing outside this window is wrong. The remedy is
         // the dropdown, so it is the button.
         command: null,
@@ -337,22 +341,24 @@ export function failureNotice(kind: FailureKind): FailureNotice | null {
       };
     case 'quota':
       return {
-        heading: 'The provider account has no credit',
+        heading: _('The provider account has no credit'),
         // Fixed words, no agent text. The login worked, so no command is named: the remedies are a free
         // model (the button) or topping up the account at the provider, which lotse cannot do.
-        body:
+        body: _(
           'You are logged in, but the provider refused this request because the account has no credit. ' +
-          'Choose a model that is free, or add credit at the provider.',
+            'Choose a model that is free, or add credit at the provider.',
+        ),
         command: null,
         action: 'choose-model',
       };
     case 'unsupported':
       return {
-        heading: 'This agent cannot reopen this session',
-        body:
+        heading: _('This agent cannot reopen this session'),
+        body: _(
           'It advertises neither session/load nor session/resume, so there is no way for lotse to ' +
-          'attach it to a conversation that already exists. An agent lotse cannot reattach to is ' +
-          'refused, not shown as an empty transcript.',
+            'attach it to a conversation that already exists. An agent lotse cannot reattach to is ' +
+            'refused, not shown as an empty transcript.',
+        ),
         command: null,
         action: null,
       };

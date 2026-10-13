@@ -5,6 +5,7 @@
  * and keeps the rest, so the CLI and the GUI never reset each other. Without a flag it only reports.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
 import { messengerProblem, requestSettings, type LotsePaths, type RequestSettings } from '@lotse/core';
@@ -122,40 +123,43 @@ export function messengerReport(file: string, settings: Settings, problem: strin
 
 const command = (paths: LotsePaths): CommandModule => ({
   command: 'messenger',
-  describe: 'show or set the requests serve takes from the chat',
+  describe: _('show or set the requests serve takes from the chat'),
   builder: (yargs) =>
     yargs
-      .option('requests', { type: 'string', describe: 'start an agent run for a chat message: on or off' })
-      .option('request-profile', { type: 'string', describe: 'the tasks.json profile a request runs with' })
+      .option('requests', { type: 'string', describe: _('start an agent run for a chat message: on or off') })
+      .option('request-profile', {
+        type: 'string',
+        describe: _('the tasks.json profile a request runs with'),
+      })
       .option('request-prefix', {
         type: 'string',
-        describe: 'a message starting with this is always a request',
+        describe: _('a message starting with this is always a request'),
       })
       .option('request-preamble', {
         type: 'string',
-        describe: 'text put before the first message of a session',
+        describe: _('text put before the first message of a session'),
       })
-      .option('request-cwd', { type: 'string', describe: 'working directory of a request; empty: home' })
+      .option('request-cwd', { type: 'string', describe: _('working directory of a request; empty: home') })
       .option('request-rights', {
         type: 'string',
-        describe: 'read: decline every permission request; confirm: ask in the chat',
+        describe: _('read: decline every permission request; confirm: ask in the chat'),
       })
       .option('request-mcp-server', {
         type: 'string',
-        describe: 'MCP servers for a request: name=command arg …; separated by ";", or none',
+        describe: _('MCP servers for a request: name=command arg …; separated by ";", or none'),
       })
       .option('request-mcp-env', {
         type: 'string',
-        describe: 'environment of those servers: server:NAME=value; …, or none (replaces all)',
+        describe: _('environment of those servers: server:NAME=value; …, or none (replaces all)'),
       })
       .option('follow-up-minutes', {
         type: 'number',
-        describe: 'how long after an answer a message continues that session; 0: never',
+        describe: _('how long after an answer a message continues that session; 0: never'),
       })
-      .option('max-concurrent', { type: 'number', describe: 'requests running at the same time' })
+      .option('max-concurrent', { type: 'number', describe: _('requests running at the same time') })
       .option('person-needed-minutes', {
         type: 'number',
-        describe: 'how long a task waits when only you can go on (person_needed)',
+        describe: _('how long a task waits when only you can go on (person_needed)'),
       })
       .strict(),
   handler: (argv) => {
@@ -184,7 +188,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       }
       try {
         const { backup } = saveSettings(file, withRequests(current, next));
-        if (backup) err(`the earlier settings file was moved to ${backup}`);
+        if (backup) err(fmt(_('the earlier settings file was moved to {backup}'), { backup }));
       } catch (error) {
         const code = (error as NodeJS.ErrnoException).code;
         err(

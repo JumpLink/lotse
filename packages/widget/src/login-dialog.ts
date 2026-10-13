@@ -12,6 +12,7 @@
  * no per-step teardown to get wrong.
  */
 
+import { _, fmt } from '@lotse/core';
 import Adw from '@girs/adw-1';
 import Gtk from '@girs/gtk-4.0';
 
@@ -59,7 +60,7 @@ export class LoginDialog {
 
   show(parent: Gtk.Widget, controller: LoginController): void {
     if (this.#dialog) return;
-    const dialog = new Adw.Dialog({ title: 'Log in', contentWidth: CLAMP_PX });
+    const dialog = new Adw.Dialog({ title: _('Log in'), contentWidth: CLAMP_PX });
     const content = new Gtk.Box({
       orientation: Gtk.Orientation.VERTICAL,
       spacing: 18,
@@ -119,26 +120,32 @@ export class LoginDialog {
         content.append(new Gtk.Spinner({ spinning: true, widthRequest: 32, heightRequest: 32 }));
         content.append(
           plainLabel(
-            state.step === 'starting' ? 'Starting the login…' : `Contacting ${state.provider.name}…`,
+            state.step === 'starting'
+              ? _('Starting the login…')
+              : fmt(_('Contacting {provider}…'), { provider: state.provider.name }),
           ),
         );
         return;
       case 'unavailable':
-        content.append(plainLabel('Logging in from this window is not possible'));
+        content.append(plainLabel(_('Logging in from this window is not possible')));
         content.append(plainLabel(state.reason));
-        content.append(button('Close', () => this.close()));
+        content.append(button(_('Close'), () => this.close()));
         return;
       case 'providers':
         this.#renderProviders(content, controller, state.providers);
         return;
       case 'methods': {
-        content.append(plainLabel(`How do you want to log in to ${state.provider.name}?`));
+        content.append(
+          plainLabel(fmt(_('How do you want to log in to {provider}?'), { provider: state.provider.name })),
+        );
         const group = new Adw.PreferencesGroup();
         for (const method of state.provider.methods) {
           const row = new Adw.ActionRow({
             title: method.label,
             subtitle:
-              method.kind === 'key' ? 'Paste a key from the provider’s console' : 'Log in in the browser',
+              method.kind === 'key'
+                ? _('Paste a key from the provider’s console')
+                : _('Log in in the browser'),
             activatable: true,
             useMarkup: false,
           });
@@ -147,7 +154,7 @@ export class LoginDialog {
           group.add(row);
         }
         content.append(group);
-        content.append(button('Back', () => void controller.showProviders()));
+        content.append(button(_('Back'), () => void controller.showProviders()));
         return;
       }
       case 'fields':
@@ -157,12 +164,14 @@ export class LoginDialog {
         this.#renderKey(content, controller, state.provider);
         return;
       case 'waiting': {
-        content.append(plainLabel(`Log in to ${state.provider.name}`, ['title-3']));
+        content.append(
+          plainLabel(fmt(_('Log in to {provider}'), { provider: state.provider.name }), ['title-3']),
+        );
         if (state.prompt.instructions) content.append(plainLabel(state.prompt.instructions, [], true));
         content.append(
           new Gtk.LinkButton({
             uri: state.prompt.url,
-            label: 'Open the login page',
+            label: _('Open the login page'),
             halign: Gtk.Align.START,
           }),
         );
@@ -170,47 +179,49 @@ export class LoginDialog {
         // and widened the whole dialog past the window (measured, 1378 px in a 1024 px window). The link
         // opens it and Copy hands it to a browser on another machine.
         const copy = new Gtk.Button({
-          label: 'Copy the link',
+          label: _('Copy the link'),
           halign: Gtk.Align.START,
           cssClasses: ['flat'],
         });
         copy.connect('clicked', () => {
           copy.get_clipboard().set(state.prompt.url);
-          copy.set_label('Copied');
+          copy.set_label(_('Copied'));
         });
         content.append(copy);
         if (state.prompt.mode === 'code') {
-          const entry = new Adw.EntryRow({ title: 'Code from the page' });
+          const entry = new Adw.EntryRow({ title: _('Code from the page') });
           const go = (): void => controller.submitCode(entry.get_text());
           entry.connect('entry-activated', go);
           const group = new Adw.PreferencesGroup();
           group.add(entry);
           content.append(group);
-          content.append(button('Continue', go, true));
+          content.append(button(_('Continue'), go, true));
         } else {
           const waiting = new Gtk.Box({ spacing: 12 });
           waiting.append(new Gtk.Spinner({ spinning: true }));
-          waiting.append(plainLabel('Waiting until you are done in the browser…'));
+          waiting.append(plainLabel(_('Waiting until you are done in the browser…')));
           content.append(waiting);
         }
-        content.append(button('Cancel', () => controller.cancel()));
+        content.append(button(_('Cancel'), () => controller.cancel()));
         return;
       }
       case 'connected':
-        content.append(plainLabel(`Logged in to ${state.provider.name}.`, ['title-3']));
         content.append(
-          plainLabel('Send your prompt again; the agent has been restarted with the new login.'),
+          plainLabel(fmt(_('Logged in to {provider}.'), { provider: state.provider.name }), ['title-3']),
         );
-        content.append(button('Done', () => this.close(), true));
+        content.append(
+          plainLabel(_('Send your prompt again; the agent has been restarted with the new login.')),
+        );
+        content.append(button(_('Done'), () => this.close(), true));
         return;
       case 'failed':
-        content.append(plainLabel('The login did not work', ['title-3']));
+        content.append(plainLabel(_('The login did not work'), ['title-3']));
         content.append(plainLabel(state.message, [], true));
-        content.append(button('Close', () => this.close()));
+        content.append(button(_('Close'), () => this.close()));
         return;
       case 'expired':
-        content.append(plainLabel('The login ran out of time', ['title-3']));
-        content.append(button('Try again', () => void controller.showProviders(), true));
+        content.append(plainLabel(_('The login ran out of time'), ['title-3']));
+        content.append(button(_('Try again'), () => void controller.showProviders(), true));
         return;
       case 'closed':
         return;
@@ -219,11 +230,13 @@ export class LoginDialog {
 
   #providerRow(provider: LoginProvider, controller: LoginController): Adw.ActionRow {
     const ways = [
-      ...new Set(provider.methods.map((method) => (method.kind === 'key' ? 'API key' : 'Browser login'))),
+      ...new Set(
+        provider.methods.map((method) => (method.kind === 'key' ? _('API key') : _('Browser login'))),
+      ),
     ];
     const notes = [
-      ...(provider.connected ? ['Logged in'] : []),
-      ...(provider.europe ? ['Europe'] : []),
+      ...(provider.connected ? [_('Logged in')] : []),
+      ...(provider.europe ? [_('Europe')] : []),
       ways.join(' · '),
     ];
     const row = new Adw.ActionRow({
@@ -243,16 +256,18 @@ export class LoginDialog {
    */
   #renderProviders(content: Gtk.Box, controller: LoginController, providers: readonly LoginProvider[]): void {
     content.append(
-      plainLabel('Use your own subscription, account or API key. lotse stores nothing: the agent keeps it.'),
+      plainLabel(
+        _('Use your own subscription, account or API key. lotse stores nothing: the agent keeps it.'),
+      ),
     );
-    const search = new Gtk.SearchEntry({ placeholderText: 'Search providers' });
+    const search = new Gtk.SearchEntry({ placeholderText: _('Search providers') });
     content.append(search);
     const list = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 18 });
     const entries: Array<{ row: Adw.ActionRow; haystack: string }> = [];
     const groups: Array<{ group: Adw.PreferencesGroup; rows: Adw.ActionRow[] }> = [];
     for (const [title, wanted] of [
-      ['Popular', true],
-      ['Other', false],
+      [_('Popular'), true],
+      [_('Other'), false],
     ] as const) {
       const group = new Adw.PreferencesGroup({ title });
       const rows: Adw.ActionRow[] = [];
@@ -297,12 +312,12 @@ export class LoginDialog {
     content.append(group);
     const go = (): void => void controller.submitKey(provider, entry.get_text());
     entry.connect('entry-activated', go);
-    const next = button('Continue', go, true);
+    const next = button(_('Continue'), go, true);
     // Nothing to send until something is typed: a dead button would say nothing.
     next.set_sensitive(false);
     entry.connect('changed', () => next.set_sensitive(entry.get_text().trim() !== ''));
     content.append(next);
-    content.append(button('Back', () => void controller.showProviders()));
+    content.append(button(_('Back'), () => void controller.showProviders()));
     entry.grab_focus();
   }
 
@@ -346,6 +361,6 @@ export class LoginDialog {
         true,
       ),
     );
-    content.append(button('Back', () => void controller.showProviders()));
+    content.append(button(_('Back'), () => void controller.showProviders()));
   }
 }

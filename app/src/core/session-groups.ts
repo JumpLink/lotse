@@ -31,6 +31,7 @@
  * sort does, so one section cannot reappear in the middle of the list.
  */
 
+import { _, _p } from '../i18n.ts';
 import { byRecency, type SessionRecord } from '@lotse/session';
 
 export type SessionGroupLabel = 'today' | 'yesterday' | 'this-week' | 'earlier';
@@ -38,13 +39,13 @@ export type SessionGroupLabel = 'today' | 'yesterday' | 'this-week' | 'earlier';
 /** The order the sections are rendered in, oldest last. The sidebar's reading order, top to bottom. */
 export const GROUP_ORDER: readonly SessionGroupLabel[] = ['today', 'yesterday', 'this-week', 'earlier'];
 
-/** Header text per section. Fixed English strings — see the note on `Intl` in the file header. */
-export const GROUP_TITLES: Readonly<Record<SessionGroupLabel, string>> = {
-  today: 'Today',
-  yesterday: 'Yesterday',
-  'this-week': 'This week',
-  earlier: 'Earlier',
-};
+/** Header text per section. Translated at use, never at load. */
+export const groupTitles = (): Readonly<Record<SessionGroupLabel, string>> => ({
+  today: _('Today'),
+  yesterday: _('Yesterday'),
+  'this-week': _('This week'),
+  earlier: _('Earlier'),
+});
 
 export interface SessionGroup {
   readonly label: SessionGroupLabel;
@@ -54,7 +55,15 @@ export interface SessionGroup {
 const MS_PER_DAY = 86_400_000;
 
 /** Short weekday names, indexed by `getDay()` — 0 is Sunday, so the order is not the ISO order. */
-const WEEKDAYS: readonly string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const weekdays = (): readonly string[] => [
+  _p('weekday', 'Sun'),
+  _p('weekday', 'Mon'),
+  _p('weekday', 'Tue'),
+  _p('weekday', 'Wed'),
+  _p('weekday', 'Thu'),
+  _p('weekday', 'Fri'),
+  _p('weekday', 'Sat'),
+];
 
 /**
  * Midnight at the start of the day the given instant falls in, in the local zone.
@@ -136,9 +145,9 @@ export function timeLabelOf(updatedAt: string, now: Date): string {
     case 'today':
       return `${pad2(at.getHours())}:${pad2(at.getMinutes())}`;
     case 'yesterday':
-      return GROUP_TITLES.yesterday;
+      return groupTitles().yesterday;
     case 'this-week':
-      return WEEKDAYS[at.getDay()];
+      return weekdays()[at.getDay()];
     case 'earlier':
       // ISO order, so the column of dates down the sidebar sorts the way it reads. Local parts, not
       // `toISOString()`: that would be UTC, and a session from late last night would show tomorrow.

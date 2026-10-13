@@ -7,6 +7,7 @@
  * watching a turn sees both; a script sees one.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import type { SessionNotification } from '@lotse/acp/types';
 import { labelOf, type SessionRecord } from '@lotse/session';
 
@@ -58,11 +59,11 @@ export function showUpdate(notification: SessionNotification, onText: (text: str
     case 'plan':
       for (const entry of update.entries) {
         const mark = entry.status === 'completed' ? '✓' : entry.status === 'in_progress' ? '→' : '·';
-        err(`  ${mark} ${entry.content}`);
+        err(fmt(_('  {mark} {content}'), { mark, content: entry.content }));
       }
       return;
     case 'current_mode_update':
-      err(`  mode: ${update.currentModeId}`);
+      err(fmt(_('  mode: {currentModeId}'), { currentModeId: update.currentModeId }));
       return;
     case 'usage_update': {
       // **The same clause the transcript gets, out of `core/usage.ts`.** This file used to build its
@@ -85,12 +86,12 @@ export function showUpdate(notification: SessionNotification, onText: (text: str
 
 export function showSession(record: SessionRecord): void {
   out(labelOf(record));
-  out(`  id       ${record.id}`);
-  out(`  agent    ${record.agent}`);
-  out(`  cwd      ${record.cwd}`);
+  out(fmt(_('  id       {id}'), { id: record.id }));
+  out(fmt(_('  agent    {agent}'), { agent: record.agent }));
+  out(fmt(_('  cwd      {cwd}'), { cwd: record.cwd }));
   out(`  scope    ${record.boundTo ? `bound to ${record.boundTo}` : 'standalone'}`);
-  out(`  updated  ${record.updatedAt}`);
-  if (record.reattach) out(`  reattach ${record.reattach}`);
+  out(fmt(_('  updated  {updatedAt}'), { updatedAt: record.updatedAt }));
+  if (record.reattach) out(fmt(_('  reattach {reattach}'), { reattach: record.reattach }));
   out();
   for (const turn of record.turns) {
     out(`  ${turn.kind.padEnd(7)} ${turn.text.split('\n').join('\n          ')}`);

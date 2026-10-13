@@ -10,14 +10,17 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "check": "gjsify tsc --noEmit",
+    "check": "gjsify tsc --noEmit && gjsify run check:i18n",
+    "check:i18n": "node ../dev/check-i18n.js",
+    "i18n:extract": "../dev/i18n.sh extract",
+    "i18n:compile": "../dev/i18n.sh compile",
     "format": "gjsify format --write .",
     "format:check": "gjsify format --check .",
     "lint": "gjsify lint .",
     "lint:fix": "gjsify lint --fix .",
-    "build": "gjsify run build:gjs",
+    "build": "gjsify run i18n:compile && gjsify run build:gjs",
     "build:gjs": "gjsify build src/index.ts --app gjs --outfile dist/lotse.gjs.mjs",
-    "build:app": "gjsify build src/frontends/gui/main.ts --app gjs --outfile dist/lotse-app.gjs.mjs",
+    "build:app": "gjsify run i18n:compile && gjsify build src/frontends/gui/main.ts --app gjs --outfile dist/lotse-app.gjs.mjs",
     "build:app:node": "gjsify build src/frontends/gui/main.ts --app node --outfile dist/lotse-app.node.mjs",
     "start": "gjsify run dist/lotse.gjs.mjs",
     "start:app": "gjsify run dist/lotse-app.gjs.mjs",
@@ -25,6 +28,7 @@
     "dev:app": "gjsify run build:app && gjsify run start:app",
     "test": "gjsify test",
     "test:real-agent": "gjsify build tests/integration/acp-real-agent.ts --app gjs --outfile dist/acp-real-agent.gjs.mjs && gjsify run dist/acp-real-agent.gjs.mjs",
+    "test:i18n": "gjsify run i18n:compile && gjsify build tests/probes/i18n-de.ts --app gjs --outfile dist/i18n-de.gjs.mjs && LANGUAGE=de LANG=de_DE.UTF-8 gjsify run dist/i18n-de.gjs.mjs",
     "test:schema": "node ../scripts/check-schema.mjs"
   },
   "gjsify": {
@@ -50,6 +54,7 @@
         "darwin": "node",
         "win32": "node"
       },
+      "localeDir": "dist/locale",
       "icon": "../data/icons/hicolor/scalable/apps/eu.jumplink.Lotse.svg",
       "categories": [
         "Development",

@@ -9,6 +9,7 @@
  * somebody needs told rather than left to discover.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
 import {
@@ -29,21 +30,21 @@ import { processTerminal } from './terminal.ts';
 
 const command = (paths: LotsePaths): CommandModule => ({
   command: 'resume <id> [prompt..]',
-  describe: 'reattach a recorded session and optionally run one prompt turn',
+  describe: _('reattach a recorded session and optionally run one prompt turn'),
   builder: (yargs) =>
     yargs
-      .positional('id', { type: 'string', describe: 'the session id from `lotse sessions`' })
+      .positional('id', { type: 'string', describe: _('the session id from `lotse sessions`') })
       .positional('prompt', {
         type: 'string',
         array: true,
-        describe: 'the prompt; omit it to reattach and stop',
+        describe: _('the prompt; omit it to reattach and stop'),
       })
       .option('agent', {
         type: 'string',
-        describe: "must match the session's agent; the session's own agent is used when omitted",
+        describe: _("must match the session's agent; the session's own agent is used when omitted"),
       })
-      .option('deny-all', { type: 'boolean', describe: 'refuse every tool call without asking' })
-      .option('quiet', { type: 'boolean', describe: "do not echo the agent's log lines" })
+      .option('deny-all', { type: 'boolean', describe: _('refuse every tool call without asking') })
+      .option('quiet', { type: 'boolean', describe: _("do not echo the agent's log lines") })
       .strict(),
   handler: async (argv) => {
     const raw = argv as Record<string, unknown>;
@@ -57,7 +58,7 @@ const command = (paths: LotsePaths): CommandModule => ({
     const store = createSessionStore(paths.sessionsFile);
     const record = store.get(id);
     if (!record) {
-      err(`no session with id ${id} — \`lotse sessions\` lists what lotse has`);
+      err(fmt(_('no session with id {id} — `lotse sessions` lists what lotse has'), { id }));
       process.exitCode = 1;
       return;
     }
@@ -92,7 +93,7 @@ const command = (paths: LotsePaths): CommandModule => ({
         command: launcher,
         gate: commandGate({ terminal, denyAll }),
         onLog: (line) => {
-          if (!quiet) err(`  [agent] ${line}`);
+          if (!quiet) err(fmt(_('  [agent] {line}'), { line }));
         },
         onNotice: (message) => err(message),
         onSpawn: (close) => {
@@ -135,7 +136,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       // `start` could disagree about what a transcript write does.
       store.append(id, transcript);
       out();
-      err(`— ${stopReason} —`);
+      err(fmt(_('— {stopReason} —'), { stopReason }));
     } finally {
       interrupt.dispose();
       handle?.close();

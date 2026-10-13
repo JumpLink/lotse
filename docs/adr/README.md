@@ -15,3 +15,4 @@ Statuses: **Proposed** (written, not yet agreed), **Accepted**, **Superseded by 
 | [0002](0002-assistant-in-continuous-operation.md) | The assistant in continuous operation | Accepted |
 | [0003](0003-serve-tasks-questions-channel.md) | `lotse serve`: tasks, questions and the channel seam | Accepted |
 | [0004](0004-headless-job-api.md) | A headless job API in `@lotse/core` | Accepted |
+| [0005](0005-two-gettext-domains.md) | Two gettext domains: the app's and the library's | Accepted |

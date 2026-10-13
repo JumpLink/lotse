@@ -21,6 +21,8 @@
  * the same lifecycle, and the two surfaces disagreeing about it is a bug with two faces.
  */
 
+import '../../i18n-gettext.ts';
+import { _ } from '../../i18n.ts';
 import Gtk from '@girs/gtk-4.0';
 import { runAdwaitaApp } from '@gjsify/adwaita-app';
 
@@ -176,10 +178,11 @@ const status = await runAdwaitaApp({
     version: APP_VERSION,
     website: 'https://github.com/JumpLink/lotse',
     license: 'AGPL-3.0-or-later',
-    comments:
+    comments: _(
       'An ACP client for GNOME: start a coding agent as a subprocess, watch it work, and answer ' +
-      'the questions it asks. The agent brings its own model, its own tools and its own login — ' +
-      'lotse shows what it offers and asks before it acts. The same kernel as the command line.',
+        'the questions it asks. The agent brings its own model, its own tools and its own login — ' +
+        'lotse shows what it offers and asks before it acts. The same kernel as the command line.',
+    ),
   },
   // The same read `lotse sessions` does, principal filter included: two surfaces listing different
   // sessions from one file would make one of them wrong, and nobody could say which.

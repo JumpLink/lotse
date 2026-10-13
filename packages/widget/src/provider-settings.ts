@@ -21,6 +21,9 @@ import Adw from '@girs/adw-1';
 import Gtk from '@girs/gtk-4.0';
 
 import {
+  _,
+  _n,
+  fmt,
   CUSTOM_PRESETS,
   parseModelSpecs,
   type AddOutcome,
@@ -60,7 +63,7 @@ function rowButton(label: string, onClick: () => void, cssClasses: string[] = ['
 function confirm(parent: Gtk.Widget, heading: string, body: string, yes: string): Promise<boolean> {
   return new Promise((resolve) => {
     const dialog = new Adw.AlertDialog({ heading, body, bodyUseMarkup: false });
-    dialog.add_response('cancel', 'Cancel');
+    dialog.add_response('cancel', _('Cancel'));
     dialog.add_response('yes', yes);
     dialog.set_response_appearance('yes', Adw.ResponseAppearance.DESTRUCTIVE);
     dialog.set_default_response('cancel');
@@ -128,17 +131,17 @@ export class ProviderSettingsPage {
         const group = this.#group();
         const box = new Gtk.Box({ spacing: 12 });
         box.append(new Gtk.Spinner({ spinning: true }));
-        box.append(plainLabel('Reading the providers…'));
+        box.append(plainLabel(_('Reading the providers…')));
         group.add(box);
         return;
       }
       case 'unavailable':
-        this.#group({ title: 'Providers' }).add(plainLabel(state.reason));
+        this.#group({ title: _('Providers') }).add(plainLabel(state.reason));
         return;
       case 'failed': {
-        const group = this.#group({ title: 'Providers' });
+        const group = this.#group({ title: _('Providers') });
         group.add(plainLabel(state.message, ['error']));
-        group.set_header_suffix(rowButton('Try again', () => void controller.reload()));
+        group.set_header_suffix(rowButton(_('Try again'), () => void controller.reload()));
         return;
       }
       case 'ready':
@@ -154,27 +157,28 @@ export class ProviderSettingsPage {
     if (view.message) this.#group().add(plainLabel(view.message, ['caption']));
 
     const connected = this.#group({
-      title: 'Connected providers',
-      description: view.connectedReadOnlyReason ?? 'The logins and keys the agent holds.',
+      title: _('Connected providers'),
+      description: view.connectedReadOnlyReason ?? _('The logins and keys the agent holds.'),
     });
-    const connect = rowButton('Connect…', () => this.#hooks.connect(() => void controller.reload()));
+    const connect = rowButton(_('Connect…'), () => this.#hooks.connect(() => void controller.reload()));
     connect.set_sensitive(idle);
     connected.set_header_suffix(connect);
-    if (view.connected.length === 0) connected.add(new Adw.ActionRow({ title: 'No provider connected yet' }));
+    if (view.connected.length === 0)
+      connected.add(new Adw.ActionRow({ title: _('No provider connected yet') }));
     for (const provider of view.connected) {
       const notes = [
-        provider.models === 1 ? '1 model' : `${provider.models} models`,
-        ...(provider.offered ? [] : ['not used by this app']),
+        fmt(_n('{n} model', '{n} models', provider.models), { n: provider.models }),
+        ...(provider.offered ? [] : [_('not used by this app')]),
       ];
       const row = new Adw.ActionRow({ title: provider.name, subtitle: notes.join(' · '), useMarkup: false });
       connected.add(row);
       if (!provider.removable) continue;
-      const logout = rowButton(view.busy === provider.id ? 'Logging out…' : 'Log out', () => {
+      const logout = rowButton(view.busy === provider.id ? _('Logging out…') : _('Log out'), () => {
         void confirm(
           this.page,
-          `Log out of ${provider.name}?`,
-          'The agent forgets the login or key. You can connect again at any time.',
-          'Log out',
+          fmt(_('Log out of {provider}?'), { provider: provider.name }),
+          _('The agent forgets the login or key. You can connect again at any time.'),
+          _('Log out'),
         ).then((yes) => (yes ? controller.disconnect(provider.id) : undefined));
       });
       logout.set_sensitive(idle);
@@ -183,25 +187,25 @@ export class ProviderSettingsPage {
 
     if (view.custom) {
       const custom = this.#group({
-        title: 'Custom providers',
+        title: _('Custom providers'),
         description:
           view.custom.readOnlyReason ??
-          'An OpenAI-compatible server of your own — Ollama, LM Studio, llama.cpp, vLLM or a gateway.',
+          _('An OpenAI-compatible server of your own — Ollama, LM Studio, llama.cpp, vLLM or a gateway.'),
       });
       if (view.custom.editable) {
-        const add = rowButton('Add…', () => this.#openAddForm(controller));
+        const add = rowButton(_('Add…'), () => this.#openAddForm(controller));
         add.set_sensitive(idle);
         custom.set_header_suffix(add);
       }
-      if (view.custom.providers.length === 0) custom.add(new Adw.ActionRow({ title: 'None added' }));
+      if (view.custom.providers.length === 0) custom.add(new Adw.ActionRow({ title: _('None added') }));
       for (const provider of view.custom.providers) {
         const lines = [
-          [provider.baseUrl ?? 'no URL', provider.keyStored ? 'key stored' : null]
+          [provider.baseUrl ?? _('no URL'), provider.keyStored ? _('key stored') : null]
             .filter(Boolean)
             .join(' · '),
-          provider.models.join(', ') || 'no models listed',
-          ...(provider.offered ? [] : ['not used by this app']),
-          ...(provider.removable ? [] : [`written in ${provider.source}`]),
+          provider.models.join(', ') || _('no models listed'),
+          ...(provider.offered ? [] : [_('not used by this app')]),
+          ...(provider.removable ? [] : [fmt(_('written in {source}'), { source: provider.source })]),
           ...(provider.privacyNote ? [provider.privacyNote] : []),
         ];
         const row = new Adw.ActionRow({
@@ -211,12 +215,12 @@ export class ProviderSettingsPage {
           subtitleLines: 0,
         });
         if (provider.removable) {
-          const remove = rowButton(view.busy === provider.id ? 'Removing…' : 'Remove', () => {
+          const remove = rowButton(view.busy === provider.id ? _('Removing…') : _('Remove'), () => {
             void confirm(
               this.page,
-              `Remove ${provider.name}?`,
-              'Its entry and any key stored for it are deleted.',
-              'Remove',
+              fmt(_('Remove {provider}?'), { provider: provider.name }),
+              _('Its entry and any key stored for it are deleted.'),
+              _('Remove'),
             ).then((yes) => (yes ? controller.removeCustom(provider.id) : undefined));
           });
           remove.set_sensitive(idle);
@@ -232,7 +236,7 @@ export class ProviderSettingsPage {
 
   /** The add form: a preset, the fields it does not fill, the models and an optional key. */
   #openAddForm(controller: ProviderSettingsController): void {
-    const dialog = new Adw.Dialog({ title: 'Add a custom provider', contentWidth: FORM_WIDTH_PX });
+    const dialog = new Adw.Dialog({ title: _('Add a custom provider'), contentWidth: FORM_WIDTH_PX });
     const content = new Gtk.Box({
       orientation: Gtk.Orientation.VERTICAL,
       spacing: 18,
@@ -249,14 +253,14 @@ export class ProviderSettingsPage {
     const presets = [...CUSTOM_PRESETS, null];
     const form = new Adw.PreferencesGroup();
     const preset = new Adw.ComboRow({
-      title: 'Server',
-      model: Gtk.StringList.new(presets.map((entry) => entry?.name ?? 'Other')),
+      title: _('Server'),
+      model: Gtk.StringList.new(presets.map((entry) => entry?.name ?? _('Other'))),
     });
-    const id = new Adw.EntryRow({ title: 'Id (lowercase, e.g. local-ollama)' });
-    const name = new Adw.EntryRow({ title: 'Name' });
-    const url = new Adw.EntryRow({ title: 'Base URL (…/v1)' });
-    const models = new Adw.EntryRow({ title: 'Models (empty: ask the server; model=context to set one)' });
-    const key = new Adw.PasswordEntryRow({ title: 'API key (optional)' });
+    const id = new Adw.EntryRow({ title: _('Id (lowercase, e.g. local-ollama)') });
+    const name = new Adw.EntryRow({ title: _('Name') });
+    const url = new Adw.EntryRow({ title: _('Base URL (…/v1)') });
+    const models = new Adw.EntryRow({ title: _('Models (empty: ask the server; model=context to set one)') });
+    const key = new Adw.PasswordEntryRow({ title: _('API key (optional)') });
     for (const row of [preset, id, name, url, models, key]) form.add(row);
     // A preset fills the fields it knows; the person may still change every one of them.
     const fill = (): void => {
@@ -273,7 +277,7 @@ export class ProviderSettingsPage {
     problem.set_visible(false);
     content.append(problem);
     const save = new Gtk.Button({
-      label: 'Add',
+      label: _('Add'),
       cssClasses: ['suggested-action', 'pill'],
       halign: Gtk.Align.CENTER,
     });
@@ -313,7 +317,7 @@ export class ProviderSettingsPage {
           return say(outcome.reason);
         case 'confirm': {
           const body = [outcome.question, outcome.privacyNote].filter(Boolean).join('\n\n');
-          if (await confirm(dialog, 'Plain http on your network?', body, 'Use it')) await submit(true);
+          if (await confirm(dialog, _('Plain http on your network?'), body, _('Use it'))) await submit(true);
           return;
         }
         case 'added':
@@ -334,10 +338,10 @@ export class ProviderSettingsPage {
       child = next;
     }
     // Whether the agent could be restarted is the line under the group (`view.message`), not claimed here.
-    content.append(plainLabel('Saved.', ['title-3']));
+    content.append(plainLabel(_('Saved.'), ['title-3']));
     for (const note of notes) content.append(plainLabel(note));
     const done = new Gtk.Button({
-      label: 'Done',
+      label: _('Done'),
       cssClasses: ['suggested-action', 'pill'],
       halign: Gtk.Align.CENTER,
     });

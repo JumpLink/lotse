@@ -18,6 +18,7 @@
  * `connect/key`, and never written or printed.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
 import {
@@ -67,26 +68,28 @@ function describe(provider: ConfiguredProvider): string {
 
 const command = (paths: LotsePaths): CommandModule => ({
   command: 'provider <action> [id]',
-  describe: 'custom providers (local models, any OpenAI-compatible endpoint) for the bundled opencode',
+  describe: _('custom providers (local models, any OpenAI-compatible endpoint) for the bundled opencode'),
   builder: (yargs) =>
     yargs
-      .positional('action', { type: 'string', choices: ACTIONS, describe: 'list, add or remove' })
-      .positional('id', { type: 'string', describe: 'the provider id (add: defaults to the preset’s)' })
+      .positional('action', { type: 'string', choices: ACTIONS, describe: _('list, add or remove') })
+      .positional('id', { type: 'string', describe: _('the provider id (add: defaults to the preset’s)') })
       .option('preset', {
         type: 'string',
         choices: CUSTOM_PRESETS.map((preset) => preset.id),
-        describe: 'a local server: its URL, name and id',
+        describe: _('a local server: its URL, name and id'),
       })
-      .option('url', { type: 'string', describe: 'the base URL, e.g. http://127.0.0.1:11434/v1' })
-      .option('name', { type: 'string', describe: 'the name shown in the model list' })
+      .option('url', { type: 'string', describe: _('the base URL, e.g. http://127.0.0.1:11434/v1') })
+      .option('name', { type: 'string', describe: _('the name shown in the model list') })
       .option('model', {
         type: 'string',
         array: true,
-        describe: 'a model id, optionally with its context: qwen3:4b=8192 (default: what the server lists)',
+        describe: _(
+          'a model id, optionally with its context: qwen3:4b=8192 (default: what the server lists)',
+        ),
       })
-      .option('key', { type: 'boolean', describe: 'read an API key from stdin; opencode keeps it' })
-      .option('allow-lan', { type: 'boolean', describe: 'yes to plain http on the local network' })
-      .option('agent', { type: 'string', describe: 'which agent (default: the resolved one)' })
+      .option('key', { type: 'boolean', describe: _('read an API key from stdin; opencode keeps it') })
+      .option('allow-lan', { type: 'boolean', describe: _('yes to plain http on the local network') })
+      .option('agent', { type: 'string', describe: _('which agent (default: the resolved one)') })
       .strict(),
   handler: async (argv) => {
     const raw = argv as Record<string, unknown>;
@@ -94,10 +97,14 @@ const command = (paths: LotsePaths): CommandModule => ({
     const resolved = agentForNew(paths, pickArgv<string>(raw, 'agent'));
     if (!resolved) return;
     const agent = resolved.command;
-    if (agent.id !== 'opencode') return fail(`${agent.title} has no custom providers lotse can manage`);
+    if (agent.id !== 'opencode')
+      return fail(fmt(_('{title} has no custom providers lotse can manage'), { title: agent.title }));
     const reason = whyNoLoginServer(agent, currentSandboxFacts());
     if (reason) return fail(reason.replace('its login server', 'its config'));
-    if (!which(agent.program)) return fail(`${agent.program} is not on PATH — install it, then try again`);
+    if (!which(agent.program))
+      return fail(
+        fmt(_('{program} is not on PATH — install it, then try again'), { program: agent.program }),
+      );
     // Only the bundled copy has a config directory that is lotse's to write.
     const file = resolved.isolation ? customProvidersFile(resolved.isolation) : null;
     if (action !== 'list' && !file) {
@@ -144,7 +151,7 @@ async function list(server: OpencodeServer, file: string | null): Promise<void> 
   }
   for (const provider of providers) {
     out(describe(provider));
-    for (const model of provider.models) out(`    ${model}`);
+    for (const model of provider.models) out(fmt(_('    {model}'), { model }));
   }
 }
 
@@ -160,7 +167,13 @@ async function add(
   );
   if (typeof models === 'string') return fail(models);
   const document = readProvidersDocument(file);
-  if (!document.ok) return fail(`${file} could not be read (${document.problem}) — fix or remove it first`);
+  if (!document.ok)
+    return fail(
+      fmt(_('{file} could not be read ({problem}) — fix or remove it first'), {
+        file,
+        problem: document.problem,
+      }),
+    );
 
   const api = createProviderApi(server.send);
   const preset = pickArgv<string>(raw, 'preset');
@@ -185,12 +198,12 @@ async function add(
     err(`  could not list the models (${redact(listProblem)}) — name them with --model`);
   if (plan.kind === 'refused') return fail(plan.reason);
   if (plan.kind === 'confirm') {
-    if (plan.privacyNote) err(`  ${plan.privacyNote}`);
-    return fail(`${plan.question} Add --allow-lan to say yes.`);
+    if (plan.privacyNote) err(fmt(_('  {privacyNote}'), { privacyNote: plan.privacyNote }));
+    return fail(fmt(_('{question} Add --allow-lan to say yes.'), { question: plan.question }));
   }
-  if (plan.privacyNote) err(`  ${plan.privacyNote}`);
-  for (const note of plan.notes) err(`  ${note}`);
-  if (plan.reach !== 'remote') err(`  ${LOCAL_MODEL_HINT}`);
+  if (plan.privacyNote) err(fmt(_('  {privacyNote}'), { privacyNote: plan.privacyNote }));
+  for (const note of plan.notes) err(fmt(_('  {note}'), { note }));
+  if (plan.reach !== 'remote') err(fmt(_('  {LOCAL_MODEL_HINT}'), { LOCAL_MODEL_HINT }));
 
   // Written onto the file as it is now, not as it was before the network calls above.
   updateProvidersDocument(file, (fresh) => withProvider(fresh, plan.provider));
@@ -201,17 +214,25 @@ async function add(
       now: () => Date.now(),
     });
     if (!seen)
-      return fail(`${id} was written, but opencode did not list it in time — the key was not stored`);
+      return fail(
+        fmt(_('{id} was written, but opencode did not list it in time — the key was not stored'), { id }),
+      );
     await createLoginApi(server.send).connectKey(id, key, {});
   }
   out(`${plan.replaces ? 'updated' : 'added'} ${id} (${plan.provider.models.map((m) => m.id).join(', ')}).`);
-  err('  a chat that is already open shows it after a restart of the agent.');
+  err(_('  a chat that is already open shows it after a restart of the agent.'));
 }
 
 async function remove(server: OpencodeServer, file: string, id: string | undefined): Promise<void> {
   if (!id) return fail('which provider? `lotse provider list` names them');
   const document = readProvidersDocument(file);
-  if (!document.ok) return fail(`${file} could not be read (${document.problem}) — fix or remove it first`);
+  if (!document.ok)
+    return fail(
+      fmt(_('{file} could not be read ({problem}) — fix or remove it first'), {
+        file,
+        problem: document.problem,
+      }),
+    );
   const api = createProviderApi(server.send);
   if (!documentProviderIds(document.raw).includes(id)) {
     const elsewhere = (await api.configured(file)).find((provider) => provider.id === id);

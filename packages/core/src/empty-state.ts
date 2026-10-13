@@ -5,6 +5,7 @@
  * `NO_AGENT_MESSAGE` (`agents/resolve.ts`) both read it, so the two never drift apart.
  */
 
+import { _ } from './i18n.ts';
 import type { ResolvedAgent, ResolvedSource } from './agents/resolve.ts';
 import { noticeDue, type NoticeId } from './notices.ts';
 
@@ -32,13 +33,14 @@ export function emptyStateView(resolution: { readonly agent: ResolvedAgent | nul
   if (resolution.agent !== null) return { kind: 'ready' };
   return {
     kind: 'no-agent',
-    title: 'No agent found',
-    body:
+    title: _('No agent found'),
+    body: _(
       'lotse starts a coding agent but found none on this machine. Install opencode with the command ' +
-      'below, or install lotse from Flatpak, which bundles one. Then start lotse again.',
+        'below, or install lotse from Flatpak, which bundles one. Then start lotse again.',
+    ),
     commands: [INSTALL_COMMAND],
     docsUrl: DOCS_URL,
-    sendReason: 'No agent found, so there is nothing to send to.',
+    sendReason: _('No agent found, so there is nothing to send to.'),
   };
 }
 
@@ -49,12 +51,14 @@ export interface NoticeView {
 }
 
 // Three lines at the 360 px floor: Adw.Banner ellipsizes beyond that, which would cut the statement itself.
-const BUNDLED_TEXT =
-  'Bundled OpenCode, free models: time-limited, and use without an account is undocumented. ' +
-  'What you send goes to that provider.';
+const bundledText = () =>
+  _(
+    'Bundled OpenCode, free models: time-limited, and use without an account is undocumented. ' +
+      'What you send goes to that provider.',
+  );
 
 /** The banner to show, or `null`: only the bundled copy earns one, and only until it was dismissed. */
 export function noticeView(source: ResolvedSource | null, seen: readonly string[]): NoticeView | null {
   if (source !== 'bundled' || !noticeDue('bundled-agent', seen)) return null;
-  return { id: 'bundled-agent', text: BUNDLED_TEXT, button: 'Got it' };
+  return { id: 'bundled-agent', text: bundledText(), button: _('Got it') };
 }

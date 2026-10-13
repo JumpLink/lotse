@@ -1,0 +1,571 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the lotse package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: lotse\n"
+"Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
+"POT-Creation-Date: 2026-10-13 08:19+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: packages/core/src/composer-state.ts:100
+msgid ""
+"No agent is attached to this window yet, so there is nothing to send to."
+msgstr ""
+
+#: packages/core/src/composer-state.ts:103
+msgid ""
+"No session is open, so there is nowhere to send this. Pick one from the list."
+msgstr ""
+
+#: packages/core/src/composer-state.ts:129
+msgid "Working — the agent is answering."
+msgstr ""
+
+#: packages/core/src/composer-state.ts:130
+msgid "The agent is waiting for your answer."
+msgstr ""
+
+#: packages/core/src/composer-state.ts:151
+msgid "The agent exited. Press New chat to send another prompt."
+msgstr ""
+
+#: packages/core/src/composer-state.ts:203
+msgid "Stopped."
+msgstr ""
+
+#: packages/core/src/config-row.ts:184
+msgid "The agent did not change this. Its previous value is still in use."
+msgstr ""
+
+#: packages/core/src/config-row.ts:225
+msgid "Choose…"
+msgstr ""
+
+#: packages/core/src/empty-state.ts:36
+msgid "No agent found"
+msgstr ""
+
+#: packages/core/src/empty-state.ts:38
+msgid ""
+"lotse starts a coding agent but found none on this machine. Install opencode "
+"with the command below, or install lotse from Flatpak, which bundles one. "
+"Then start lotse again."
+msgstr ""
+
+#: packages/core/src/empty-state.ts:43
+msgid "No agent found, so there is nothing to send to."
+msgstr ""
+
+#: packages/core/src/empty-state.ts:56
+msgid ""
+"Bundled OpenCode, free models: time-limited, and use without an account is "
+"undocumented. What you send goes to that provider."
+msgstr ""
+
+#: packages/core/src/empty-state.ts:63
+msgid "Got it"
+msgstr ""
+
+#: packages/core/src/failure.ts:297
+msgid "The agent wants you to log in first"
+msgstr ""
+
+#: packages/core/src/failure.ts:299
+msgid ""
+"It cannot answer a prompt until somebody has logged in. Everything else "
+"keeps working; the prompt on screen was not sent."
+msgstr ""
+
+#: packages/core/src/failure.ts:309
+msgid "The model refused the request"
+msgstr ""
+
+#: packages/core/src/failure.ts:317
+msgid ""
+"The provider turned this request down. It may be limited by region or rate, "
+"or it may need a login. Choose another model, or run lotse auth in a "
+"terminal."
+msgstr ""
+
+#: packages/core/src/failure.ts:326
+msgid "This model is not allowed here"
+msgstr ""
+
+#: packages/core/src/failure.ts:334
+msgid ""
+"The app this chat is part of does not allow its data to be sent to this "
+"model, so the prompt was not sent. Choose another model from the list and "
+"send it again."
+msgstr ""
+
+#: packages/core/src/failure.ts:344
+msgid "The provider account has no credit"
+msgstr ""
+
+#: packages/core/src/failure.ts:348
+msgid ""
+"You are logged in, but the provider refused this request because the account "
+"has no credit. Choose a model that is free, or add credit at the provider."
+msgstr ""
+
+#: packages/core/src/failure.ts:356
+msgid "This agent cannot reopen this session"
+msgstr ""
+
+#: packages/core/src/failure.ts:358
+msgid ""
+"It advertises neither session/load nor session/resume, so there is no way "
+"for lotse to attach it to a conversation that already exists. An agent lotse "
+"cannot reattach to is refused, not shown as an empty transcript."
+msgstr ""
+
+#: packages/core/src/model-policy.ts:208
+msgid ""
+"This model is not allowed here. Pick another one from the model list, then "
+"send."
+msgstr ""
+
+#: packages/core/src/model-policy.ts:213
+msgid ""
+"lotse cannot tell which model this agent would use, so nothing was sent."
+msgstr ""
+
+#: packages/core/src/onboarding.ts:80
+msgid "{n} provider"
+msgid_plural "{n} providers"
+msgstr[0] ""
+msgstr[1] ""
+
+#: packages/core/src/onboarding.ts:88 packages/widget/src/login-dialog.ts:234
+msgid "Browser login"
+msgstr ""
+
+#: packages/core/src/onboarding.ts:89 packages/widget/src/login-dialog.ts:234
+msgid "API key"
+msgstr ""
+
+#: packages/core/src/onboarding.ts:91
+msgid "Connect a provider"
+msgstr ""
+
+#: packages/core/src/onboarding.ts:92
+msgid ""
+"No provider is connected to this agent yet. Connect one to use your own "
+"models."
+msgstr ""
+
+#: packages/core/src/onboarding.ts:94
+msgid "Connect a provider…"
+msgstr ""
+
+#: packages/core/src/onboarding.ts:95
+msgid "Use free hosted models"
+msgstr ""
+
+#: packages/core/src/onboarding.ts:97
+msgid ""
+"Free hosted models need no account. They are time-limited, and what you send "
+"goes to the provider that hosts them."
+msgstr ""
+
+#: packages/core/src/permission.ts:83
+msgid "Allow once"
+msgstr ""
+
+#: packages/core/src/permission.ts:84
+msgid "Always allow"
+msgstr ""
+
+#: packages/core/src/permission.ts:85 packages/core/src/permission.ts:354
+msgid "Decline"
+msgstr ""
+
+#: packages/core/src/permission.ts:86
+msgid "Always decline"
+msgstr ""
+
+#: packages/core/src/permission.ts:354
+msgid "Allow"
+msgstr ""
+
+#: packages/core/src/permission.ts:379
+msgid "The agent calls these: {names}"
+msgstr ""
+
+#: packages/core/src/transcript-items.ts:359
+msgid "Thought"
+msgid_plural "{n} thoughts"
+msgstr[0] ""
+msgstr[1] ""
+
+#: packages/widget/src/chat.blp:66
+msgid "New chat"
+msgstr ""
+
+#: packages/widget/src/chat.blp:67
+msgid "Write a message below. The agent starts when you send it."
+msgstr ""
+
+#: packages/widget/src/chat.blp:104
+msgid "Nothing here yet"
+msgstr ""
+
+#: packages/widget/src/chat.blp:105
+msgid "No prompt has been sent in this session yet. The first one starts it."
+msgstr ""
+
+#: packages/widget/src/chat.ts:489
+msgid "Working in {path}"
+msgstr ""
+
+#: packages/widget/src/chat.ts:774 packages/widget/src/provider-settings.ts:139
+#: packages/widget/src/provider-settings.ts:142
+msgid "Providers"
+msgstr ""
+
+#: packages/widget/src/composer.ts:101
+msgid "Send"
+msgstr ""
+
+#: packages/widget/src/composer.ts:102
+msgid "Stop"
+msgstr ""
+
+#: packages/widget/src/composer.ts:110
+msgid "Send this message to the agent."
+msgstr ""
+
+#: packages/widget/src/composer.ts:111
+msgid "Stop the running turn."
+msgstr ""
+
+#: packages/widget/src/composer.ts:114
+msgid "Ask the agent…"
+msgstr ""
+
+#: packages/widget/src/failure-dialog.ts:19
+#: packages/widget/src/login-dialog.ts:132
+#: packages/widget/src/login-dialog.ts:220
+msgid "Close"
+msgstr ""
+
+#: packages/widget/src/failure-dialog.ts:22
+msgid "Choose another model"
+msgstr ""
+
+#: packages/widget/src/failure-dialog.ts:24
+msgid "Log in…"
+msgstr ""
+
+#: packages/widget/src/failure-dialog.ts:86
+msgid "Or run `{command}` in a terminal."
+msgstr ""
+
+#: packages/widget/src/failure-dialog.ts:86
+msgid "Run `{command}` in a terminal."
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:63
+msgid "Log in"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:124
+msgid "Starting the login…"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:125
+msgid "Contacting {provider}…"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:130
+msgid "Logging in from this window is not possible"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:139
+msgid "How do you want to log in to {provider}?"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:147
+msgid "Paste a key from the provider’s console"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:148
+msgid "Log in in the browser"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:157
+#: packages/widget/src/login-dialog.ts:320
+#: packages/widget/src/login-dialog.ts:364
+msgid "Back"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:168
+msgid "Log in to {provider}"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:174
+msgid "Open the login page"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:182
+msgid "Copy the link"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:188
+msgid "Copied"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:192
+msgid "Code from the page"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:198
+#: packages/widget/src/login-dialog.ts:315
+msgid "Continue"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:202
+msgid "Waiting until you are done in the browser…"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:205
+#: packages/widget/src/provider-settings.ts:66
+msgid "Cancel"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:210
+msgid "Logged in to {provider}."
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:213
+msgid ""
+"Send your prompt again; the agent has been restarted with the new login."
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:215
+#: packages/widget/src/provider-settings.ts:344
+#: packages/widget/src/tool-line.ts:31
+msgid "Done"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:218
+msgid "The login did not work"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:223
+msgid "The login ran out of time"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:224
+#: packages/widget/src/provider-settings.ts:144
+msgid "Try again"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:238
+msgid "Logged in"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:239
+msgid "Europe"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:260
+msgid ""
+"Use your own subscription, account or API key. lotse stores nothing: the "
+"agent keeps it."
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:263
+msgid "Search providers"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:269
+msgid "Popular"
+msgstr ""
+
+#: packages/widget/src/login-dialog.ts:270
+#: packages/widget/src/provider-settings.ts:257
+msgid "Other"
+msgstr ""
+
+#: packages/widget/src/permission-dialog.ts:66
+msgid "The agent did not say what it wanted to do with this."
+msgstr ""
+
+#: packages/widget/src/permission-dialog.ts:69
+msgid "The agent did not say where."
+msgstr ""
+
+#: packages/widget/src/permission-dialog.ts:330
+msgid "The agent wants permission"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:134
+msgid "Reading the providers…"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:160
+msgid "Connected providers"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:161
+msgid "The logins and keys the agent holds."
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:163
+msgid "Connect…"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:167
+msgid "No provider connected yet"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:170
+msgid "{n} model"
+msgid_plural "{n} models"
+msgstr[0] ""
+msgstr[1] ""
+
+#: packages/widget/src/provider-settings.ts:171
+#: packages/widget/src/provider-settings.ts:207
+msgid "not used by this app"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:176
+msgid "Logging out…"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:176
+#: packages/widget/src/provider-settings.ts:181
+msgid "Log out"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:179
+msgid "Log out of {provider}?"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:180
+msgid "The agent forgets the login or key. You can connect again at any time."
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:190
+msgid "Custom providers"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:193
+msgid ""
+"An OpenAI-compatible server of your own — Ollama, LM Studio, llama.cpp, vLLM "
+"or a gateway."
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:196
+msgid "Add…"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:200
+msgid "None added"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:203
+msgid "no URL"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:203
+msgid "key stored"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:206
+msgid "no models listed"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:208
+msgid "written in {source}"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:218
+msgid "Removing…"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:218
+#: packages/widget/src/provider-settings.ts:223
+msgid "Remove"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:221
+msgid "Remove {provider}?"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:222
+msgid "Its entry and any key stored for it are deleted."
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:239
+msgid "Add a custom provider"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:256
+msgid "Server"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:259
+msgid "Id (lowercase, e.g. local-ollama)"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:260
+msgid "Name"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:261
+msgid "Base URL (…/v1)"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:262
+msgid "Models (empty: ask the server; model=context to set one)"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:263
+msgid "API key (optional)"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:280
+msgid "Add"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:320
+msgid "Plain http on your network?"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:320
+msgid "Use it"
+msgstr ""
+
+#: packages/widget/src/provider-settings.ts:341
+msgid "Saved."
+msgstr ""
+
+#: packages/widget/src/tool-line.ts:29
+msgid "Pending"
+msgstr ""
+
+#: packages/widget/src/tool-line.ts:30
+msgid "Running"
+msgstr ""
+
+#: packages/widget/src/tool-line.ts:32
+msgid "Failed"
+msgstr ""
+
+#: packages/widget/src/transcript-view.ts:712
+msgid "Tool call"
+msgstr ""

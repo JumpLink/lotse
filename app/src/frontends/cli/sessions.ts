@@ -6,6 +6,7 @@
  * resume needs and what a person wants when asking "what did I open here last week".
  */
 
+import { _ } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
 import type { LotsePaths } from '@lotse/core';
@@ -16,12 +17,12 @@ import { err, pickArgv, showSession, showSessionTable } from './output.ts';
 
 const command = (paths: LotsePaths): CommandModule => ({
   command: 'sessions',
-  describe: 'list the sessions lotse has recorded',
+  describe: _('list the sessions lotse has recorded'),
   builder: (yargs) =>
     yargs
-      .option('all', { type: 'boolean', describe: 'include sessions of other principals' })
-      .option('long', { type: 'boolean', describe: 'show the transcript, not one line per session' })
-      .option('principal', { type: 'string', describe: 'whose sessions to list' })
+      .option('all', { type: 'boolean', describe: _('include sessions of other principals') })
+      .option('long', { type: 'boolean', describe: _('show the transcript, not one line per session') })
+      .option('principal', { type: 'string', describe: _('whose sessions to list') })
       .strict(),
   handler: (argv) => {
     const raw = argv as Record<string, unknown>;

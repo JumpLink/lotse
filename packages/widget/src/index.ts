@@ -27,6 +27,8 @@
  *   the dialog on its own: `LotseChat` raises it, and a host's say over it is `gate`.
  */
 
+import './i18n.ts';
+
 export { LotseChat, type HostGateAnswer, type LotseChatOptions } from './chat.ts';
 // The host's say over how its own tool calls are drawn, and what it is handed to decide.
 export type { ToolPresentation, ToolPresenter } from './tool-line.ts';

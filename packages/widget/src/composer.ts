@@ -75,7 +75,7 @@ import Adw from '@girs/adw-1';
 import Gdk from '@girs/gdk-4.0';
 import Gtk from '@girs/gtk-4.0';
 
-import { composerView, type ComposerInput } from '@lotse/core';
+import { _, composerView, type ComposerInput } from '@lotse/core';
 import { CONTENT_MAX_WIDTH_PX } from './constants.ts';
 import { CSS } from './css.ts';
 
@@ -97,21 +97,21 @@ import { CSS } from './css.ts';
 const SEND_ICON = 'go-up-symbolic';
 /** The Stop icon. A filled square, which is what stopping a running turn looks like. */
 const STOP_ICON = 'process-stop-symbolic';
-/** Button labels. Fixed English — see `core/session-groups.ts` §2 on why not `Intl`. */
-const SEND_LABEL = 'Send';
-const STOP_LABEL = 'Stop';
+/** Button labels. Functions, not constants: a lookup at module load would run before a translator registers. */
+const sendLabel = () => _('Send');
+const stopLabel = () => _('Stop');
 /**
  * Tooltips for the two buttons while they are **working**.
  *
  * Needed because `composerView` returns `''` for a sensitive button, and `''` as a tooltip is no
  * tooltip: without these the Send button is the one control in the window with nothing to say about
- * itself. Fixed English — see `core/session-groups.ts` §2 on why not `Intl`.
+ * itself. Translated at use, never at load.
  */
-const SEND_TOOLTIP = 'Send this message to the agent.';
-const STOP_TOOLTIP = 'Stop the running turn.';
+const sendTooltip = () => _('Send this message to the agent.');
+const stopTooltip = () => _('Stop the running turn.');
 
-/** What the empty entry says. Fixed English — see `core/session-groups.ts` §2 on why not `Intl`. */
-const PLACEHOLDER = 'Ask the agent…';
+/** What the empty entry says. Translated at use, never at load. */
+const placeholder = () => _('Ask the agent…');
 /** The entry's resting height in logical pixels: two lines, so "write a prompt" is visibly possible. */
 const ENTRY_MIN_HEIGHT = 56;
 /** Where the entry stops growing and starts scrolling. A window's bottom bar has a budget. */
@@ -204,7 +204,7 @@ export class Composer {
       // Our own word, but in the constructor like every other label in this window: one rule for
       // "when is markup decided" beats a rule with an exception for the strings we wrote.
       useMarkup: false,
-      label: PLACEHOLDER,
+      label: placeholder(),
       xalign: 0,
       halign: Gtk.Align.START,
       valign: Gtk.Align.START,
@@ -434,7 +434,7 @@ export class Composer {
     // `composerView` returns an **empty** reason for a button that works — a sentence explaining a
     // button that is fine is noise — so the tooltip has to fall back to the action itself. Passing
     // `view.reason` straight through would leave the enabled button with no tooltip at all.
-    this.#button.tooltipText = view.reason || (isStop ? STOP_TOOLTIP : SEND_TOOLTIP);
+    this.#button.tooltipText = view.reason || (isStop ? stopTooltip() : sendTooltip());
     // **The accessible name is never blank.** The same empty-reason rule means `view.reason` is `''`
     // exactly when the button works, and assigning `''` to `AccessibleProperty.LABEL` would leave a
     // screen reader announcing an unnamed button — the failure mode is invisible in a screenshot and
@@ -443,10 +443,10 @@ export class Composer {
       [Gtk.AccessibleProperty.LABEL],
       [
         view.reason
-          ? `${isStop ? STOP_LABEL : SEND_LABEL} — ${view.reason}`
+          ? `${isStop ? stopLabel() : sendLabel()} — ${view.reason}`
           : isStop
-            ? STOP_LABEL
-            : SEND_LABEL,
+            ? stopLabel()
+            : sendLabel(),
       ],
     );
 

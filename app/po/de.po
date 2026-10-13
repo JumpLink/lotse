@@ -1,0 +1,1034 @@
+# German translation of lotse's application strings.
+# Copyright (C) 2026 Pascal Garber
+# This file is distributed under the same license as the lotse package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: eu.jumplink.Lotse\n"
+"Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
+"POT-Creation-Date: 2026-10-13 08:19+0200\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: app/src/core/answer-view.ts:51
+msgid "in under a minute"
+msgstr "in weniger als einer Minute"
+
+#: app/src/core/answer-view.ts:54
+msgid "in {minutes} min"
+msgstr "in {minutes} Min."
+
+#: app/src/core/answer-view.ts:56
+msgid "in {hours} h"
+msgstr "in {hours} Std."
+
+#: app/src/core/answer-view.ts:57
+msgid "in {hours} h {minutes} min"
+msgstr "in {hours} Std. {minutes} Min."
+
+#: app/src/core/answer-view.ts:64
+msgid "Expiry unknown"
+msgstr "Ablauf unbekannt"
+
+#: app/src/core/answer-view.ts:66
+msgid "Expired at {time}"
+msgstr "Abgelaufen um {time}"
+
+#: app/src/core/answer-view.ts:67
+msgid "Expires at {time}, {left}"
+msgstr "Läuft um {time} ab, {left}"
+
+#: app/src/core/answer-view.ts:73
+msgid "{label} has expired; nothing waits for an answer any more."
+msgstr "{label} ist abgelaufen; niemand wartet mehr auf eine Antwort."
+
+#: app/src/core/answer-view.ts:75
+msgid "{label} is {status}{how}; nothing waits for an answer any more."
+msgstr "{label} ist {status}{how}; niemand wartet mehr auf eine Antwort."
+
+#: app/src/core/answer-view.ts:86 app/src/core/answer-view.ts:97
+msgid "Question {label}"
+msgstr "Frage {label}"
+
+#: app/src/core/answer-view.ts:92
+msgid "There is no question {label}. `lotse questions` lists the open ones."
+msgstr "Es gibt keine Frage {label}. „lotse questions“ listet die offenen auf."
+
+#: app/src/core/answer-view.ts:98
+msgid "from task {task}"
+msgstr "aus Aufgabe {task}"
+
+#: app/src/core/question-actions.ts:52
+msgid "Allow once"
+msgstr "Einmal erlauben"
+
+#: app/src/core/question-actions.ts:52
+msgid "Decline"
+msgstr "Ablehnen"
+
+#: app/src/core/question-actions.ts:53
+msgid "Done"
+msgstr "Erledigt"
+
+#: app/src/core/question-actions.ts:54
+msgid "Yes"
+msgstr "Ja"
+
+#: app/src/core/question-actions.ts:54
+msgid "No"
+msgstr "Nein"
+
+#: app/src/core/question-actions.ts:68
+msgid "Answer…"
+msgstr "Antworten…"
+
+#: app/src/core/session-groups.ts:44
+msgid "Today"
+msgstr "Heute"
+
+#: app/src/core/session-groups.ts:45
+msgid "Yesterday"
+msgstr "Gestern"
+
+#: app/src/core/session-groups.ts:46
+msgid "This week"
+msgstr "Diese Woche"
+
+#: app/src/core/session-groups.ts:47
+msgid "Earlier"
+msgstr "Früher"
+
+#: app/src/core/session-groups.ts:59
+msgctxt "weekday"
+msgid "Sun"
+msgstr "So"
+
+#: app/src/core/session-groups.ts:60
+msgctxt "weekday"
+msgid "Mon"
+msgstr "Mo"
+
+#: app/src/core/session-groups.ts:61
+msgctxt "weekday"
+msgid "Tue"
+msgstr "Di"
+
+#: app/src/core/session-groups.ts:62
+msgctxt "weekday"
+msgid "Wed"
+msgstr "Mi"
+
+#: app/src/core/session-groups.ts:63
+msgctxt "weekday"
+msgid "Thu"
+msgstr "Do"
+
+#: app/src/core/session-groups.ts:64
+msgctxt "weekday"
+msgid "Fri"
+msgstr "Fr"
+
+#: app/src/core/session-groups.ts:65
+msgctxt "weekday"
+msgid "Sat"
+msgstr "Sa"
+
+#: app/src/core/settings-view.ts:86
+msgid "Your own {name} (global configuration)"
+msgstr "Dein eigenes {name} (globale Konfiguration)"
+
+#: app/src/core/settings-view.ts:90
+msgid "Bundled {name} (recommended)"
+msgstr "Mitgeliefertes {name} (empfohlen)"
+
+#: app/src/core/settings-view.ts:112
+msgid "Not included in this install"
+msgstr "In dieser Installation nicht enthalten"
+
+#: app/src/core/settings-view.ts:124
+msgid "On your PATH"
+msgstr "In deinem PATH"
+
+#: app/src/core/settings-view.ts:126
+msgid "Checking…"
+msgstr "Wird geprüft…"
+
+#: app/src/core/settings-view.ts:127
+msgid "Not found on this machine"
+msgstr "Auf diesem Rechner nicht gefunden"
+
+#: app/src/core/settings-view.ts:137
+msgid "Not known to this version of lotse"
+msgstr "Dieser lotse-Version nicht bekannt"
+
+#: app/src/core/settings-view.ts:157
+msgid "Automatic"
+msgstr "Automatisch"
+
+#: app/src/core/settings-view.ts:158
+msgid "The bundled one, else your own install. Now: {now}"
+msgstr "Die mitgelieferte, sonst deine eigene Installation. Jetzt: {now}"
+
+#: app/src/core/settings-view.ts:159
+msgid "checking…"
+msgstr "wird geprüft…"
+
+#: app/src/core/settings-view.ts:159
+msgid "no agent is available"
+msgstr "kein Agent verfügbar"
+
+#: app/src/core/settings-view.ts:173
+msgid ""
+"lotse will not overwrite that file, so choosing an agent is turned off here."
+msgstr ""
+"lotse überschreibt diese Datei nicht, daher ist die Agentenauswahl hier "
+"abgeschaltet."
+
+#: app/src/core/settings-view.ts:175
+msgid "Your next choice first moves that file to {path}."
+msgstr "Deine nächste Auswahl verschiebt diese Datei zuerst nach {path}."
+
+#: app/src/core/settings-view.ts:180
+msgid ""
+"Your saved choice, {choice}, is not available here, so lotse starts "
+"{instead} instead."
+msgstr ""
+"Deine gespeicherte Auswahl, {choice}, ist hier nicht verfügbar; lotse "
+"startet stattdessen {instead}."
+
+#: app/src/core/settings-view.ts:182
+msgid "no agent (none is available)"
+msgstr "keinen Agenten (keiner ist verfügbar)"
+
+#: app/src/frontends/cli/agents.ts:85
+msgid "list the agent launchers lotse knows how to start"
+msgstr "die Agenten-Starter auflisten, die lotse starten kann"
+
+#: app/src/frontends/cli/agents.ts:90
+msgid ""
+"remember which agent to start: <id>, <id>:host, <id>:bundled, or none to "
+"clear"
+msgstr ""
+"merken, welcher Agent gestartet wird: <id>, <id>:host, <id>:bundled oder "
+"none zum Zurücksetzen"
+
+#: app/src/frontends/cli/agents.ts:105 app/src/frontends/cli/messenger.ts:191
+msgid "the earlier settings file was moved to {backup}"
+msgstr "die frühere Einstellungsdatei wurde nach {backup} verschoben"
+
+#: app/src/frontends/cli/agents.ts:126
+msgid "* the default for --agent"
+msgstr "* der Standard für --agent"
+
+#: app/src/frontends/cli/answer.ts:70
+msgid ""
+"answer a question from `lotse questions`; yes/no for a permission, text for "
+"a reply"
+msgstr ""
+"eine Frage aus „lotse questions“ beantworten; yes/no bei einer Berechtigung, "
+"Text bei einer Rückfrage"
+
+#: app/src/frontends/cli/answer.ts:73
+msgid "the question id, like #A1 or A1"
+msgstr "die Frage-ID, etwa #A1 oder A1"
+
+#: app/src/frontends/cli/answer.ts:77
+msgid ""
+"yes, no, or the reply; without it the answer window opens where there is a "
+"display"
+msgstr ""
+"yes, no oder die Antwort; ohne Angabe öffnet sich das Antwortfenster, wo es "
+"eine Anzeige gibt"
+
+#: app/src/frontends/cli/answer.ts:79
+msgid "type the answer in a window"
+msgstr "die Antwort in einem Fenster eingeben"
+
+#: app/src/frontends/cli/answer.ts:80 app/src/frontends/cli/auth.ts:40
+#: app/src/frontends/cli/cancel.ts:30 app/src/frontends/cli/resume.ts:47
+#: app/src/frontends/cli/start.ts:56
+msgid "do not echo the agent's log lines"
+msgstr "die Logzeilen des Agenten nicht ausgeben"
+
+#: app/src/frontends/cli/answer.ts:89
+msgid "either text or --dialog, not both"
+msgstr "entweder Text oder --dialog, nicht beides"
+
+#: app/src/frontends/cli/auth.ts:33
+msgid ""
+"arrange the login an agent asked for, so a session does not die on -32000"
+msgstr ""
+"den vom Agenten verlangten Login einrichten, damit eine Sitzung nicht mit "
+"-32000 stirbt"
+
+#: app/src/frontends/cli/auth.ts:38
+msgid ""
+"which agent to log in (default: the bundled copy, else your own install)"
+msgstr ""
+"bei welchem Agenten angemeldet wird (Standard: die mitgelieferte Kopie, "
+"sonst deine eigene Installation)"
+
+#: app/src/frontends/cli/auth.ts:50 app/src/frontends/cli/login.ts:167
+msgid "  a login here is kept in {data} and is not your own opencode login"
+msgstr ""
+"  ein Login hier wird in {data} gespeichert und ist nicht dein eigener "
+"opencode-Login"
+
+#: app/src/frontends/cli/auth.ts:57 app/src/frontends/cli/login.ts:152
+msgid ""
+"{program} is not on PATH — install it, or point PATH at it, then try again"
+msgstr ""
+"{program} ist nicht im PATH — installiere es oder ergänze den PATH und "
+"versuche es erneut"
+
+#: app/src/frontends/cli/auth.ts:70 app/src/frontends/cli/cancel.ts:64
+#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:118
+#: app/src/frontends/cli/start.ts:90
+msgid "  [agent] {line}"
+msgstr "  [agent] {line}"
+
+#: app/src/frontends/cli/auth.ts:73
+msgid ""
+"\n"
+"{message}"
+msgstr ""
+"\n"
+"{message}"
+
+#: app/src/frontends/cli/auth.ts:78
+msgid "{title} needs no authentication."
+msgstr "{title} braucht keine Authentifizierung."
+
+#: app/src/frontends/cli/auth.ts:88
+msgid ""
+"the agent advertised an auth method without an id — nothing lotse can do "
+"with it"
+msgstr ""
+"der Agent bot eine Anmeldemethode ohne ID an — damit kann lotse nichts "
+"anfangen"
+
+#: app/src/frontends/cli/auth.ts:98
+msgid "login command exited with {code} — not authenticated"
+msgstr "Login-Befehl endete mit {code} — nicht angemeldet"
+
+#: app/src/frontends/cli/auth.ts:102
+msgid "the agent did not accept the login: {message}"
+msgstr "der Agent hat den Login nicht akzeptiert: {message}"
+
+#: app/src/frontends/cli/cancel.ts:25
+msgid ""
+"send session/cancel for a session (Ctrl-C does the same inside a running "
+"turn)"
+msgstr ""
+"session/cancel für eine Sitzung senden (Strg+C tut in einem laufenden Zug "
+"dasselbe)"
+
+#: app/src/frontends/cli/cancel.ts:28
+msgid "the session id to cancel"
+msgstr "die abzubrechende Sitzungs-ID"
+
+#: app/src/frontends/cli/cancel.ts:29
+msgid "the agent that owns the session"
+msgstr "der Agent, dem die Sitzung gehört"
+
+#: app/src/frontends/cli/cancel.ts:41
+msgid ""
+"no session with id {id} and no --agent — `lotse sessions` lists what lotse "
+"has"
+msgstr ""
+"keine Sitzung mit der ID {id} und kein --agent — „lotse sessions“ listet "
+"auf, was lotse kennt"
+
+#: app/src/frontends/cli/cancel.ts:47
+msgid "session {id} belongs to agent \"{agent}\", not \"{agentId}\""
+msgstr "Sitzung {id} gehört zum Agenten „{agent}“, nicht zu „{agentId}“"
+
+#: app/src/frontends/cli/cancel.ts:76
+msgid "session/cancel sent for {id}"
+msgstr "session/cancel für {id} gesendet"
+
+#: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/serve.ts:295
+#: app/src/frontends/cli/serve.ts:302 app/src/frontends/cli/serve.ts:314
+#: app/src/frontends/cli/serve.ts:332
+msgid "  {line}"
+msgstr "  {line}"
+
+#: app/src/frontends/cli/choose.ts:38 app/src/frontends/cli/questions.ts:33
+#: app/src/frontends/cli/serve-deps.ts:111 app/src/frontends/cli/serve.ts:129
+msgid "  {problem}"
+msgstr "  {problem}"
+
+#: app/src/frontends/cli/choose.ts:40 app/src/frontends/cli/provider.ts:205
+#: app/src/frontends/cli/serve.ts:189 app/src/frontends/cli/serve.ts:228
+msgid "  {note}"
+msgstr "  {note}"
+
+#: app/src/frontends/cli/login.ts:120
+msgid ""
+"log in to a provider (browser login or API key) through the agent, with no "
+"terminal login"
+msgstr ""
+"bei einem Anbieter anmelden (Browser-Login oder API-Schlüssel), über den "
+"Agenten und ohne Terminal-Login"
+
+#: app/src/frontends/cli/login.ts:123
+msgid "which provider; none lists them"
+msgstr "welcher Anbieter; ohne Angabe werden sie aufgelistet"
+
+#: app/src/frontends/cli/login.ts:126
+msgid "which way to log in; needed when there is more than one"
+msgstr "auf welchem Weg angemeldet wird; nötig, wenn es mehrere gibt"
+
+#: app/src/frontends/cli/login.ts:131
+msgid "a field the method asks for, as key=value"
+msgstr "ein Feld, das die Methode verlangt, als key=value"
+
+#: app/src/frontends/cli/login.ts:135
+msgid "which agent (default: the bundled copy, else your own install)"
+msgstr ""
+"welcher Agent (Standard: die mitgelieferte Kopie, sonst deine eigene "
+"Installation)"
+
+#: app/src/frontends/cli/login.ts:195
+msgid "this opencode has no login API (it needs v2) — run `lotse auth` instead"
+msgstr ""
+"dieses opencode hat keine Login-API (es braucht v2) — führe stattdessen "
+"„lotse auth“ aus"
+
+#: app/src/frontends/cli/login.ts:210
+msgid "\"{wanted}\" is not a provider lotse offers a login for. These are:"
+msgstr ""
+"„{wanted}“ ist kein Anbieter, für den lotse einen Login anbietet. Möglich "
+"sind:"
+
+#: app/src/frontends/cli/login.ts:233
+msgid "{label} needs more before it can start:"
+msgstr "{label} braucht noch Angaben, bevor es starten kann:"
+
+#: app/src/frontends/cli/login.ts:254 app/src/frontends/cli/login.ts:277
+msgid "logged in to {name}."
+msgstr "bei {name} angemeldet."
+
+#: app/src/frontends/cli/login.ts:255 app/src/frontends/cli/login.ts:278
+msgid "  an agent that is already running may need a restart to see it."
+msgstr ""
+"  ein bereits laufender Agent muss eventuell neu gestartet werden, um es zu "
+"sehen."
+
+#: app/src/frontends/cli/login.ts:261
+msgid ""
+"\n"
+"Open {url}"
+msgstr ""
+"\n"
+"Öffne {url}"
+
+#: app/src/frontends/cli/login.ts:262
+msgid "  {instructions}"
+msgstr "  {instructions}"
+
+#: app/src/frontends/cli/login.ts:281
+msgid "the login failed: {message}"
+msgstr "der Login ist fehlgeschlagen: {message}"
+
+#: app/src/frontends/cli/login.ts:284
+msgid "the login ran out of time — start it again."
+msgstr "beim Login ist die Zeit abgelaufen — starte ihn erneut."
+
+#: app/src/frontends/cli/login.ts:287
+msgid "cancelled."
+msgstr "abgebrochen."
+
+#: app/src/frontends/cli/messenger.ts:126
+msgid "show or set the requests serve takes from the chat"
+msgstr "die Anfragen anzeigen oder festlegen, die serve aus dem Chat annimmt"
+
+#: app/src/frontends/cli/messenger.ts:129
+msgid "start an agent run for a chat message: on or off"
+msgstr "für eine Chat-Nachricht einen Agentenlauf starten: on oder off"
+
+#: app/src/frontends/cli/messenger.ts:132
+msgid "the tasks.json profile a request runs with"
+msgstr "das Profil aus tasks.json, mit dem eine Anfrage läuft"
+
+#: app/src/frontends/cli/messenger.ts:136
+msgid "a message starting with this is always a request"
+msgstr "eine Nachricht, die so beginnt, ist immer eine Anfrage"
+
+#: app/src/frontends/cli/messenger.ts:140
+msgid "text put before the first message of a session"
+msgstr "Text vor der ersten Nachricht einer Sitzung"
+
+#: app/src/frontends/cli/messenger.ts:142
+msgid "working directory of a request; empty: home"
+msgstr "Arbeitsverzeichnis einer Anfrage; leer: Home"
+
+#: app/src/frontends/cli/messenger.ts:145
+msgid "read: decline every permission request; confirm: ask in the chat"
+msgstr "read: jede Berechtigungsanfrage ablehnen; confirm: im Chat nachfragen"
+
+#: app/src/frontends/cli/messenger.ts:149
+msgid ""
+"MCP servers for a request: name=command arg …; separated by \";\", or none"
+msgstr ""
+"MCP-Server für eine Anfrage: name=Befehl Arg …; getrennt durch „;“, oder none"
+
+#: app/src/frontends/cli/messenger.ts:153
+msgid ""
+"environment of those servers: server:NAME=value; …, or none (replaces all)"
+msgstr "Umgebung dieser Server: server:NAME=Wert; …, oder none (ersetzt alles)"
+
+#: app/src/frontends/cli/messenger.ts:157
+msgid "how long after an answer a message continues that session; 0: never"
+msgstr ""
+"wie lange nach einer Antwort eine Nachricht diese Sitzung fortsetzt; 0: nie"
+
+#: app/src/frontends/cli/messenger.ts:159
+msgid "requests running at the same time"
+msgstr "gleichzeitig laufende Anfragen"
+
+#: app/src/frontends/cli/messenger.ts:162
+msgid "how long a task waits when only you can go on (person_needed)"
+msgstr ""
+"wie lange eine Aufgabe wartet, wenn nur du weitermachen kannst "
+"(person_needed)"
+
+#: app/src/frontends/cli/output.ts:62
+msgid "  {mark} {content}"
+msgstr "  {mark} {content}"
+
+#: app/src/frontends/cli/output.ts:66
+msgid "  mode: {currentModeId}"
+msgstr "  Modus: {currentModeId}"
+
+#: app/src/frontends/cli/output.ts:89
+msgid "  id       {id}"
+msgstr "  ID       {id}"
+
+#: app/src/frontends/cli/output.ts:90
+msgid "  agent    {agent}"
+msgstr "  Agent    {agent}"
+
+#: app/src/frontends/cli/output.ts:91
+msgid "  cwd      {cwd}"
+msgstr "  Ordner   {cwd}"
+
+#: app/src/frontends/cli/output.ts:93
+msgid "  updated  {updatedAt}"
+msgstr "  Geändert {updatedAt}"
+
+#: app/src/frontends/cli/output.ts:94
+msgid "  reattach {reattach}"
+msgstr "  Anbindung {reattach}"
+
+#: app/src/frontends/cli/provider.ts:71
+msgid ""
+"custom providers (local models, any OpenAI-compatible endpoint) for the "
+"bundled opencode"
+msgstr ""
+"eigene Anbieter (lokale Modelle, jeder OpenAI-kompatible Endpunkt) für das "
+"mitgelieferte opencode"
+
+#: app/src/frontends/cli/provider.ts:74
+msgid "list, add or remove"
+msgstr "auflisten, hinzufügen oder entfernen"
+
+#: app/src/frontends/cli/provider.ts:75
+msgid "the provider id (add: defaults to the preset’s)"
+msgstr "die Anbieter-ID (add: Standard ist die der Vorlage)"
+
+#: app/src/frontends/cli/provider.ts:79
+msgid "a local server: its URL, name and id"
+msgstr "ein lokaler Server: seine URL, sein Name und seine ID"
+
+#: app/src/frontends/cli/provider.ts:81
+msgid "the base URL, e.g. http://127.0.0.1:11434/v1"
+msgstr "die Basis-URL, z. B. http://127.0.0.1:11434/v1"
+
+#: app/src/frontends/cli/provider.ts:82
+msgid "the name shown in the model list"
+msgstr "der in der Modellliste angezeigte Name"
+
+#: app/src/frontends/cli/provider.ts:87
+msgid ""
+"a model id, optionally with its context: qwen3:4b=8192 (default: what the "
+"server lists)"
+msgstr ""
+"eine Modell-ID, optional mit Kontext: qwen3:4b=8192 (Standard: was der "
+"Server auflistet)"
+
+#: app/src/frontends/cli/provider.ts:90
+msgid "read an API key from stdin; opencode keeps it"
+msgstr "einen API-Schlüssel von stdin lesen; opencode behält ihn"
+
+#: app/src/frontends/cli/provider.ts:91
+msgid "yes to plain http on the local network"
+msgstr "Ja zu unverschlüsseltem http im lokalen Netz"
+
+#: app/src/frontends/cli/provider.ts:92
+msgid "which agent (default: the resolved one)"
+msgstr "welcher Agent (Standard: der aufgelöste)"
+
+#: app/src/frontends/cli/provider.ts:101
+msgid "{title} has no custom providers lotse can manage"
+msgstr "{title} hat keine eigenen Anbieter, die lotse verwalten kann"
+
+#: app/src/frontends/cli/provider.ts:106
+msgid "{program} is not on PATH — install it, then try again"
+msgstr "{program} ist nicht im PATH — installiere es und versuche es erneut"
+
+#: app/src/frontends/cli/provider.ts:154
+msgid "    {model}"
+msgstr "    {model}"
+
+#: app/src/frontends/cli/provider.ts:172 app/src/frontends/cli/provider.ts:231
+msgid "{file} could not be read ({problem}) — fix or remove it first"
+msgstr ""
+"{file} konnte nicht gelesen werden ({problem}) — repariere oder entferne sie "
+"zuerst"
+
+#: app/src/frontends/cli/provider.ts:201 app/src/frontends/cli/provider.ts:204
+msgid "  {privacyNote}"
+msgstr "  {privacyNote}"
+
+#: app/src/frontends/cli/provider.ts:202
+msgid "{question} Add --allow-lan to say yes."
+msgstr "{question} Mit --allow-lan sagst du Ja."
+
+#: app/src/frontends/cli/provider.ts:206
+msgid "  {LOCAL_MODEL_HINT}"
+msgstr "  {LOCAL_MODEL_HINT}"
+
+#: app/src/frontends/cli/provider.ts:218
+msgid ""
+"{id} was written, but opencode did not list it in time — the key was not "
+"stored"
+msgstr ""
+"{id} wurde geschrieben, aber opencode hat ihn nicht rechtzeitig aufgelistet "
+"— der Schlüssel wurde nicht gespeichert"
+
+#: app/src/frontends/cli/provider.ts:223
+msgid "  a chat that is already open shows it after a restart of the agent."
+msgstr ""
+"  ein bereits geöffneter Chat zeigt ihn nach einem Neustart des Agenten."
+
+#: app/src/frontends/cli/questions.ts:19
+msgid "list the questions agents are waiting on"
+msgstr "die Fragen auflisten, auf die Agenten warten"
+
+#: app/src/frontends/cli/questions.ts:22
+msgid "also list answered, expired and cancelled questions"
+msgstr "auch beantwortete, abgelaufene und abgebrochene Fragen auflisten"
+
+#: app/src/frontends/cli/questions.ts:23
+msgid "print the questions as JSON"
+msgstr "die Fragen als JSON ausgeben"
+
+#: app/src/frontends/cli/questions.ts:50
+msgid "    {line}"
+msgstr "    {line}"
+
+#: app/src/frontends/cli/questions.ts:52
+msgid "    → {resolution}"
+msgstr "    → {resolution}"
+
+#: app/src/frontends/cli/resume.ts:33
+msgid "reattach a recorded session and optionally run one prompt turn"
+msgstr ""
+"eine aufgezeichnete Sitzung wieder anbinden und optional einen Prompt-Zug "
+"ausführen"
+
+#: app/src/frontends/cli/resume.ts:36
+msgid "the session id from `lotse sessions`"
+msgstr "die Sitzungs-ID aus „lotse sessions“"
+
+#: app/src/frontends/cli/resume.ts:40
+msgid "the prompt; omit it to reattach and stop"
+msgstr "der Prompt; ohne Angabe wird nur wieder angebunden"
+
+#: app/src/frontends/cli/resume.ts:44
+msgid ""
+"must match the session's agent; the session's own agent is used when omitted"
+msgstr ""
+"muss zum Agenten der Sitzung passen; ohne Angabe wird der Agent der Sitzung "
+"verwendet"
+
+#: app/src/frontends/cli/resume.ts:46
+msgid "refuse every tool call without asking"
+msgstr "jeden Werkzeugaufruf ohne Nachfrage ablehnen"
+
+#: app/src/frontends/cli/resume.ts:61
+msgid "no session with id {id} — `lotse sessions` lists what lotse has"
+msgstr ""
+"keine Sitzung mit der ID {id} — „lotse sessions“ listet auf, was lotse kennt"
+
+#: app/src/frontends/cli/resume.ts:139 app/src/frontends/cli/start.ts:145
+msgid "— {stopReason} —"
+msgstr "— {stopReason} —"
+
+#: app/src/frontends/cli/serve-deps.ts:30 app/src/frontends/cli/serve.ts:371
+msgid "  {warning}"
+msgstr "  {warning}"
+
+#: app/src/frontends/cli/serve.ts:82
+msgid "  #{questionId}: {message}"
+msgstr "  #{questionId}: {message}"
+
+#: app/src/frontends/cli/serve.ts:112
+msgid "  #{questionId}: {reason}"
+msgstr "  #{questionId}: {reason}"
+
+#: app/src/frontends/cli/serve.ts:169
+msgid "  messenger channel not started: {problem}"
+msgstr "  Messenger-Kanal nicht gestartet: {problem}"
+
+#: app/src/frontends/cli/serve.ts:173
+msgid "  messenger: {line}"
+msgstr "  Messenger: {line}"
+
+#: app/src/frontends/cli/serve.ts:193
+msgid "  {name}: {message}"
+msgstr "  {name}: {message}"
+
+#: app/src/frontends/cli/serve.ts:212
+msgid "run the scheduled tasks and ask the person when an agent has a question"
+msgstr ""
+"die geplanten Aufgaben ausführen und die Person fragen, wenn ein Agent eine "
+"Frage hat"
+
+#: app/src/frontends/cli/serve.ts:217
+msgid "run the tasks that are due now, wait for them, and exit"
+msgstr "die jetzt fälligen Aufgaben ausführen, auf sie warten und beenden"
+
+#: app/src/frontends/cli/serve.ts:219
+msgid "do not echo the agents' log lines"
+msgstr "die Logzeilen der Agenten nicht ausgeben"
+
+#: app/src/frontends/cli/serve.ts:264
+msgid "  {dropped} permission question(s) from an earlier serve cancelled"
+msgstr "  {dropped} Berechtigungsfrage(n) aus einem früheren serve abgebrochen"
+
+#: app/src/frontends/cli/serve.ts:275
+msgid "  stopping: {why}"
+msgstr "  wird beendet: {why}"
+
+#: app/src/frontends/cli/serve.ts:318
+msgid ""
+"  {left} chat request(s) from an earlier serve were not completed; the chat "
+"was told"
+msgstr ""
+"  {left} Chat-Anfrage(n) aus einem früheren serve wurden nicht "
+"abgeschlossen; der Chat wurde informiert"
+
+#: app/src/frontends/cli/serve.ts:353
+msgid "  {id}: {outcome}{tail}"
+msgstr "  {id}: {outcome}{tail}"
+
+#: app/src/frontends/cli/serve.ts:389
+msgid "  {message}"
+msgstr "  {message}"
+
+#: app/src/frontends/cli/sessions.ts:20
+msgid "list the sessions lotse has recorded"
+msgstr "die von lotse aufgezeichneten Sitzungen auflisten"
+
+#: app/src/frontends/cli/sessions.ts:23
+msgid "include sessions of other principals"
+msgstr "auch Sitzungen anderer Principals einbeziehen"
+
+#: app/src/frontends/cli/sessions.ts:24
+msgid "show the transcript, not one line per session"
+msgstr "das Protokoll zeigen, nicht eine Zeile pro Sitzung"
+
+#: app/src/frontends/cli/sessions.ts:25
+msgid "whose sessions to list"
+msgstr "wessen Sitzungen aufgelistet werden"
+
+#: app/src/frontends/cli/start.ts:36
+msgid "open a session with an agent and run one prompt turn"
+msgstr "eine Sitzung mit einem Agenten öffnen und einen Prompt-Zug ausführen"
+
+#: app/src/frontends/cli/start.ts:42
+msgid "the prompt; omit it to open a session and stop"
+msgstr "der Prompt; ohne Angabe wird nur eine Sitzung geöffnet"
+
+#: app/src/frontends/cli/start.ts:46
+msgid ""
+"which agent launcher to start (default: the bundled copy, else your own "
+"install)"
+msgstr ""
+"welcher Agenten-Starter gestartet wird (Standard: die mitgelieferte Kopie, "
+"sonst deine eigene Installation)"
+
+#: app/src/frontends/cli/start.ts:50
+msgid "the directory the session runs in (default: the current one)"
+msgstr "das Verzeichnis, in dem die Sitzung läuft (Standard: das aktuelle)"
+
+#: app/src/frontends/cli/start.ts:54
+msgid "refuse every tool call without asking, even on a terminal"
+msgstr "jeden Werkzeugaufruf ohne Nachfrage ablehnen, auch im Terminal"
+
+#: app/src/frontends/cli/start.ts:105
+msgid "{agentInfo} — session {sessionId} in {cwd}"
+msgstr "{agentInfo} — Sitzung {sessionId} in {cwd}"
+
+#: app/src/frontends/gui/answer-window.ts:45
+msgid "Close"
+msgstr "Schließen"
+
+#: app/src/frontends/gui/answer-window.ts:49
+msgid "Nothing to answer"
+msgstr "Nichts zu beantworten"
+
+#: app/src/frontends/gui/answer-window.ts:76
+msgid "Later"
+msgstr "Später"
+
+#: app/src/frontends/gui/answer-window.ts:130
+msgid "Your answer"
+msgstr "Deine Antwort"
+
+#: app/src/frontends/gui/answer-window.ts:133
+msgid "Send"
+msgstr "Senden"
+
+#: app/src/frontends/gui/answer-window.ts:150
+msgid "Ctrl+Enter sends, Esc answers later."
+msgstr "Strg+Eingabe sendet, Esc antwortet später."
+
+#: app/src/frontends/gui/main.ts:182
+msgid ""
+"An ACP client for GNOME: start a coding agent as a subprocess, watch it "
+"work, and answer the questions it asks. The agent brings its own model, its "
+"own tools and its own login — lotse shows what it offers and asks before it "
+"acts. The same kernel as the command line."
+msgstr ""
+"Ein ACP-Client für GNOME: Starte einen Coding-Agenten als Unterprozess, sieh "
+"ihm bei der Arbeit zu und beantworte seine Fragen. Der Agent bringt sein "
+"eigenes Modell, seine eigenen Werkzeuge und seinen eigenen Login mit — lotse "
+"zeigt, was er anbietet, und fragt, bevor er handelt. Derselbe Kern wie die "
+"Befehlszeile."
+
+#: app/src/frontends/gui/preferences.ts:83
+msgid ""
+"A change applies the next time lotse starts. This window keeps its agent."
+msgstr ""
+"Eine Änderung gilt beim nächsten Start von lotse. Dieses Fenster behält "
+"seinen Agenten."
+
+#: app/src/frontends/gui/preferences.ts:86
+msgid ""
+"How lotse serve shows a question an agent asks. A change applies to the next "
+"question."
+msgstr ""
+"Wie lotse serve eine Frage eines Agenten anzeigt. Eine Änderung gilt für die "
+"nächste Frage."
+
+#: app/src/frontends/gui/preferences.ts:95
+msgid "Notification"
+msgstr "Benachrichtigung"
+
+#: app/src/frontends/gui/preferences.ts:96
+msgid "Buttons answer in a window, or allow and decline at once."
+msgstr ""
+"Schaltflächen antworten in einem Fenster oder erlauben und lehnen sofort ab."
+
+#: app/src/frontends/gui/preferences.ts:100
+msgid "Answer window"
+msgstr "Antwortfenster"
+
+#: app/src/frontends/gui/preferences.ts:101
+msgid "The window opens as soon as a question arrives."
+msgstr "Das Fenster öffnet sich, sobald eine Frage eintrifft."
+
+#: app/src/frontends/gui/preferences.ts:107
+msgid ""
+"Also ask in a chat, through an MCP server such as curlew, and read the reply "
+"as the answer. The first answer wins. A change applies within a minute to a "
+"running lotse serve; runs under way finish as they were."
+msgstr ""
+"Fragen zusätzlich in einem Chat stellen, über einen MCP-Server wie curlew, "
+"und die Antwort dort als Antwort lesen. Die erste Antwort gewinnt. Eine "
+"Änderung gilt innerhalb einer Minute für ein laufendes lotse serve; laufende "
+"Läufe enden wie begonnen."
+
+#: app/src/frontends/gui/preferences.ts:113
+msgid "MCP server command"
+msgstr "Befehl des MCP-Servers"
+
+#: app/src/frontends/gui/preferences.ts:114
+msgid "Arguments (separated by spaces)"
+msgstr "Argumente (durch Leerzeichen getrennt)"
+
+#: app/src/frontends/gui/preferences.ts:115
+msgid "Account"
+msgstr "Konto"
+
+#: app/src/frontends/gui/preferences.ts:116
+msgid "Send to"
+msgstr "Senden an"
+
+#: app/src/frontends/gui/preferences.ts:117
+msgid "Send tool"
+msgstr "Sende-Werkzeug"
+
+#: app/src/frontends/gui/preferences.ts:118
+msgid "Wait-for-reply tool"
+msgstr "Werkzeug zum Warten auf Antwort"
+
+#: app/src/frontends/gui/preferences.ts:123
+msgid ""
+"A message that answers no question starts an agent run, and the answer comes "
+"back in the chat. A change applies the next time lotse serve starts."
+msgstr ""
+"Eine Nachricht, die keine Frage beantwortet, startet einen Agentenlauf, und "
+"die Antwort kommt im Chat zurück. Eine Änderung gilt beim nächsten Start von "
+"lotse serve."
+
+#: app/src/frontends/gui/preferences.ts:129
+msgid "Prefix that always starts a request"
+msgstr "Präfix, das immer eine Anfrage einleitet"
+
+#: app/src/frontends/gui/preferences.ts:130
+msgid "Profile (from tasks.json)"
+msgstr "Profil (aus tasks.json)"
+
+#: app/src/frontends/gui/preferences.ts:131
+msgid "Preamble for a new session"
+msgstr "Einleitung für eine neue Sitzung"
+
+#: app/src/frontends/gui/preferences.ts:132
+msgid "Working directory (empty: home)"
+msgstr "Arbeitsverzeichnis (leer: Home)"
+
+#: app/src/frontends/gui/preferences.ts:133
+msgid "MCP servers (name=command args; …)"
+msgstr "MCP-Server (Name=Befehl Args; …)"
+
+#: app/src/frontends/gui/preferences.ts:134
+msgid "MCP server environment (server:NAME=value; …)"
+msgstr "MCP-Server-Umgebung (server:NAME=Wert; …)"
+
+#: app/src/frontends/gui/preferences.ts:165
+#: app/src/frontends/gui/window.blp:245
+msgid "Preferences"
+msgstr "Einstellungen"
+
+#: app/src/frontends/gui/preferences.ts:168
+#: app/src/frontends/gui/preferences.ts:175
+msgid "Agent"
+msgstr "Agent"
+
+#: app/src/frontends/gui/preferences.ts:254
+msgid "Could not read the settings: {reason}"
+msgstr "Die Einstellungen konnten nicht gelesen werden: {reason}"
+
+#: app/src/frontends/gui/preferences.ts:296
+msgid "The earlier settings file was moved to {path}."
+msgstr "Die frühere Einstellungsdatei wurde nach {path} verschoben."
+
+#: app/src/frontends/gui/preferences.ts:304
+msgid "Questions"
+msgstr "Fragen"
+
+#: app/src/frontends/gui/preferences.ts:330
+msgid "Messenger"
+msgstr "Messenger"
+
+#: app/src/frontends/gui/preferences.ts:334
+msgid "Ask on the desktop"
+msgstr "Auf dem Desktop fragen"
+
+#: app/src/frontends/gui/preferences.ts:334
+msgid "Ask in the messenger"
+msgstr "Im Messenger fragen"
+
+#: app/src/frontends/gui/preferences.ts:365
+msgid "Requests from the chat"
+msgstr "Anfragen aus dem Chat"
+
+#: app/src/frontends/gui/preferences.ts:375
+msgid "Start a run for a chat message"
+msgstr "Für eine Chat-Nachricht einen Lauf starten"
+
+#: app/src/frontends/gui/preferences.ts:410
+msgid "MCP server environment: {problem}"
+msgstr "MCP-Server-Umgebung: {problem}"
+
+#: app/src/frontends/gui/preferences.ts:413
+msgid "The prefix must not be empty."
+msgstr "Das Präfix darf nicht leer sein."
+
+#: app/src/frontends/gui/preferences.ts:419
+msgid "Ask before a write"
+msgstr "Vor dem Schreiben fragen"
+
+#: app/src/frontends/gui/preferences.ts:420
+msgid "Off: a request may only read, and every permission request is declined."
+msgstr ""
+"Aus: Eine Anfrage darf nur lesen, und jede Berechtigungsanfrage wird "
+"abgelehnt."
+
+#: app/src/frontends/gui/preferences.ts:428
+msgid "Follow-up window (minutes)"
+msgstr "Folgefenster (Minuten)"
+
+#: app/src/frontends/gui/preferences.ts:429
+msgid "A message this soon after an answer continues that session. 0: never."
+msgstr ""
+"Eine Nachricht kurz nach einer Antwort setzt diese Sitzung fort. 0: nie."
+
+#: app/src/frontends/gui/preferences.ts:436
+msgid "Runs at the same time"
+msgstr "Gleichzeitige Läufe"
+
+#: app/src/frontends/gui/preferences.ts:443
+msgid "Wait for you (minutes)"
+msgstr "Auf dich warten (Minuten)"
+
+#: app/src/frontends/gui/preferences.ts:444
+msgid "How long a task waits when only you can go on. Then it is deferred."
+msgstr "Wie lange eine Aufgabe wartet, wenn nur du weitermachen kannst. Danach wird sie zurückgestellt."
+
+#: app/src/frontends/gui/preferences.ts:473
+#: app/src/frontends/gui/preferences.ts:498
+#: app/src/frontends/gui/preferences.ts:517
+msgid "Could not save your choice: {reason}"
+msgstr "Deine Auswahl konnte nicht gespeichert werden: {reason}"
+
+#: app/src/frontends/gui/session-list.ts:43
+msgid "The session you are looking at."
+msgstr "Die Sitzung, die du gerade ansiehst."
+
+#: app/src/frontends/gui/session-list.ts:84
+msgid "Could not read the sessions"
+msgstr "Die Sitzungen konnten nicht gelesen werden"
+
+#: app/src/frontends/gui/session-list.ts:96
+msgid "No sessions yet"
+msgstr "Noch keine Sitzungen"
+
+#: app/src/frontends/gui/window.blp:65 app/src/frontends/gui/window.blp:68
+#: app/src/frontends/gui/window.blp:163
+msgid "New chat"
+msgstr "Neuer Chat"
+
+#: app/src/frontends/gui/window.blp:145
+msgid "No session open"
+msgstr "Keine Sitzung geöffnet"
+
+#: app/src/frontends/gui/window.blp:150
+msgid ""
+"Pick a session from the list, or start a new chat. The agent starts when you "
+"send your first message."
+msgstr ""
+"Wähle eine Sitzung aus der Liste oder beginne einen neuen Chat. Der Agent "
+"startet, sobald du deine erste Nachricht sendest."
+
+#: app/src/frontends/gui/window.blp:226 app/src/frontends/gui/window.blp:235
+msgid "Copy"
+msgstr "Kopieren"

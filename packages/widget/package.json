@@ -36,6 +36,7 @@
   },
   "files": [
     "src",
+    "po",
     "COPYING",
     "LICENSE",
     "README.md"

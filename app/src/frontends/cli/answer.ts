@@ -10,6 +10,7 @@
  * display; the text it returns takes the same path as text on the command line.
  */
 
+import { _ } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
 import { answerQuestion, type LotsePaths } from '@lotse/core';
@@ -66,17 +67,17 @@ async function answerWith(
 
 const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
   command: 'answer <id> [text..]',
-  describe: 'answer a question from `lotse questions`; yes/no for a permission, text for a reply',
+  describe: _('answer a question from `lotse questions`; yes/no for a permission, text for a reply'),
   builder: (yargs) =>
     yargs
-      .positional('id', { type: 'string', describe: 'the question id, like #A1 or A1' })
+      .positional('id', { type: 'string', describe: _('the question id, like #A1 or A1') })
       .positional('text', {
         type: 'string',
         array: true,
-        describe: 'yes, no, or the reply; without it the answer window opens where there is a display',
+        describe: _('yes, no, or the reply; without it the answer window opens where there is a display'),
       })
-      .option('dialog', { type: 'boolean', describe: 'type the answer in a window' })
-      .option('quiet', { type: 'boolean', describe: "do not echo the agent's log lines" })
+      .option('dialog', { type: 'boolean', describe: _('type the answer in a window') })
+      .option('quiet', { type: 'boolean', describe: _("do not echo the agent's log lines") })
       .strict(),
   handler: async (argv) => {
     const raw = argv as Record<string, unknown>;
@@ -85,7 +86,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     const dialog = pickArgv<boolean>(raw, 'dialog') === true;
     const quiet = pickArgv<boolean>(raw, 'quiet') === true;
     if (given && dialog) {
-      err('either text or --dialog, not both');
+      err(_('either text or --dialog, not both'));
       process.exitCode = 1;
       return;
     }

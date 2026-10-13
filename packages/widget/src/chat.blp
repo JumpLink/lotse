@@ -2,6 +2,12 @@ using Gtk 4.0;
 using Adw 1;
 using Pango 1.0;
 
+// This widget renders inside a HOST's process, whose `textdomain` is its own — so every
+// `translatable="yes"` string below is resolved against `lotse` rather than the process default.
+// Compiles to `<interface domain="lotse">`, which is the only hook GtkBuilder offers here.
+// docs/adr/0005-two-gettext-domains.md
+translation-domain "lotse";
+
 /**
  * The chat surface's own tree — one conversation, and nothing about the app around it.
  *

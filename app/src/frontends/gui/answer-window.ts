@@ -12,6 +12,7 @@
  * a tool call, and an Enter meant for another window must not press it.
  */
 
+import { _ } from '../../i18n.ts';
 import Adw from '@girs/adw-1';
 import Gdk from '@girs/gdk-4.0';
 import Gio from '@girs/gio-2.0';
@@ -41,11 +42,11 @@ function readQuestion(idText: string): Question | null {
 }
 
 function closedPage(view: AnswerView, close: () => void): Gtk.Widget {
-  const button = new Gtk.Button({ label: 'Close', halign: Gtk.Align.CENTER, cssClasses: ['pill'] });
+  const button = new Gtk.Button({ label: _('Close'), halign: Gtk.Align.CENTER, cssClasses: ['pill'] });
   button.connect('clicked', close);
   return new Adw.StatusPage({
     iconName: 'dialog-question-symbolic',
-    title: 'Nothing to answer',
+    title: _('Nothing to answer'),
     description: view.closed ?? '',
     child: button,
   });
@@ -72,7 +73,7 @@ function createWindow(app: Adw.Application, view: AnswerView, send: (text: strin
     return window;
   }
 
-  const laterButton = new Gtk.Button({ label: 'Later' });
+  const laterButton = new Gtk.Button({ label: _('Later') });
   laterButton.connect('clicked', later);
   header.pack_start(laterButton);
 
@@ -126,9 +127,13 @@ function createWindow(app: Adw.Application, view: AnswerView, send: (text: strin
       minContentHeight: 96,
       cssClasses: ['card'],
     });
-    box.append(new Gtk.Label({ label: 'Your answer', xalign: 0, cssClasses: ['heading'] }));
+    box.append(new Gtk.Label({ label: _('Your answer'), xalign: 0, cssClasses: ['heading'] }));
     box.append(field);
-    const sendButton = new Gtk.Button({ label: 'Send', sensitive: false, cssClasses: ['suggested-action'] });
+    const sendButton = new Gtk.Button({
+      label: _('Send'),
+      sensitive: false,
+      cssClasses: ['suggested-action'],
+    });
     const typed = () => {
       const buffer = entry.get_buffer();
       return buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), false).trim();
@@ -142,7 +147,7 @@ function createWindow(app: Adw.Application, view: AnswerView, send: (text: strin
     header.pack_end(sendButton);
     box.append(
       new Gtk.Label({
-        label: 'Ctrl+Enter sends, Esc answers later.',
+        label: _('Ctrl+Enter sends, Esc answers later.'),
         xalign: 0,
         cssClasses: ['caption', 'dim-label'],
       }),

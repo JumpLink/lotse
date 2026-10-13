@@ -12,6 +12,9 @@
   "scripts": {
     "check": "gjsify foreach -A check",
     "check:schema": "node scripts/check-schema.mjs",
+    "check:i18n": "node dev/check-i18n.js",
+    "i18n:extract": "./dev/i18n.sh extract",
+    "i18n:compile": "./dev/i18n.sh compile",
     "lint": "gjsify foreach -A lint",
     "format": "gjsify foreach -A format",
     "format:check": "oxfmt --check .",
@@ -303,6 +306,7 @@
             "printf '#!/usr/bin/gjs -m\\n' > /app/bin/lotse",
             "cat app/dist/lotse.gjs.mjs >> /app/bin/lotse",
             "chmod 0755 /app/bin/lotse",
+            "for mo in app/dist/locale/*/LC_MESSAGES/*.mo; do lang=${mo#app/dist/locale/}; lang=${lang%%/*}; install -Dm644 \"$mo\" \"/app/share/locale/$lang/LC_MESSAGES/$(basename $mo)\"; done",
             "install -Dm644 data/eu.jumplink.Lotse.desktop /app/share/applications/eu.jumplink.Lotse.desktop",
             "install -Dm644 data/eu.jumplink.Lotse.metainfo.xml /app/share/metainfo/eu.jumplink.Lotse.metainfo.xml",
             "install -Dm644 data/icons/hicolor/scalable/apps/eu.jumplink.Lotse.svg /app/share/icons/hicolor/scalable/apps/eu.jumplink.Lotse.svg",

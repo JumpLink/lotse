@@ -8,6 +8,7 @@
  * would start now.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
 import {
@@ -81,12 +82,12 @@ export function settingsReport(file: string, settings: Settings, problem: string
 
 const command = (paths: LotsePaths): CommandModule => ({
   command: 'agents',
-  describe: 'list the agent launchers lotse knows how to start',
+  describe: _('list the agent launchers lotse knows how to start'),
   builder: (yargs) =>
     yargs
       .option('use', {
         type: 'string',
-        describe: 'remember which agent to start: <id>, <id>:host, <id>:bundled, or none to clear',
+        describe: _('remember which agent to start: <id>, <id>:host, <id>:bundled, or none to clear'),
       })
       .strict(),
   handler: (argv) => {
@@ -101,7 +102,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       }
       try {
         const { backup } = saveSettings(file, withAgent(readSettings(file).settings, parsed.choice));
-        if (backup) err(`the earlier settings file was moved to ${backup}`);
+        if (backup) err(fmt(_('the earlier settings file was moved to {backup}'), { backup }));
       } catch (error) {
         const code = (error as NodeJS.ErrnoException).code;
         err(
@@ -122,7 +123,7 @@ const command = (paths: LotsePaths): CommandModule => ({
     for (const line of agentsReport(LAUNCHERS, detections, chosen)) out(line);
     for (const line of settingsReport(file, settings, problem)) out(line);
     if (note) err(note);
-    err('* the default for --agent');
+    err(_('* the default for --agent'));
   },
 });
 

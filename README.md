@@ -119,6 +119,8 @@ between them is drawn in [ADR 0001](docs/adr/0001-lotse-as-an-embeddable-widget.
 To embed the chat in your own app, start with the [host guide](docs/embedding.md); the API is documented in
 [`@lotse/widget`](packages/widget/README.md) and [`@lotse/core`](packages/core/README.md).
 
+Translations: [docs/i18n.md](docs/i18n.md).
+
 Design decisions are in [docs/adr/](docs/adr/README.md). The GUI's look and screenshots of every
 state are in [docs/design/](docs/design/README.md).
 

@@ -7,6 +7,7 @@
  * A question that is not open shows why, and nothing that sends.
  */
 
+import { _, fmt } from '../i18n.ts';
 import { formatQuestionId, isOpen, normalizeQuestionId, quickReplies, type Question } from '@lotse/core';
 
 import { quickReplyLabel, type QuickReply } from './question-actions.ts';
@@ -47,45 +48,54 @@ function clock(at: Date, now: Date): string {
 /** `in 3 h 20 min`, `in 5 min`, `in under a minute`. */
 export function timeLeft(ms: number): string {
   const minutes = Math.floor(ms / 60_000);
-  if (minutes < 1) return 'in under a minute';
+  if (minutes < 1) return _('in under a minute');
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
-  if (hours === 0) return `in ${rest} min`;
-  return rest === 0 ? `in ${hours} h` : `in ${hours} h ${rest} min`;
+  if (hours === 0) return fmt(_('in {minutes} min'), { minutes: rest });
+  return rest === 0
+    ? fmt(_('in {hours} h'), { hours })
+    : fmt(_('in {hours} h {minutes} min'), { hours, minutes: rest });
 }
 
 /** `Expires at 18:40, in 3 h 20 min`, or when it expired. */
 export function describeExpiry(expiresAt: string, now: Date): string {
   const at = new Date(expiresAt);
   const left = at.getTime() - now.getTime();
-  if (Number.isNaN(left)) return 'Expiry unknown';
-  return left <= 0 ? `Expired at ${clock(at, now)}` : `Expires at ${clock(at, now)}, ${timeLeft(left)}`;
+  if (Number.isNaN(left)) return _('Expiry unknown');
+  return left <= 0
+    ? fmt(_('Expired at {time}'), { time: clock(at, now) })
+    : fmt(_('Expires at {time}, {left}'), { time: clock(at, now), left: timeLeft(left) });
 }
 
 function closedReason(question: Question): string {
   const label = formatQuestionId(question.id);
-  if (question.status === 'open') return `${label} has expired; nothing waits for an answer any more.`;
+  if (question.status === 'open')
+    return fmt(_('{label} has expired; nothing waits for an answer any more.'), { label });
   const how = question.resolution ? ` (${question.resolution})` : '';
-  return `${label} is ${question.status}${how}; nothing waits for an answer any more.`;
+  return fmt(_('{label} is {status}{how}; nothing waits for an answer any more.'), {
+    label,
+    status: question.status,
+    how,
+  });
 }
 
 export function answerView(question: Question | null, idText: string, now: Date): AnswerView {
   if (!question) {
     const label = formatQuestionId(normalizeQuestionId(idText) ?? idText.replace(/^#/, ''));
     return {
-      title: `Question ${label}`,
+      title: fmt(_('Question {label}'), { label }),
       subtitle: '',
       text: '',
       expiry: '',
       entry: false,
       quickReplies: [],
-      closed: `There is no question ${label}. \`lotse questions\` lists the open ones.`,
+      closed: fmt(_('There is no question {label}. `lotse questions` lists the open ones.'), { label }),
     };
   }
   const open = isOpen(question, now);
   return {
-    title: `Question ${formatQuestionId(question.id)}`,
-    subtitle: `from task ${question.task}`,
+    title: fmt(_('Question {label}'), { label: formatQuestionId(question.id) }),
+    subtitle: fmt(_('from task {task}'), { task: question.task }),
     text: question.text,
     expiry: describeExpiry(question.expiresAt, now),
     entry:

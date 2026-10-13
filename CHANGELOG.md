@@ -8,6 +8,11 @@ and also records changes that are not a release of their own.
 
 ### Added
 
+- **Translations.** The app, the widget, the CLI and the notifications are translated with gettext
+  (English msgids, German catalogue). Two domains: `eu.jumplink.Lotse` (app) and `lotse` (widget and core).
+  Hosts compile the shipped `.po` files themselves; see [docs/i18n.md](docs/i18n.md) and
+  [docs/embedding.md](docs/embedding.md#translations).
+
 - **`person_needed`: a running task can ask for you.** A task with `personNeeded: {enabled}` tells you
   that only you can go on (a login, a code, an approval), waits, and continues on `done` or on a code you
   reply with. No reply in time leaves a deferred open question in `lotse questions`. The code never

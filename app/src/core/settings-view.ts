@@ -26,6 +26,7 @@
  * says why; a file it will first move aside says so too.
  */
 
+import { _, fmt } from '../i18n.ts';
 import {
   bundledProgram,
   resolveAgent,
@@ -82,11 +83,11 @@ export function choiceFromKey(key: string): AgentChoice | null | undefined {
 }
 
 function hostTitle(name: string, version: string | null): string {
-  return `Your own ${name}${version ? ` ${version}` : ''} (global configuration)`;
+  return fmt(_('Your own {name} (global configuration)'), { name: `${name}${version ? ` ${version}` : ''}` });
 }
 
 function bundledTitle(name: string, version: string | null): string {
-  return `Bundled ${name}${version ? ` ${version}` : ''} (recommended)`;
+  return fmt(_('Bundled {name} (recommended)'), { name: `${name}${version ? ` ${version}` : ''}` });
 }
 
 export function settingsChoicesView(
@@ -108,7 +109,7 @@ export function settingsChoicesView(
     rows.push({
       key: `${entry.id}:bundled`,
       title: bundledTitle(entry.title, entry.version),
-      subtitle: available ? bundledProgram(entry) : 'Not included in this install',
+      subtitle: available ? bundledProgram(entry) : _('Not included in this install'),
       available,
       pending: false,
     });
@@ -120,10 +121,10 @@ export function settingsChoicesView(
       key: `${detection.id}:host`,
       title: hostTitle(nameOf(detection.id), found ? detection.version : null),
       subtitle: found
-        ? (detection.path ?? 'On your PATH')
+        ? (detection.path ?? _('On your PATH'))
         : pending
-          ? 'Checking…'
-          : 'Not found on this machine',
+          ? _('Checking…')
+          : _('Not found on this machine'),
       available: found,
       pending,
     });
@@ -133,7 +134,7 @@ export function settingsChoicesView(
     rows.push({
       key: selectedKey,
       title: source === 'bundled' ? bundledTitle(id, null) : hostTitle(id, null),
-      subtitle: 'Not known to this version of lotse',
+      subtitle: _('Not known to this version of lotse'),
       available: false,
       pending: false,
     });
@@ -153,10 +154,10 @@ export function settingsChoicesView(
     : null;
   const automaticRow: Omit<ChoiceRow, 'selected'> = {
     key: AUTOMATIC_KEY,
-    title: 'Automatic',
-    subtitle: `The bundled one, else your own install. Now: ${
-      hostPending ? 'checking…' : (nowTitle ?? 'no agent is available')
-    }`,
+    title: _('Automatic'),
+    subtitle: fmt(_('The bundled one, else your own install. Now: {now}'), {
+      now: hostPending ? _('checking…') : (nowTitle ?? _('no agent is available')),
+    }),
     available: true,
     pending: false,
   };
@@ -169,15 +170,17 @@ export function settingsChoicesView(
   if (facts.problem) lines.push(facts.problem);
   const decision = saveDecision(facts.problemKind ?? null);
   if (decision === 'refuse') {
-    lines.push('lotse will not overwrite that file, so choosing an agent is turned off here.');
+    lines.push(_('lotse will not overwrite that file, so choosing an agent is turned off here.'));
   } else if (decision === 'backup-then-write' && facts.backupPath) {
-    lines.push(`Your next choice first moves that file to ${facts.backupPath}.`);
+    lines.push(fmt(_('Your next choice first moves that file to {path}.'), { path: facts.backupPath }));
   }
   const chosen = ordered.find((row) => row.selected);
   if (settings.agent && chosen && !chosen.available && !chosen.pending) {
     lines.push(
-      `Your saved choice, ${chosen.title}, is not available here, so lotse starts ` +
-        `${nowTitle ?? 'no agent (none is available)'} instead.`,
+      fmt(_('Your saved choice, {choice}, is not available here, so lotse starts {instead} instead.'), {
+        choice: chosen.title,
+        instead: nowTitle ?? _('no agent (none is available)'),
+      }),
     );
   }
   return {

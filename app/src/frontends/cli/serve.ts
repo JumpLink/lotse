@@ -10,6 +10,7 @@
  * the new one, and a file that no longer parses leaves the previous tasks in force.
  */
 
+import { _, fmt } from '../../i18n.ts';
 import { homedir } from 'node:os';
 
 import type { CommandModule } from 'yargs';
@@ -78,7 +79,7 @@ function answerHandlers(
     const current = deps();
     if (!current) return;
     const result = await answerQuestion(questionId, text, current);
-    err(`  #${questionId}: ${result.message}`);
+    err(fmt(_('  #{questionId}: {message}'), { questionId, message: result.message }));
     if (!FAILED.has(result.mode)) return;
     // Feedback goes to the desktop, not the combined channel: the messenger's own receive loop
     // answers its person in the chat, and a click here must not post "not taken" there.
@@ -107,7 +108,8 @@ function answerHandlers(
       windows.add(questionId);
       openAnswerDialog(command.command, questionId)
         .then(async (result) => {
-          if (result.kind === 'failed') err(`  #${questionId}: ${result.reason}`);
+          if (result.kind === 'failed')
+            err(fmt(_('  #{questionId}: {reason}'), { questionId, reason: result.reason }));
           if (result.kind === 'answer') await answer(questionId, result.text);
         })
         .catch((error: unknown) => report(questionId, error))
@@ -124,7 +126,7 @@ async function openDesktop(
   try {
     const { desktopChannel } = await import('../../core/desktop-channel.ts');
     return desktopChannel({
-      onProblem: (problem) => err(`  ${problem}`),
+      onProblem: (problem) => err(fmt(_('  {problem}'), { problem })),
       dialog: !('problem' in currentDialogCommand()),
       ...answerHandlers(paths, deps, feedback),
     });
@@ -164,10 +166,12 @@ async function openChannels(
   if (active.includes('messenger')) {
     const config = messengerSettings(settings);
     const problem = messengerProblem(config);
-    if (problem) err(`  messenger channel not started: ${problem}`);
+    if (problem) err(fmt(_('  messenger channel not started: {problem}'), { problem }));
     else {
       const link = new McpLink(() =>
-        connectMcp(messengerCommand(config), { onStderr: (line) => err(`  messenger: ${line}`) }),
+        connectMcp(messengerCommand(config), {
+          onStderr: (line) => err(fmt(_('  messenger: {line}'), { line })),
+        }),
       );
       const channel = messengerChannel(link, config);
       messenger = { link, settings: config, channel };
@@ -182,11 +186,11 @@ async function openChannels(
     config(),
     opened.map((route) => route.name),
   ))
-    err(`  ${note}`);
+    err(fmt(_('  {note}'), { note }));
   // A channel that failed while another delivered is told here, nowhere else: stderr and serve.log.
   const failed: ChannelFailure = (name, error) => {
     const message = error instanceof Error ? error.message : String(error);
-    err(`  ${name}: ${message}`);
+    err(fmt(_('  {name}: {message}'), { name, message }));
     deps()?.log?.({
       event: 'error',
       task: '-',
@@ -205,14 +209,14 @@ const ONCE_WAIT_S = 5;
 
 const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
   command: 'serve',
-  describe: 'run the scheduled tasks and ask the person when an agent has a question',
+  describe: _('run the scheduled tasks and ask the person when an agent has a question'),
   builder: (yargs) =>
     yargs
       .option('once', {
         type: 'boolean',
-        describe: 'run the tasks that are due now, wait for them, and exit',
+        describe: _('run the tasks that are due now, wait for them, and exit'),
       })
-      .option('quiet', { type: 'boolean', describe: "do not echo the agents' log lines" })
+      .option('quiet', { type: 'boolean', describe: _("do not echo the agents' log lines") })
       .strict(),
   handler: async (argv) => {
     const raw = argv as Record<string, unknown>;
@@ -221,7 +225,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
 
     const loaded = readTasks(serve);
     if (!loaded) return;
-    for (const note of freeModelNotes(loaded.config)) err(`  ${note}`);
+    for (const note of freeModelNotes(loaded.config)) err(fmt(_('  {note}'), { note }));
     let ready: ServeDeps | null = null;
     let activeConfig = loaded.config;
     const opened = await openChannels(
@@ -256,7 +260,8 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     const clock = attemptClock((id) => runs.lastRun(id));
 
     const dropped = cancelOrphanedPermissions(live);
-    if (dropped > 0) err(`  ${dropped} permission question(s) from an earlier serve cancelled`);
+    if (dropped > 0)
+      err(fmt(_('  {dropped} permission question(s) from an earlier serve cancelled'), { dropped }));
     err(
       `lotse serve — ${loaded.config.tasks.length} task(s), questions via ${channel.name}, state in ${serve.stateDir}`,
     );
@@ -267,7 +272,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     const stop = (why: string) => {
       if (stopping) return;
       stopping = true;
-      err(`  stopping: ${why}`);
+      err(fmt(_('  stopping: {why}'), { why }));
       abort.abort();
       wake?.();
     };
@@ -287,14 +292,14 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
               defaultCwd: homedir(),
               pending,
               send: (text) => sendToPeer(messenger.link, messenger.settings, text),
-              log: (line) => err(`  ${line}`),
+              log: (line) => err(fmt(_('  {line}'), { line })),
             }),
         })
       : null;
     const checkRequests = () => {
       const change = holder?.check();
       if (!change || change.kind === 'unchanged') return;
-      err(`  ${change.line}`);
+      err(fmt(_('  {line}'), { line: change.line }));
       live.log?.({
         event: 'reload',
         task: '-',
@@ -306,10 +311,14 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
       const left = await recoverPending(
         pending,
         (text) => sendToPeer(messenger.link, messenger.settings, text),
-        (line) => err(`  ${line}`),
+        (line) => err(fmt(_('  {line}'), { line })),
       );
       if (left > 0)
-        err(`  ${left} chat request(s) from an earlier serve were not completed; the chat was told`);
+        err(
+          fmt(_('  {left} chat request(s) from an earlier serve were not completed; the chat was told'), {
+            left,
+          }),
+        );
     }
     // `--once` has no loop: after its runs, the receive loop makes one bounded pass (below).
     const receive = (extra: { once?: boolean; timeoutS?: number; signal: AbortSignal }) =>
@@ -320,7 +329,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
         serve: live,
         cursor: fileCursorStore(messengerCursorFile(serve.stateDir)),
         requests: () => holder?.current(),
-        log: (line) => err(`  ${line}`),
+        log: (line) => err(fmt(_('  {line}'), { line })),
         ...extra,
       }).catch((error: unknown) =>
         err(`  messenger: ${error instanceof Error ? error.message : String(error)}`),
@@ -341,7 +350,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
             : result.questionId
               ? ` (#${result.questionId})`
               : '';
-          err(`  ${task.id}: ${result.outcome}${tail}`);
+          err(fmt(_('  {id}: {outcome}{tail}'), { id: task.id, outcome: result.outcome, tail }));
         })
         .catch((error: unknown) =>
           err(`  ${task.id}: ${error instanceof Error ? error.message : String(error)}`),
@@ -359,7 +368,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
         if (change.kind === 'reloaded') {
           const { loaded: fresh, deps: freshDeps } = reloader.current();
           activeConfig = fresh.config;
-          if (fresh.warning) err(`  ${fresh.warning}`);
+          if (fresh.warning) err(fmt(_('  {warning}'), { warning: fresh.warning }));
           const parts = [
             change.added.length > 0 ? `added ${change.added.join(', ')}` : '',
             change.removed.length > 0
@@ -377,7 +386,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
           });
         } else if (change.kind === 'rejected') {
           const message = `${serve.tasksFile} not reloaded, keeping the previous tasks: ${change.message}`;
-          err(`  ${message}`);
+          err(fmt(_('  {message}'), { message }));
           reloader.current().deps.log?.({
             event: 'error',
             task: '-',

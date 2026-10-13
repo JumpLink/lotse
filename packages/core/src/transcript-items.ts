@@ -57,6 +57,7 @@
  * **A host line is never merged.** See `HostItem`.
  */
 
+import { _n, fmt } from './i18n.ts';
 import type { EntryKind, McpCall, TranscriptEntry } from '@lotse/session';
 
 /**
@@ -353,7 +354,7 @@ function oneLine(text: string): string {
   return flat.length > SUMMARY_MAX ? `${flat.slice(0, SUMMARY_MAX - 1)}…` : flat;
 }
 
-/** What the disclosure says while it is closed. Fixed English — see `session-groups.ts` §2. */
+/** What the disclosure says while it is closed. */
 function thoughtSummary(chunks: number): string {
-  return chunks === 1 ? 'Thought' : `${chunks} thoughts`;
+  return fmt(_n('Thought', '{n} thoughts', chunks), { n: chunks });
 }

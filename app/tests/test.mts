@@ -76,6 +76,7 @@ import hookValue from './unit/gui/hook-value.test.ts';
 import modelPolicyHook from './unit/gui/model-policy-hook.test.ts';
 import toolLine from './unit/gui/tool-line.test.ts';
 
+import i18n from './unit/i18n.test.ts';
 import smoke from './unit/smoke.test.ts';
 
 run({
@@ -147,5 +148,6 @@ run({
   hookValue,
   modelPolicyHook,
   toolLine,
+  i18n,
   smoke,
 });

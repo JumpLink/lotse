@@ -51,6 +51,7 @@ import GObject from '@girs/gobject-2.0';
 import Gtk from '@girs/gtk-4.0';
 
 import {
+  _,
   agentNames,
   initialFocusResponseId,
   optionLabel,
@@ -62,10 +63,10 @@ import { toolIcon } from './tool-line.ts';
 import BodyTemplate from './permission-body.blp';
 
 /** What lotse says when the agent reported no raw input at all. */
-const NO_RAW_INPUT = 'The agent did not say what it wanted to do with this.';
+const noRawInput = () => _('The agent did not say what it wanted to do with this.');
 
 /** What lotse says when the agent named no locations. */
-const NO_LOCATIONS = 'The agent did not say where.';
+const noLocations = () => _('The agent did not say where.');
 
 /**
  * The response id a dismissal reports.
@@ -308,7 +309,7 @@ function buildDialog(view: PermissionView): { dialog: Adw.AlertDialog; rawInput:
   body._titleLabel.label = view.tool;
   body._kindLabel.label = view.kind;
   body._kindIcon.iconName = toolIcon(view.kind);
-  body._locationsLabel.label = view.locations.length > 0 ? view.locations.join('\n') : NO_LOCATIONS;
+  body._locationsLabel.label = view.locations.length > 0 ? view.locations.join('\n') : noLocations();
   // "The agent did not say where" rather than an empty row. An empty box reads as *there is nothing
   // here*, which is a different claim from *the agent did not say*, and the difference is the whole
   // reason a person can tell a vague request from a complete one.
@@ -324,9 +325,9 @@ function buildDialog(view: PermissionView): { dialog: Adw.AlertDialog; rawInput:
   }
   // `len: -1` is the binding's way of saying "to the end of the string" — `Gtk.TextBuffer.set_text`
   // takes a length in bytes and a one-argument call is a type error, not a default.
-  body._rawInput.get_buffer()?.set_text(view.rawInput ?? NO_RAW_INPUT, -1);
+  body._rawInput.get_buffer()?.set_text(view.rawInput ?? noRawInput(), -1);
 
-  const dialog = new Adw.AlertDialog({ heading: 'The agent wants permission' });
+  const dialog = new Adw.AlertDialog({ heading: _('The agent wants permission') });
   // `extra_child` rather than a longer heading: the heading is one lotse sentence and stays that way,
   // whatever the agent's tool is called. A heading built from the agent's title would let agent text
   // into the part of the dialog that reads as the app's own voice — and into the one string that is
