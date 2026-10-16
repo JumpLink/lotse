@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@gjsify/unit';
 
 import { AcpClient } from '@lotse/acp/client';
+import type { SessionConfigOption } from '@lotse/acp/types';
 import type { AgentSource, SessionRecord, TranscriptEntry } from '@lotse/session';
 
 import {
@@ -1500,6 +1501,37 @@ export default async () => {
       await h.session.prompt('hello');
       expect(h.agent.calls('session/prompt').length).toBe(0);
       expect(h.session.snapshot.modelBlock?.cause).toBe('denied');
+    });
+  });
+
+  // What the free-model warning reads. The decision is `free-models.ts`'s; what is measured here is
+  // that the snapshot carries the model in use, and follows a model change.
+  await describe('agent-session — the free model in use', async () => {
+    await it('names no free model while a paid one is in use', async () => {
+      const h = harness();
+      await h.session.prompt('hello');
+      expect(h.session.snapshot.freeModel).toBe(null);
+    });
+
+    await it('names the free model once one is picked, and forgets it when a paid one is', async () => {
+      const options: SessionConfigOption[] = [
+        {
+          id: 'model',
+          name: 'Model',
+          category: 'model',
+          type: 'select',
+          currentValue: 'opencode/big-pickle',
+          options: [
+            { value: 'opencode/big-pickle', name: 'Big Pickle' },
+            { value: 'github-copilot/gpt-5.5-codex', name: 'Codex' },
+          ],
+        },
+      ];
+      const h = harness({ configOptions: options });
+      await h.session.prompt('hello');
+      expect(h.session.snapshot.freeModel).toBe('opencode/big-pickle');
+      await h.session.setConfigOption('model', 'github-copilot/gpt-5.5-codex');
+      expect(h.session.snapshot.freeModel).toBe(null);
     });
   });
 

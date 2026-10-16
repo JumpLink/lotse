@@ -53,7 +53,13 @@ import {
 import { findControl, projectConfigOptions, type ConfigControl } from './config.ts';
 import { conversationRecord, unsavedMessage } from './conversation.ts';
 import { failureKind } from './failure.ts';
-import { modelBlock, ModelDeniedError, type ModelBlock, type ModelPolicy } from './model-policy.ts';
+import {
+  freeModelInUse,
+  modelBlock,
+  ModelDeniedError,
+  type ModelBlock,
+  type ModelPolicy,
+} from './model-policy.ts';
 import {
   answerFor,
   PermissionDesk,
@@ -159,6 +165,11 @@ export interface AgentSnapshot {
    * order.
    */
   readonly modelBlock: ModelBlock | null;
+  /**
+   * The model in use when it is a free one, or `null`. What a surface warns about
+   * (`freeModelWarningDue`); read from the same raw options as `modelBlock`.
+   */
+  readonly freeModel: string | null;
 }
 
 /** The session a window is bound to. */
@@ -408,6 +419,7 @@ export class AgentSession {
       sessionId: this.#session?.id ?? null,
       startsConversation: this.#pending !== null,
       modelBlock: this.#modelBlock(),
+      freeModel: freeModelInUse(this.#configOptions),
     };
   }
 

@@ -161,11 +161,14 @@ the controller checks again once the agent has answered and refuses to send if t
 still unnamed.
 
 `denyFreeHostedModels` (from `@lotse/core`) denies what `isFreeModel` calls free, which is the same
-classification `lotse serve` has used since ADR 0003: the maintained ids in
-`packages/core/data/free-models.json`, plus any id ending in `-free`, plus an empty or blank id. The
-file's own criterion is "free to run without a paid key **and** documented as zero-retention" — the
-suffix rule is what catches the rest of the free tier, where a model is merely free and may be trained
-on. Free also means hosted: the prompt goes to whoever runs it.
+classification `lotse serve` has used since ADR 0003: any id ending in `-free`, plus the few free ids
+without the suffix (`FREE_MODELS_WITHOUT_SUFFIX`), plus an empty or blank id. Every one of them may keep
+what it is sent and train on it. Free also means hosted: the prompt goes to whoever runs it.
+
+**Without a policy the widget warns instead.** While a free model is in use, a card above the composer
+shows `FREE_MODEL_WARNING`. The person can close it; it comes back when they pick another free model
+and in the next conversation. With `denyFreeHostedModels` there is nothing to close: the prompt is
+refused.
 
 **A well-formed id the classification has never heard of is allowed**, deliberately. Denying the
 unknown reads safer and is unusable: the classification knows two exact ids and one suffix, so

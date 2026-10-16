@@ -220,10 +220,12 @@ A conversation can contain everything the agent read through your MCP tools, and
 model the agent is configured to use. Two different things in lotse touch that, and only one of them is
 a policy.
 
-**The dropdown's order is a hint, not protection.** `@lotse/core` keeps a small list of hosted models
-that are free *and* documented as zero-retention (`FREE_MODELS`, `freeModelFirst`) and sorts them to the
-top of the model dropdown. Lotse never selects a model, hides one or guesses. "Free" still means
-time-limited, and what you send goes to the provider that hosts the model; the onboarding page says so.
+**The dropdown's order and the warning are not protection.** `@lotse/core` recognises free hosted
+models by their id (`isFreeModel`: the `-free` suffix plus a few exceptions) and sorts them to the top
+of the model dropdown (`freeModelFirst`). While one is in use the widget shows `FREE_MODEL_WARNING`
+above the composer — free-model providers may store what is sent and train on it, so it is not for tax
+or client data. The person can close it; it comes back for another free model and in the next
+conversation. Lotse never selects a model, hides one or guesses.
 
 **`modelPolicy` is the policy.** If your app carries client or personal data, pass one:
 
@@ -239,8 +241,8 @@ choice stays theirs, it is only narrowed. The check is fail-closed in both direc
 about: a policy that throws is a deny, and so is a model lotse cannot identify (the agent, once it has answered,
 reported no model control), because "I do not know where this would go" is not an approval.
 
-`denyFreeHostedModels` denies `isFreeModel`'s answer — the ids in
-`packages/core/data/free-models.json`, any id ending in `-free`, and an empty id — and **allows a
+`denyFreeHostedModels` denies `isFreeModel`'s answer — any id ending in `-free` plus the few free ids
+without the suffix (`FREE_MODELS_WITHOUT_SUFFIX`) — and an empty id, and **allows a
 well-formed id it does not recognise**, because the list names free models rather than paid ones and
 denying the unrecognised would deny nearly everything, paid models included. For certainty, use
 `allowOnlyProviders(['anthropic', …])` (`@lotse/core`): only ids whose provider — the part before the

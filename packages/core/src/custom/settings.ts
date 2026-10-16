@@ -22,7 +22,7 @@
  * no remove.
  */
 
-import { FREE_MODEL_IDS } from '../free-models.ts';
+import { FREE_MODELS_WITHOUT_SUFFIX } from '../free-models.ts';
 import type { LoginProvider } from '../login/providers.ts';
 import { modelAllowed, providerOffered, type ModelPolicy } from '../model-policy.ts';
 
@@ -140,8 +140,8 @@ export const PROVIDER_PRIVACY_NOTE =
   'and keeps it under its own terms. lotse stores no key: the agent does.';
 
 export const FREE_MODELS_PRIVACY_NOTE =
-  'Free hosted models: the ones listed first are documented as keeping nothing; any other free model may ' +
-  'keep what it sees and train on it. Nothing private belongs there.';
+  'Free hosted models are listed first. Any of them may keep what it sees and train on it, so nothing ' +
+  'private belongs there.';
 
 export const FREE_MODELS_DENIED_NOTE = 'This app does not let a chat use free hosted models.';
 
@@ -288,7 +288,9 @@ export class ProviderSettingsController {
       for (const provider of configured.filter((entry) => entry.connected))
         connected.push(row(provider.id, provider.name, models.get(provider.id) ?? provider.models));
     }
-    const freeAllowed = [...FREE_MODEL_IDS, 'opencode/model-free'].some((id) => modelAllowed(policy, id));
+    const freeAllowed = [...FREE_MODELS_WITHOUT_SUFFIX, 'opencode/model-free'].some((id) =>
+      modelAllowed(policy, id),
+    );
     return {
       connected,
       connectedReadOnlyReason: writable ? null : HOST_READ_ONLY_REASON,

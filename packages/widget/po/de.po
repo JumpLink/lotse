@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-13 08:16+0200\n"
+"POT-Creation-Date: 2026-10-16 09:49+0200\n"
 "Language-Team: German\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -155,7 +155,17 @@ msgstr ""
 "sich lotse nicht wieder anbinden kann, wird abgelehnt statt als leeres "
 "Protokoll gezeigt."
 
-#: packages/core/src/model-policy.ts:208
+#: packages/core/src/free-models.ts:76
+msgid ""
+"Free model: providers of free models may store what you send and train on "
+"it. Not suitable for confidential data such as tax or client records — use "
+"it to try things out."
+msgstr ""
+"Kostenloses Modell: Anbieter kostenloser Modelle dürfen deine Eingaben "
+"speichern und damit trainieren. Für vertrauliche Daten wie Steuer- oder "
+"Kundendaten nicht geeignet, nur zum Ausprobieren empfohlen."
+
+#: packages/core/src/model-policy.ts:211
 msgid ""
 "This model is not allowed here. Pick another one from the model list, then "
 "send."
@@ -163,7 +173,7 @@ msgstr ""
 "Dieses Modell ist hier nicht erlaubt. Wähle ein anderes aus der Modellliste "
 "und sende dann."
 
-#: packages/core/src/model-policy.ts:213
+#: packages/core/src/model-policy.ts:216
 msgid ""
 "lotse cannot tell which model this agent would use, so nothing was sent."
 msgstr ""
@@ -260,11 +270,19 @@ msgid "No prompt has been sent in this session yet. The first one starts it."
 msgstr ""
 "In dieser Sitzung wurde noch keine Eingabe gesendet. Die erste startet sie."
 
-#: packages/widget/src/chat.ts:489
+#: packages/widget/src/chat.blp:166
+msgid "Dismiss"
+msgstr "Schließen"
+
+#: packages/widget/src/chat.blp:171
+msgid "Dismiss warning"
+msgstr "Warnung schließen"
+
+#: packages/widget/src/chat.ts:509
 msgid "Working in {path}"
 msgstr "Arbeitet in {path}"
 
-#: packages/widget/src/chat.ts:774 packages/widget/src/provider-settings.ts:139
+#: packages/widget/src/chat.ts:804 packages/widget/src/provider-settings.ts:139
 #: packages/widget/src/provider-settings.ts:142
 msgid "Providers"
 msgstr "Anbieter"

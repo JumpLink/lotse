@@ -399,17 +399,18 @@ export {
   type ConfigSelection,
 } from './config-row.ts';
 export {
-  FREE_MODEL_IDS,
-  FREE_MODELS,
+  FREE_MODEL_WARNING,
+  FREE_MODELS_WITHOUT_SUFFIX,
   freeModelFirst,
+  freeModelWarningDue,
   isFreeModel,
-  type FreeModelList,
 } from './free-models.ts';
 // What a host will let a prompt reach. Absent `modelPolicy` is lotse's own behaviour unchanged.
 export {
   allowedModelValues,
   allowOnlyProviders,
   denyFreeHostedModels,
+  freeModelInUse,
   MODEL_DENIED_REASON,
   MODEL_UNKNOWN_REASON,
   modelAllowed,

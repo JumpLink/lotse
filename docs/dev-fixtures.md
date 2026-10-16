@@ -208,7 +208,7 @@ tested on both runtimes, and never once seen.
 | Value | The policy it builds |
 | --- | --- |
 | unset (or `,`) | **none** — the default path, the widget option absent |
-| `free` | `denyFreeHostedModels`, the ready-made rule over `packages/core/data/free-models.json` |
+| `free` | `denyFreeHostedModels`, the ready-made rule over `isFreeModel` (`-free` suffix plus exceptions) |
 | `id[,id…]` | deny exactly those model ids, allow the rest |
 
 Read as a list by `hookList` for `LOTSE_APP_SWITCH`'s reason — a variable's syntax is read where every
