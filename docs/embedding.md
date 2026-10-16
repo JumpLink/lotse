@@ -157,6 +157,53 @@ A gate can **only add restrictions.** There is no answer that approves, and a th
 or any other value counts as `'decline'`. If your policy code breaks, nothing is approved. Without a
 gate, every question goes to the person.
 
+### Tools you confirm yourself
+
+Some approvals are not lotse's to give: a legal submission behind a PIN, a payment, a signature.
+Lotse's dialog cannot ask for any of that, so mark the tool and show your own dialog:
+
+```ts
+hostTools: { hostConfirmed: [{ name: 'steuererklaerung.elster_submit' }, { kind: 'delete' }] },
+confirmTool: async (question) => await myPinDialog(question.view), // true approves ONE call
+```
+
+**Lotse never approves a marked tool through `session/request_permission`** — not from its own dialog,
+not from an "always allow", not from a grant the person gave earlier in the same session, because the
+rule is read before those are. What goes on the wire for your `true` is the agent's own `allow_once`
+and nothing wider, so the next call asks you again. An agent that offered no `allow_once` is answered
+with no approval at all (`cancelled`, plus one notice saying why): a confirmation that lasts a session
+is not a confirmation.
+
+Everything that is not an explicit `true` is a decline — `false`, a throw, a rejected promise, and no
+`confirmTool` at all. `question.view` is the same projection lotse's own dialog draws from (`tool`,
+`kind`, `locations`, `rawInput`, `options`).
+
+A rule matches on `name`, on `kind`, or on both ANDed. `name` is compared against the title the agent
+reported **and** against the MCP names the call carries (`server.tool` and `tool`, the same names you
+see in the transcript), exactly, case- and padding-insensitive, never as a fragment. A rule that names
+**neither** matches nothing and is reported through `onNotice` once, rather than quietly routing every
+tool into your dialog.
+
+### An "always allow" that ends with the conversation
+
+ACP has no lasting-approval answer: lotse sends the agent's own option id, and the *agent* decides
+whether to ask again — which can outlive the window. If you carry somebody's documents and do not want
+a promise you cannot see the end of:
+
+```ts
+hostTools: { alwaysAllow: 'session' },
+```
+
+An **Always allow** press is then sent to the agent as its `allow_once`, and lotse remembers the always
+itself: in memory, keyed by the ACP session id plus the tool's kind and MCP name. It is **written
+nowhere**, so there is nothing to persist and nothing to clear, and a new conversation has a new id and
+therefore an empty memory. Grants are keyed by the tool, not by the arguments: the next file of the same
+edit is the same answer. Where the agent offers nothing narrower than an always, the button is
+**withdrawn** rather than shown as a promise lotse would have to hand the agent to keep.
+
+The default is `'agent'`: lotse's own behaviour, the agent remembers. Both fields are independent, and a
+`hostConfirmed` tool is never covered by a grant under either scope.
+
 ## 7. Onboarding and login
 
 A user without a provider connected would otherwise hit an auth failure on the first prompt. Turn on the
@@ -185,6 +232,48 @@ plain predicate offers every provider and still refuses a denied model at send. 
 
 Lotse never reads or stores a credential; the agent keeps its own (for a bundled agent: under
 `<dataDir>/agents/<id>/`).
+
+### Mount the two pages yourself
+
+If your app has its own preferences dialog and its own welcome screen, you want both pages **outside**
+the chat widget. They are exported, and they are the same pages lotse builds for itself — one factory
+each owns the wiring, so your copy reads the same provider file, starts the same private login server
+and honours the same `modelPolicy`:
+
+```ts
+import { createProviderSettingsPage, createOnboardingPage, probeConnections } from '@lotse/widget';
+
+const settings = createProviderSettingsPage({
+  agent: found.command,
+  modelPolicy: denyFreeHostedModels, // still applied: it decides which providers and models are offered
+  allowCustomProviders: false,
+  connect: (done) => openMyLoginDialog(done), // or chat.openLogin()
+  onChanged: async () => restartMyAgent(), // a throw is reported on the page
+});
+myPreferencesDialog.add(settings.page); // Adw.PreferencesPage
+```
+
+The page starts the private server when it is shown and stops it when it is hidden, so one built into a
+dialog nobody opens starts nothing.
+
+```ts
+const facts = await probeConnections(found.command); // ConnectionFacts: connected | none | unknown
+const welcome = createOnboardingPage(
+  { enabled: true, noAgent: false, loginAvailable: chat.hasLogin, connection: facts, dismissed: false },
+  { onConnect: () => chat.openLogin(), onContinue: () => showMyChatPage() },
+);
+if (welcome !== null) myStack.add_named(welcome.widget, 'welcome'); // Adw.StatusPage
+```
+
+**`null` is an answer, not an error, and it is not yours to invent.** `onboardingView` says no in five
+ways (you did not ask for it, no agent was found, no login can run, a provider is already connected, the
+person already continued without one), and a host drawing the page from its own reading of those facts
+would be the "an offer, never a wall" rule reimplemented differently. `probeConnections` costs one
+private login server, briefly, which is why it is your call to make and not the page's; any failure,
+timeout or abort is `unknown`, and `unknown` means show the ordinary chat.
+
+With `providerOnboarding: true` the chat widget does all of this by itself — mount these only if you
+want them somewhere else.
 
 ## 8. Shut down with the window
 
