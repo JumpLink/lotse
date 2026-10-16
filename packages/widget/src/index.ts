@@ -35,6 +35,30 @@ export type { ToolPresentation, ToolPresenter } from './tool-line.ts';
 export type { HostItem, McpCall, ToolCallView } from '@lotse/core';
 // The policy-side helpers a host may want next to `modelPolicy` and `allowCustomProviders`.
 export { providerOffered, type ModelPolicy } from '@lotse/core';
+// What a host is handed when it confirms a tool itself, and what it may say about tools up front.
+export type { AlwaysAllowScope, HostToolMatch, HostToolPolicy, PermissionQuestion, PermissionView } from '@lotse/core';
+
+// ── The two pages a host may mount on its own ───────────────────────────────────────────────────
+// `LotseChat` shows both by itself — the onboarding offer on a new chat (`providerOnboarding`), the
+// settings through `providerSettingsPage()`. A host with its own preferences dialog and its own
+// welcome screen wants them *outside* the chat widget, and these are the same pages lotse builds for
+// itself: the `create…` function owns the wiring, so a host's copy reads the same provider file,
+// starts the same private server and honours the same `modelPolicy`.
+export {
+  ProviderSettingsPage,
+  createProviderSettingsPage,
+  type ProviderSettingsHooks,
+  type ProviderSettingsPageOptions,
+} from './provider-settings.ts';
+export { OnboardingPage, createOnboardingPage, type OnboardingHandlers } from './onboarding-page.ts';
+// What the onboarding page is decided from, and what the probe that answers it costs: a private
+// login server, once, which is why `probeConnections` is the host's call to make and not the page's.
+export {
+  probeConnections,
+  type ConnectionFacts,
+  type OnboardingInput,
+  type OnboardingView,
+} from '@lotse/core';
 
 // The stylesheet is installed by `LotseChat` itself; only the class-name map is public, for a host
 // that styles its own widgets next to the chat (lotse's app reuses `calm`).

@@ -27,6 +27,7 @@ packages/core/src/empty-state.ts
 packages/core/src/env.ts
 packages/core/src/failure.ts
 packages/core/src/free-models.ts
+packages/core/src/host-tools.ts
 packages/core/src/i18n.ts
 packages/core/src/index.ts
 packages/core/src/interrupt.ts
@@ -40,6 +41,7 @@ packages/core/src/messenger/channel.ts
 packages/core/src/messenger/link.ts
 packages/core/src/messenger/mcp-client.ts
 packages/core/src/messenger/receive.ts
+packages/core/src/messenger/refs.ts
 packages/core/src/messenger/reply.ts
 packages/core/src/messenger/requests.ts
 packages/core/src/messenger/settings.ts
