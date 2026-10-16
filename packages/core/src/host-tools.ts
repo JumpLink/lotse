@@ -163,7 +163,11 @@ export function hostToolProblems(policy: HostToolPolicy | undefined): string[] {
 
 /** The narrowest allowing option the agent offered: `allow_once` ahead of `allow_always`, else `null`. */
 export function narrowestAllow(options: readonly PermissionOption[]): PermissionOption | null {
-  return options.find((option) => option.kind === 'allow_once') ?? options.find((option) => option.kind === 'allow_always') ?? null;
+  return (
+    options.find((option) => option.kind === 'allow_once') ??
+    options.find((option) => option.kind === 'allow_always') ??
+    null
+  );
 }
 
 /**
@@ -215,7 +219,10 @@ export class SessionGrants {
 
   /** The grant key for a call: its kind, plus the MCP tool name when the call named one. */
   static keyOf(ref: ToolRef): string {
-    const mcp = ref.names.filter((name) => name !== ref.title).map(key).sort();
+    const mcp = ref.names
+      .filter((name) => name !== ref.title)
+      .map(key)
+      .sort();
     return `${key(ref.kind)}\u0000${mcp.join(',')}`;
   }
 

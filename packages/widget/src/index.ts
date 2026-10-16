@@ -36,7 +36,13 @@ export type { HostItem, McpCall, ToolCallView } from '@lotse/core';
 // The policy-side helpers a host may want next to `modelPolicy` and `allowCustomProviders`.
 export { providerOffered, type ModelPolicy } from '@lotse/core';
 // What a host is handed when it confirms a tool itself, and what it may say about tools up front.
-export type { AlwaysAllowScope, HostToolMatch, HostToolPolicy, PermissionQuestion, PermissionView } from '@lotse/core';
+export type {
+  AlwaysAllowScope,
+  HostToolMatch,
+  HostToolPolicy,
+  PermissionQuestion,
+  PermissionView,
+} from '@lotse/core';
 
 // ── The two pages a host may mount on its own ───────────────────────────────────────────────────
 // `LotseChat` shows both by itself — the onboarding offer on a new chat (`providerOnboarding`), the
