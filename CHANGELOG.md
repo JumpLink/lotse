@@ -8,6 +8,26 @@ and also records changes that are not a release of their own.
 
 ### Added
 
+- **Tools the embedding host confirms itself.** `hostTools.hostConfirmed` marks a tool by name or kind,
+  and lotse then never approves it through `session/request_permission` — not from its own dialog, not
+  from an "always allow", not from a grant given earlier in the session. The host's `confirmTool` shows
+  its own dialog (a PIN, a signature) and a `true` is worth one call: what goes on the wire is the
+  agent's own `allow_once`. Everything else — `false`, a throw, no callback — is a decline. See
+  [docs/embedding.md](docs/embedding.md#tools-you-confirm-yourself).
+
+- **An "always allow" that ends with the conversation.** With `hostTools.alwaysAllow: 'session'` an
+  "Always allow" press is sent to the agent as its narrower `allow_once` and remembered by lotse itself,
+  in memory and keyed by the ACP session id, so it is written nowhere and a new conversation asks again.
+  Where the agent offers no `allow_once`, the button is withdrawn rather than shown as a promise lotse
+  cannot keep that narrow.
+
+- **The provider settings and the onboarding page are mountable by a host.**
+  `createProviderSettingsPage` and `createOnboardingPage` (plus `probeConnections`) are exported from
+  `@lotse/widget`, for an app with its own preferences dialog and its own welcome screen. Both are the
+  pages lotse builds for itself — the same provider file, the same private login server, the same
+  `modelPolicy` — and `createOnboardingPage` returns `null` where `onboardingView` says the ordinary chat
+  is the right page. See [docs/embedding.md](docs/embedding.md#mount-the-two-pages-yourself).
+
 - **Reply to the question's message in the chat.** A messenger reply (XEP-0461) binds the answer to
   the question that message carried, ahead of the one-open-question guess; the quote fallback is dropped.
   Needs a Curlew that returns `replyToId`. See [docs/serve.md](docs/serve.md#reply-to-the-questions-message).

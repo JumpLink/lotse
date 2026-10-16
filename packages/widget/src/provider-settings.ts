@@ -25,10 +25,16 @@ import {
   _n,
   fmt,
   CUSTOM_PRESETS,
+  ProviderSettingsController,
+  customProvidersFileOf,
+  loginUnavailableReason,
+  openSettingsSession,
   parseModelSpecs,
+  probeModels,
   type AddOutcome,
+  type AgentCommand,
   type CustomProviderInput,
-  type ProviderSettingsController,
+  type ModelPolicy,
   type ProviderSettingsState,
   type ProviderSettingsView,
 } from '@lotse/core';
@@ -40,6 +46,61 @@ export interface ProviderSettingsHooks {
   createController(): ProviderSettingsController;
   /** Open the login dialog; `done` after a successful login, so the page reads the list again. */
   connect(done: () => void): void;
+}
+
+/**
+ * What a host needs to say to get the finished page — the agent, its two policies, and where its own
+ * login lives.
+ *
+ * **One options object instead of `ProviderSettingsHooks`, because the controller's wiring is not a
+ * decision a host should be making.** Which session to open, which file is lotse's own copy, how the
+ * models are listed, what the clock is: all of it follows from the agent, and a host that had to
+ * assemble it could assemble it differently from `LotseChat` — a second opinion about where the
+ * person's providers live. `ProviderSettingsHooks` stays exported for a host that really does want to
+ * bring its own controller (a test, a fixture).
+ */
+export interface ProviderSettingsPageOptions {
+  /** The agent whose providers these are, and the one a login is for. */
+  readonly agent: AgentCommand;
+  /**
+   * The host's model rule. **Still applied when the host mounts this page itself**: it goes into the
+   * controller, which is what decides whether a provider is `offered` and which models are listed.
+   */
+  readonly modelPolicy?: ModelPolicy;
+  /** Whether the person may add and remove custom providers. Off by default, like `LotseChat`'s. */
+  readonly allowCustomProviders?: boolean;
+  /** "Connect…": open the host's login dialog, and call `done` once a login was stored. */
+  connect(done: () => void): void;
+  /** A change the running agent has to pick up — a restart. A throw is reported on the page. */
+  onChanged?(): void | Promise<void>;
+}
+
+/**
+ * The provider settings page, wired — for a host that mounts it in its own preferences dialog rather
+ * than through `LotseChat.providerSettingsPage()`.
+ *
+ * **The same wiring both ways round**: `LotseChat` calls this function too, so a host's page and
+ * lotse's own page read the same file, start the same private server and honour the same
+ * `modelPolicy`. The page starts that server when it is shown and stops it when it is hidden, so one
+ * built into a dialog nobody opens starts nothing.
+ */
+export function createProviderSettingsPage(options: ProviderSettingsPageOptions): ProviderSettingsPage {
+  const { agent, modelPolicy, onChanged } = options;
+  return new ProviderSettingsPage({
+    createController: () =>
+      new ProviderSettingsController({
+        openSession: () => openSettingsSession(agent),
+        unavailableReason: () => loginUnavailableReason(agent),
+        file: customProvidersFileOf(agent),
+        allowCustomProviders: options.allowCustomProviders === true,
+        ...(modelPolicy ? { modelPolicy } : {}),
+        listModels: (baseUrl, key) => probeModels(baseUrl, fetch, key),
+        sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+        now: () => Date.now(),
+        ...(onChanged ? { onChanged: () => onChanged() } : {}),
+      }),
+    connect: (done) => options.connect(done),
+  });
 }
 
 function plainLabel(text: string, cssClasses: string[] = []): Gtk.Label {

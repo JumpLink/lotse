@@ -10,7 +10,7 @@
 import Adw from '@girs/adw-1';
 import Gtk from '@girs/gtk-4.0';
 
-import type { OnboardingView } from '@lotse/core';
+import { onboardingView, type OnboardingInput, type OnboardingView } from '@lotse/core';
 
 import { CSS } from './css.ts';
 
@@ -19,6 +19,24 @@ export interface OnboardingHandlers {
   readonly onConnect: () => void;
   /** "Use free hosted models": carry on to the ordinary chat page. */
   readonly onContinue: () => void;
+}
+
+/**
+ * The onboarding page for a host that shows it itself — or `null` when there is nothing to show.
+ *
+ * **`null` is the answer a host must not invent.** Whether the offer appears at all is
+ * `onboardingView`'s decision, and it says no in four different ways (the host did not ask for it, no
+ * agent was found, no login could run, the person already has a provider or already dismissed it). A
+ * host that drew the page from its own reading of those facts would be the "offer, never a wall" rule
+ * reimplemented, and it would be reimplemented differently.
+ */
+export function createOnboardingPage(
+  input: OnboardingInput,
+  handlers: OnboardingHandlers,
+): OnboardingPage | null {
+  const view = onboardingView(input);
+  if (view === null) return null;
+  return new OnboardingPage(view, handlers);
 }
 
 function label(text: string, cssClasses: string[] = []): Gtk.Label {

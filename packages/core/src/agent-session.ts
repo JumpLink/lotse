@@ -32,6 +32,7 @@
 import type { AcpClient, McpServer, RequestPermissionRequest } from '@lotse/acp';
 import type { ClientGate } from '@lotse/acp/gate';
 import type {
+  PermissionOption,
   RequestPermissionResponse,
   SessionConfigOption,
   SessionId,
@@ -53,13 +54,25 @@ import {
 import { findControl, projectConfigOptions, type ConfigControl } from './config.ts';
 import { conversationRecord, unsavedMessage } from './conversation.ts';
 import { failureKind } from './failure.ts';
+import {
+  HOST_CONFIRM_NO_ONCE_NOTE,
+  SessionGrants,
+  hostConfirmDecision,
+  hostToolProblems,
+  sessionAnswer,
+  toolGate,
+  toolRefOf,
+  type HostToolPolicy,
+} from './host-tools.ts';
 import { modelBlock, ModelDeniedError, type ModelBlock, type ModelPolicy } from './model-policy.ts';
 import {
   answerFor,
+  permissionView,
   PermissionDesk,
   type NotAnsweredReason,
   type PermissionDecision,
   type PermissionQuestion,
+  type PermissionView,
 } from './permission.ts';
 import { openAgent, runTurn, withAuthHint, type AgentHandle, type OpenAgentOptions } from './run.ts';
 import { fitsInputCap, isJsonValue, toTranscript } from './transcript.ts';
@@ -118,6 +131,19 @@ export interface AgentSessionEvents {
    * ends in `cancel`.
    */
   onPermission?(question: PermissionQuestion): Promise<string | null | undefined>;
+  /**
+   * Ask the **host** about a tool the host confirms itself (`hostTools.hostConfirmed`).
+   *
+   * **It answers yes or no, and a yes is worth one call.** The host shows its own dialog — the PIN,
+   * the signature, whatever lotse's dialog could not have asked for — and resolves `true` only if the
+   * person got through it. lotse then answers the agent's own `allow_once` and nothing wider, so the
+   * next call asks again; see `hostConfirmDecision`.
+   *
+   * **Absent is a decline, and so is a throw**, which is the one direction this may fail in: a host
+   * that marked a tool as its own and then has no way to confirm it has not confirmed it. lotse's own
+   * dialog is never shown for such a tool, and `onPermission` is never reached by one.
+   */
+  onHostConfirm?(question: PermissionQuestion): boolean | Promise<boolean>;
   /**
    * The agent's configuration row changed: new options, a set in flight, or a refusal.
    *
@@ -242,6 +268,17 @@ export interface AgentSessionOptions {
    * around the composer could walk past.
    */
   readonly modelPolicy?: ModelPolicy;
+  /**
+   * The embedding host's rules about **tool calls** (`host-tools.ts`): the tools it confirms itself,
+   * and whether an always-allow is the agent's to remember or lives one session. Absent, and every
+   * field absent, is lotse's own behaviour — every question to the person, every always the agent's.
+   *
+   * **Here for the same reason `modelPolicy` is here: this is the file that answers the wire.** A
+   * surface can decline to draw a button; only `#gate` writes the `optionId` into
+   * `session/request_permission`'s response, so "lotse never approves a host-confirmed tool" is a
+   * sentence only this controller can keep.
+   */
+  readonly hostTools?: HostToolPolicy;
 }
 
 /** What the controller needs of an `AgentHandle`: the connection, and a way to end it. */
@@ -264,6 +301,19 @@ export class AgentSession {
   readonly #closeGraceMs: number;
   readonly #mcpServers: McpServer[] | undefined;
   readonly #modelPolicy: ModelPolicy | undefined;
+  readonly #hostTools: HostToolPolicy | undefined;
+  /**
+   * The always-allows given in this window's sessions, under `hostTools.alwaysAllow: 'session'`.
+   *
+   * **In memory, keyed by the ACP session id, and never written anywhere** — see `SessionGrants`.
+   * Constructed unconditionally because an empty map answers "no" to everything, so a host with no
+   * policy pays one `Map` and gets lotse's own behaviour.
+   */
+  readonly #grants = new SessionGrants();
+  /** Whether the host's unusable rules have been reported yet — said once, at the first question. */
+  #hostToolsReported = false;
+  /** Ids for the questions handed to `onHostConfirm`, which the desk never sees. */
+  #hostConfirmId = 1;
   /**
    * One open question, a queue behind it, no memory. Owned here rather than by the surface because the
    * fail-closed paths are *this* file's: a Stop, a closing window and a dying agent are decided here,
@@ -388,6 +438,7 @@ export class AgentSession {
     this.#closeGraceMs = options.closeGraceMs ?? CLOSE_GRACE_MS;
     this.#mcpServers = options.mcpServers ? [...options.mcpServers] : undefined;
     this.#modelPolicy = options.modelPolicy;
+    this.#hostTools = options.hostTools;
     // **Bound in the constructor, not at the first ask.** The desk owns "this question is on screen",
     // and the surface is what is on screen — wiring it lazily would mean the first request of the very
     // first turn took a different path from every one after it.
@@ -1036,6 +1087,12 @@ export class AgentSession {
    * The turn state moves to `waiting-for-you` around the ask and back when it is answered, which is
    * what puts a Stop button next to a dialog — a dialog with a running turn is not the same thing as a
    * dialog on a window that can no longer act.
+   *
+   * **A host's rules are read first, and the order inside `toolGate` is the guarantee.** A
+   * host-confirmed tool is recognised before any grant is consulted, so an always-allow a person gave
+   * earlier in the session cannot answer it; and the host's own yes becomes an `allow_once` and never
+   * anything wider. Everything a host narrows is still narrowed here rather than in a surface, because
+   * this is the function that writes the option id onto the wire.
    */
   #gate(): ClientGate {
     return {
@@ -1054,6 +1111,29 @@ export class AgentSession {
           const outcome = answerFor(decision).outcome;
           return outcome.outcome === 'selected' ? outcome.optionId : null;
         };
+        this.#reportHostTools();
+        const ref = toolRefOf(request);
+        // The same projection the desk will make of the same request — one pure function of one
+        // message, so there is no second opinion to drift, and `host-tools.ts` decides over exactly
+        // the options a dialog could have shown.
+        const view = permissionView(request);
+        const gate = toolGate({
+          view,
+          ref,
+          sessionId: sessionId ?? undefined,
+          policy: this.#hostTools,
+          grants: this.#grants,
+        });
+        // The host owns this one. lotse's dialog is not shown, `onPermission` is not called, and the
+        // widest answer that can come back out is the agent's own `allow_once`.
+        if (gate.type === 'host-confirm') {
+          return answer(await this.#waitingForYou(() => this.#hostConfirm(view)));
+        }
+        // An always-allow this session already carries. Recorded like any other decision, so the
+        // transcript says what was approved and on whose earlier say-so.
+        if (gate.type === 'granted') {
+          return answer({ type: 'allowed', optionId: gate.optionId });
+        }
         // No surface can ask: guardrail 2, unchanged. Recorded, because a refusal nobody can see is a
         // policy in the wrong place. `dismissed` rather than a reason of its own, because there was
         // never a dialog for anyone to dismiss — this is the same "nobody chose" as an Escape.
@@ -1061,9 +1141,57 @@ export class AgentSession {
           this.#askedPermissions = true;
           return answer({ type: 'not-answered', reason: 'dismissed' });
         }
-        return answer(await this.#ask(request));
+        const decision = await this.#ask(request, gate.options);
+        if (decision.type !== 'allowed') return answer(decision);
+        // **Under `'session'` scope an "always" leaves here as a "once".** `sessionAnswer` swaps the
+        // id, lotse remembers the always itself, and the agent is told about this call only — so the
+        // promise ends with the session and with this process, because the memory does.
+        const chosen = sessionAnswer(view, decision.optionId, this.#hostTools?.alwaysAllow);
+        // No turn session means no key to remember it under, which is the fail-closed reading: the
+        // narrower id still goes out and the next call asks again.
+        if (chosen.remember && sessionId) this.#grants.allow(sessionId, ref);
+        return answer({ type: 'allowed', optionId: chosen.optionId });
       },
     };
+  }
+
+  /**
+   * The host's unusable tool rules, said once.
+   *
+   * **At the first question rather than from the constructor**, because `onNotice` is the host's own
+   * callback and a controller that called back into a half-built host would be the crash the
+   * constructor's own comment records about `onSnapshot`. The first question is also the first moment
+   * the report can matter: before one, no rule has failed to match anything.
+   */
+  #reportHostTools(): void {
+    if (this.#hostToolsReported) return;
+    this.#hostToolsReported = true;
+    for (const problem of hostToolProblems(this.#hostTools)) this.#events.onNotice?.(problem);
+  }
+
+  /**
+   * The host's own dialog, and what its answer means.
+   *
+   * **Every path that is not an explicit `true` is a decline**: no callback, a throw, a rejected
+   * promise, anything that is not the boolean. A host that marked a tool as needing its own
+   * confirmation and cannot confirm it has not confirmed it, and lotse has no dialog to fall back on
+   * for such a tool by construction.
+   */
+  async #hostConfirm(view: PermissionView): Promise<PermissionDecision> {
+    this.#askedPermissions = true;
+    const ask = this.#events.onHostConfirm;
+    if (ask === undefined) return hostConfirmDecision(view, false);
+    let confirmed = false;
+    try {
+      confirmed = (await ask({ id: `h${this.#hostConfirmId++}`, view })) === true;
+    } catch {
+      confirmed = false;
+    }
+    const decision = hostConfirmDecision(view, confirmed);
+    // A yes that could only have been answered with a lasting approval is not answered at all. The
+    // host is owed the reason, or it looks like its dialog was ignored.
+    if (confirmed && decision.type !== 'allowed') this.#events.onNotice?.(HOST_CONFIRM_NO_ONCE_NOTE());
+    return decision;
   }
 
   /**
@@ -1075,12 +1203,27 @@ export class AgentSession {
    * flicker for no reason. It also means the bracketing cannot nest: a second request arriving while a
    * dialog is up finds `#ask` already running and only joins the queue.
    */
-  async #ask(request: RequestPermissionRequest): Promise<PermissionDecision> {
+  async #ask(
+    request: RequestPermissionRequest,
+    narrowed?: readonly PermissionOption[],
+  ): Promise<PermissionDecision> {
     this.#askedPermissions = true;
+    return this.#waitingForYou(() => this.#desk.ask(request, narrowed));
+  }
+
+  /**
+   * The bracket around a wait for a person — lotse's dialog or the host's, because the window is
+   * waiting either way.
+   *
+   * Factored out of `#ask` when the host's own confirmation arrived: a host dialog that left the turn
+   * in `thinking` would be a modal with no Stop button next to it, and the depth counter is what keeps
+   * the move from nesting across queued questions.
+   */
+  async #waitingForYou<T>(run: () => Promise<T>): Promise<T> {
     if (this.#askDepth === 0) this.#move({ kind: 'permission-asked' });
     this.#askDepth += 1;
     try {
-      return await this.#desk.ask(request);
+      return await run();
     } finally {
       this.#askDepth -= 1;
       if (this.#askDepth === 0) this.#move({ kind: 'permission-answered' });
