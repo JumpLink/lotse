@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: eu.jumplink.Lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-22 20:19+0200\n"
+"POT-Creation-Date: 2026-10-22 22:08+0200\n"
 "Language-Team: German\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -204,11 +204,35 @@ msgstr ""
 msgid "no agent (none is available)"
 msgstr "keinen Agenten (keiner ist verfügbar)"
 
-#: app/src/frontends/cli/agents.ts:85
+#: app/src/frontends/cli/agents.ts:110
+msgid "no agent called {id} in the catalog"
+msgstr "Im Katalog gibt es keinen Agenten „{id}“"
+
+#: app/src/frontends/cli/agents.ts:114
+msgid "{title} {version} is already installed"
+msgstr "{title} {version} ist bereits installiert"
+
+#: app/src/frontends/cli/agents.ts:119
+msgid "{title} has no download for this platform"
+msgstr "Für {title} gibt es auf dieser Plattform keinen Download"
+
+#: app/src/frontends/cli/agents.ts:123
+msgid "Download {title} {version} ({megabytes} MB) from {url}?"
+msgstr "{title} {version} ({megabytes} MB) von {url} herunterladen?"
+
+#: app/src/frontends/cli/agents.ts:130
+msgid "nothing was downloaded; pass --yes to confirm without asking"
+msgstr "Es wurde nichts heruntergeladen; mit --yes ohne Rückfrage bestätigen"
+
+#: app/src/frontends/cli/agents.ts:135
+msgid "installed {program}"
+msgstr "{program} installiert"
+
+#: app/src/frontends/cli/agents.ts:145
 msgid "list the agent launchers lotse knows how to start"
 msgstr "die Agenten-Starter auflisten, die lotse starten kann"
 
-#: app/src/frontends/cli/agents.ts:90
+#: app/src/frontends/cli/agents.ts:150
 msgid ""
 "remember which agent to start: <id>, <id>:host, <id>:bundled, or none to "
 "clear"
@@ -216,11 +240,21 @@ msgstr ""
 "merken, welcher Agent gestartet wird: <id>, <id>:host, <id>:bundled oder "
 "none zum Zurücksetzen"
 
-#: app/src/frontends/cli/agents.ts:105 app/src/frontends/cli/messenger.ts:191
+#: app/src/frontends/cli/agents.ts:154
+msgid ""
+"download the pinned copy of a catalog agent for this user (default: opencode)"
+msgstr ""
+"die festgelegte Version eines Katalog-Agenten für diese Person herunterladen (Standard: opencode)"
+
+#: app/src/frontends/cli/agents.ts:158
+msgid "do not ask before downloading"
+msgstr "vor dem Herunterladen nicht nachfragen"
+
+#: app/src/frontends/cli/agents.ts:185 app/src/frontends/cli/messenger.ts:191
 msgid "the earlier settings file was moved to {backup}"
 msgstr "die frühere Einstellungsdatei wurde nach {backup} verschoben"
 
-#: app/src/frontends/cli/agents.ts:126
+#: app/src/frontends/cli/agents.ts:207
 msgid "* the default for --agent"
 msgstr "* der Standard für --agent"
 

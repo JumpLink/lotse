@@ -4,6 +4,7 @@ packages/core/src/agents/detect.ts
 packages/core/src/agents/dev-agent.ts
 packages/core/src/agent-session.ts
 packages/core/src/agents/flatpak-module.ts
+packages/core/src/agents/install.ts
 packages/core/src/agents/isolation.ts
 packages/core/src/agents/launcher.ts
 packages/core/src/agents/opencode.ts

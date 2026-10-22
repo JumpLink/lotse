@@ -8,16 +8,24 @@
  * would start now.
  */
 
+import { createInterface } from 'node:readline/promises';
+
 import { _, fmt } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
 import {
+  AgentInstallError,
+  BUNDLED_AGENTS,
   DEFAULT_AGENT,
   LAUNCHERS,
   NO_AGENT_REMEDY,
   describeChoice,
   detectAgents,
+  distFor,
+  effectiveCatalog,
   gatherAgentFacts,
+  installAgent,
+  isInstalled,
   launcherIds,
   resolveAgent,
   type AgentCommand,
@@ -80,6 +88,64 @@ export function settingsReport(file: string, settings: Settings, problem: string
   return lines;
 }
 
+/** Ask on the terminal; anything but an explicit yes is a no, and so is a closed stdin. */
+async function confirm(question: string): Promise<boolean> {
+  if (!process.stdin.isTTY) return false;
+  const rl = createInterface({ input: process.stdin, output: process.stderr });
+  try {
+    return /^(y|yes|j|ja)$/i.test((await rl.question(`${question} [y/N] `)).trim());
+  } finally {
+    rl.close();
+  }
+}
+
+/**
+ * `--install [id]`: fetch the pinned copy of a catalog agent into the data directory. The download is a
+ * program, so the person is asked first with its size; `--yes` is the explicit way to skip the question.
+ * Returns the exit code.
+ */
+async function installFromCatalog(paths: LotsePaths, id: string, yes: boolean): Promise<number> {
+  const entry = BUNDLED_AGENTS.find((candidate) => candidate.id === id);
+  if (!entry) {
+    err(fmt(_('no agent called {id} in the catalog'), { id }));
+    return 1;
+  }
+  if (isInstalled(entry, paths.dataDir)) {
+    out(fmt(_('{title} {version} is already installed'), { title: entry.title, version: entry.version }));
+    return 0;
+  }
+  const dist = distFor(entry);
+  if (dist === null) {
+    err(fmt(_('{title} has no download for this platform'), { title: entry.title }));
+    return 1;
+  }
+  const megabytes = Math.round(dist.size / 1_000_000);
+  const question = fmt(_('Download {title} {version} ({megabytes} MB) from {url}?'), {
+    title: entry.title,
+    version: entry.version,
+    megabytes: String(megabytes),
+    url: dist.url,
+  });
+  if (!yes && !(await confirm(question))) {
+    err(_('nothing was downloaded; pass --yes to confirm without asking'));
+    return 1;
+  }
+  try {
+    const program = await installAgent(entry, paths.dataDir);
+    out(fmt(_('installed {program}'), { program }));
+    return 0;
+  } catch (error) {
+    err(
+      error instanceof AgentInstallError
+        ? error.message
+        : error instanceof Error
+          ? error.message
+          : String(error),
+    );
+    return 1;
+  }
+}
+
 const command = (paths: LotsePaths): CommandModule => ({
   command: 'agents',
   describe: _('list the agent launchers lotse knows how to start'),
@@ -89,9 +155,29 @@ const command = (paths: LotsePaths): CommandModule => ({
         type: 'string',
         describe: _('remember which agent to start: <id>, <id>:host, <id>:bundled, or none to clear'),
       })
+      .option('install', {
+        type: 'string',
+        describe: _('download the pinned copy of a catalog agent for this user (default: opencode)'),
+      })
+      .option('yes', {
+        type: 'boolean',
+        describe: _('do not ask before downloading'),
+      })
       .strict(),
-  handler: (argv) => {
+  handler: async (argv) => {
     const file = paths.settingsFile;
+    const install = pickArgv<string>(argv as Record<string, unknown>, 'install');
+    if (install !== undefined) {
+      const code = await installFromCatalog(
+        paths,
+        install === '' ? DEFAULT_AGENT : install,
+        pickArgv<boolean>(argv as Record<string, unknown>, 'yes') === true,
+      );
+      if (code !== 0) {
+        process.exitCode = code;
+        return;
+      }
+    }
     const use = pickArgv<string>(argv as Record<string, unknown>, 'use');
     if (use !== undefined) {
       const parsed = parseChoiceSpec(use, launcherIds());
@@ -113,11 +199,13 @@ const command = (paths: LotsePaths): CommandModule => ({
       }
     }
     const { settings, problem } = readSettings(file);
-    const facts = gatherAgentFacts();
-    const detections = detectAgents(facts);
+    const catalog = effectiveCatalog(paths.dataDir);
+    const facts = gatherAgentFacts(LAUNCHERS, undefined, undefined, catalog);
+    const detections = detectAgents(facts, catalog);
     const { detection: chosen, note } = resolveAgent({
       setting: settings.agent,
       detections,
+      catalog,
       bundledAvailable: (id) => facts.find((fact) => fact.id === id)?.bundledExists === true,
     });
     for (const line of agentsReport(LAUNCHERS, detections, chosen)) out(line);

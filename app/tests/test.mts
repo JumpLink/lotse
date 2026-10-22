@@ -31,6 +31,7 @@ import sandbox from './unit/core/sandbox.test.ts';
 import catalog from './unit/core/catalog.test.ts';
 import flatpakModule from './unit/core/flatpak-module.test.ts';
 import detect from './unit/core/detect.test.ts';
+import install from './unit/core/install.test.ts';
 import isolation from './unit/core/isolation.test.ts';
 import resolve from './unit/core/resolve.test.ts';
 import devAgent from './unit/core/dev-agent.test.ts';
@@ -107,6 +108,7 @@ run({
   catalog,
   flatpakModule,
   detect,
+  install,
   isolation,
   resolve,
   devAgent,
