@@ -7,8 +7,9 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 
-import { BUNDLED_AGENTS, bundledProgram } from './catalog.ts';
+import { BUNDLED_AGENTS, bundledProgram, type BundledAgent } from './catalog.ts';
 import { detectAgents, parseVersionOutput, type AgentFacts } from './detect.ts';
+import { effectiveCatalog } from './install.ts';
 import { isolationDirs } from './isolation.ts';
 import { LAUNCHERS } from './launcher.ts';
 import type { CwdFacts } from '../cwd.ts';
@@ -54,10 +55,11 @@ export function gatherAgentFacts(
   launchers: readonly AgentCommand[] = LAUNCHERS,
   readVersions = true,
   probeHost = true,
+  catalog: readonly BundledAgent[] = BUNDLED_AGENTS,
 ): AgentFacts[] {
   return launchers.map((launcher): AgentFacts => {
     const hostPath = which(launcher.program, process.env, probeHost ? currentSandboxFacts() : NO_HOST);
-    const entry = BUNDLED_AGENTS.find((candidate) => candidate.id === launcher.id);
+    const entry = catalog.find((candidate) => candidate.id === launcher.id);
     return {
       id: launcher.id,
       hostPath,
@@ -73,10 +75,11 @@ export function gatherAgentFacts(
  */
 export async function gatherAgentFactsAsync(
   launchers: readonly AgentCommand[] = LAUNCHERS,
+  catalog: readonly BundledAgent[] = BUNDLED_AGENTS,
 ): Promise<AgentFacts[]> {
   return Promise.all(
     launchers.map(async (launcher): Promise<AgentFacts> => {
-      const entry = BUNDLED_AGENTS.find((candidate) => candidate.id === launcher.id);
+      const entry = catalog.find((candidate) => candidate.id === launcher.id);
       return {
         id: launcher.id,
         hostPath: await whichAsync(launcher.program),
@@ -88,7 +91,8 @@ export async function gatherAgentFactsAsync(
 }
 
 export async function gatherResolveContextAsync(paths: LotsePaths): Promise<ResolveContext> {
-  return resolveContextFrom(paths, await gatherAgentFactsAsync());
+  const catalog = effectiveCatalog(paths.dataDir);
+  return resolveContextFrom(paths, await gatherAgentFactsAsync(LAUNCHERS, catalog), catalog);
 }
 
 /** The impure half of resolution: probe this machine once, and say where a bundled copy keeps its state. */
@@ -97,15 +101,21 @@ export function gatherResolveContext(
   readVersions = true,
   probeHost = true,
 ): ResolveContext {
-  return resolveContextFrom(paths, gatherAgentFacts(LAUNCHERS, readVersions, probeHost));
+  const catalog = effectiveCatalog(paths.dataDir);
+  return resolveContextFrom(paths, gatherAgentFacts(LAUNCHERS, readVersions, probeHost, catalog), catalog);
 }
 
-function resolveContextFrom(paths: LotsePaths, facts: readonly AgentFacts[]): ResolveContext {
+function resolveContextFrom(
+  paths: LotsePaths,
+  facts: readonly AgentFacts[],
+  catalog: readonly BundledAgent[],
+): ResolveContext {
   return {
-    detections: detectAgents(facts),
+    detections: detectAgents(facts, catalog),
+    catalog,
     isolationFor: (id) => isolationDirs(paths.dataDir, id),
     bundledAvailable: (id) => {
-      const entry = BUNDLED_AGENTS.find((candidate) => candidate.id === id);
+      const entry = catalog.find((candidate) => candidate.id === id);
       return entry !== undefined && existsSync(bundledProgram(entry));
     },
   };

@@ -72,6 +72,18 @@ export {
   STAND_IN_SCRIPT,
   type DevAgentChoice,
 } from './agents/dev-agent.ts';
+export {
+  AgentInstallError,
+  distFor,
+  effectiveCatalog,
+  installAgent,
+  installedEntry,
+  installedPath,
+  installRoot,
+  isInstalled,
+  type InstallFailure,
+  type InstallOptions,
+} from './agents/install.ts';
 export { isolationDirs, isolationEnv, prepareIsolation, type IsolationDirs } from './agents/isolation.ts';
 export { DEFAULT_AGENT, findLauncher, launcherIds, LAUNCHERS, requireLauncher } from './agents/launcher.ts';
 export { OPENCODE_COMMAND, OPENCODE_LOGIN } from './agents/opencode.ts';

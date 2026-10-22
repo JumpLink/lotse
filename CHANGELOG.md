@@ -6,6 +6,14 @@ and also records changes that are not a release of their own.
 
 ## Unreleased
 
+### Added
+
+- **A per-user install of the pinned agent.** `lotse agents --install [id]` downloads the catalog's pinned
+  opencode into `<data dir>/agents/`, after asking (`--yes` skips the question). Size and sha256 are
+  checked before anything is unpacked; the copy then counts as the bundled one, between the shipped copy
+  and the person's own install. `@lotse/core` exports `installAgent`, `effectiveCatalog` and friends for
+  host apps. See [ADR 0006](docs/adr/0006-per-user-agent-install.md).
+
 ## 0.4.0 — 2026-10-22
 
 ### Added
