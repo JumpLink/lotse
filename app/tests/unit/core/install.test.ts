@@ -78,7 +78,7 @@ async function failure(promise: Promise<unknown>): Promise<AgentInstallError> {
 }
 
 const leftovers = (dir: string, id = 'demo'): string[] => {
-  const root = join(dir, 'agents', id);
+  const root = join(dir, 'agent-binaries', id);
   return existsSync(root) ? readdirSync(root) : [];
 };
 
@@ -198,6 +198,23 @@ export default async () => {
           },
         });
         expect(second).toBe(first);
+      });
+    });
+
+    await it("never touches the agent's isolated state when it prunes", async () => {
+      await withDataDir(async (dir) => {
+        const login = join(dir, 'agents', 'demo', 'data', 'auth.json');
+        mkdirSync(dirname(login), { recursive: true });
+        writeFileSync(login, '{}');
+        const old = agent({ version: '0.9.0' });
+        await installAgent(old, dir, { ...LINUX, fetch: respond(BYTES), unpack: unpackBinary(old.binary) });
+        const current = agent();
+        await installAgent(current, dir, {
+          ...LINUX,
+          fetch: respond(BYTES),
+          unpack: unpackBinary(current.binary),
+        });
+        expect(existsSync(login)).toBe(true);
       });
     });
 
