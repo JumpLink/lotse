@@ -46,6 +46,7 @@ export const STRINGS = {
   answerShortened: '[shortened, {count} more characters]',
   answerPart: '({part}/{parts})',
   personAsk: 'I need you: {origin} wants {kind}.',
+  personLink: 'Open or scan this: {link}',
   personReplyCode: 'Reply "done" when you have done it yourself, or reply with the code and I will enter it.',
   personReplyDone: 'Reply "done" when you are through.',
   personCodeRefused: '{id} is no longer waiting for a code; reply "done" once you have done it yourself.',

@@ -87,13 +87,15 @@ function parseDays(value: unknown): Weekday[] {
  * An interval with no last run is due now. A time of day is due at its next occurrence after the
  * last run, which is in the past when `serve` was down at that moment: the missed run happens once,
  * on start, and is not repeated per missed day. With no last run it waits for the next occurrence
- * after `now` — a fresh install does not fire a 07:30 task at 15:00.
+ * after `since` — a fresh install does not fire a 07:30 task at 15:00. `since` is when the task first
+ * became known (the runner records it); it must stay fixed between ticks, because a baseline that
+ * moves with `now` keeps the candidate strictly ahead of it and the task never becomes due.
  */
-export function nextRun(schedule: Schedule, lastRun: Date | null, now: Date): Date {
+export function nextRun(schedule: Schedule, lastRun: Date | null, now: Date, since: Date = now): Date {
   if (schedule.kind === 'every') {
     return lastRun ? new Date(lastRun.getTime() + schedule.ms) : now;
   }
-  const after = lastRun ?? now;
+  const after = lastRun ?? since;
   const candidate = new Date(after);
   candidate.setHours(schedule.hour, schedule.minute, 0, 0);
   for (let day = 0; day <= 7; day++) {
@@ -107,6 +109,6 @@ export function nextRun(schedule: Schedule, lastRun: Date | null, now: Date): Da
   return new Date(after.getTime() + 7 * UNITS['d']!);
 }
 
-export function isDue(schedule: Schedule, lastRun: Date | null, now: Date): boolean {
-  return nextRun(schedule, lastRun, now).getTime() <= now.getTime();
+export function isDue(schedule: Schedule, lastRun: Date | null, now: Date, since: Date = now): boolean {
+  return nextRun(schedule, lastRun, now, since).getTime() <= now.getTime();
 }

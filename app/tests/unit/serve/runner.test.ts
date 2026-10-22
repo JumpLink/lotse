@@ -10,6 +10,7 @@ import {
   attemptClock,
   dueTasks,
   nextWakeMs,
+  parseSchedule,
   parseServeConfig,
   parseVerdict,
   precheckText,
@@ -451,6 +452,40 @@ export default async () => {
       clock.skipped('t', now);
       expect(dueTasks(serveConfig, clock.lastRun, new Set(), now).length).toBe(0);
       expect(nextWakeMs(serveConfig, clock.lastRun, now)).toBe(60_000);
+    });
+  });
+  await describe('dueTasks with an at schedule', async () => {
+    const atConfig = (): ServeConfig => {
+      const base = config();
+      return { ...base, tasks: [{ ...base.tasks[0]!, schedule: parseSchedule({ at: '09:01' }) }] };
+    };
+
+    await it('a never-run task loaded at 08:57 is due at 09:01:00.3', async () => {
+      const serveConfig = atConfig();
+      const clock = attemptClock(() => null);
+      const loaded = new Date(2026, 9, 13, 8, 57);
+      expect(dueTasks(serveConfig, clock.lastRun, new Set(), loaded, clock.since).length).toBe(0);
+      expect(nextWakeMs(serveConfig, clock.lastRun, loaded, undefined, clock.since)).toBe(60_000);
+      const late = new Date(2026, 9, 13, 9, 1, 0, 300);
+      expect(dueTasks(serveConfig, clock.lastRun, new Set(), late, clock.since).length).toBe(1);
+    });
+
+    await it('a task first seen after its time waits for the next day', async () => {
+      const serveConfig = atConfig();
+      const clock = attemptClock(() => null);
+      const afternoon = new Date(2026, 9, 13, 15, 0);
+      expect(dueTasks(serveConfig, clock.lastRun, new Set(), afternoon, clock.since).length).toBe(0);
+      const tomorrow = new Date(2026, 9, 14, 9, 1, 0, 300);
+      expect(dueTasks(serveConfig, clock.lastRun, new Set(), tomorrow, clock.since).length).toBe(1);
+    });
+
+    await it('a skip still counts as the last attempt', async () => {
+      const serveConfig = atConfig();
+      const clock = attemptClock(() => null);
+      clock.since('t', new Date(2026, 9, 13, 8, 57));
+      const late = new Date(2026, 9, 13, 9, 1, 0, 300);
+      clock.skipped('t', late);
+      expect(dueTasks(serveConfig, clock.lastRun, new Set(), late, clock.since).length).toBe(0);
     });
   });
   await describe('run-summary', async () => {

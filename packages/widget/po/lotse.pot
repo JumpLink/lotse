@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-16 09:49+0200\n"
+"POT-Creation-Date: 2026-10-22 20:20+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -137,6 +137,18 @@ msgid ""
 "it to try things out."
 msgstr ""
 
+#: packages/core/src/host-tools.ts:156
+msgid ""
+"Host-confirmed tool rule {index} names neither a tool nor a kind, so it "
+"matches nothing."
+msgstr ""
+
+#: packages/core/src/host-tools.ts:306
+msgid ""
+"The agent offered no one-time approval for a tool the host confirms, so "
+"nothing was approved."
+msgstr ""
+
 #: packages/core/src/model-policy.ts:211
 msgid ""
 "This model is not allowed here. Pick another one from the model list, then "
@@ -240,12 +252,12 @@ msgstr ""
 msgid "Dismiss warning"
 msgstr ""
 
-#: packages/widget/src/chat.ts:509
+#: packages/widget/src/chat.ts:543
 msgid "Working in {path}"
 msgstr ""
 
-#: packages/widget/src/chat.ts:804 packages/widget/src/provider-settings.ts:139
-#: packages/widget/src/provider-settings.ts:142
+#: packages/widget/src/chat.ts:848 packages/widget/src/provider-settings.ts:200
+#: packages/widget/src/provider-settings.ts:203
 msgid "Providers"
 msgstr ""
 
@@ -355,7 +367,7 @@ msgid "Waiting until you are done in the browser…"
 msgstr ""
 
 #: packages/widget/src/login-dialog.ts:205
-#: packages/widget/src/provider-settings.ts:66
+#: packages/widget/src/provider-settings.ts:127
 msgid "Cancel"
 msgstr ""
 
@@ -369,7 +381,7 @@ msgid ""
 msgstr ""
 
 #: packages/widget/src/login-dialog.ts:215
-#: packages/widget/src/provider-settings.ts:344
+#: packages/widget/src/provider-settings.ts:405
 #: packages/widget/src/tool-line.ts:31
 msgid "Done"
 msgstr ""
@@ -383,7 +395,7 @@ msgid "The login ran out of time"
 msgstr ""
 
 #: packages/widget/src/login-dialog.ts:224
-#: packages/widget/src/provider-settings.ts:144
+#: packages/widget/src/provider-settings.ts:205
 msgid "Try again"
 msgstr ""
 
@@ -410,7 +422,7 @@ msgid "Popular"
 msgstr ""
 
 #: packages/widget/src/login-dialog.ts:270
-#: packages/widget/src/provider-settings.ts:257
+#: packages/widget/src/provider-settings.ts:318
 msgid "Other"
 msgstr ""
 
@@ -426,146 +438,146 @@ msgstr ""
 msgid "The agent wants permission"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:134
+#: packages/widget/src/provider-settings.ts:195
 msgid "Reading the providers…"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:160
+#: packages/widget/src/provider-settings.ts:221
 msgid "Connected providers"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:161
+#: packages/widget/src/provider-settings.ts:222
 msgid "The logins and keys the agent holds."
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:163
+#: packages/widget/src/provider-settings.ts:224
 msgid "Connect…"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:167
+#: packages/widget/src/provider-settings.ts:228
 msgid "No provider connected yet"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:170
+#: packages/widget/src/provider-settings.ts:231
 msgid "{n} model"
 msgid_plural "{n} models"
 msgstr[0] ""
 msgstr[1] ""
 
-#: packages/widget/src/provider-settings.ts:171
-#: packages/widget/src/provider-settings.ts:207
+#: packages/widget/src/provider-settings.ts:232
+#: packages/widget/src/provider-settings.ts:268
 msgid "not used by this app"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:176
+#: packages/widget/src/provider-settings.ts:237
 msgid "Logging out…"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:176
-#: packages/widget/src/provider-settings.ts:181
+#: packages/widget/src/provider-settings.ts:237
+#: packages/widget/src/provider-settings.ts:242
 msgid "Log out"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:179
+#: packages/widget/src/provider-settings.ts:240
 msgid "Log out of {provider}?"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:180
+#: packages/widget/src/provider-settings.ts:241
 msgid "The agent forgets the login or key. You can connect again at any time."
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:190
+#: packages/widget/src/provider-settings.ts:251
 msgid "Custom providers"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:193
+#: packages/widget/src/provider-settings.ts:254
 msgid ""
 "An OpenAI-compatible server of your own — Ollama, LM Studio, llama.cpp, vLLM "
 "or a gateway."
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:196
+#: packages/widget/src/provider-settings.ts:257
 msgid "Add…"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:200
+#: packages/widget/src/provider-settings.ts:261
 msgid "None added"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:203
+#: packages/widget/src/provider-settings.ts:264
 msgid "no URL"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:203
+#: packages/widget/src/provider-settings.ts:264
 msgid "key stored"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:206
+#: packages/widget/src/provider-settings.ts:267
 msgid "no models listed"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:208
+#: packages/widget/src/provider-settings.ts:269
 msgid "written in {source}"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:218
+#: packages/widget/src/provider-settings.ts:279
 msgid "Removing…"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:218
-#: packages/widget/src/provider-settings.ts:223
+#: packages/widget/src/provider-settings.ts:279
+#: packages/widget/src/provider-settings.ts:284
 msgid "Remove"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:221
+#: packages/widget/src/provider-settings.ts:282
 msgid "Remove {provider}?"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:222
+#: packages/widget/src/provider-settings.ts:283
 msgid "Its entry and any key stored for it are deleted."
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:239
+#: packages/widget/src/provider-settings.ts:300
 msgid "Add a custom provider"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:256
+#: packages/widget/src/provider-settings.ts:317
 msgid "Server"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:259
+#: packages/widget/src/provider-settings.ts:320
 msgid "Id (lowercase, e.g. local-ollama)"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:260
+#: packages/widget/src/provider-settings.ts:321
 msgid "Name"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:261
+#: packages/widget/src/provider-settings.ts:322
 msgid "Base URL (…/v1)"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:262
+#: packages/widget/src/provider-settings.ts:323
 msgid "Models (empty: ask the server; model=context to set one)"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:263
+#: packages/widget/src/provider-settings.ts:324
 msgid "API key (optional)"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:280
+#: packages/widget/src/provider-settings.ts:341
 msgid "Add"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:320
+#: packages/widget/src/provider-settings.ts:381
 msgid "Plain http on your network?"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:320
+#: packages/widget/src/provider-settings.ts:381
 msgid "Use it"
 msgstr ""
 
-#: packages/widget/src/provider-settings.ts:341
+#: packages/widget/src/provider-settings.ts:402
 msgid "Saved."
 msgstr ""
 

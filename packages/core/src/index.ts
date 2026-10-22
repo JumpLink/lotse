@@ -360,6 +360,27 @@ export {
   type PermissionView,
 } from './permission.ts';
 export { chunkToText, describe, terminalGate, type Terminal, type TerminalGateOptions } from './policy.ts';
+// The host's two rules about a tool call: one it confirms itself, and an always-allow that lives one
+// session. Absent `hostTools` is lotse's own behaviour unchanged.
+export {
+  HOST_CONFIRM_NO_ONCE_NOTE,
+  SessionGrants,
+  hostConfirmDecision,
+  hostConfirmed,
+  hostToolProblems,
+  matchesTool,
+  narrowestAllow,
+  narrowestReject,
+  scopedOptions,
+  sessionAnswer,
+  toolGate,
+  toolRefOf,
+  type AlwaysAllowScope,
+  type HostToolMatch,
+  type HostToolPolicy,
+  type ToolGate,
+  type ToolRef,
+} from './host-tools.ts';
 
 // ── The view models a chat is drawn from ─────────────────────────────────────────────────────────
 export {
@@ -589,7 +610,8 @@ export {
   type MessengerChannel,
   type MessengerChannelOptions,
 } from './messenger/channel.ts';
-export { openIds, parseReply, type ReplyIntent } from './messenger/reply.ts';
+export { openIds, parseReply, stripQuote, type ReplyIntent } from './messenger/reply.ts';
+export { findRef, memoryRefs, recordRefs, REF_LIMIT, type RefStore, type SentRef } from './messenger/refs.ts';
 export {
   abortableSleep,
   chatSays,

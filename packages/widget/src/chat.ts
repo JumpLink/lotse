@@ -43,9 +43,7 @@ import {
   fmt,
   AgentSession,
   LoginController,
-  ProviderSettingsController,
   agentStatus,
-  customProvidersFileOf,
   displayCwd,
   failureAction,
   failureToShow,
@@ -55,9 +53,7 @@ import {
   loginUnavailableReason,
   onboardingView,
   openLoginSession,
-  openSettingsSession,
   probeConnections,
-  probeModels,
   providerOffered,
   staleDialog,
   type AgentAttachment,
@@ -67,9 +63,11 @@ import {
   type ConnectionFacts,
   type EmptyStateView,
   type FailureNotice,
+  type HostToolPolicy,
   type McpServer,
   type ModelPolicy,
   type NotAnsweredReason,
+  type OnboardingInput,
   type PermissionQuestion,
   type RecordedResolution,
 } from '@lotse/core';
@@ -79,9 +77,9 @@ import { installWidgetCss } from './css.ts';
 import { ConfigRow } from './config-row.ts';
 import { FailureDialog } from './failure-dialog.ts';
 import { LoginDialog } from './login-dialog.ts';
-import { OnboardingPage } from './onboarding-page.ts';
+import { createOnboardingPage, type OnboardingPage } from './onboarding-page.ts';
 import { PermissionDialog } from './permission-dialog.ts';
-import { ProviderSettingsPage } from './provider-settings.ts';
+import { createProviderSettingsPage } from './provider-settings.ts';
 import type { ToolPresenter } from './tool-line.ts';
 import { TranscriptView } from './transcript-view.ts';
 import Template from './chat.blp';
@@ -181,6 +179,32 @@ export interface LotseChatOptions {
    *   denied — or an unverifiable — model around this surface.
    */
   readonly modelPolicy?: ModelPolicy;
+  /**
+   * The host's rules about **tool calls**: the tools it confirms itself, and whether an "always allow"
+   * is the agent's to remember or lives only as long as the session it was given in.
+   *
+   * **`hostConfirmed` is the one host hook that is not only a narrowing**, and it is still not an
+   * approval lotse gives: a tool listed here never goes to lotse's dialog and is never covered by an
+   * always-allow — `confirmTool` is asked instead, and the most that can come back is the agent's own
+   * one-time option. A legal submission behind a PIN, a payment, a signature: lotse's dialog cannot
+   * ask for any of that, so it does not pretend to.
+   *
+   * **`alwaysAllow: 'session'`** keeps an always-allow in memory here instead of handing it to the
+   * agent, so it ends with the conversation and is written nowhere. Where the agent offers nothing
+   * narrower than an always, the button is withdrawn rather than shown as a promise lotse cannot keep.
+   *
+   * Absent, and every field absent, is lotse's own window: every question to the person, every always
+   * the agent's to remember.
+   */
+  readonly hostTools?: HostToolPolicy;
+  /**
+   * The host's own confirmation for a tool it marked in `hostTools.hostConfirmed`.
+   *
+   * Shown by the host, in the host's own dialog, with whatever it needs to ask for. `true` is worth
+   * **one** call; everything else — `false`, a throw, a rejected promise, no callback at all — is a
+   * decline, which is the same fail-closed rule as `gate` and `modelPolicy`.
+   */
+  readonly confirmTool?: (question: PermissionQuestion) => boolean | Promise<boolean>;
   /**
    * Whether the provider settings (`providerSettingsPage`) let the person add and remove custom providers
    * — an OpenAI-compatible server of their own, local or not. Off by default: a custom provider is a new
@@ -303,6 +327,7 @@ export class LotseChat extends Adw.Bin {
   readonly #hostConversation: LotseChatOptions['onConversation'];
   readonly #hostNotice: LotseChatOptions['onNotice'];
   readonly #modelPolicy: ModelPolicy | undefined;
+  readonly #confirmTool: LotseChatOptions['confirmTool'];
   readonly #allowCustomProviders: boolean;
 
   constructor(options: LotseChatOptions) {
@@ -317,6 +342,7 @@ export class LotseChat extends Adw.Bin {
     this.#loginAgent = options.agent;
     this.#providerOnboarding = options.providerOnboarding === true;
     this.#modelPolicy = options.modelPolicy;
+    this.#confirmTool = options.confirmTool;
     this.#allowCustomProviders = options.allowCustomProviders === true;
     // `this` rather than a window, which is why `PermissionDialog` and `FailureDialog` take a
     // `Gtk.Widget`: a widget a host embeds does not know what window it will end up in, and
@@ -359,6 +385,9 @@ export class LotseChat extends Adw.Bin {
       // controller filters the row, computes the composer's block and refuses in front of the wire, so
       // the policy is asked once per question rather than once per surface.
       ...(options.modelPolicy ? { modelPolicy: options.modelPolicy } : {}),
+      // **The host's tool rules, to the same one place.** The widget keeps no copy of these either:
+      // a tool the host confirms must be recognised in front of the wire, not in front of a dialog.
+      ...(options.hostTools ? { hostTools: options.hostTools } : {}),
       ...(options.now ? { now: options.now } : {}),
       events: {
         onSnapshot: (snapshot) => this.#onSnapshot(snapshot),
@@ -376,6 +405,11 @@ export class LotseChat extends Adw.Bin {
         // and resolves with the id that was pressed. It decides nothing about that id — a dismissal
         // arrives as an id the agent never offered, and what it means is `permission.ts`'s to say.
         onPermission: (question) => this.#ask(question),
+        // **The host's own dialog, for a tool the host confirms.** The widget draws nothing here and
+        // decides nothing: it forwards the question and the answer, and `host-tools.ts` says what a
+        // `true` is worth. Absent `confirmTool` never reaches this line — the controller reads the
+        // callback as absent and declines, which is where that rule belongs.
+        ...(options.confirmTool ? { onHostConfirm: (question) => this.#confirm(question) } : {}),
         // **The row, through the controller's decided view.** `config-row.ts` has already decided
         // which controls may exist, what is selected, and what a refusal says.
         // **And the composer with it, because the model is one of its inputs now.** The row and the
@@ -681,30 +715,48 @@ export class LotseChat extends Adw.Bin {
     return this.#permissions.show(question);
   }
 
+  /**
+   * One question, to the host's own dialog — for a tool the host confirms itself.
+   *
+   * **lotse's `gate` is not consulted and lotse's dialog is not shown.** Both would be lotse putting
+   * itself between the host and a decision the host said was its own; the host's dialog is the gate
+   * for this call. A `true` is the only answer that approves, and it approves one call.
+   */
+  async #confirm(question: PermissionQuestion): Promise<boolean> {
+    const confirm = this.#confirmTool;
+    if (confirm === undefined) return false;
+    return (await confirm(question)) === true;
+  }
+
   // ─── provider onboarding ─────────────────────────────────────────────────────────────────────
 
   /** The page a new chat shows: the onboarding offer where `onboardingView` says so, else "New chat". */
   #newPage(): 'new' | 'onboarding' | 'checking' {
     if (this.#probing) return 'checking';
-    const view = onboardingView({
+    const input: OnboardingInput = {
       enabled: this.#providerOnboarding,
       noAgent: this.#unavailable !== undefined,
       loginAvailable: this.#onboardingStaged || this.hasLogin,
       connection: this.#connection,
       dismissed: this.#onboardingDismissed,
-    });
-    if (view === null) return 'new';
+    };
+    // **Built through the same factory an embedding host calls**, so the `null` that means "show the
+    // ordinary chat instead" is `onboardingView`'s answer in both places rather than two readings of
+    // the same five facts. Once the page exists it is kept and only the answer is re-read.
     if (this.#onboardingPage === null) {
-      this.#onboardingPage = new OnboardingPage(view, {
+      const page = createOnboardingPage(input, {
         onConnect: () => this.openLogin(),
         onContinue: () => {
           this.#onboardingDismissed = true;
           this.#refreshOnboarding();
         },
       });
-      this._stack.add_named(this.#onboardingPage.widget, 'onboarding');
+      if (page === null) return 'new';
+      this.#onboardingPage = page;
+      this._stack.add_named(page.widget, 'onboarding');
+      return 'onboarding';
     }
-    return 'onboarding';
+    return onboardingView(input) === null ? 'new' : 'onboarding';
   }
 
   /** Re-decide the page — only if the person is on one of the two it chooses between. */
@@ -776,27 +828,19 @@ export class LotseChat extends Adw.Bin {
    * build it with its dialog. A change the agent has to pick up restarts it, as a login does.
    */
   providerSettingsPage(): Adw.PreferencesPage {
-    const agent = this.#loginAgent;
     const policy = this.#modelPolicy;
-    const page = new ProviderSettingsPage({
-      createController: () =>
-        new ProviderSettingsController({
-          openSession: () => openSettingsSession(agent),
-          unavailableReason: () => loginUnavailableReason(agent),
-          file: customProvidersFileOf(agent),
-          allowCustomProviders: this.#allowCustomProviders,
-          ...(policy ? { modelPolicy: policy } : {}),
-          listModels: (baseUrl, key) => probeModels(baseUrl, fetch, key),
-          sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-          now: () => Date.now(),
-          onChanged: async () => {
-            if (!(await this.#agent.restartAgent()))
-              throw new Error('a turn is still running — it uses the change from the next start');
-          },
-        }),
+    // **Through the same factory a host calls.** `createProviderSettingsPage` owns the controller's
+    // wiring, so lotse's page and an embedding host's page cannot read the provider file differently.
+    return createProviderSettingsPage({
+      agent: this.#loginAgent,
+      ...(policy ? { modelPolicy: policy } : {}),
+      allowCustomProviders: this.#allowCustomProviders,
       connect: (done) => this.#openLogin(done),
-    });
-    return page.page;
+      onChanged: async () => {
+        if (!(await this.#agent.restartAgent()))
+          throw new Error('a turn is still running — it uses the change from the next start');
+      },
+    }).page;
   }
 
   /** The same page in a dialog of its own, for a host without a preferences dialog to put it in. */

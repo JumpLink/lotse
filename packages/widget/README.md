@@ -111,6 +111,8 @@ This is `app/tests/examples/embed.ts`, which is type-checked with the app. Each 
 | `noAgentPage` | `Gtk.Widget` | Your "no agent found" page. Absent: that state renders nothing. |
 | `gate` | `(question) => 'ask' \| 'decline' \| Promise<…>` | Your permission policy, asked **before** the person. See below. |
 | `modelPolicy` | `(model: string) => 'allow' \| 'deny'` | Which models your data may reach. Absent: every model, which is lotse's own window. See below. |
+| `hostTools` | `HostToolPolicy` | The tools you confirm yourself (`hostConfirmed`), and whether an always-allow is the agent's to remember or lives one session (`alwaysAllow`). See below. |
+| `confirmTool` | `(question) => boolean \| Promise<boolean>` | Your own dialog for a `hostConfirmed` tool. `true` approves one call; everything else declines. See below. |
 | `toolPresenter` | `(call: ToolCallView) => ToolPresentation \| null` | Draw your own MCP calls in your words. Absent: every tool row is lotse's. See below. |
 | `providerOnboarding` | `boolean` | Off by default. On: a new chat with no provider connected shows "Connect a provider" first. |
 | `allowCustomProviders` | `boolean` | Off by default. On: `providerSettingsPage()` lets the person add and remove custom providers (local models, any OpenAI-compatible endpoint). Off: the page lists them read-only. |
@@ -180,6 +182,39 @@ id, however new — it does not look inside a provider, so pair it with `denyFre
 that matters. Or write your own predicate; it is the same one-line option. The genuinely uncertain case, "which model is even in
 use?", is caught by the fail-closed rule above and not by this one.
 
+### `hostTools`: the tools you confirm, and an always that ends with the session
+
+Two rules about tool calls, both decided in `@lotse/core`'s `host-tools.ts` and both independent:
+
+```ts
+new LotseChat({
+  …,
+  hostTools: { hostConfirmed: [{ name: 'shop.place_order' }, { kind: 'delete' }], alwaysAllow: 'session' },
+  confirmTool: async (question) => await myPinDialog(question.view),
+});
+```
+
+**`hostConfirmed` is the one host hook that is not only a narrowing — and lotse still approves nothing.**
+A listed tool never reaches lotse's dialog and `gate` is not consulted for it; `confirmTool` is asked
+instead, with the same `PermissionQuestion` the dialog would have drawn. A `true` is answered with the
+agent's own **`allow_once`** and nothing wider, so the next call asks you again — an approval that
+lasted a session would be the PIN asked once and then never again. An agent that offered no `allow_once`
+gets no approval at all (the request is cancelled) and you get one notice saying why. `false`, a throw,
+a rejected promise and a missing `confirmTool` are all a decline, with the agent's narrowest rejecting
+option.
+
+A rule matches on `name`, on `kind`, or both ANDed. `name` is compared against the agent's title **and**
+against each MCP name the call carries (`server.tool` and `tool`) — exactly, trimmed and case-folded,
+never as a fragment. A rule with neither field matches nothing and is reported once through `onNotice`.
+
+**`alwaysAllow: 'session'`** changes who remembers an always. ACP has no lasting-approval answer: lotse
+sends an option id and the agent decides whether to ask again, which can outlive your window. Under
+`'session'`, **Always allow** goes out as the agent's `allow_once` and lotse keeps the always itself — in
+memory, keyed by the ACP session id plus the tool's kind and MCP name, written nowhere, gone with the
+conversation and with the process. Where the agent offers no `allow_once`, the button is withdrawn
+rather than shown as a promise lotse cannot keep that narrow. A `hostConfirmed` tool is never covered by
+such a grant: the host is asked first, which is the order and the point. Default is `'agent'`.
+
 ### `toolPresenter` renames a row, it never restatuses it
 
 Every tool line in the transcript written by this version carries a structured record: ACP kind, title, status,
@@ -233,6 +268,23 @@ written only for a **bundled** opencode (lotse's own `lotse-providers.json`); a 
 configuration is the person's, so the page shows it read-only. All of the logic is core's
 `ProviderSettingsController`; the page only renders it.
 
+### Mounting the two pages without the chat widget
+
+`createProviderSettingsPage(options)` and `createOnboardingPage(input, handlers)` build the same two
+pages for a host that wants them in its own preferences dialog and its own welcome screen. The factory
+owns the wiring in both directions — `LotseChat` calls it too — so a host's page cannot read the
+provider file, start the login server or apply `modelPolicy` differently from lotse's own.
+
+`createProviderSettingsPage({ agent, modelPolicy?, allowCustomProviders?, connect(done), onChanged?() })`
+returns a `ProviderSettingsPage` whose `.page` is the `Adw.PreferencesPage`. `connect` opens your login
+dialog and calls `done()` once a login was stored; an `onChanged` that throws is reported on the page.
+
+`createOnboardingPage(input, { onConnect, onContinue })` returns an `OnboardingPage` whose `.widget` is
+the `Adw.StatusPage` — **or `null`**, which is `onboardingView`'s answer that the ordinary chat is the
+right page, and not a value a host should derive itself. The `OnboardingInput` needs `connection:
+ConnectionFacts` from `probeConnections(agent)`; that call costs one private login server, briefly, and
+anything that fails, times out or is aborted is `unknown`, which means show the chat.
+
 ## `LotseChat` members
 
 | Member | Use |
@@ -265,6 +317,10 @@ terminates only afterwards. Terminating first would lose the work of the turn in
 | `LotseChatOptions` | The options above. |
 | `ToolPresenter`, `ToolPresentation`, `ToolCallView`, `McpCall`, `HostItem` | The types `toolPresenter` and host entries use. |
 | `providerOffered(policy, id, models?)`, `ModelPolicy` | Whether a `modelPolicy` lets a chat use any model of a provider; the login dialog and the settings page filter by it. |
+| `HostToolPolicy`, `HostToolMatch`, `AlwaysAllowScope`, `PermissionQuestion`, `PermissionView` | The types `hostTools` and `confirmTool` are written in. |
+| `createProviderSettingsPage`, `ProviderSettingsPage`, `ProviderSettingsPageOptions`, `ProviderSettingsHooks` | The provider settings page, for your own preferences dialog. See above. |
+| `createOnboardingPage`, `OnboardingPage`, `OnboardingHandlers`, `OnboardingView`, `OnboardingInput` | The onboarding page, for your own welcome screen. See above. |
+| `probeConnections`, `ConnectionFacts` | Which providers the agent has connected, read from a private login server that is closed again at once. |
 | `CSS` | The widget's class-name map, for a host that styles its own widgets next to the chat. The stylesheet itself is installed by `LotseChat`; a host needs no CSS of its own. |
 
 ## Related

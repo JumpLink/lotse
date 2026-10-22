@@ -52,8 +52,10 @@ import { currentTasksHash, loadTasks } from '../../core/serve-config.ts';
 import { runState } from '../../core/serve-state.ts';
 import {
   fileCursorStore,
+  fileRefStore,
   filePendingStore,
   messengerCursorFile,
+  messengerRefsFile,
   pendingRequestsFile,
 } from '../../core/messenger-state.ts';
 import { activeChannels, desktopMode, messengerSettings, readSettings } from '../../core/settings.ts';
@@ -154,6 +156,7 @@ interface OpenedChannels {
  */
 async function openChannels(
   paths: LotsePaths,
+  stateDir: string,
   config: () => ServeConfig,
   deps: () => ServeDeps | null,
 ): Promise<OpenedChannels> {
@@ -173,7 +176,7 @@ async function openChannels(
           onStderr: (line) => err(fmt(_('  messenger: {line}'), { line })),
         }),
       );
-      const channel = messengerChannel(link, config);
+      const channel = messengerChannel(link, config, { refs: fileRefStore(messengerRefsFile(stateDir)) });
       messenger = { link, settings: config, channel };
       opened.push({ name: 'messenger', channel });
     }
@@ -230,6 +233,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     let activeConfig = loaded.config;
     const opened = await openChannels(
       paths,
+      serve.stateDir,
       () => activeConfig,
       () => ready,
     );
@@ -328,6 +332,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
         channel: messenger!.channel,
         serve: live,
         cursor: fileCursorStore(messengerCursorFile(serve.stateDir)),
+        refs: fileRefStore(messengerRefsFile(serve.stateDir)),
         requests: () => holder?.current(),
         log: (line) => err(fmt(_('  {line}'), { line })),
         ...extra,
@@ -396,11 +401,17 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
         checkRequests();
         const current = reloader.current().deps;
         const now = current.now();
-        for (const task of dueTasks(current.config, clock.lastRun, new Set(running.keys()), now)) {
+        for (const task of dueTasks(
+          current.config,
+          clock.lastRun,
+          new Set(running.keys()),
+          now,
+          clock.since,
+        )) {
           start(task, current);
         }
         if (once) break;
-        const ms = nextWakeMs(current.config, clock.lastRun, current.now());
+        const ms = nextWakeMs(current.config, clock.lastRun, current.now(), undefined, clock.since);
         await new Promise<void>((resolve) => {
           const timer = setTimeout(() => {
             wake = null;

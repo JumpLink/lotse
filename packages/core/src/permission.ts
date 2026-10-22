@@ -537,9 +537,29 @@ export class PermissionDesk {
    * Resolving is not the same as *eventually* resolving: an unanswered question stays open, which is
    * the point. `cancel()` is what settles it, and every fail-closed path in `AgentSession` is a
    * `cancel()`.
+   *
+   * **`narrowed` may only take options away**, which is why it is intersected with the projection
+   * rather than used in its place. A caller that has read a host's policy (`host-tools.ts`'s
+   * `scopedOptions` withdraws `allow_always` where lotse cannot keep the promise that narrow) passes
+   * the set it is left with; an option the agent never sent cannot enter the dialog through here, and
+   * a `narrowed` that empties the list is answered `cancelled` by the rule below, like any question
+   * with nothing to press.
    */
-  ask(request: RequestPermissionRequest): Promise<PermissionDecision> {
-    const question: PermissionQuestion = { id: `q${this.#nextId++}`, view: permissionView(request) };
+  ask(
+    request: RequestPermissionRequest,
+    narrowed?: readonly PermissionOption[],
+  ): Promise<PermissionDecision> {
+    const projected = permissionView(request);
+    const view =
+      narrowed === undefined
+        ? projected
+        : {
+            ...projected,
+            options: projected.options.filter((option) =>
+              narrowed.some((kept) => kept.optionId === option.optionId),
+            ),
+          };
+    const question: PermissionQuestion = { id: `q${this.#nextId++}`, view };
     return new Promise<PermissionDecision>((resolve) => {
       // **A request with nothing to press is answered here, not shown.** `options` is the agent's
       // array and may be empty, and the projection may empty it — every option the agent sent can be
