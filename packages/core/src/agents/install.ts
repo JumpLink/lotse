@@ -13,7 +13,7 @@
  *
  * **What it never does.** It does not decide that an install happens — the caller asks the person first
  * (it is a network download of a program) and then calls {@link installAgent}. It does not run the agent
- * and it writes nowhere outside `<dataDir>/agents`. In a Flatpak that directory is inside the sandbox, and
+ * and it writes nowhere outside `<dataDir>/agent-binaries`. In a Flatpak that directory is inside the sandbox, and
  * the copy runs there, under the same finish-args as the app: nothing is widened.
  */
 
@@ -30,9 +30,12 @@ import {
   type BundledDist,
 } from './catalog.ts';
 
-/** Where per-user copies live: `<dataDir>/agents`. Not under `isolationDirs` — that tree is the agent's HOME. */
+/**
+ * Where per-user copies live: `<dataDir>/agent-binaries`. NOT `<dataDir>/agents` — `isolationDirs` keeps the
+ * agent's HOME, config and login under `agents/<id>/`, and pruning old versions there would delete them.
+ */
 export function installRoot(dataDir: string): string {
-  return join(dataDir, 'agents');
+  return join(dataDir, 'agent-binaries');
 }
 
 /** The directory one pinned version unpacks into. A version in the path lets an update sit beside the old one. */

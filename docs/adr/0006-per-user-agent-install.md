@@ -19,7 +19,9 @@ The catalog (`bundled-agents.json`) already pins what a build may ship: version,
 ## Decision
 
 1. **lotse can fetch the pinned archive for one person, into its own data directory.**
-   `installAgent` writes `<dataDir>/agents/<id>/<version>` and nowhere else.
+   `installAgent` writes `<dataDir>/agent-binaries/<id>/<version>` and nowhere else. It is deliberately not under
+   `<dataDir>/agents/<id>/`, where the isolated agent keeps its HOME, config and login: pruning old
+   versions must never be able to reach those.
 2. **It trusts only the catalog.** The bytes are checked against the pinned size and sha256 *before*
    `tar` sees them; a mismatch leaves nothing on disk. There is no "latest": a newer opencode arrives
    with a lotse release that moves the pin, so what runs next to tax data was read by someone.

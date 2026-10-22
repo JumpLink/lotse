@@ -75,6 +75,30 @@ const empty = emptyStateView({ agent: found });
   page, and call `chat.showNoAgent()`.
 - For development without a model, use the stand-in agent in [dev-fixtures](dev-fixtures.md).
 
+### Install the agent for the person, on request
+
+A package that does not bundle the agent (a .deb, an AppImage, a source install) can fetch the catalog's
+pinned copy into its own data directory. The widget never does this by itself: **you ask first** —
+it is a download of a program — and then call core. Nothing but the pin in `bundled-agents.json` is
+trusted; size and sha256 are checked before anything is unpacked ([ADR 0006](adr/0006-per-user-agent-install.md)).
+
+```ts
+const opencode = BUNDLED_AGENTS.find((agent) => agent.id === 'opencode')!;
+const dist = distFor(opencode); // null: no pinned download for this platform
+if (dist && !isInstalled(opencode, paths.dataDir) && (await askPerson(`${opencode.title}, ${dist.size / 1e6} MB`))) {
+  try {
+    await installAgent(opencode, paths.dataDir); // writes <dataDir>/agent-binaries/<id>/<version> only
+  } catch (error) {
+    if (error instanceof AgentInstallError) showFailure(error.kind, error.message);
+  }
+}
+// Resolve again: the per-user copy now counts as the bundled one.
+const found = resolveDefault(gatherResolveContext(paths, false));
+```
+
+Offer it where you show the "no agent" page. Hosts that resolve through `gatherResolveContext` need no
+other change: the per-user copy is picked up there, behind a shipped copy and ahead of the person's own install.
+
 ### Bundle the agent (Flatpak)
 
 Generate the module from the catalog instead of copying lotse's manifest:
