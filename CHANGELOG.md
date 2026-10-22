@@ -6,6 +6,8 @@ and also records changes that are not a release of their own.
 
 ## Unreleased
 
+## 0.4.0 — 2026-10-22
+
 ### Added
 
 - **Tools the embedding host confirms itself.** `hostTools.hostConfirmed` marks a tool by name or kind,
@@ -55,6 +57,9 @@ and also records changes that are not a release of their own.
 
 ### Changed
 
+- **The fallback note names no CLI command unless the caller supplies one.** `resolveAgent` and
+  `ResolveContext` take an optional `remedy`; only the lotse CLI passes ``choose again with `lotse agents --use` ``,
+  so a host app such as an embedded chat pane no longer tells people to run a command that cannot run there.
 - **Free models are detected, not listed.** `isFreeModel` is a rule over the id (`-free` suffix plus
   `opencode/big-pickle`); `packages/core/data/free-models.json` and its exports (`FREE_MODELS`,
   `FREE_MODEL_IDS`, `FreeModelList`) are gone, and no model is called zero-retention any more.

@@ -37,6 +37,24 @@
     <content_attribute id="language-humor">none</content_attribute>
   </content_rating>
   <releases>
+    <release version="0.4.0" date="2026-10-22">
+      <description>
+        <!-- TRANSLATORS: Release notes for version 0.4.0 - opening line: German translation, bundled OpenCode default, free-model warning -->
+        <p>Lotse speaks German, starts the bundled OpenCode by default and warns when a free model is in use.</p>
+        <ul>
+          <!-- TRANSLATORS: Release notes for version 0.4.0 - German translation -->
+          <li>The app, the widget, the command line and the notifications are translated into German.</li>
+          <!-- TRANSLATORS: Release notes for version 0.4.0 - bundled OpenCode is the default agent -->
+          <li>The bundled OpenCode, with its own login and settings, is the default agent. Your own OpenCode is an opt-in.</li>
+          <!-- TRANSLATORS: Release notes for version 0.4.0 - warning while a free model is in use -->
+          <li>A card above the message field warns while a free model is in use, because its provider may store and train on what you send.</li>
+          <!-- TRANSLATORS: Release notes for version 0.4.0 - a task can ask for the person -->
+          <li>A running task can ask for you when only you can go on, for example for a login or a code.</li>
+          <!-- TRANSLATORS: Release notes for version 0.4.0 - fix for scheduled tasks -->
+          <li>A scheduled task that never ran now starts at its first matching time.</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.3.0" date="2026-10-11">
       <description>
         <!-- TRANSLATORS: Release notes for version 0.3.0 - opening line: the rename to lotse, the libraries on npm. Keep "Kurier" and "lotse" as they are. -->
@@ -57,6 +75,8 @@
           <li>A host app can limit which models a chat may use.</li>
           <!-- TRANSLATORS: Release notes for version 0.3.0 - xAI added to the login -->
           <li>The login now offers xAI (Grok).</li>
+          <!-- TRANSLATORS: Release notes for version 0.3.0 - headless jobs (runJob) -->
+          <li>A host app can run a single prompt as a headless job, with no chat window, and get a typed result back.</li>
           <!-- TRANSLATORS: Release notes for version 0.3.0 - the rename from Kurier to lotse. Keep "Kurier" and "lotse" as they are. -->
           <li>Kurier is now called lotse. An installed Kurier is upgraded, and your sessions and settings are moved over once.</li>
         </ul>
