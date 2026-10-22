@@ -175,7 +175,7 @@ Exists today:
   Basic-auth password and the same isolation env.
 - `frontends/gui/login-dialog.ts` (352 lines) renders it; `failure-dialog.ts` offers **Log in…** on an `auth` failure.
 - CLI: `lotse login`, `lotse auth`. No credential is stored by lotse: opencode keeps it, an API key lives in memory for one call.
-- Model choice: `config-row.ts` with `free-models.json` ordering.
+- Model choice: `config-row.ts` with free models (`isFreeModel`) sorted first.
 
 Widget needs:
 - **Inline provider page** instead of only a dialog opened after a failure. First run with no connected provider shows:

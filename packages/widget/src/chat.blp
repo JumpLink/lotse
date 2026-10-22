@@ -123,6 +123,62 @@ template $LotseChat: Adw.Bin {
       orientation: vertical;
       spacing: 0;
 
+      // The free-model warning, above the composer so it sits next to what is about to be sent.
+      // Text and visibility come from `chat.ts` (`FREE_MODEL_WARNING`, `freeModelWarningDue`); the
+      // close button dismisses it for this model in this conversation only.
+      Adw.Clamp {
+        maximum-size: 720;
+        tightening-threshold: 720;
+
+        Gtk.Box freeModelNotice {
+          visible: false;
+          spacing: 12;
+          margin-start: 12;
+          margin-end: 12;
+          margin-top: 6;
+
+          styles [
+            "card",
+          ]
+
+          Gtk.Image {
+            icon-name: "dialog-warning-symbolic";
+            valign: center;
+            margin-start: 12;
+
+            styles [
+              "warning",
+            ]
+          }
+
+          Gtk.Label freeModelLabel {
+            use-markup: false;
+            wrap: true;
+            wrap-mode: word_char;
+            xalign: 0;
+            hexpand: true;
+            margin-top: 8;
+            margin-bottom: 8;
+          }
+
+          Gtk.Button freeModelDismiss {
+            icon-name: "window-close-symbolic";
+            tooltip-text: _("Dismiss");
+            valign: center;
+            margin-end: 6;
+
+            accessibility {
+              label: _("Dismiss warning");
+            }
+
+            styles [
+              "flat",
+              "circular",
+            ]
+          }
+        }
+      }
+
       Adw.Bin composerHost {}
 
       // Where a new chat will run — one dim line, only while a new chat is waiting. `use-markup:

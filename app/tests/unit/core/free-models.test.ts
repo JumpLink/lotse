@@ -1,28 +1,31 @@
 /**
- * The free-model hint — what it sorts, what it refuses to do, and where it is allowed to apply.
+ * Which models are free, the sort that puts them first, and when the warning about them is owed.
  *
- * The function is pure and the ids are a parameter, so almost every case here runs against a hint that
- * has nothing to do with the shipped file; that is the point of taking the list as an argument rather
- * than reading a module global. The two cases that *do* read `FREE_MODEL_IDS` are the ones about the
- * file itself, because "is this id still a real one" is not something a synthetic list can answer.
+ * The classification is a rule over the id the agent sends (`-free`, plus a short list of exceptions),
+ * so most cases here are about that rule's edges: what it must catch, and the paid ids it must not
+ * drag up beside a free one.
  *
  * Both runtimes, no display — the same bargain as every other `core/` test: a decision about which
- * model ids appear first is invisible in a screenshot, and cheap to get wrong.
+ * model ids appear first, or whether a warning is shown, is invisible in a screenshot and cheap to get
+ * wrong.
  */
 
 import { describe, expect, it } from '@gjsify/unit';
 
 import {
-  FREE_MODELS,
-  FREE_MODEL_IDS,
+  FREE_MODEL_WARNING,
+  FREE_MODELS_WITHOUT_SUFFIX,
   configRowInput,
   freeModelFirst,
+  freeModelInUse,
+  freeModelWarningDue,
+  isFreeModel,
   modelControl,
   type ConfigValue,
 } from '@lotse/core';
 import type { SessionConfigOption } from '@lotse/acp/types';
 
-/** The agent's list, in the agent's order, with two of them named by the hint. */
+/** The agent's list, in the agent's order. */
 function values(...ids: string[]): ConfigValue[] {
   return ids.map((id) => ({ value: id, name: id, description: null, group: null }));
 }
@@ -33,74 +36,63 @@ function ids(list: readonly ConfigValue[]): string[] {
 
 const HINT = ['opencode/space-bunny-free', 'opencode/longcat-2.5-preview-free'];
 
+/** One model option whose current value is `current`. */
+function modelOption(current: string): SessionConfigOption[] {
+  return [
+    {
+      id: 'model',
+      name: 'Model',
+      category: 'model',
+      type: 'select',
+      currentValue: current,
+      options: [
+        { value: current, name: current },
+        { value: 'openrouter/vendor/paid', name: 'paid' },
+      ],
+    },
+  ];
+}
+
 export default async function freeModels(): Promise<void> {
-  await describe('free-model hint — the file it reads', async () => {
-    await it('carries ids, the date they were checked, and the link they were read from', async () => {
-      // A hint nobody can audit is a hint nobody can correct. `checked` is what tells a stale entry from
-      // a current one, and `link` is the only authority lotse has on the question at all.
-      expect(FREE_MODELS.checked).toBe('2026-10-02');
-      expect(FREE_MODELS.link).toContain('opencode.ai');
-      expect(FREE_MODELS.ids.length).toBeGreaterThan(0);
-      expect(FREE_MODEL_IDS).toEqualArray(FREE_MODELS.ids);
+  await describe('free models — which ids count', async () => {
+    await it('counts every id ending in -free, so a new free model is caught the day it appears', async () => {
+      expect(isFreeModel('opencode/space-bunny-free')).toBe(true);
+      expect(isFreeModel('opencode/a-model-nobody-has-heard-of-free')).toBe(true);
     });
 
-    await it('lists no duplicates and no blanks — a Set is the only place a duplicate could hide', async () => {
-      const seen = new Set<string>();
-      for (const id of FREE_MODEL_IDS) {
-        expect(id.trim()).toBe(id);
-        expect(seen.has(id)).toBe(false);
-        seen.add(id);
-      }
+    await it('counts the free ids without the suffix', async () => {
+      expect(isFreeModel('opencode/big-pickle')).toBe(true);
+      for (const id of FREE_MODELS_WITHOUT_SUFFIX) expect(isFreeModel(id)).toBe(true);
     });
 
-    await it('names real provider-scoped ids, because a bare model name matches nothing', async () => {
-      // A hint is exact string matching, so `space-bunny-free` would never match the value the agent
-      // sends (`opencode/space-bunny-free`) and would look like a working hint while doing nothing.
-      for (const id of FREE_MODEL_IDS) expect(id).toContain('/');
+    await it('names the exceptions with their provider, because a bare name matches nothing', async () => {
+      // Exact string matching: `big-pickle` would never equal the value the agent sends.
+      for (const id of FREE_MODELS_WITHOUT_SUFFIX) expect(id).toContain('/');
+    });
+
+    await it('does not count a paid id that merely contains "free"', async () => {
+      expect(isFreeModel('opencode/space-bunny-free-pro')).toBe(false);
+      expect(isFreeModel('vendor/freedom-1')).toBe(false);
+      expect(isFreeModel('opencode/big-pickle-pro')).toBe(false);
+      expect(isFreeModel('other/big-pickle')).toBe(false);
     });
   });
 
-  await describe('free-model hint — what the sort does', async () => {
-    await it('moves a named id to the front', async () => {
-      const sorted = freeModelFirst(values('openrouter/a/model', 'opencode/space-bunny-free'), HINT);
+  await describe('free models — what the sort does', async () => {
+    await it('moves a free id to the front', async () => {
+      const sorted = freeModelFirst(values('openrouter/a/model', 'opencode/space-bunny-free'));
       expect(ids(sorted)).toEqualArray(['opencode/space-bunny-free', 'openrouter/a/model']);
     });
 
-    await it('keeps the hint’s own priority order, because that is what the file’s order means', async () => {
-      // The maintainer wrote the ids down in the order they should be reached; re-sorting by name — or
-      // treating the list as a `Set` and keeping the agent's order — would throw that away and make the
-      // file an unordered set. The agent's own order here is the *opposite* of the hint's, so the two
-      // readings cannot both pass.
-      const list = values('opencode/longcat-2.5-preview-free', 'opencode/space-bunny-free');
-      expect(ids(freeModelFirst(list, HINT))).toEqualArray([
-        'opencode/space-bunny-free',
-        'opencode/longcat-2.5-preview-free',
-      ]);
-      expect(ids(freeModelFirst(list, [...HINT].reverse()))).toEqualArray([
-        'opencode/longcat-2.5-preview-free',
-        'opencode/space-bunny-free',
-      ]);
-    });
-
-    await it('places a duplicated hint id once, because a dropdown offering one model twice is a defect', async () => {
-      // `free-models.json` is maintained by hand; the function defends against a typo in it rather than
-      // trusting the file to be well-formed.
-      const list = values('a/1', 'opencode/space-bunny-free');
-      const sorted = freeModelFirst(list, ['opencode/space-bunny-free', 'opencode/space-bunny-free']);
-      expect(ids(sorted)).toEqualArray(['opencode/space-bunny-free', 'a/1']);
-      expect(sorted.length).toBe(list.length);
-    });
-
     await it('keeps the agent’s order within both groups', async () => {
-      // The rest of a 400-entry list is a statement the agent made — its own recommended models first —
-      // and the hint has no business re-ordering any of it.
+      // The order is a statement the agent made — its own recommended models first — and lotse has no
+      // business re-ordering any of it beyond which group a model is in.
       const sorted = freeModelFirst(
-        values('a/1', 'opencode/space-bunny-free', 'a/2', 'opencode/longcat-2.5-preview-free', 'a/3'),
-        HINT,
+        values('a/1', 'opencode/space-bunny-free', 'a/2', 'opencode/big-pickle', 'a/3'),
       );
       expect(ids(sorted)).toEqualArray([
         'opencode/space-bunny-free',
-        'opencode/longcat-2.5-preview-free',
+        'opencode/big-pickle',
         'a/1',
         'a/2',
         'a/3',
@@ -109,46 +101,56 @@ export default async function freeModels(): Promise<void> {
 
     await it('hides nothing — every id the agent offered is still in the list', async () => {
       const list = values('a/1', 'b/2', 'c/3', 'opencode/space-bunny-free');
-      const sorted = freeModelFirst(list, HINT);
+      const sorted = freeModelFirst(list);
       expect(sorted.length).toBe(list.length);
       expect([...ids(sorted)].sort()).toEqualArray([...ids(list)].sort());
     });
 
-    await it('matches only exact ids, and never a substring', async () => {
-      // A `startsWith` would drag a paid model up beside the free one it is named after.
-      const sorted = freeModelFirst(
-        values(
-          'opencode/space-bunny-free-pro',
-          'opencode/space-bunny-free-x',
-          'vendor/opencode/space-bunny-free',
-        ),
-        HINT,
-      );
-      expect(ids(sorted)).toEqualArray([
-        'opencode/space-bunny-free-pro',
-        'opencode/space-bunny-free-x',
-        'vendor/opencode/space-bunny-free',
-      ]);
-    });
-
-    await it('is a no-op for an empty hint, an unknown id, or an empty list', async () => {
-      // Which is also the shape a rotted `free-models.json` degrades into: ids that match nothing.
+    await it('takes another classification, so a host can sort by its own rule', async () => {
       const list = values('a/1', 'b/2');
-      expect(ids(freeModelFirst(list, []))).toEqualArray(['a/1', 'b/2']);
-      expect(ids(freeModelFirst(list, ['opencode/something-removed']))).toEqualArray(['a/1', 'b/2']);
-      expect(freeModelFirst([], HINT)).toEqualArray([]);
+      expect(ids(freeModelFirst(list, (id) => id === 'b/2'))).toEqualArray(['b/2', 'a/1']);
+      expect(ids(freeModelFirst(list, () => false))).toEqualArray(['a/1', 'b/2']);
+      expect(freeModelFirst([])).toEqualArray([]);
     });
 
     await it('returns a new array and leaves the caller’s list untouched', async () => {
       const list = values('a/1', 'opencode/space-bunny-free');
-      const sorted = freeModelFirst(list, HINT);
+      const sorted = freeModelFirst(list);
       expect(sorted).not.toBe(list);
       expect(ids(list)).toEqualArray(['a/1', 'opencode/space-bunny-free']);
     });
   });
 
-  await describe('free-model hint — where it applies', async () => {
-    /** An agent's model option whose list contains both hinted ids and three others. */
+  await describe('free models — the warning', async () => {
+    await it('names the risk and the data it is not for', async () => {
+      expect(FREE_MODEL_WARNING).toContain('train');
+      expect(FREE_MODEL_WARNING).toContain('tax');
+    });
+
+    await it('reads the free model in use off the agent’s options', async () => {
+      expect(freeModelInUse(modelOption('opencode/big-pickle'))).toBe('opencode/big-pickle');
+      expect(freeModelInUse(modelOption('openrouter/vendor/paid'))).toBe(null);
+      // No model known yet is not a free model: nothing to warn about until the agent has said.
+      expect(freeModelInUse(null)).toBe(null);
+      expect(freeModelInUse([])).toBe(null);
+    });
+
+    await it('is owed while a free model is in use and nobody closed it', async () => {
+      expect(freeModelWarningDue('opencode/big-pickle', null)).toBe(true);
+      expect(freeModelWarningDue(null, null)).toBe(false);
+    });
+
+    await it('stays closed for the model it was closed for', async () => {
+      expect(freeModelWarningDue('opencode/big-pickle', 'opencode/big-pickle')).toBe(false);
+    });
+
+    await it('comes back for another free model, because closing it was about one model', async () => {
+      expect(freeModelWarningDue('opencode/space-bunny-free', 'opencode/big-pickle')).toBe(true);
+    });
+  });
+
+  await describe('free models — where the sort applies', async () => {
+    /** An agent's model option whose list contains two free ids and two paid ones. */
     function modelOptions(): SessionConfigOption[] {
       return [
         {
@@ -187,14 +189,14 @@ export default async function freeModels(): Promise<void> {
         'openrouter/vendor/model-000',
         'openrouter/vendor/model-001',
       ]);
-      // The thought level is untouched — the hint is about models, and a rate-limited value above a
-      // person's own effort level would be worse than no hint at all.
+      // The thought level is untouched — the sort is about models, and a rate-limited value above a
+      // person's own effort level would be worse than no sort at all.
       const effort = view.controls.find((control) => control.id === 'effort');
       expect(effort?.values.map((value) => value.value)).toEqualArray(['low', 'default']);
     });
 
     await it('still shows what the agent says is in use, at its own index', async () => {
-      // **Never a selection.** The hint moved the values, so the selected index has to be computed
+      // **Never a selection.** The sort moved the values, so the selected index has to be computed
       // against the *sorted* list or the dropdown would put some other model on screen. `currentValue`
       // is still the agent's, and this is the case that proves it.
       const view = configRowInput({ options: modelOptions() });
@@ -203,9 +205,8 @@ export default async function freeModels(): Promise<void> {
     });
 
     await it('leaves an uncategorised option alone, rather than guessing that it is the model', async () => {
-      // `id: 'model'` with no `category` is a different agent's naming. Applying the hint on the id
-      // would mean a second rule about what an agent calls things; not applying it means no hint, which
-      // is honest.
+      // `id: 'model'` with no `category` is a different agent's naming. Sorting on the id would mean
+      // a second rule about what an agent calls things; not sorting is honest.
       const uncategorised = modelOptions().map((option) => ({ ...option, category: undefined }));
       const view = configRowInput({ options: uncategorised });
       const model = view.controls.find((control) => control.id === 'model');

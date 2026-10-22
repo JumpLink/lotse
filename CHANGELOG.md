@@ -6,6 +6,8 @@ and also records changes that are not a release of their own.
 
 ## Unreleased
 
+## 0.4.0 — 2026-10-22
+
 ### Added
 
 - **Tools the embedding host confirms itself.** `hostTools.hostConfirmed` marks a tool by name or kind,
@@ -43,6 +45,10 @@ and also records changes that are not a release of their own.
   reaches the store, the log or a transcript, and a task that may receive one is refused on a free model.
   The wait is a setting (Preferences, `--person-needed-minutes`). See `docs/serve.md`.
 
+- **A warning while a free model is in use.** A card above the composer says that free-model providers
+  may store what is sent and train on it, so it is not for tax or client data. Closing it holds for that
+  model in that conversation; it comes back for another free model and in the next conversation.
+
 ### Fixed
 
 - **A never-run `at` task now starts.** The schedule measured "after now" on every tick, so the candidate
@@ -50,6 +56,14 @@ and also records changes that are not a release of their own.
   baseline when it first sees it (start or reload) and runs it at the first matching time after that.
 
 ### Changed
+
+- **The fallback note names no CLI command unless the caller supplies one.** `resolveAgent` and
+  `ResolveContext` take an optional `remedy`; only the lotse CLI passes ``choose again with `lotse agents --use` ``,
+  so a host app such as an embedded chat pane no longer tells people to run a command that cannot run there.
+- **Free models are detected, not listed.** `isFreeModel` is a rule over the id (`-free` suffix plus
+  `opencode/big-pickle`); `packages/core/data/free-models.json` and its exports (`FREE_MODELS`,
+  `FREE_MODEL_IDS`, `FreeModelList`) are gone, and no model is called zero-retention any more.
+  `freeModelFirst` keeps the agent's order in both groups.
 
 - **Chat messages are styled for XMPP and carry images.** The messenger channel turns the agent's Markdown
   into XEP-0393 styling (`*bold*`, `_italic_`, `• ` lists, `text: url` links) and sends a standalone

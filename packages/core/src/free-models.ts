@@ -1,13 +1,16 @@
 /**
- * The free-model hint: which model ids to put at the top of a model dropdown, and the one pure function
- * that does it.
+ * Which models are free, read off the agent's own list at runtime, and the warning a free one earns.
  *
- * **A hint, and the word is load-bearing in all four of its senses.** Plan §3 rejected both alternatives
- * and this file is what the rejection left behind: lotse never *chooses* a model (a hardcoded id would
- * be a policy table in a client, and it rots), and it never *probes* (burning a turn on each candidate
- * until one answers is slow and costs quota). What it does is move the ids a maintainer wrote down into
- * the first rows of a list the **agent** supplied — so the person still picks, the agent still decides
- * what exists, and the only thing lotse added is order.
+ * **No maintained list, on purpose.** Until 2026-10 this file read `data/free-models.json`, a hand-kept
+ * set of ids that were free *and* documented as zero-retention. It rotted in two weeks: on 2026-10-16
+ * `opencode models` (2.0.28) offered twelve free models and the file named two of them. The free tier
+ * rotates faster than anybody re-reads a provider page, so the classification is now a rule over the
+ * id the agent sends — the `-free` suffix opencode gives its free tier, plus the few free ids that do not
+ * carry it — and a new free model is recognised the day it appears.
+ *
+ * **Zero-retention is no longer claimed for any model.** It is not in the id, and the only source is a
+ * web page. So every free model gets the same warning (`FREE_MODEL_WARNING`): a provider of a free model
+ * may keep what it is sent and train on it. The person decides; lotse says so every time.
  *
  * **Three things it deliberately does not do**, and each of them is a rule rather than an omission:
  *
@@ -17,110 +20,71 @@
  *   which is the "always allow" mistake in different clothes (`core/config-row.ts`'s header).
  * - **Never hides.** Every id the agent offered is still in the list, in its original relative order
  *   within its group. A model lotse stopped showing is a model a person cannot go back to.
- * - **Never guesses.** The hint is a set of exact id strings. An id this file has never heard of is not
- *   free, is not paid, and is simply not matched — which is also why the list can rot harmlessly: a
- *   model that disappears leaves a stale entry that matches nothing.
- *
- * **The data is a JSON file rather than an array in here, because it is a list somebody maintains by
- * reading a web page.** `packages/core/data/free-models.json` carries the ids, the date they were last checked,
- * the criterion they were chosen by and the link they were read from — so "why is this id in here" is
- * answerable without reading this file, and a stale entry can be recognised as stale. The bundler
- * inlines it, so nothing at runtime reads a file or needs one installed.
- *
- * The sort itself is `freeModelFirst`, and it is pure over its arguments — the ids are a parameter, not
- * a global read — so a test can sort a list against a hint that has nothing to do with the shipped file.
+ * - **Never probes.** Whether a free model answers from here (a region block, a quota) is found out by
+ *   the prompt the person sends, not by burning a turn on each candidate.
  */
 
-// The import attribute is required, not decorative: this file is an ECMAScript module and `module` is
-// `NodeNext` in `tsconfig.json`, so TypeScript demands it (TS1543). The bundler inlines the file's
-// contents at build time — nothing reads the data directory at runtime, and no file has to be installed beside
-// the bundle for the hint to work.
-import list from '../data/free-models.json' with { type: 'json' };
+import { N_ } from './i18n.ts';
 
 /**
- * The maintainer's list, verbatim: ids, the date it was checked, the criterion and the link.
+ * Free ids that do not end in `-free`. Measured with `opencode models` on 2026-10-16 (2.0.28).
  *
- * Exported whole because a *hint* is only honest if a person can see what it is made of, and the only
- * way to see it is for it to exist as a value.
+ * A stale entry here costs nothing: an id that has gone away matches nothing. A missing one costs the
+ * warning and the sort for that model, which is why the list is kept to what was measured.
  */
-export const FREE_MODELS: FreeModelList = list;
-
-/** The ids themselves, in the order the file lists them. */
-export const FREE_MODEL_IDS: readonly string[] = FREE_MODELS.ids;
-
-/** The shape of `packages/core/data/free-models.json`, written out so a broken file is a type error and not a runtime surprise. */
-export interface FreeModelList {
-  /** ISO date the ids were last read off the provider's own page. */
-  readonly checked: string;
-  /** Where they were read. The only authority lotse has on this. */
-  readonly link: string;
-  /** Why these ids and not the merely-free ones. */
-  readonly criterion: string;
-  /** What the hint is allowed to do. A policy, in prose, next to the data it governs. */
-  readonly rule: string;
-  readonly ids: string[];
-}
+export const FREE_MODELS_WITHOUT_SUFFIX: readonly string[] = ['opencode/big-pickle'];
 
 /**
- * A model id that must not see private data: the maintained list, and anything named `-free`.
+ * A model id from a provider's free tier, which may keep and train on what it is sent.
  *
- * A merely-free model may be trained on, and that is not lotse's decision to make for a person — so
- * this is a *classification*, not a policy: it answers "is this one of the free ones", and who may
- * prompt it is decided by `lotse serve`'s task configuration (`serve/config.ts`) or by a host's
- * `ModelPolicy` (`model-policy.ts`). Both read this one function, which is why it lives beside the
- * data rather than in either of them.
+ * **A classification, not a policy**: who may prompt one is decided by `lotse serve`'s task
+ * configuration (`serve/config.ts`), a host's `ModelPolicy` (`model-policy.ts`) and the person, who is
+ * shown `FREE_MODEL_WARNING`. All of them read this one function.
  *
- * **It moved here from `serve/config.ts`, and the move was not cosmetic.** That file imports
- * `node:crypto`; a widget asking "is this model free" through it would pull `createHash` and the whole
- * task-file parser into a GTK bundle that has no use for either.
+ * **It lives here and not in `serve/config.ts`**, which imports `node:crypto`; a widget asking "is this
+ * model free" through it would pull `createHash` and the task-file parser into a GTK bundle.
  *
- * The suffix is matched as well as the list because a free model may be added upstream between two
- * checks of `free-models.json` — `opencode/fledge-alpha-free`, the anonymous default measured on
- * 2026-10-02, is caught by the suffix alone. What it cannot catch is a free model shipped without
- * either marker; `denyFreeHostedModels` says so where a host can read it.
+ * What it cannot catch is a free model shipped with neither the suffix nor an entry in
+ * `FREE_MODELS_WITHOUT_SUFFIX`; `denyFreeHostedModels` says so where a host can read it.
  */
 export function isFreeModel(model: string): boolean {
-  return FREE_MODEL_IDS.includes(model) || model.endsWith('-free');
+  return model.endsWith('-free') || FREE_MODELS_WITHOUT_SUFFIX.includes(model);
 }
 
 /**
- * Move every value whose id is in `ids` to the front, **in the hint's own order**, and keep the caller's
- * order for everything after them.
+ * Move every free value to the front, and keep the agent's order inside both groups.
  *
- * **The order of `ids` is a priority, not a set.** `FREE_MODEL_IDS` is written down by a maintainer
- * reading a provider's page, and the order of that list says which of the two is the one to reach first;
- * a `Set` and a partition would have flattened it to a set and quietly thrown the ranking away. So the
- * front group is built by walking `ids` and picking each match out of `values`, which costs
- * `ids.length × values.length` comparisons — two times four hundred, on a row that is rebuilt only when
- * the agent answers about its options.
- *
- * **Everything after the front group keeps the order the *agent* sent it in**, because that order is a
- * statement the agent made (`core/config.ts`: "an agent that puts its recommended model first knows
- * something about its user") and this hint has no business overriding it for the two thirds of the list
- * it says nothing about. Inside the front group the hint wins, by design.
- *
- * **A duplicated id in the hint is skipped, not honoured twice.** `free-models.json` is a hand-maintained
- * file; if one id is listed twice the value would appear twice in the dropdown, and a dropdown offering
- * the same model in two rows is a defect rather than a duplicate preference. The `Set` doubles as the
- * "have I placed this one already" mark, which is why it is kept from the first version.
+ * **The agent's order is kept because it is a statement the agent made** (`core/config.ts`: "an agent
+ * that puts its recommended model first knows something about its user"). The only thing lotse adds is
+ * which group a value is in.
  *
  * **Generic over the value, so the call site keeps its own type.** It is applied to `ConfigValue[]` and
- * the projection reads the result back, and a function that returned `ConfigValue[]` would make the one
- * future caller with a different value shape cast at the call site instead of here.
+ * the projection reads the result back.
  */
 export function freeModelFirst<T extends { readonly value: string }>(
   values: readonly T[],
-  ids: readonly string[] = FREE_MODEL_IDS,
+  free: (model: string) => boolean = isFreeModel,
 ): T[] {
-  // An empty hint is a no-op, and it is worth one line: without it the function would walk the list twice
-  // on every rebuild of a 400-entry model list, for a caller that passed nothing.
-  if (ids.length === 0) return [...values];
-  const placed = new Set<string>();
-  const first: T[] = [];
-  for (const id of ids) {
-    if (placed.has(id)) continue;
-    placed.add(id);
-    for (const value of values) if (value.value === id) first.push(value);
-  }
-  return [...first, ...values.filter((value) => !placed.has(value.value))];
+  return [...values.filter((value) => free(value.value)), ...values.filter((value) => !free(value.value))];
+}
+
+/**
+ * The warning shown while a free model is in use. One sentence pair for every surface — the widget,
+ * and any host that draws its own — so the wording cannot drift between two apps.
+ */
+export const FREE_MODEL_WARNING = N_(
+  'Free model: providers of free models may store what you send and train on it. Not suitable for ' +
+    'confidential data such as tax or client records — use it to try things out.',
+);
+
+/**
+ * Whether the warning is owed: a free model is in use and the person has not dismissed it **for that
+ * model**.
+ *
+ * **Dismissed per model, never for good.** Picking another free model brings it back, and so does the
+ * next conversation (the caller forgets `dismissed` there). A "never show again" would be one click
+ * that, half a year later, nobody remembers making — and the data it guards does not get less private.
+ */
+export function freeModelWarningDue(freeModel: string | null, dismissed: string | null): boolean {
+  return freeModel !== null && freeModel !== dismissed;
 }

@@ -293,11 +293,16 @@ too**, which is why the notice names *both* remedies in provider-neutral words. 
 (`agentStatus` reads `kind === 'model'` as attached) and the config row, whose model dropdown the one
 button opens, and writes no transcript line — the agent answered, so `agentExitedEntry` would be one.
 
-**The free-model hint is order, never a choice.** `packages/core/data/free-models.json` (ids, the date checked, the
-criterion, the [zen link](https://opencode.ai/docs/zen)) is applied by `freeModelFirst` to a **model**
-control's values only, leaving the rest in the agent's order — the one named exception to "the agent's
-order is the order it sent". It never selects, hides or guesses: exact ids, so a model that has gone stops
-matching. Plan §3 rejected the alternatives: a default rots, probing burns quota.
+**Free models are detected, sorted first and warned about — never chosen, never listed by hand.**
+`isFreeModel` (`packages/core/src/free-models.ts`) is a rule over the id the agent sends: the `-free`
+suffix plus `FREE_MODELS_WITHOUT_SUFFIX` (`opencode/big-pickle`). A hand-kept id list rotted in two weeks
+(2 of 12 on 2026-10-16), so none comes back. `freeModelFirst` applies it to a **model** control's values
+only, keeping the agent's order inside both groups — the one named exception to "the agent's order is the
+order it sent". It never selects, hides or probes: plan §3 rejected those, a default rots, probing burns
+quota. **Every free model in use earns `FREE_MODEL_WARNING`** (no zero-retention claim, for any model);
+the widget shows it above the composer, and closing it holds for that model in that conversation only
+(`freeModelWarningDue`) — no "never again". A host that must not reach a free model passes
+`denyFreeHostedModels`, which is a refusal, not a dismissible note.
 
 **Once per failure, and never over a window that has moved on.** Two more functions in the same file
 answer the two questions a surface asks on every state move, and both are needed: `failureToShow` is

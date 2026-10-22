@@ -3,7 +3,7 @@
  *
  * **Where the data lives.** `packages/core/data/bundled-agents.json` is a list somebody refreshes by reading a
  * release page, so it carries its own dates and pins (version, per-arch url, sha256, size). It is imported
- * with an import attribute and inlined by the bundler, exactly like `free-models.json`: nothing reads
+ * with an import attribute and inlined by the bundler, exactly like `login-providers.json`: nothing reads
  * the data directory at runtime, and there is no source tree in the bundle to read from anyway.
  *
  * **Why the copy is OFF PATH.** `/app/bin` is on a Flatpak's PATH. A bundled `opencode` there would be

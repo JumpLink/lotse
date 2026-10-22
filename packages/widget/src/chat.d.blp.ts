@@ -26,6 +26,9 @@ export declare const InternalChildren: [
     'closedHost',
     'noAgentHost',
     'transcriptHost',
+    'freeModelNotice',
+    'freeModelLabel',
+    'freeModelDismiss',
     'composerHost',
     'cwdCaption',
 ];
@@ -36,6 +39,9 @@ export interface Children {
     _closedHost: Adw.Bin;
     _noAgentHost: Adw.Bin;
     _transcriptHost: Adw.Bin;
+    _freeModelNotice: Gtk.Box;
+    _freeModelLabel: Gtk.Label;
+    _freeModelDismiss: Gtk.Button;
     _composerHost: Adw.Bin;
     _cwdCaption: Gtk.Label;
 }

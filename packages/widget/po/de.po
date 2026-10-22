@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-16 09:50+0200\n"
+"POT-Creation-Date: 2026-10-22 20:20+0200\n"
 "Language-Team: German\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -155,6 +155,16 @@ msgstr ""
 "sich lotse nicht wieder anbinden kann, wird abgelehnt statt als leeres "
 "Protokoll gezeigt."
 
+#: packages/core/src/free-models.ts:76
+msgid ""
+"Free model: providers of free models may store what you send and train on "
+"it. Not suitable for confidential data such as tax or client records — use "
+"it to try things out."
+msgstr ""
+"Kostenloses Modell: Anbieter kostenloser Modelle dürfen deine Eingaben "
+"speichern und damit trainieren. Für vertrauliche Daten wie Steuer- oder "
+"Kundendaten nicht geeignet, nur zum Ausprobieren empfohlen."
+
 #: packages/core/src/host-tools.ts:156
 msgid ""
 "Host-confirmed tool rule {index} names neither a tool nor a kind, so it "
@@ -163,7 +173,7 @@ msgstr ""
 "Regel {index} für host-bestätigte Werkzeuge nennt weder ein Werkzeug noch "
 "eine Art und trifft damit auf nichts zu."
 
-#: packages/core/src/host-tools.ts:299
+#: packages/core/src/host-tools.ts:306
 msgid ""
 "The agent offered no one-time approval for a tool the host confirms, so "
 "nothing was approved."
@@ -171,7 +181,7 @@ msgstr ""
 "Der Agent hat für ein Werkzeug, das der Host bestätigt, keine einmalige "
 "Freigabe angeboten – darum wurde nichts freigegeben."
 
-#: packages/core/src/model-policy.ts:208
+#: packages/core/src/model-policy.ts:211
 msgid ""
 "This model is not allowed here. Pick another one from the model list, then "
 "send."
@@ -179,7 +189,7 @@ msgstr ""
 "Dieses Modell ist hier nicht erlaubt. Wähle ein anderes aus der Modellliste "
 "und sende dann."
 
-#: packages/core/src/model-policy.ts:213
+#: packages/core/src/model-policy.ts:216
 msgid ""
 "lotse cannot tell which model this agent would use, so nothing was sent."
 msgstr ""
@@ -276,11 +286,19 @@ msgid "No prompt has been sent in this session yet. The first one starts it."
 msgstr ""
 "In dieser Sitzung wurde noch keine Eingabe gesendet. Die erste startet sie."
 
-#: packages/widget/src/chat.ts:522
+#: packages/widget/src/chat.blp:166
+msgid "Dismiss"
+msgstr "Schließen"
+
+#: packages/widget/src/chat.blp:171
+msgid "Dismiss warning"
+msgstr "Warnung schließen"
+
+#: packages/widget/src/chat.ts:543
 msgid "Working in {path}"
 msgstr "Arbeitet in {path}"
 
-#: packages/widget/src/chat.ts:812 packages/widget/src/provider-settings.ts:200
+#: packages/widget/src/chat.ts:848 packages/widget/src/provider-settings.ts:200
 #: packages/widget/src/provider-settings.ts:203
 msgid "Providers"
 msgstr "Anbieter"

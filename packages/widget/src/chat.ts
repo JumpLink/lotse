@@ -47,6 +47,8 @@ import {
   displayCwd,
   failureAction,
   failureToShow,
+  FREE_MODEL_WARNING,
+  freeModelWarningDue,
   keepsDraft,
   loginUnavailableReason,
   onboardingView,
@@ -252,6 +254,10 @@ export class LotseChat extends Adw.Bin {
   declare readonly _composerHost: Adw.Bin;
   /** One dim line under the composer naming the directory a new chat will run in. Hidden otherwise. */
   declare readonly _cwdCaption: Gtk.Label;
+  /** The free-model warning above the composer. Shown by `#renderFreeModelNotice` only. */
+  declare readonly _freeModelNotice: Gtk.Box;
+  declare readonly _freeModelLabel: Gtk.Label;
+  declare readonly _freeModelDismiss: Gtk.Button;
 
   /** One transcript view for the whole widget, refilled per session. See the constructor. */
   readonly #transcript: TranscriptView;
@@ -294,6 +300,11 @@ export class LotseChat extends Adw.Bin {
    * next emit opens it again. The decision is `failureToShow`; this is where the answer is kept.
    */
   #shownFailure: AgentAttachment | null = null;
+  /**
+   * The free model whose warning the person closed in this conversation. Forgotten by `open()` and
+   * `newChat()`, so the next conversation warns again — `freeModelWarningDue` has the reason.
+   */
+  #freeModelDismissed: string | null = null;
   /** The turn machinery. One per widget, one agent subprocess behind it. */
   readonly #agent: AgentSession;
   /** The session on screen, or `null` while none is. */
@@ -411,6 +422,7 @@ export class LotseChat extends Adw.Bin {
         onConfig: (view) => {
           this.#config.setView(view);
           this.#composer.setInput(composerInput(this.#agent.snapshot, this.#unavailable));
+          this.#renderFreeModelNotice();
         },
       },
     });
@@ -440,6 +452,12 @@ export class LotseChat extends Adw.Bin {
     // rather than a nesting — the tree that renders is the tree `chat.blp` draws.
     this._transcriptHost.child = this.#transcript.widget;
     this._composerHost.child = this.#composer.widget;
+    this._freeModelLabel.label = _(FREE_MODEL_WARNING);
+    this._freeModelDismiss.connect('clicked', () => {
+      this.#freeModelDismissed = this.#agent.snapshot.freeModel;
+      this.#renderFreeModelNotice();
+    });
+    this.#renderFreeModelNotice();
     if (options.closedPage) this._closedHost.child = options.closedPage;
     if (options.noAgentPage) this._noAgentHost.child = options.noAgentPage;
     if (this.#providerOnboarding && !this.#unavailable) {
@@ -477,6 +495,7 @@ export class LotseChat extends Adw.Bin {
     this.#login.close();
     this.#openRecord = record;
     this._cwdCaption.visible = false;
+    this.#freeModelDismissed = null;
     // **A session switch takes the failure dialog down, and keeps `#shownFailure`.** The dialog is
     // about the widget, not about the session — but a person who opened another conversation while a
     // modal sentence about the last one was up is now looking at a *different* conversation, and a
@@ -514,6 +533,7 @@ export class LotseChat extends Adw.Bin {
     if (!chat) return;
     this.#failures.close();
     this.#openRecord = null;
+    this.#freeModelDismissed = null;
     // The agent stops a running turn itself (`startConversation`), settling any open question
     // `cancelled`; the dialog widget goes down after it, like Stop's.
     this.#agent.startConversation(chat.cwd);
@@ -575,6 +595,16 @@ export class LotseChat extends Adw.Bin {
     if (!keepsDraft(snapshot.state)) this.#composer.clearDraft();
     if (snapshot.attachment.status === 'gone') this.#permissions.close();
     this.#showFailure(snapshot);
+    this.#renderFreeModelNotice();
+  }
+
+  /**
+   * Show or hide the free-model warning. Called on both clocks — a state move and a config answer —
+   * because a model change arrives on the config one only (see `onConfig`).
+   */
+  #renderFreeModelNotice(): void {
+    this._freeModelNotice.visible =
+      !this.#unavailable && freeModelWarningDue(this.#agent.snapshot.freeModel, this.#freeModelDismissed);
   }
 
   /**
@@ -1019,7 +1049,17 @@ GObject.registerClass(
     // shape `PermissionBody` already uses in `permission-dialog.ts` and the one `window.ts` uses for
     // the shell — one convention for every template here, with the `declare readonly _x` fields
     // above as the typed half.
-    InternalChildren: ['stack', 'closedHost', 'noAgentHost', 'transcriptHost', 'composerHost', 'cwdCaption'],
+    InternalChildren: [
+      'stack',
+      'closedHost',
+      'noAgentHost',
+      'transcriptHost',
+      'composerHost',
+      'cwdCaption',
+      'freeModelNotice',
+      'freeModelLabel',
+      'freeModelDismiss',
+    ],
   },
   LotseChat,
 );

@@ -171,6 +171,14 @@ export default async () => {
       expect(found.note).toContain('using alpha (bundled) instead');
     });
 
+    await it('adds the caller-supplied remedy when a choice had to be dropped, and none by default', async () => {
+      const detections = [detection('alpha', 'bundled'), detection('beta', 'host')];
+      const withRemedy = pick({ setting: host('alpha'), detections, remedy: 'choose again in your app' });
+      expect(withRemedy.note).toContain('using alpha (bundled) instead');
+      expect(withRemedy.note).toContain('choose again in your app');
+      expect(pick({ setting: host('alpha'), detections }).note).not.toContain('choose again');
+    });
+
     await it('a host setting is not satisfied by a bundled copy of the same id', async () => {
       const found = pick({ setting: host('alpha'), detections: [detection('alpha', 'bundled')] });
       expect(found.detection!.source).toBe('bundled');

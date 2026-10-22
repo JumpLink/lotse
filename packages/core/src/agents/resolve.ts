@@ -63,6 +63,11 @@ export interface ResolveContext {
   readonly bundledAvailable: (id: string) => boolean;
   readonly launchers?: readonly AgentCommand[];
   readonly catalog?: readonly BundledAgent[];
+  /**
+   * What to tell the person to do next when a choice had to be dropped — the lotse CLI passes
+   * `choose again with \`lotse agents --use\``, a host app that embeds the widget passes its own or none.
+   */
+  readonly remedy?: string;
 }
 
 /** What a detection stands for, or `null` when it names a launcher or catalog entry we lack. */
@@ -106,6 +111,7 @@ export function resolveDefaultWithNote(
     detections: context.detections,
     bundledAvailable: context.bundledAvailable,
     ...(context.catalog ? { catalog: context.catalog } : {}),
+    remedy: context.remedy,
   });
   return { agent: detection ? resolved(detection, context) : null, note };
 }

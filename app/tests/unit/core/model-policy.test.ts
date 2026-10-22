@@ -8,9 +8,9 @@
  * predicate would pass against a policy nothing consults — which is exactly the failure a fail-closed
  * seam must not have. So each consumer is asked here too, through its own barrel export.
  *
- * **The policies are written in the test**, never read from `free-models.json`, except in the one block
+ * **The policies are written in the test**, never read from `isFreeModel`, except in the one block
  * about `denyFreeHostedModels` itself — a host's rule is a parameter, and a suite that needed the shipped
- * list to say anything would be testing the list.
+ * classification to say anything would be testing the classification.
  *
  * Both runtimes, no display: which model a prompt may reach is invisible in a screenshot and expensive
  * to get wrong.
@@ -244,12 +244,12 @@ export default async function modelPolicy(): Promise<void> {
   });
 
   await describe('model policy — the config row', async () => {
-    await it('leaves the row untouched without a policy', async () => {
+    await it('removes nothing without a policy — the free model is only sorted first', async () => {
       const view = configRowInput({ options: options() });
       expect(ids(modelControl(view)?.values ?? [])).toEqualArray([
+        'vendor/model-free',
         'vendor/paid-1',
         'vendor/paid-2',
-        'vendor/model-free',
       ]);
     });
 

@@ -111,15 +111,18 @@ export function allowedModelValues<T extends { readonly value: string }>(
 /**
  * The ready-made policy: **no free hosted model may be prompted.**
  *
- * **What counts as free is `isFreeModel`'s answer, not a second list.** That is the maintained ids in
- * `packages/core/data/free-models.json` plus any id ending in `-free`, and `lotse serve` has been
- * reading it for the same purpose since ADR 0003: a merely-free model may be trained on, and a host
- * carrying somebody's private data has no business deciding that for them. One criterion, one file,
- * one place it is maintained.
+ * **What counts as free is `isFreeModel`'s answer, not a second list.** That is any id ending in
+ * `-free` plus the few free ids without the suffix, and `lotse serve` has been reading it for the same
+ * purpose since ADR 0003: a free model may be trained on, and a host carrying somebody's private data
+ * has no business deciding that for them. One criterion, one place it is maintained.
+ *
+ * **The hard gate beside the warning.** Every surface warns while a free model is in use
+ * (`FREE_MODEL_WARNING`), and a person may dismiss that. A host whose data must never reach one passes
+ * this policy instead, and then nothing is dismissed: the prompt is refused.
  *
  * **An id this classification has never heard of is allowed, and that is a choice with a reason.**
  * The alternative — deny everything unknown — reads safer and is unusable: the classification knows
- * two exact ids and one suffix, so "unknown" is ~400 of the ~400 models `opencode acp` reports,
+ * one suffix and an exact id or two, so "unknown" is ~400 of the ~400 models `opencode acp` reports,
  * *including every paid one*. A widget whose every model is denied has no allowed model to offer, so
  * the composer blocks permanently and the sentence under it asks the person to choose something that
  * does not exist. The genuinely uncertain case — "which model is even in use?" — is caught by the
@@ -240,6 +243,20 @@ export function modelBlock(
   }
   if (modelAllowed(policy, control.currentValue)) return null;
   return { cause: 'denied', reason: _(MODEL_DENIED_REASON) };
+}
+
+/**
+ * The model in use, when it is a free one; `null` otherwise, including while no model is known.
+ *
+ * From the agent's **raw** options, for `modelBlock`'s reason: the drawn row may have the value in use
+ * filtered out of it.
+ */
+export function freeModelInUse(options: SessionConfigOption[] | null | undefined): string | null {
+  const control = projectConfigOptions(options ?? null).find(
+    (candidate) => candidate.category === MODEL_CATEGORY && candidate.kind === 'select',
+  );
+  if (control === undefined || control.kind !== 'select') return null;
+  return isFreeModel(control.currentValue) ? control.currentValue : null;
 }
 
 /**

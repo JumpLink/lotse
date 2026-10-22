@@ -37,6 +37,7 @@
  * | `LOTSE_STANDIN_CONFIG_MODELS` | `3`     | How many models the list holds. `400` is the real size, and needs search.  |
  * | `LOTSE_STANDIN_CONFIG_REFUSE`  | unset   | Refuse every configuration change — the fail-closed state.                  |
  * | `LOTSE_STANDIN_CONFIG_PUSH`    | `1`     | Push `config_option_update` after a *model* change, as `opencode` does.    |
+ * | `LOTSE_STANDIN_CONFIG_FREE`    | unset   | Put a free model (`opencode/big-pickle`) first and in use — the warning.   |
  * | `LOTSE_STANDIN_USAGE`          | unset   | Push a `usage_update` after the answer, cost and all.                     |
  * | `LOTSE_STANDIN_AUTH`           | unset   | Refuse `session/load` with `-32000` — trap 1, the auth dialog.        |
  * | `LOTSE_STANDIN_PROMPT_AUTH`    | unset   | Refuse `session/prompt` with the same `-32000` — issue #2, the model dialog. |
@@ -76,6 +77,7 @@ const CONFIG = flag('LOTSE_STANDIN_CONFIG');
 const CONFIG_MODELS = number('LOTSE_STANDIN_CONFIG_MODELS', 3);
 const CONFIG_REFUSE = flag('LOTSE_STANDIN_CONFIG_REFUSE');
 const CONFIG_PUSH = flag('LOTSE_STANDIN_CONFIG_PUSH', true);
+const CONFIG_FREE = flag('LOTSE_STANDIN_CONFIG_FREE');
 const USAGE = flag('LOTSE_STANDIN_USAGE');
 const AUTH = flag('LOTSE_STANDIN_AUTH');
 const PROMPT_AUTH = flag('LOTSE_STANDIN_PROMPT_AUTH');
@@ -440,6 +442,7 @@ function buildConfigOptions() {
     value: `openrouter/vendor/model-${String(index).padStart(3, '0')}`,
     name: `model-${String(index).padStart(3, '0')}`,
   }));
+  if (CONFIG_FREE) models.unshift({ value: 'opencode/big-pickle', name: 'Big Pickle' });
   return [
     {
       id: 'model',

@@ -1,6 +1,6 @@
 {
   "name": "lotse",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "type": "module",
@@ -125,6 +125,40 @@
         ]
       },
       "releases": [
+        {
+          "version": "0.4.0",
+          "date": "2026-10-22",
+          "description": [
+            {
+              "p": "Lotse speaks German, starts the bundled OpenCode by default and warns when a free model is in use.",
+              "translatorHint": "Release notes for version 0.4.0 - opening line: German translation, bundled OpenCode default, free-model warning"
+            },
+            {
+              "ul": [
+                {
+                  "item": "The app, the widget, the command line and the notifications are translated into German.",
+                  "translatorHint": "Release notes for version 0.4.0 - German translation"
+                },
+                {
+                  "item": "The bundled OpenCode, with its own login and settings, is the default agent. Your own OpenCode is an opt-in.",
+                  "translatorHint": "Release notes for version 0.4.0 - bundled OpenCode is the default agent"
+                },
+                {
+                  "item": "A card above the message field warns while a free model is in use, because its provider may store and train on what you send.",
+                  "translatorHint": "Release notes for version 0.4.0 - warning while a free model is in use"
+                },
+                {
+                  "item": "A running task can ask for you when only you can go on, for example for a login or a code.",
+                  "translatorHint": "Release notes for version 0.4.0 - a task can ask for the person"
+                },
+                {
+                  "item": "A scheduled task that never ran now starts at its first matching time.",
+                  "translatorHint": "Release notes for version 0.4.0 - fix for scheduled tasks"
+                }
+              ]
+            }
+          ]
+        },
         {
           "version": "0.3.0",
           "date": "2026-10-11",
@@ -316,7 +350,7 @@
             {
               "type": "git",
               "url": "https://github.com/JumpLink/lotse.git",
-              "tag": "v0.3.0",
+              "tag": "v0.4.0",
               "x-checker-data": {
                 "type": "git",
                 "tag-pattern": "^v(\\d+\\.\\d+\\.\\d+)$",

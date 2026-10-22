@@ -187,8 +187,10 @@ Details and measurements: [docs/custom-providers.md](../../docs/custom-providers
 
 | Export | What it is |
 |---|---|
-| `FREE_MODELS`, `FREE_MODEL_IDS`, `FreeModelList` | A maintained list of model ids that are free **and** documented as zero-retention, with the date checked and the source. |
-| `freeModelFirst(values)` | Sort those ids to the top of a model dropdown. Never selects, never hides, never guesses: an id lotse has not heard of is simply not matched. |
+| `isFreeModel(id)`, `FREE_MODELS_WITHOUT_SUFFIX` | Whether an id is from a free tier: it ends in `-free`, or it is one of the few free ids without the suffix. Read at runtime off the agent's own list; no maintained id list. |
+| `freeModelFirst(values, free?)` | Sort free ids to the top of a model dropdown, keeping the agent's order in both groups. Never selects, never hides. |
+| `freeModelInUse(options)` | The current model when it is free, else `null`. `AgentSnapshot.freeModel` carries it. |
+| `FREE_MODEL_WARNING`, `freeModelWarningDue(free, dismissed)` | The warning a free model earns (a `N_` msgid, translate with `_`), and whether it is still owed after the person closed it for one model. |
 
 Free hosted models are time-limited and what you send goes to the provider that hosts them. Lotse
 labels them that way on the onboarding page; treat the same rule as yours (see
