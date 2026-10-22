@@ -72,7 +72,7 @@ jobs:
       - name: Install system prerequisites
         run: >
           dnf install -y --setopt=install_weak_deps=False
-          git tar xz findutils gjs msitools squashfs-tools file
+          git tar xz findutils gjs gettext msitools squashfs-tools file
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
