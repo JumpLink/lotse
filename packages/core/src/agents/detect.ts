@@ -90,6 +90,13 @@ export function resolveAgent(input: {
   readonly detections: readonly AgentDetection[];
   readonly bundledAvailable?: (id: string) => boolean;
   readonly catalog?: readonly BundledAgent[];
+  /**
+   * What to tell the person to do next when a choice had to be dropped. The lotse CLI passes its own
+   * remedy (`choose again with \`lotse agents --use\`); a host app that embeds the widget answers in its
+   * own surface, so it passes none and the note stays factual instead of naming a command that cannot
+   * run there.
+   */
+  readonly remedy?: string;
 }): Resolution {
   const { setting, detections } = input;
   const found = (id: string) => detections.find((entry) => entry.id === id);
@@ -126,7 +133,7 @@ export function resolveAgent(input: {
   return {
     detection: fallback,
     note: fallback
-      ? `${asked} — using ${fallback.id} (${fallback.source}) instead; choose again with \`lotse agents --use\``
+      ? `${asked} — using ${fallback.id} (${fallback.source}) instead${input.remedy ? `; ${input.remedy}` : ''}`
       : `${asked}, and no other agent is available either`,
   };
 }

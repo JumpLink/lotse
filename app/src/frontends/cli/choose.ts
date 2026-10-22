@@ -36,7 +36,10 @@ export function agentForNew(paths: LotsePaths, explicit: string | undefined): Re
   }
   const { settings, problem } = readSettings(paths.settingsFile);
   if (problem) err(fmt(_('  {problem}'), { problem }));
-  const { agent: found, note } = resolveDefaultWithNote(gatherResolveContext(paths), settings.agent);
+  const { agent: found, note } = resolveDefaultWithNote(
+    { ...gatherResolveContext(paths), remedy: `choose again with \`lotse agents --use\`` },
+    settings.agent,
+  );
   if (note) err(fmt(_('  {note}'), { note }));
   if (!found) {
     err(NO_AGENT_MESSAGE);
