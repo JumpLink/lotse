@@ -6,6 +6,8 @@ and also records changes that are not a release of their own.
 
 ## Unreleased
 
+## 0.5.0 — 2026-10-22
+
 ### Added
 
 - **A per-user install of the pinned agent.** `lotse agents --install [id]` downloads the catalog's pinned
