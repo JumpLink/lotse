@@ -126,6 +126,28 @@
       },
       "releases": [
         {
+          "version": "0.5.0",
+          "date": "2026-10-22",
+          "description": [
+            {
+              "p": "Lotse can download its OpenCode for you when none is installed.",
+              "translatorHint": "Release notes for version 0.5.0 - opening line: Lotse can download its own OpenCode"
+            },
+            {
+              "ul": [
+                {
+                  "item": "lotse agents --install downloads the pinned OpenCode for your user after asking, and checks it before it is used.",
+                  "translatorHint": "Release notes for version 0.5.0 - agent install from the command line. Keep the command as it is."
+                },
+                {
+                  "item": "Apps that embed lotse can offer the same download without bundling the agent.",
+                  "translatorHint": "Release notes for version 0.5.0 - embedding apps can offer the install"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "version": "0.4.0",
           "date": "2026-10-22",
           "description": [
