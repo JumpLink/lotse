@@ -58,16 +58,17 @@ What follows from it:
 - **Spiel's eSpeak provider lists no voices**: its D-Bus `Voices` property stays empty, even after
   `Init`. It is no fallback until that is fixed upstream.
 
-## Open: what it sounds like
+## Heard: what it sounds like (2026-10-26)
 
-Speed decides nothing among these five, so the default comes down to how they sound. That needs a
-human listener and is open:
+Speed decides nothing among these five, so the default came down to how they sound:
 
-- [ ] Rate the five Piper voices on sentences 2, 3, 6 and 7 (numbers, dates, paths, abbreviations)
-      and on sentence 10 (does it stay pleasant over 25 seconds?).
+- [x] The five Piper voices, listened to by Pascal: **Thorsten sounds best.**
 - [ ] The same sentences through sprechstunde's A/B view: Pocket, Mistral, Kugel. Pocket is known
       to drop German digits (sprechstunde README), so sentences 2, 3 and 9 are the test.
-- [ ] Decide the default voice and whether Pocket becomes a Spiel provider.
 
-Until then, the proposed default is `thorsten-medium` (fast, 61 MB, no cold-start delay), with
-`eva_k-x_low` for weaker devices.
+**Default voice: `de_DE-thorsten-medium`** (fast, 61 MB, no cold-start delay); `thorsten-high`
+only where answers are spoken sentence by sentence; `eva_k-x_low` for weaker devices.
+
+Pocket is expected to sound better as a local voice, so a Pocket Spiel provider stays on the list
+(ADR 0009, order of work step 7). Until it exists, Thorsten is the default; once it does, the A/B
+comparison above decides whether Pocket replaces it.
