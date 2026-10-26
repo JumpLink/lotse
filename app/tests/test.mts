@@ -62,7 +62,6 @@ import questionActions from './unit/core/question-actions.test.ts';
 import answerDialog from './unit/core/answer-dialog.test.ts';
 import answerView from './unit/core/answer-view.test.ts';
 
-import serveSchedule from './unit/serve/schedule.test.ts';
 import serveConfig from './unit/serve/config.test.ts';
 import serveQuestions from './unit/serve/questions.test.ts';
 import serveGate from './unit/serve/gate.test.ts';
@@ -138,7 +137,6 @@ run({
   questionActions,
   answerDialog,
   answerView,
-  serveSchedule,
   serveConfig,
   serveQuestions,
   serveGate,

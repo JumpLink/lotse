@@ -7,10 +7,6 @@ import {
   OPENCODE_COMMAND,
   answerQuestion,
   cancelOrphanedPermissions,
-  attemptClock,
-  dueTasks,
-  nextWakeMs,
-  parseSchedule,
   parseServeConfig,
   parseVerdict,
   precheckText,
@@ -51,8 +47,7 @@ function config(
         {
           id: 't',
           profile: 'p',
-          schedule: { every: '1h' },
-          prompt: 'Do the thing.',
+                    prompt: 'Do the thing.',
           cwd: '/fixture',
           ...patch.task,
         },
@@ -435,61 +430,8 @@ export default async () => {
     });
   });
 
-  await describe('dueTasks', async () => {
-    await it('leaves out a task that is already running', async () => {
-      const serveConfig = config();
-      const now = new Date(START);
-      expect(dueTasks(serveConfig, () => null, new Set(), now).length).toBe(1);
-      expect(dueTasks(serveConfig, () => null, new Set(['t']), now).length).toBe(0);
-      expect(dueTasks(serveConfig, () => now, new Set(), now).length).toBe(0);
-    });
-
-    await it('counts a skip, so a task at its ceiling is not due again at once', async () => {
-      const serveConfig = config();
-      const now = new Date(START);
-      const clock = attemptClock(() => new Date(now.getTime() - 2 * 3_600_000));
-      expect(dueTasks(serveConfig, clock.lastRun, new Set(), now).length).toBe(1);
-      clock.skipped('t', now);
-      expect(dueTasks(serveConfig, clock.lastRun, new Set(), now).length).toBe(0);
-      expect(nextWakeMs(serveConfig, clock.lastRun, now)).toBe(60_000);
-    });
-  });
-  await describe('dueTasks with an at schedule', async () => {
-    const atConfig = (): ServeConfig => {
-      const base = config();
-      return { ...base, tasks: [{ ...base.tasks[0]!, schedule: parseSchedule({ at: '09:01' }) }] };
-    };
-
-    await it('a never-run task loaded at 08:57 is due at 09:01:00.3', async () => {
-      const serveConfig = atConfig();
-      const clock = attemptClock(() => null);
-      const loaded = new Date(2026, 9, 13, 8, 57);
-      expect(dueTasks(serveConfig, clock.lastRun, new Set(), loaded, clock.since).length).toBe(0);
-      expect(nextWakeMs(serveConfig, clock.lastRun, loaded, undefined, clock.since)).toBe(60_000);
-      const late = new Date(2026, 9, 13, 9, 1, 0, 300);
-      expect(dueTasks(serveConfig, clock.lastRun, new Set(), late, clock.since).length).toBe(1);
-    });
-
-    await it('a task first seen after its time waits for the next day', async () => {
-      const serveConfig = atConfig();
-      const clock = attemptClock(() => null);
-      const afternoon = new Date(2026, 9, 13, 15, 0);
-      expect(dueTasks(serveConfig, clock.lastRun, new Set(), afternoon, clock.since).length).toBe(0);
-      const tomorrow = new Date(2026, 9, 14, 9, 1, 0, 300);
-      expect(dueTasks(serveConfig, clock.lastRun, new Set(), tomorrow, clock.since).length).toBe(1);
-    });
-
-    await it('a skip still counts as the last attempt', async () => {
-      const serveConfig = atConfig();
-      const clock = attemptClock(() => null);
-      clock.since('t', new Date(2026, 9, 13, 8, 57));
-      const late = new Date(2026, 9, 13, 9, 1, 0, 300);
-      clock.skipped('t', late);
-      expect(dueTasks(serveConfig, clock.lastRun, new Set(), late, clock.since).length).toBe(0);
-    });
-  });
   await describe('run-summary', async () => {
-    await it('a scheduled run logs its final message, flattened and cut', async () => {
+    await it('a run logs its final message, flattened and cut', async () => {
       const long = `Line one.\n\n${'word '.repeat(200)}`;
       const h = harness(config(), { chunks: [long] });
       await runTask(h.deps.config.tasks[0]!, h.deps);

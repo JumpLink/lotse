@@ -8,7 +8,7 @@
 # (ADR 0003), so an edit needs no restart; `systemctl --user restart lotse-serve` is for settings.json.
 
 [Unit]
-Description=lotse serve: scheduled agent tasks
+Description=lotse serve: messenger requests and questions
 Documentation=https://github.com/JumpLink/lotse/blob/main/docs/serve.md
 After=graphical-session.target
 

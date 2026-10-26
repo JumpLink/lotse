@@ -77,20 +77,18 @@ const ROUTED = parseServeConfig(
     users: [{ id: 'me' }],
     profiles: [{ id: 'p', user: 'me', data: 'public' }],
     tasks: [
-      { id: 't', profile: 'p', schedule: { every: '1h' }, prompt: 'x', cwd: '/fixture' },
+      { id: 't', profile: 'p', prompt: 'x', cwd: '/fixture' },
       {
         id: 'tui',
         profile: 'p',
-        schedule: { every: '1h' },
-        prompt: 'x',
+                prompt: 'x',
         cwd: '/fixture',
         channels: ['desktop'],
       },
       {
         id: 'quiet',
         profile: 'p',
-        schedule: { every: '1h' },
-        prompt: 'x',
+                prompt: 'x',
         cwd: '/fixture',
         messengerDetail: 'notice',
       },

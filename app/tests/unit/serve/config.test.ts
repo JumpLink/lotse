@@ -9,6 +9,7 @@ import {
   freeModelNotes,
   isFreeModel,
   parseServeConfig,
+  tasksWithRemovedSchedule,
   unreachableTaskNotes,
   type SchemaNode,
 } from '@lotse/core';
@@ -20,7 +21,7 @@ const VALID = {
   users: [{ id: 'me' }],
   profiles: [{ id: 'work', user: 'me', data: 'private', model: 'provider/paid-model' }],
   tasks: [
-    { id: 'inbox', profile: 'work', schedule: { every: '1h' }, prompt: 'Look at the inbox.', cwd: '/tmp' },
+    { id: 'inbox', profile: 'work', prompt: 'Look at the inbox.', cwd: '/tmp' },
   ],
 };
 
@@ -64,6 +65,13 @@ export default async () => {
       expect(config.tasks[0]!.mcpServers.length).toBe(1);
     });
 
+    await it('ignores a removed schedule and names the tasks that still carry one', async () => {
+      const old = { ...VALID, tasks: [{ ...VALID.tasks[0], schedule: { every: '1h' } }, { ...VALID.tasks[0], id: 'other' }] };
+      expect(problems(old).length).toBe(0);
+      expect(tasksWithRemovedSchedule(JSON.stringify(old))).toStrictEqual(['inbox']);
+      expect(tasksWithRemovedSchedule('not json')).toStrictEqual([]);
+    });
+
     await it('reads question limits', async () => {
       const config = parseServeConfig(
         JSON.stringify({
@@ -80,13 +88,12 @@ export default async () => {
         extra: true,
         users: [{ id: 'me' }],
         profiles: [{ id: 'p', user: 'nobody', data: 'public' }],
-        tasks: [{ id: 't', profile: 'missing', schedule: { every: '10s' }, cwd: 'relative' }],
+        tasks: [{ id: 't', profile: 'missing', cwd: 'relative' }],
       });
       expect(found.some((line) => line.includes('"version"'))).toBe(true);
       expect(found.some((line) => line.includes('unknown key "extra"'))).toBe(true);
       expect(found.some((line) => line.includes('user "nobody"'))).toBe(true);
       expect(found.some((line) => line.includes('profile "missing"'))).toBe(true);
-      expect(found.some((line) => line.includes('schedule'))).toBe(true);
       expect(found.some((line) => line.includes('"prompt" and "promptFile"'))).toBe(true);
       expect(found.some((line) => line.includes('cwd'))).toBe(true);
     });

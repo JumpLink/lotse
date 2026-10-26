@@ -83,7 +83,7 @@ const DELIVERY = {
 export const SERVE_CONFIG_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   title: 'lotse serve tasks',
-  description: 'Users, profiles and the scheduled tasks `lotse serve` runs. Read once at start.',
+  description: 'Users, profiles and the tasks `lotse serve` knows. Read once at start.',
   type: 'object',
   additionalProperties: false,
   required: ['version', 'users', 'profiles', 'tasks'],
@@ -186,9 +186,9 @@ export const SERVE_CONFIG_SCHEMA = {
     task: {
       type: 'object',
       title: 'Task',
-      description: 'One scheduled job.',
+      description: 'One job: a prompt, the profile it runs on and the folder it starts in.',
       additionalProperties: false,
-      required: ['id', 'profile', 'schedule', 'cwd'],
+      required: ['id', 'profile', 'cwd'],
       properties: {
         id: {
           type: 'string',
@@ -197,53 +197,6 @@ export const SERVE_CONFIG_SCHEMA = {
           description: 'A short name, unique in the file.',
         },
         profile: { type: 'string', title: 'Profile', description: 'The id of the profile the task runs on.' },
-        schedule: {
-          title: 'Schedule',
-          description: 'An interval, or a time of day on chosen weekdays (local time).',
-          oneOf: [
-            {
-              type: 'object',
-              title: 'Every',
-              description: 'Run at an interval.',
-              additionalProperties: false,
-              required: ['every'],
-              properties: {
-                every: {
-                  type: 'string',
-                  pattern: DURATION_PATTERN,
-                  title: 'Interval',
-                  description: 'A duration such as 30m, 2h or 1d; at least 1m.',
-                },
-              },
-            },
-            {
-              type: 'object',
-              title: 'At',
-              description: 'Run at a time of day.',
-              additionalProperties: false,
-              required: ['at'],
-              properties: {
-                at: {
-                  type: 'string',
-                  pattern: '^\\d{1,2}:\\d{2}$',
-                  title: 'Time',
-                  description: 'HH:MM, local time.',
-                },
-                days: {
-                  type: 'array',
-                  title: 'Days',
-                  description: 'The weekdays to run on. Empty: every day.',
-                  items: {
-                    type: 'string',
-                    enum: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
-                    title: 'Day',
-                    description: 'A weekday.',
-                  },
-                },
-              },
-            },
-          ],
-        },
         ...PROMPT,
         cwd: {
           type: 'string',

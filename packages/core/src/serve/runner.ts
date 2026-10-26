@@ -1,5 +1,5 @@
 /**
- * One run of a task, one answer to a question, and the schedule that starts runs — ADR 0003.
+ * One run of a task and one answer to a question — ADR 0003.
  *
  * Everything with a side effect arrives as an argument: the agent (`open`, the same seam
  * `AgentSession` uses), the question store, the channel, the clock and the sleep. The app wires the
@@ -66,7 +66,6 @@ import {
   type PersonOutcome,
 } from './person.ts';
 import { STRINGS, msg } from '../messenger/strings.ts';
-import { nextRun } from './schedule.ts';
 
 /** The question list, wherever it lives. Read fresh on every look: another process writes it too. */
 export interface QuestionBook {
@@ -216,7 +215,7 @@ export function cancelOrphanedPermissions(deps: Pick<ServeDeps, 'questions' | 'n
   return count;
 }
 
-/** One scheduled run of a task: a new session, the task's prompt, one turn. */
+/** One run of a task: a new session, the task's prompt, one turn. */
 export async function runTask(task: ServeTask, deps: ServeDeps): Promise<RunResult> {
   const startedAt = deps.now();
   const reason = ceilingReached(task, deps.questions.read(), startedAt);
@@ -605,12 +604,11 @@ export interface RequestRunResult {
   readonly how: RequestMode;
 }
 
-/** The task an ad-hoc run is: no schedule, no reply questions, its permission questions to every channel. */
+/** The task an ad-hoc run is: no reply questions, its permission questions to every channel. */
 export function requestTask(request: Omit<RequestRun, 'text' | 'sessionId' | 'preamble'>): ServeTask {
   return {
     id: REQUEST_TASK,
     profile: request.profile,
-    schedule: { kind: 'every', ms: 0, spec: 'on request' },
     prompt: null,
     promptFile: null,
     cwd: request.cwd,
@@ -659,70 +657,6 @@ export async function runRequest(request: RequestRun, deps: ServeDeps): Promise<
     { replyQuestions: false },
   );
   return { run, how };
-}
-
-/**
- * The schedule's view of the last run: the recorded one, or a later skip. A skip stays out of
- * `runs.json`, where it would hide the run a question belongs to, but the schedule has to count it:
- * otherwise a task at its question ceiling is due again at once and `serve` spins.
- */
-export function attemptClock(recorded: (task: string) => Date | null): {
-  readonly skipped: (task: string, at: Date) => void;
-  readonly lastRun: (task: string) => Date | null;
-  readonly since: (task: string, now: Date) => Date;
-} {
-  const skips = new Map<string, Date>();
-  const known = new Map<string, Date>();
-  return {
-    // The first look at a task fixes its baseline: a never-run `at` task runs at its first matching
-    // time after that, not after every tick's `now` (which would keep it one step ahead forever).
-    since: (task, now) => {
-      const first = known.get(task);
-      if (first) return first;
-      known.set(task, now);
-      return now;
-    },
-    skipped: (task, at) => void skips.set(task, at),
-    lastRun: (task) => {
-      const run = recorded(task);
-      const skip = skips.get(task) ?? null;
-      if (!run || !skip) return run ?? skip;
-      return skip.getTime() > run.getTime() ? skip : run;
-    },
-  };
-}
-
-/** The tasks due now that are not already running. */
-export function dueTasks(
-  config: ServeConfig,
-  lastRun: (task: string) => Date | null,
-  running: ReadonlySet<string>,
-  now: Date,
-  since: (task: string, now: Date) => Date = (_task, at) => at,
-): ServeTask[] {
-  return config.tasks.filter(
-    (task) =>
-      !running.has(task.id) &&
-      nextRun(task.schedule, lastRun(task.id), now, since(task.id, now)).getTime() <= now.getTime(),
-  );
-}
-
-/** How long to sleep before the next look: until the earliest next run, between 1 s and `maxMs`. */
-export function nextWakeMs(
-  config: ServeConfig,
-  lastRun: (task: string) => Date | null,
-  now: Date,
-  maxMs = 60_000,
-  since: (task: string, now: Date) => Date = (_task, at) => at,
-): number {
-  let earliest = maxMs;
-  for (const task of config.tasks) {
-    earliest = Math.min(
-      earliest,
-      nextRun(task.schedule, lastRun(task.id), now, since(task.id, now)).getTime() - now.getTime(),
-    );
-  }
-  return Math.max(1_000, earliest);
 }
 
 // ─── the shared part of a run and an answer ──────────────────────────────────────────────────

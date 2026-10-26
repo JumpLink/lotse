@@ -41,8 +41,7 @@ function config(profile: Record<string, unknown> = {}, task: Record<string, unkn
         {
           id: 't',
           profile: 'p',
-          schedule: { every: '1h' },
-          prompt: 'Do the thing.',
+                    prompt: 'Do the thing.',
           cwd: '/fixture',
           personNeeded: { enabled: true },
           ...task,

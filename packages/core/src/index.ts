@@ -493,7 +493,7 @@ export {
 } from './empty-state.ts';
 export { noticeDue, NOTICE_IDS, type NoticeId } from './notices.ts';
 
-// ── `lotse serve`: scheduled tasks, questions to a person, the channel seam (ADR 0003) ──────────
+// ── `lotse serve`: tasks, questions to a person, the channel seam (ADR 0003) ─────────────
 export {
   DEFAULT_PERSON_TIMEOUT_MIN,
   PERSON_KINDS,
@@ -514,15 +514,7 @@ export {
   type PersonReply,
 } from './serve/person.ts';
 export { PERSON_TOOL, createPersonHost } from './serve/person-server.ts';
-export {
-  MIN_INTERVAL_MS,
-  isDue,
-  nextRun,
-  parseDuration,
-  parseSchedule,
-  type Schedule,
-  type Weekday,
-} from './serve/schedule.ts';
+export { parseDuration } from './serve/duration.ts';
 export {
   DEFAULT_QUESTION_LIMITS,
   PERSON_NEEDED_OFF,
@@ -532,6 +524,7 @@ export {
   freeModelNotes,
   parseServeConfig,
   profileOf,
+  tasksWithRemovedSchedule,
   unreachableTaskNotes,
   type MessengerDetail,
   type PersonNeededConfig,
@@ -638,12 +631,9 @@ export { SERVE_CONFIG_SCHEMA, schemaKeys, type SchemaNode } from './serve/schema
 export {
   ModelUnavailableError,
   answerQuestion,
-  attemptClock,
   cancelOrphanedPermissions,
   ceilingReached,
-  dueTasks,
   followUpPrompt,
-  nextWakeMs,
   parseVerdict,
   precheckText,
   REQUEST_TASK,

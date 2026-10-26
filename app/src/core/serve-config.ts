@@ -9,13 +9,21 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join } from 'node:path';
 
-import { configHash, parseServeConfig, type ServeConfig, type ServeTask } from '@lotse/core';
+import {
+  configHash,
+  parseServeConfig,
+  tasksWithRemovedSchedule,
+  type ServeConfig,
+  type ServeTask,
+} from '@lotse/core';
 
 export interface LoadedTasks {
   readonly config: ServeConfig;
   readonly hash: string;
   /** Present when the file can be read by someone other than its owner. */
   readonly warning: string | null;
+  /** Tasks that still carry the removed `schedule`: read, ignored, and named once so the person can delete it. */
+  readonly removedSchedules: readonly string[];
   promptFor(task: ServeTask): string;
   precheckPromptFor(task: ServeTask): string;
 }
@@ -66,6 +74,7 @@ export function loadTasks(tasksFile: string): LoadedTasks {
   return {
     config,
     hash: configHash(all),
+    removedSchedules: tasksWithRemovedSchedule(text),
     warning:
       (mode & 0o077) !== 0
         ? `${tasksFile} is readable by others (mode ${mode.toString(8)}); \`chmod 600\` it`
