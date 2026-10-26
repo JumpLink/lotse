@@ -35,8 +35,7 @@ Without `lotse serve`, messages pile up in the index and nobody answers.
 ## Decision
 
 1. **The messenger stays part of Lotse, but Lotse speaks no messaging protocol.** It speaks MCP
-   against a documented contract. The contract goes into `docs/messenger-contract.md`, written
-   with the implementation.
+   against a documented contract. The contract is in [docs/messenger-contract.md](../messenger-contract.md).
 2. **Curlew is the optional default.** Lotse has no package dependency on it. Any MCP server that
    meets the contract can take its place.
 3. **Curlew never calls Lotse.** There is no AI in Curlew. The daemon receives, `curlew mcp`
