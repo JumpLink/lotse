@@ -86,7 +86,6 @@ const ABBREVIATIONS: ReadonlySet<string> = new Set([
   'kap',
   'abs',
   'art',
-  'ca',
   'engl',
   'dt',
   'ev',
