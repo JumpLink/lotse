@@ -111,7 +111,8 @@ Measurements on 2026-10-26:
 1. Architecture doc `docs/architecture/voice.md`: components, settings schema, provider contract,
    keyring entries.
 2. **Listening comparison** of German voices: Spiel providers that exist (Piper first), Pocket
-   through sprechstunde's server, Mistral, Kugel. It sets the default voice.
+   through sprechstunde's server, Mistral, Kugel. It sets the default voice. Measured part:
+   [voice/hoervergleich.md](../voice/hoervergleich.md).
 3. **Spiel in gjsify:** `@girs/spiel-1.0` in ts-for-gir, `@gjsify/spiel-native` and
    `@gjsify/speech-synthesis` with their own gjsify ADR, then a release.
 4. **Read aloud:** `speakableText()`, sentence chunker and `voice` policy in `@lotse/core`; the
