@@ -6,6 +6,11 @@ and also records changes that are not a release of their own.
 
 ## Unreleased
 
+### Changed
+
+- **Toolchain:** gjsify 0.54.0 → 0.64.11 (also the committed `build-aux/gjsify.gjs.mjs` and the offline
+  Flatpak sources), `@girs/*` 5.5.0, oxlint 1.89, oxfmt 0.74, `@modelcontextprotocol/sdk` 1.32.2.
+
 ## 0.5.0 — 2026-10-22
 
 ### Added

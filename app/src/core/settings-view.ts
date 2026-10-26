@@ -173,9 +173,10 @@ export function settingsChoicesView(
     pending: false,
   };
 
-  const ordered = [automaticRow, ...rows].map(
-    (row): ChoiceRow => ({ ...row, selected: row.key === selectedKey }),
-  );
+  const ordered = [automaticRow, ...rows].map((row): ChoiceRow => ({
+    ...row,
+    selected: row.key === selectedKey,
+  }));
 
   const lines: string[] = [];
   if (facts.problem) lines.push(facts.problem);
