@@ -71,6 +71,7 @@ packages/core/src/serve/person.ts
 packages/core/src/serve/questions.ts
 packages/core/src/serve/runner.ts
 packages/core/src/serve/schema.ts
+packages/core/src/task/skill.ts
 packages/core/src/transcript-items.ts
 packages/core/src/transcript.ts
 packages/core/src/turn.ts

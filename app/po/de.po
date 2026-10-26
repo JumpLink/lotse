@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: eu.jumplink.Lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-26 15:02+0100\n"
+"POT-Creation-Date: 2026-10-26 15:59+0100\n"
 "Language-Team: German\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -285,7 +285,7 @@ msgstr "die Antwort in einem Fenster eingeben"
 
 #: app/src/frontends/cli/answer.ts:80 app/src/frontends/cli/auth.ts:40
 #: app/src/frontends/cli/cancel.ts:30 app/src/frontends/cli/resume.ts:47
-#: app/src/frontends/cli/start.ts:56
+#: app/src/frontends/cli/run.ts:27 app/src/frontends/cli/start.ts:56
 msgid "do not echo the agent's log lines"
 msgstr "die Logzeilen des Agenten nicht ausgeben"
 
@@ -321,7 +321,7 @@ msgstr ""
 "versuche es erneut"
 
 #: app/src/frontends/cli/auth.ts:70 app/src/frontends/cli/cancel.ts:64
-#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:148
+#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:166
 #: app/src/frontends/cli/start.ts:90
 msgid "  [agent] {line}"
 msgstr "  [agent] {line}"
@@ -386,19 +386,19 @@ msgstr "Sitzung {id} gehört zum Agenten „{agent}“, nicht zu „{agentId}“
 msgid "session/cancel sent for {id}"
 msgstr "session/cancel für {id} gesendet"
 
-#: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/serve.ts:284
-#: app/src/frontends/cli/serve.ts:291 app/src/frontends/cli/serve.ts:303
-#: app/src/frontends/cli/serve.ts:321
+#: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/serve.ts:285
+#: app/src/frontends/cli/serve.ts:292 app/src/frontends/cli/serve.ts:304
+#: app/src/frontends/cli/serve.ts:327
 msgid "  {line}"
 msgstr "  {line}"
 
 #: app/src/frontends/cli/choose.ts:38 app/src/frontends/cli/questions.ts:33
-#: app/src/frontends/cli/serve-deps.ts:141 app/src/frontends/cli/serve.ts:125
+#: app/src/frontends/cli/serve-deps.ts:159 app/src/frontends/cli/serve.ts:126
 msgid "  {problem}"
 msgstr "  {problem}"
 
 #: app/src/frontends/cli/choose.ts:43 app/src/frontends/cli/provider.ts:205
-#: app/src/frontends/cli/serve.ts:186 app/src/frontends/cli/serve.ts:218
+#: app/src/frontends/cli/serve.ts:187 app/src/frontends/cli/serve.ts:219
 msgid "  {note}"
 msgstr "  {note}"
 
@@ -705,14 +705,30 @@ msgstr ""
 msgid "— {stopReason} —"
 msgstr "— {stopReason} —"
 
-#: app/src/frontends/cli/serve-deps.ts:31
+#: app/src/frontends/cli/run.ts:21
+msgid "run a task now"
+msgstr "eine Aufgabe jetzt ausführen"
+
+#: app/src/frontends/cli/run.ts:24
+msgid "the task id, from `lotse tasks`"
+msgstr "die Aufgaben-ID aus `lotse tasks`"
+
+#: app/src/frontends/cli/run.ts:25
+msgid "a parameter, like name=value"
+msgstr "ein Parameter, etwa name=wert"
+
+#: app/src/frontends/cli/run.ts:26
+msgid "print the result as JSON"
+msgstr "das Ergebnis als JSON ausgeben"
+
+#: app/src/frontends/cli/serve-deps.ts:38
 msgid ""
 "tasks.json: 'schedule' is no longer supported and is ignored (task {id})"
 msgstr ""
 "tasks.json: „schedule“ wird nicht mehr unterstützt und ignoriert (Aufgabe "
 "{id})"
 
-#: app/src/frontends/cli/serve-deps.ts:40
+#: app/src/frontends/cli/serve-deps.ts:47
 msgid ""
 "The profiles in tasks.json were copied to {file}, which every lotse host now "
 "shares. tasks.json keeps working; edit the profiles there."
@@ -721,49 +737,53 @@ msgstr ""
 "Programme gemeinsam nutzen. tasks.json funktioniert weiter; ändere die "
 "Profile künftig dort."
 
-#: app/src/frontends/cli/serve-deps.ts:46 app/src/frontends/cli/serve.ts:337
+#: app/src/frontends/cli/serve-deps.ts:57
+msgid "The tasks in tasks.json were copied to {dir}, one SKILL.md each. tasks.json keeps working and is not changed; edit the tasks there."
+msgstr "Die Aufgaben aus tasks.json wurden nach {dir} kopiert, je eine SKILL.md. tasks.json funktioniert weiter und bleibt unverändert; ändere die Aufgaben künftig dort."
+
+#: app/src/frontends/cli/serve-deps.ts:62 app/src/frontends/cli/serve.ts:343
 msgid "  {warning}"
 msgstr "  {warning}"
 
-#: app/src/frontends/cli/serve.ts:78
+#: app/src/frontends/cli/serve.ts:79
 msgid "  #{questionId}: {message}"
 msgstr "  #{questionId}: {message}"
 
-#: app/src/frontends/cli/serve.ts:108
+#: app/src/frontends/cli/serve.ts:109
 msgid "  #{questionId}: {reason}"
 msgstr "  #{questionId}: {reason}"
 
-#: app/src/frontends/cli/serve.ts:166
+#: app/src/frontends/cli/serve.ts:167
 msgid "  messenger channel not started: {problem}"
 msgstr "  Messenger-Kanal nicht gestartet: {problem}"
 
-#: app/src/frontends/cli/serve.ts:170
+#: app/src/frontends/cli/serve.ts:171
 msgid "  messenger: {line}"
 msgstr "  Messenger: {line}"
 
-#: app/src/frontends/cli/serve.ts:190
+#: app/src/frontends/cli/serve.ts:191
 msgid "  {name}: {message}"
 msgstr "  {name}: {message}"
 
-#: app/src/frontends/cli/serve.ts:209
+#: app/src/frontends/cli/serve.ts:210
 msgid "answer chat requests and ask the person when an agent has a question"
 msgstr ""
 "Chat-Anfragen beantworten und die Person fragen, wenn ein Agent eine Frage "
 "hat"
 
-#: app/src/frontends/cli/serve.ts:211
+#: app/src/frontends/cli/serve.ts:212
 msgid "do not echo the agents' log lines"
 msgstr "die Logzeilen der Agenten nicht ausgeben"
 
-#: app/src/frontends/cli/serve.ts:253
+#: app/src/frontends/cli/serve.ts:254
 msgid "  {dropped} permission question(s) from an earlier serve cancelled"
 msgstr "  {dropped} Berechtigungsfrage(n) aus einem früheren serve abgebrochen"
 
-#: app/src/frontends/cli/serve.ts:264
+#: app/src/frontends/cli/serve.ts:265
 msgid "  stopping: {why}"
 msgstr "  wird beendet: {why}"
 
-#: app/src/frontends/cli/serve.ts:307
+#: app/src/frontends/cli/serve.ts:308
 msgid ""
 "  {left} chat request(s) from an earlier serve were not completed; the chat "
 "was told"
@@ -771,7 +791,7 @@ msgstr ""
 "  {left} Chat-Anfrage(n) aus einem früheren serve wurden nicht "
 "abgeschlossen; der Chat wurde informiert"
 
-#: app/src/frontends/cli/serve.ts:356
+#: app/src/frontends/cli/serve.ts:362
 msgid "  {message}"
 msgstr "  {message}"
 
@@ -818,6 +838,58 @@ msgstr "jeden Werkzeugaufruf ohne Nachfrage ablehnen, auch im Terminal"
 #: app/src/frontends/cli/start.ts:105
 msgid "{agentInfo} — session {sessionId} in {cwd}"
 msgstr "{agentInfo} — Sitzung {sessionId} in {cwd}"
+
+#: app/src/frontends/cli/status.ts:14
+msgid "show running tasks, recent runs and open questions"
+msgstr "laufende Aufgaben, letzte Läufe und offene Fragen anzeigen"
+
+#: app/src/frontends/cli/status.ts:16
+msgid "print the status as JSON"
+msgstr "den Status als JSON ausgeben"
+
+#: app/src/frontends/cli/task-commands.ts:61
+msgid "Done."
+msgstr "Erledigt."
+
+#: app/src/frontends/cli/task-commands.ts:63
+msgid "Waiting for you: {id}. Answer it with `lotse answer {id} <text>`."
+msgstr "Wartet auf dich: {id}. Antworte mit `lotse answer {id} <Text>`."
+
+#: app/src/frontends/cli/task-commands.ts:67
+msgid "Not started: {reason}"
+msgstr "Nicht gestartet: {reason}"
+
+#: app/src/frontends/cli/task-commands.ts:69
+msgid "Failed: {reason}"
+msgstr "Fehlgeschlagen: {reason}"
+
+#: app/src/frontends/cli/task-commands.ts:74
+msgid "No tasks."
+msgstr "Keine Aufgaben."
+
+#: app/src/frontends/cli/task-commands.ts:106
+msgid "Running: {tasks}"
+msgstr "Läuft: {tasks}"
+
+#: app/src/frontends/cli/task-commands.ts:107
+msgid "Nothing is running."
+msgstr "Nichts läuft."
+
+#: app/src/frontends/cli/task-commands.ts:111
+msgid "{task}: {outcome} at {time}"
+msgstr "{task}: {outcome} um {time}"
+
+#: app/src/frontends/cli/task-commands.ts:114
+msgid "Open: {id} ({task}) until {time}"
+msgstr "Offen: {id} ({task}) bis {time}"
+
+#: app/src/frontends/cli/tasks.ts:15
+msgid "list the tasks that can be run"
+msgstr "die ausführbaren Aufgaben auflisten"
+
+#: app/src/frontends/cli/tasks.ts:17
+msgid "print the tasks as JSON"
+msgstr "die Aufgaben als JSON ausgeben"
 
 #: app/src/frontends/gui/answer-window.ts:45
 msgid "Close"
@@ -1080,6 +1152,3 @@ msgstr "Kopieren"
 
 #~ msgid "run the tasks that are due now, wait for them, and exit"
 #~ msgstr "die jetzt fälligen Aufgaben ausführen, auf sie warten und beenden"
-
-#~ msgid "  {id}: {outcome}{tail}"
-#~ msgstr "  {id}: {outcome}{tail}"
