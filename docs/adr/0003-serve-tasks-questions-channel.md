@@ -1,6 +1,6 @@
 # 3. `lotse serve`: tasks, questions and the channel seam
 
-- Status: **Accepted**
+- Status: **Accepted**, partly superseded by [ADR 0007](0007-profiles-tasks-triggers.md) (scheduling, task format)
 - Date: 2026-10-10
 - Deciders: Pascal Garber
 - Related: [ADR 0002](0002-assistant-in-continuous-operation.md) (the design this builds on)

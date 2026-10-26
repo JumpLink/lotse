@@ -121,6 +121,8 @@ To embed the chat in your own app, start with the [host guide](docs/embedding.md
 
 Translations: [docs/i18n.md](docs/i18n.md).
 
+Where Lotse is going and what it will not become: [docs/vision.md](docs/vision.md).
+
 Design decisions are in [docs/adr/](docs/adr/README.md). The GUI's look and screenshots of every
 state are in [docs/design/](docs/design/README.md).
 
