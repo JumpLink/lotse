@@ -43,7 +43,8 @@ Measurements on 2026-10-26:
    - TTS: `pocket` (a configurable server URL, compatible with sprechstunde's server), `mistral`,
      `kugel`, and `spiel`: any voice installed for GNOME's [Spiel](https://project-spiel.org)
      speech-provider standard (D-Bus providers, voices as Flatpak extensions, e.g. Piper with
-     German voices), reached through `libspiel`'s GObject introspection from the app.
+     German voices), reached through the Web Speech API's `speechSynthesis` that gjsify provides
+     (point 12).
    - STT: `mistral` (Voxtral); a local engine (whisper.cpp) later.
 4. **Engines are a device setting, not a profile field.** Whether Pocket runs depends on the
    machine, so provider, model, voice and server URL sit in Lotse's settings, with a fallback voice
@@ -73,9 +74,14 @@ Measurements on 2026-10-26:
 12. **Spiel is the standard for local voices.** Lotse installs no TTS engine of its own: a local
     voice is a Spiel speech provider with its voices, installed through Spiel's Flatpaks or the
     distribution. A local engine Spiel lacks, such as Pocket, is added as a Spiel provider, which
-    every Spiel app (Orca too) then gets. The `spiel` provider lives in Lotse's app first, so it
-    can change without waiting for a gjsify release. Once its shape has settled it may move into
-    gjsify, for example as the Web Speech API's `speechSynthesis` backed by Spiel.
+    every Spiel app (Orca too) then gets. Lotse does not bind Spiel itself: gjsify provides the
+    W3C Web Speech `speechSynthesis` backed by `libspiel` (`@gjsify/speech-synthesis`), and
+    bundles `libspiel` with its typelib as a prebuild (`@gjsify/spiel-native`, the
+    `gamepad-native` pattern), because neither Fedora nor the GNOME runtimes ship it. A system
+    `libspiel` takes precedence. `@lotse/core` keeps only what is Lotse's own: `speakableText()`,
+    the sentence chunker and the `voice` policy. `LotseChat` takes an optional object shaped like
+    `speechSynthesis` from its host, so the widget is tested against a fake and runs in a browser
+    unchanged. Steuererklärung passes `speechSynthesis` with `voice: "local-only"`.
 
 ## Consequences
 
@@ -83,8 +89,11 @@ Measurements on 2026-10-26:
   ~1.8–2 s to first sound; a coding agent with tools is slower).
 - Lotse gains a keyring dependency and a secret it must never log or put in `--json` output.
 - Local voices work on this machine without anything Lotse-specific to install. A weaker device
-  picks a smaller Spiel voice (eSpeak, a small Piper voice), a Pocket server elsewhere through the
-  `pocket` URL, or a cloud voice.
+  picks a smaller Spiel voice (Piper's `x_low` voices, 20 MB), a Pocket server elsewhere through
+  the `pocket` URL, or a cloud voice. Spiel's eSpeak provider listed no voices when measured on
+  2026-10-26, so it is no fallback yet.
+- Reading aloud in the app waits for a gjsify release with `@gjsify/speech-synthesis`. Core and
+  widget do not: they are built and merged against a fake first.
 - Spiel ships providers for Piper, eSpeak and Mimic 3 (checked 2026-10-26), not on Flathub but
   from its own Flatpak repo, whose providers last moved in 2025-12. Lotse depends on that
   small project; a Spiel provider for Pocket would be a contribution to it as well.
@@ -103,9 +112,11 @@ Measurements on 2026-10-26:
    keyring entries.
 2. **Listening comparison** of German voices: Spiel providers that exist (Piper first), Pocket
    through sprechstunde's server, Mistral, Kugel. It sets the default voice.
-3. **Read aloud:** `TextToSpeech`, providers `spiel` first, then `mistral`, `kugel` and `pocket`
-   (URL); sentence streaming, playback, play agent audio blocks.
-4. **Dictation:** a microphone button, `SpeechToText` with `mistral`, ACP audio when advertised.
-5. **Hands-free:** VAD, barge-in, echo cancellation.
-6. **Pocket as a Spiel provider** if step 2 says so; whisper.cpp for local dictation.
-7. **Spiel support in gjsify** once the `spiel` provider has settled.
+3. **Spiel in gjsify:** `@girs/spiel-1.0` in ts-for-gir, `@gjsify/spiel-native` and
+   `@gjsify/speech-synthesis` with their own gjsify ADR, then a release.
+4. **Read aloud:** `speakableText()`, sentence chunker and `voice` policy in `@lotse/core`; the
+   `speech` option in `LotseChat` against a fake; the app passes `speechSynthesis` after the
+   gjsify release. Then `mistral`, `kugel` and `pocket` (URL), and agent audio blocks.
+5. **Dictation:** a microphone button, `SpeechToText` with `mistral`, ACP audio when advertised.
+6. **Hands-free:** VAD, barge-in, echo cancellation.
+7. **Pocket as a Spiel provider** if step 2 says so; whisper.cpp for local dictation.
