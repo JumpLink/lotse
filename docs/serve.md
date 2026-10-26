@@ -1,72 +1,86 @@
-# `lotse serve` — chat requests and questions that ask before they act
+# `lotse serve` — the receiver: chat requests and questions that ask before they act
 
-`lotse serve` is a long-running process. It answers [requests from the chat](#requests-from-the-chat)
-and sends a desktop notification (or a chat message) when an agent needs a decision from you. You
-answer with `lotse answer`. Time-based scheduling was removed; running a task on demand is
-[`lotse run`](tasks.md). A `schedule` key left in `tasks.json` is ignored, with one notice per task. The contract
-behind it is [ADR 0003](adr/0003-serve-tasks-questions-channel.md); the design it builds on is
-[ADR 0002](adr/0002-assistant-in-continuous-operation.md).
+`lotse serve` is a long-running process that **only receives**. It listens for
+
+- **requests from the chat**: `/ask <text>` (and a plain message when requests are on), `/run <id>`,
+  `/tasks` and `/status` — see [Requests from the chat](#requests-from-the-chat);
+- **answers to open questions**: a reply in the chat, `lotse answer`, or a button on the desktop
+  notification;
+
+and it sends a desktop notification (or a chat message) when an agent needs a decision from you.
+It starts no task on its own and has no clock: scheduling was removed (ADR 0007).
+
+A [task](tasks.md) starts instead from one of three places:
+
+- `lotse run <id>` in a terminal;
+- `/run <id>` in the chat that `serve` listens to;
+- an outside trigger you set up yourself (a systemd timer, cron, a calendar hook) that calls
+  `lotse run <id>`. Lotse does not ship one; a timer is a few lines of systemd and stays under your
+  control. Exit code `3` of `lotse run` means a question waits for you.
+
+The contract behind it is [ADR 0003](adr/0003-serve-tasks-questions-channel.md); the design it builds on
+is [ADR 0002](adr/0002-assistant-in-continuous-operation.md).
 
 ```bash
-lotse serve [--quiet]              # serve chat requests and questions
+lotse serve [--quiet]              # listen for chat requests and answers
 lotse questions [--all] [--json]   # open questions (--all: also answered, expired, cancelled)
 lotse answer <id> [text…] [--dialog]  # yes/no for a permission, free text for a reply;
                                       # without text (or with --dialog) the answer window opens
 ```
 
-## The task file
+The startup line says what it does: `lotse serve — listening for chat requests and answers, questions via
+desktop + messenger, state in …`. With no messenger configured it listens for `lotse answer` and the
+desktop buttons only.
 
-Tasks live in `$XDG_CONFIG_HOME/lotse/tasks.json` (`LOTSE_TASKS_FILE` overrides it), never in this
-repository. Start from [examples/tasks.example.json](../examples/tasks.example.json) and keep the
-file at mode `0600`; `serve` warns when it is readable by others.
+### Why it is still called `serve`
+
+It still *serves*: it is the one process other hosts talk to (the chat, the notification buttons,
+`lotse answer`). A name like `listen` or `receive` would be more exact now that it starts nothing,
+but the command is in people's systemd units, so the rename is not worth breaking them. If it is ever
+renamed, `serve` stays as an alias for a release.
+
+## The user file (`tasks.json`)
+
+`$XDG_CONFIG_HOME/lotse/tasks.json` (`LOTSE_TASKS_FILE` overrides it), never in this repository, binds
+people and channels to profiles. Start from [examples/tasks.example.json](../examples/tasks.example.json)
+and keep the file at mode `0600`; `serve` warns when it is readable by others. Tasks themselves live in
+[`tasks/<id>/SKILL.md`](tasks.md); the `tasks` array in this file is the legacy format, still runnable
+and copied once to SKILL.md files.
 
 - **users**: `{id, addresses}`. The desktop channel needs no address.
 - **profiles**: `{id, user, agent?, model?, data, channels?, messengerDetail?}`. This is the serve binding of a profile: its person and channels. For an id that is also in [profiles.json](profiles.md), `agent`, `model` and `data` come from there and `data` may be left out; otherwise `data` is `private` or `public` and is required.
   `model` is optional: leave it out and the agent's default model applies. A private profile on a
   free model gets a note at start. That choice is yours, so `serve` does not block it.
-  When the agent does not offer the pinned model, `serve` retries once after about 15 s with the same
+  When the agent does not offer the pinned model, the run retries once after about 15 s with the same
   model and a fresh session (the agent may be refreshing its list), then fails; there is no fallback model.
-- **tasks**: `{id, profile, prompt | promptFile, cwd, mcpServers, rights, released,
-  questions, notify, precheck?, channels?, messengerDetail?}`. A `promptFile` resolves relative to the task file. `mcpServers` is passed to
+- **tasks** (legacy): `{id, profile, prompt | promptFile, cwd, mcpServers, rights, released,
+  questions, notify, precheck?, channels?, messengerDetail?}`. A `promptFile` resolves relative to the file. `mcpServers` is passed to
   `session/new` unchanged. `answerMcpServers` (optional) replaces it for the turn that continues
-  a reply question (`lotse answer`).
+  a reply question (`lotse answer`). A `schedule` key is ignored, with one notice per task.
 
 Unknown keys are errors, and every problem is reported at start.
 
-### Editing the task file while `serve` runs
+### Editing the file while `serve` runs
 
-`serve` looks at the task file and its prompt files at least once a minute and
-applies a change in place; there is nothing to restart.
+`serve` looks at the file and its prompt files at least once a minute and applies a change in place;
+there is nothing to restart.
 
-- A **run in progress is never interrupted.** It finishes with the definition it started with. A task
-  you removed is not started again, but its running instance completes; a changed task uses the new
-  definition from its next run.
-- **An invalid file is ignored.** `serve` keeps the previous tasks, prints the problem, writes an
+- A **run in progress is never interrupted.** It finishes with the definition it started with.
+- **An invalid file is ignored.** `serve` keeps the previous one, prints the problem, writes an
   `error` entry (`kind: reload`) to `serve.log` and keeps running. Fix the file and the next pass loads
   it; the same bad save is reported once.
 - Channels and agents come from `settings.json` and are read at start. A reload re-resolves each
-  profile's agent, but a change to which channels are open needs a restart. The routing per task
-  (`channels`, `messengerDetail`) follows the reloaded tasks.
+  profile's agent, but a change to which channels are open needs a restart.
 
-Runs of one task never overlap, across `serve` and `lotse answer` alike.
+Runs of one task never overlap, across `serve`, `lotse run` and `lotse answer` alike.
 
 ### Precheck
 
-`precheck: {profile?, prompt | promptFile}` is part of the task schema, but nothing runs it while
-scheduling is gone; `lotse run` runs it (see [tasks](tasks.md)). It describes a cheap turn before the task, usually on a small
-model, that answers one question: is there anything to do? Its last line must be `WORK` or
-`NOTHING`. Only `WORK` starts the real run.
-
-- It gets the task's `mcpServers`, always with `read` rights. It never gets `answerMcpServers` and
-  never asks you a question.
-- Its model comes from its own `profile`. Without one, it uses the task's profile with no model,
-  so the agent's default applies.
-- `NOTHING` records outcome `nothing` in `runs.json`, which is not `done`. A missing verdict or a
-  failed precheck records `failed`, and the task does not run.
-
-lotse puts one line in front of the precheck prompt: the time and outcome of the task's last run
-from `runs.json`, or that it has not run before. Compare against it, for example: "WORK if a message
-is newer than the last run or the last run failed, else NOTHING."
+A task's precheck (a cheap turn that answers `WORK` or `NOTHING`) runs when the task starts, by
+`lotse run` or `/run`; see [tasks](tasks.md). It always has `read` rights and never asks you a
+question. `NOTHING` records outcome `nothing` in `runs.json`; a missing verdict or a failed precheck
+records `failed` and the task does not run. lotse puts the time and outcome of the task's last run in
+front of the precheck prompt, so it can ask "is anything newer than that?".
 
 ### Rights
 
@@ -171,7 +185,7 @@ kinds only, never a prompt or a reply — the one exception is `run-summary`: th
 ## Running it as a service
 
 [data/lotse-serve.service](../data/lotse-serve.service) is an example systemd user unit. Nothing
-installs it; the install commands are in its header. An edit to the task file is picked up by the
+installs it; the install commands are in its header. An edit to `tasks.json` is picked up by the
 running service; `systemctl --user restart lotse-serve` is only needed for a change to `settings.json`.
 
 ## Channels

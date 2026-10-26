@@ -6,6 +6,15 @@ and also records changes that are not a release of their own.
 
 ## Unreleased
 
+### Changed
+
+- **`lotse serve` only receives.** What was left of the task loop is gone: `runServeTask` (its work is
+  `runTask`) and exports no host used (`ceilingReached`, `followUpPrompt`, `requestTask`, `userOf`,
+  `actionOf`, `isReleased`, `toolOf`), and `emptyMcpToggles()` (use `NO_MCP_TOGGLES`). The startup line and
+  the reload messages no longer count tasks. [docs/serve.md](docs/serve.md) describes the receive-only
+  role, how tasks start instead (`lotse run`, `/run`, an outside trigger) and why the command is still
+  called `serve`.
+
 ### Added
 
 - **Profiles are Lotse's own concept** (ADR 0007, step 1–3). A standalone `Profile` with its own

@@ -36,10 +36,6 @@ export interface McpTogglesView {
 }
 
 /** The view of a conversation with no MCP servers. */
-export function emptyMcpToggles(): McpTogglesView {
-  return NO_MCP_TOGGLES;
-}
-
 export const NO_MCP_TOGGLES: McpTogglesView = { visible: false, toggles: [], selectable: true };
 
 /** The servers a conversation runs with: the whole list minus the ones switched off. */

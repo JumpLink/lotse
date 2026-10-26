@@ -286,13 +286,13 @@ export async function runTask(
     if (error instanceof TaskFileError) return { status: 'failed', reason: error.message };
     throw error;
   }
-  const run = await runServeTask(task, scoped);
+  const run = await runConfigured(task, scoped);
   if (taskRunOf(run).status !== 'failed' || run.reason !== BUSY_REASON) deps.record?.(run);
   return taskRunOf(run);
 }
 
-/** One run of a configured task: a new session, the task's prompt, one turn. */
-export async function runServeTask(task: ServeTask, deps: ServeDeps): Promise<RunResult> {
+/** One run of a task: a new session, the task's prompt, one turn. Only `runTask` starts it. */
+async function runConfigured(task: ServeTask, deps: ServeDeps): Promise<RunResult> {
   const startedAt = deps.now();
   const reason = ceilingReached(task, deps.questions.read(), startedAt);
   if (reason) {

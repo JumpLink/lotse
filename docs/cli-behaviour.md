@@ -3,9 +3,10 @@
 Moved from `AGENTS.md` (issue #15, context budget). The command list stays in [AGENTS.md](../AGENTS.md#the-cli); the reasons behind it are here.
 
 **`serve` is [ADR 0003](adr/0003-serve-tasks-questions-channel.md), read it before touching
-`packages/core/src/serve/`**; the person's guide is [docs/serve.md](serve.md). Tasks live in
+`packages/core/src/serve/`**; the person's guide is [docs/serve.md](serve.md). It only receives (chat requests, answers, question notices) and starts no task; tasks run on demand
+([docs/tasks.md](tasks.md)). Users, channels and legacy tasks live in
 `$XDG_CONFIG_HOME/lotse/tasks.json` (never in the repo, `examples/tasks.example.json` is the shape), reloaded in place when it or a prompt file changes (`app/src/frontends/cli/serve-reload.ts`; running tasks
-finish with their old definition, an invalid file keeps the old tasks). Pure logic in core, GI
+finish with their old definition, an invalid file keeps the old one). Pure logic in core, GI
 only in `app/src/core/desktop-channel.ts`, which `serve.ts` imports lazily so `answer` stays GI-free.
 `serve/schema.ts` (`SERVE_CONFIG_SCHEMA`) is the one list of allowed keys, and the parser derives
 from it: a new field goes there first, with a title and a description.

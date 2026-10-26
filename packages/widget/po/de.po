@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-26 15:49+0100\n"
+"POT-Creation-Date: 2026-10-26 16:35+0100\n"
 "Language-Team: German\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -181,15 +181,16 @@ msgstr ""
 "Der Agent hat für ein Werkzeug, das der Host bestätigt, keine einmalige "
 "Freigabe angeboten – darum wurde nichts freigegeben."
 
-#: packages/core/src/mcp-toggles.ts:87
+#: packages/core/src/mcp-toggles.ts:83
 msgid "This agent cannot change MCP servers in a running conversation."
-msgstr "Dieser Agent kann MCP-Server in einer laufenden Unterhaltung nicht ändern."
+msgstr ""
+"Dieser Agent kann MCP-Server in einer laufenden Unterhaltung nicht ändern."
 
-#: packages/core/src/mcp-toggles.ts:94
+#: packages/core/src/mcp-toggles.ts:90
 msgid "MCP server {name}"
 msgstr "MCP-Server {name}"
 
-#: packages/core/src/mcp-toggles.ts:96
+#: packages/core/src/mcp-toggles.ts:92
 msgid "MCP server {name}. A change applies from the next message."
 msgstr "MCP-Server {name}. Eine Änderung gilt ab der nächsten Nachricht."
 

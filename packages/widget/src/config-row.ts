@@ -63,9 +63,9 @@ import Gtk from '@girs/gtk-4.0';
 import {
   configSelection,
   emptyConfigRow,
-  emptyMcpToggles,
   isConfigChange,
   modelControl,
+  NO_MCP_TOGGLES,
   type ConfigRowControl,
   type ConfigRowSwitch,
   type ConfigRowView,
@@ -104,7 +104,7 @@ export class ConfigRow {
   readonly #onSelect: (controlId: string, value: string) => void;
   readonly #onSwitch: (controlId: string, on: boolean) => void;
   readonly #onMcpToggle: (name: string, on: boolean) => void;
-  #mcp: McpTogglesView = emptyMcpToggles();
+  #mcp: McpTogglesView = NO_MCP_TOGGLES;
   /**
    * The last view rendered.
    *

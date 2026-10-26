@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-26 15:49+0100\n"
+"POT-Creation-Date: 2026-10-26 16:35+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -149,15 +149,15 @@ msgid ""
 "nothing was approved."
 msgstr ""
 
-#: packages/core/src/mcp-toggles.ts:87
+#: packages/core/src/mcp-toggles.ts:83
 msgid "This agent cannot change MCP servers in a running conversation."
 msgstr ""
 
-#: packages/core/src/mcp-toggles.ts:94
+#: packages/core/src/mcp-toggles.ts:90
 msgid "MCP server {name}"
 msgstr ""
 
-#: packages/core/src/mcp-toggles.ts:96
+#: packages/core/src/mcp-toggles.ts:92
 msgid "MCP server {name}. A change applies from the next message."
 msgstr ""
 

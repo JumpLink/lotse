@@ -9,10 +9,11 @@ import {
   cancelOrphanedPermissions,
   parseProfiles,
   parseServeConfig,
+  LOCKED,
   parseVerdict,
   precheckText,
   runRequest,
-  runServeTask,
+  runTask,
   type Question,
   type ServeConfig,
   type ServeDeps,
@@ -24,6 +25,7 @@ import {
   opencodeConfigOptions,
   type FixtureAgentOptions,
 } from '../../support/fixture-agent.ts';
+import { runConfigured } from '../../support/run-task.ts';
 
 const START = Date.parse('2026-10-10T12:00:00.000Z');
 
@@ -113,7 +115,7 @@ export default async () => {
   await describe('runTask', async () => {
     await it('a plain run ends done and hands the reply to the caller', async () => {
       const h = harness(config());
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('done');
       expect(run.reply).toBe('answer');
       expect(run.sessionId).toBe('ses_fixture_0001');
@@ -123,13 +125,13 @@ export default async () => {
 
     await it('notify "always" sends the reply', async () => {
       const h = harness(config({ task: { notify: 'always' } }));
-      await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(h.sent[0]!.body).toBe('answer');
     });
 
     await it('a final message ending in "?" becomes a reply question and a notification', async () => {
       const h = harness(config(), { chunks: ['Found two. Shall I archive them?'] });
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('asked');
       expect(run.questionId).toBe('A1');
       expect(h.book[0]!.kind).toBe('reply');
@@ -146,7 +148,7 @@ export default async () => {
           expect(answered.mode).toBe('allowed');
         }
       };
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('done');
       expect(h.book[0]!.kind).toBe('permission');
       expect(h.agents[0]!.permissionAsked[0]!.map((option) => option.kind)).toContain('allow_always');
@@ -157,7 +159,7 @@ export default async () => {
     await it('a permission nobody answers expires, is cancelled, and the run is declined', async () => {
       const h = harness(config({ task: { questions: { expiresIn: '30m' } } }), { permissionOptions: ONCE });
       h.step = 3_600_000;
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('declined');
       expect(h.book[0]!.status).toBe('expired');
       expect(h.agents[0]!.permissionOutcomes[0]!.outcome.outcome).toBe('cancelled');
@@ -166,22 +168,22 @@ export default async () => {
 
     await it('read rights decline without a question', async () => {
       const h = harness(config({ task: { rights: 'read' } }), { permissionOptions: ONCE });
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('declined');
       expect(h.book.length).toBe(0);
     });
 
     await it('the open-question ceiling skips the run before any agent starts', async () => {
       const h = harness(config({ task: { questions: { maxOpen: 1 } } }), { chunks: ['Shall I?'] });
-      await runServeTask(h.deps.config.tasks[0]!, h.deps);
-      const second = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps.config.tasks[0]!, h.deps);
+      const second = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(second.outcome).toBe('skipped');
       expect(h.agents.length).toBe(1);
     });
 
     await it('a pinned model the agent does not offer fails the run and tells the person', async () => {
       const h = harness(config({ profile: { data: 'private', model: 'provider/not-offered' } }));
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('failed');
       expect(run.reason).toContain('provider/not-offered');
       expect(h.sent[0]!.title).toContain('stopped');
@@ -192,7 +194,7 @@ export default async () => {
       const h = harness(config({ profile: { data: 'private', model } }));
       h.optionsFor = (n) =>
         n === 0 ? { configOptions: opencodeConfigOptions().filter((o) => o.category !== 'model') } : {};
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('done');
       expect(h.agents.length).toBe(2);
       expect(h.agents[1]!.configSets[0]).toStrictEqual({ configId: 'model', value: model });
@@ -202,7 +204,7 @@ export default async () => {
 
     await it('a model missing on both attempts fails after one logged retry', async () => {
       const h = harness(config({ profile: { data: 'private', model: 'provider/not-offered' } }));
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('failed');
       expect(h.agents.length).toBe(2);
       const retries = h.log.filter((entry) => entry.event === 'retry');
@@ -213,7 +215,7 @@ export default async () => {
 
     await it('a pinned model the agent offers is set on the session', async () => {
       const h = harness(config({ profile: { data: 'private', model: 'github-copilot/gpt-5.5-codex' } }));
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('done');
       expect(h.agents[0]!.configSets[0]).toStrictEqual({
         configId: 'model',
@@ -223,8 +225,9 @@ export default async () => {
 
     await it('a run held by another process is skipped', async () => {
       const h = harness(config());
-      const run = await runServeTask(h.deps.config.tasks[0]!, { ...h.deps, lock: () => null });
-      expect(run.outcome).toBe('skipped');
+      const run = await runTask(h.deps.config.tasks[0]!.id, {}, { ...h.deps, lock: () => null });
+      expect(run.status).toBe('failed');
+      expect(run.status === 'failed' && run.reason).toBe(LOCKED);
       expect(h.agents.length).toBe(0);
     });
   });
@@ -248,7 +251,7 @@ export default async () => {
 
     await it('NOTHING ends the run as "nothing" and never starts the task', async () => {
       const h = harness(config({ task: PRECHECK }), { chunks: ['No new messages.\nNOTHING'] });
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('nothing');
       expect(run.precheck).toBe('nothing');
       expect(h.agents.length).toBe(1);
@@ -258,7 +261,7 @@ export default async () => {
 
     await it('WORK starts the task in a fresh agent', async () => {
       const h = harness(config({ task: PRECHECK }), { chunks: ['One new mail.\nWORK'] });
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('done');
       expect(run.precheck).toBe('work');
       expect(h.agents.length).toBe(2);
@@ -267,7 +270,7 @@ export default async () => {
 
     await it('no verdict fails the run and the task does not start', async () => {
       const h = harness(config({ task: PRECHECK }), { chunks: ['I am not sure.'] });
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('failed');
       expect(run.reason).toContain('WORK or NOTHING');
       expect(h.agents.length).toBe(1);
@@ -278,7 +281,7 @@ export default async () => {
         chunks: ['Shall I?\nNOTHING'],
         permissionOptions: ONCE,
       });
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('nothing');
       expect(h.book.length).toBe(0);
       const outcome = h.agents[0]!.permissionOutcomes[0]!.outcome;
@@ -296,7 +299,7 @@ export default async () => {
         }),
         { chunks: ['NOTHING'] },
       );
-      await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps.config.tasks[0]!, h.deps);
       const params = JSON.stringify(h.agents[0]!.calls('session/new')[0]!.params);
       expect(params).toContain('read-only');
       expect(params).not.toContain('writing');
@@ -312,7 +315,7 @@ export default async () => {
         }),
         { chunks: ['NOTHING'] },
       );
-      await runServeTask(own.deps.config.tasks[0]!, own.deps);
+      await runConfigured(own.deps.config.tasks[0]!, own.deps);
       expect(own.agents[0]!.configSets[0]).toStrictEqual({
         configId: 'model',
         value: 'github-copilot/gpt-5.5-codex',
@@ -322,14 +325,14 @@ export default async () => {
         config({ profile: { model: 'github-copilot/gpt-5.5-codex' }, task: PRECHECK }),
         { chunks: ['WORK'] },
       );
-      await runServeTask(fallback.deps.config.tasks[0]!, fallback.deps);
+      await runConfigured(fallback.deps.config.tasks[0]!, fallback.deps);
       expect(fallback.agents[0]!.configSets.length).toBe(0);
       expect(fallback.agents[1]!.configSets.length).toBe(1);
     });
 
     await it('a profile without a model sends none', async () => {
       const h = harness(config({ profile: { data: 'private' } }));
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('done');
       expect(h.agents[0]!.configSets.length).toBe(0);
     });
@@ -338,7 +341,7 @@ export default async () => {
   await describe('answerQuestion', async () => {
     const asked = async (agentOptions: FixtureAgentOptions) => {
       const h = harness(config(), { chunks: ['Shall I?'] });
-      await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps.config.tasks[0]!, h.deps);
       const next = harness(h.deps.config, agentOptions);
       next.book = h.book;
       return next;
@@ -365,7 +368,7 @@ export default async () => {
         }),
         { chunks: ['Shall I?'] },
       );
-      await runServeTask(first.deps.config.tasks[0]!, first.deps);
+      await runConfigured(first.deps.config.tasks[0]!, first.deps);
       expect(JSON.stringify(first.agents[0]!.calls('session/new')[0]!.params)).toContain('read-only');
       expect(JSON.stringify(first.agents[0]!.calls('session/new')[0]!.params)).not.toContain('writing');
       const next = harness(first.deps.config, {});
@@ -436,7 +439,7 @@ export default async () => {
     await it('a run logs its final message, flattened and cut', async () => {
       const long = `Line one.\n\n${'word '.repeat(200)}`;
       const h = harness(config(), { chunks: [long] });
-      await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps.config.tasks[0]!, h.deps);
       const entry = h.log.find((item) => item.event === 'run-summary');
       expect(entry?.task).toBe('t');
       const summary = String(entry?.detail?.['summary']);
@@ -450,7 +453,7 @@ export default async () => {
     });
     await it('no summary event when the agent said nothing', async () => {
       const h = harness(config(), { chunks: [''] });
-      await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(h.log.some((item) => item.event === 'run-summary')).toBe(false);
     });
   });
@@ -478,13 +481,13 @@ export default async () => {
 
     await it('gives the task its servers when it has none, and the task wins when it has some', async () => {
       const inherited = harness(shared({ mcpServers: [SERVER] }));
-      await runServeTask(inherited.deps.config.tasks[0]!, inherited.deps);
+      await runConfigured(inherited.deps.config.tasks[0]!, inherited.deps);
       expect(JSON.stringify(inherited.agents[0]!.calls('session/new')[0]!.params)).toContain('from-profile');
 
       const own = harness(
         shared({ mcpServers: [SERVER] }, { mcpServers: [{ name: 'own', command: 'x', args: [], env: [] }] }),
       );
-      await runServeTask(own.deps.config.tasks[0]!, own.deps);
+      await runConfigured(own.deps.config.tasks[0]!, own.deps);
       const params = JSON.stringify(own.agents[0]!.calls('session/new')[0]!.params);
       expect(params).toContain('own');
       expect(params).not.toContain('from-profile');
@@ -492,20 +495,20 @@ export default async () => {
 
     await it('puts the preamble in front of the first prompt', async () => {
       const h = harness(shared({ preamble: 'Be brief.' }));
-      await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(sentPrompt(h)).toContain('Be brief.');
     });
 
     await it('sets configOptions after the model', async () => {
       const h = harness(shared({ model: 'github-copilot/gpt-5.5-codex', configOptions: { effort: 'high' } }));
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('done');
       expect(h.agents[0]!.configSets.map((set) => set.configId)).toStrictEqual(['model', 'effort']);
     });
 
     await it('stops on an option the agent does not offer, without a retry', async () => {
       const h = harness(shared({ configOptions: { nonsense: 'x' } }));
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('failed');
       expect(h.agents.length).toBe(1);
       expect(h.sent.length).toBe(1);
@@ -513,7 +516,7 @@ export default async () => {
 
     await it('narrows the task rights to the profile limit', async () => {
       const h = harness(shared({ rights: 'read' }, { rights: 'confirm' }), { permissionOptions: ONCE });
-      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('declined');
       expect(h.book.length).toBe(0);
     });
