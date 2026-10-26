@@ -37,11 +37,11 @@ export const FREE_MODELS_WITHOUT_SUFFIX: readonly string[] = ['opencode/big-pick
 /**
  * A model id from a provider's free tier, which may keep and train on what it is sent.
  *
- * **A classification, not a policy**: who may prompt one is decided by `lotse listen`'s task
- * configuration (`serve/config.ts`), a host's `ModelPolicy` (`model-policy.ts`) and the person, who is
+ * **A classification, not a policy**: who may prompt one is decided by the task
+ * configuration (`task/gate.ts`), a host's `ModelPolicy` (`model-policy.ts`) and the person, who is
  * shown `FREE_MODEL_WARNING`. All of them read this one function.
  *
- * **It lives here and not in `serve/config.ts`**, which imports `node:crypto`; a widget asking "is this
+ * **It lives here and not in `task/gate.ts`**, which imports `node:crypto`; a widget asking "is this
  * model free" through it would pull `createHash` and the task-file parser into a GTK bundle.
  *
  * What it cannot catch is a free model shipped with neither the suffix nor an entry in

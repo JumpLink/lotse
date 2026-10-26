@@ -5,7 +5,7 @@
  * transcript, no permission dialog, no reattach. `AgentSession`'s state machine exists for a person in
  * front of a window, and a host extracting a receipt wants one awaited call that looks like its own
  * `LLMProvider` port. So this file is `openAgent` + `session/new` + `runTurn`, the same three steps
- * `serve/runner.ts` takes, with two gates in front of the prompt and a parser behind it.
+ * `task/run.ts` takes, with two gates in front of the prompt and a parser behind it.
  *
  * **What it keeps from lotse and what it refuses to have.** The agent command, the ACP client, the
  * model gate (`modelBlock`) and the fail-closed permission default are the widget's own — so a job runs
