@@ -1,5 +1,5 @@
 /**
- * `lotse messenger` — the chat requests of `serve`, shown and set.
+ * `lotse messenger` — the chat requests of `listen`, shown and set.
  *
  * The same file the settings page writes: every flag changes one key of `channel.messenger.requests`
  * and keeps the rest, so the CLI and the GUI never reset each other. Without a flag it only reports.
@@ -123,13 +123,13 @@ export function messengerReport(file: string, settings: Settings, problem: strin
 
 const command = (paths: LotsePaths): CommandModule => ({
   command: 'messenger',
-  describe: _('show or set the requests serve takes from the chat'),
+  describe: _('show or set the requests `lotse listen` takes from the chat'),
   builder: (yargs) =>
     yargs
       .option('requests', { type: 'string', describe: _('start an agent run for a chat message: on or off') })
       .option('request-profile', {
         type: 'string',
-        describe: _('the tasks.json profile a request runs with'),
+        describe: _('the profile a request runs with'),
       })
       .option('request-prefix', {
         type: 'string',

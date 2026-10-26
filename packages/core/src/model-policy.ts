@@ -112,7 +112,7 @@ export function allowedModelValues<T extends { readonly value: string }>(
  * The ready-made policy: **no free hosted model may be prompted.**
  *
  * **What counts as free is `isFreeModel`'s answer, not a second list.** That is any id ending in
- * `-free` plus the few free ids without the suffix, and `lotse serve` has been reading it for the same
+ * `-free` plus the few free ids without the suffix, and `lotse listen` has been reading it for the same
  * purpose since ADR 0003: a free model may be trained on, and a host carrying somebody's private data
  * has no business deciding that for them. One criterion, one place it is maintained.
  *

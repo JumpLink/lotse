@@ -2,7 +2,7 @@
  * How the entry point waits for the command, without a top-level `await`.
  *
  * On GJS a pending top-level await in the entry module leaves GJS in its own `MainLoop::spin`, which
- * polls `g_main_context_pending` without ever sleeping: a `lotse serve` that merely waits for its next
+ * polls `g_main_context_pending` without ever sleeping: a `lotse listen` that merely waits for its next
  * minute burned a whole core (measured on GJS 1.88.1, and reproducible with a plain `gjs -m` script
  * that awaits one timer). So on GJS the command is driven fire-and-forget and a GLib main loop is run
  * synchronously instead, which blocks in `poll` until there is something to do. Curlew's entry does the

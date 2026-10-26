@@ -1,0 +1,362 @@
+/**
+ * `lotse listen` — the long-running receiver: it answers the person's chat requests (`/ask`, `/run`,
+ * `/tasks`, `/status`) and carries their answers to the agents' questions (ADR 0003). It starts no
+ * task on its own; a task starts with `lotse run` or `/run`.
+ *
+ * One process, one pass per minute: look at the request settings, sleep. The messenger receive loop
+ * and the notification buttons do the actual work between passes.
+ *
+ * users.json and profiles.json are read once at start — restart after editing them. A task's
+ * SKILL.md is read per run, so an edit to it is picked up by the next run.
+ */
+
+import { _, fmt } from '../../i18n.ts';
+import { homedir } from 'node:os';
+
+import type { CommandModule } from 'yargs';
+
+import {
+  answerQuestion,
+  cancelOrphanedPermissions,
+  chatRequests,
+  recoverPending,
+  connectMcp,
+  requestSettings,
+  sendToPeer,
+  deliveryOf,
+  deliveryOfTask,
+  freeModelNotes,
+  McpLink,
+  messengerChannel,
+  type MessengerChannel,
+  messengerCommand,
+  messengerProblem,
+  runReceiveLoop,
+  routeChannels,
+  unreachableProfileNotes,
+  type ChannelFailure,
+  type ChannelRoute,
+  type LotsePaths,
+  type QuestionChannel,
+  type Profile,
+  type RunDeps,
+  type MessengerSettings,
+} from '@lotse/core';
+
+import { currentDialogCommand, openAnswerDialog } from '../../core/answer-dialog.ts';
+import type { ListenPaths } from '../../core/paths.ts';
+import { listTasks } from '../../core/skills.ts';
+import {
+  fileCursorStore,
+  fileRefStore,
+  filePendingStore,
+  messengerCursorFile,
+  messengerRefsFile,
+  pendingRequestsFile,
+} from '../../core/messenger-state.ts';
+import { activeChannels, desktopMode, messengerSettings, readSettings } from '../../core/settings.ts';
+import { stderrChannel } from '../../core/stderr-channel.ts';
+import { err, pickArgv } from './output.ts';
+import { createRequestsHolder } from './chat-requests.ts';
+import { readConfig, runDeps, trackedAgents } from './listen-deps.ts';
+import {
+  knownTasks,
+  reportText,
+  runReportFromText,
+  statusReport,
+  statusText,
+  tasksText,
+} from './task-commands.ts';
+
+const FAILED = new Set(['unknown', 'dropped', 'expired', 'busy', 'invalid']);
+
+/**
+ * What a click on a notification does: answer through `answerQuestion`, exactly as `lotse answer`.
+ * `deps` is read late — the channel exists before them, because they carry it.
+ */
+function answerHandlers(
+  paths: LotsePaths,
+  deps: () => RunDeps | null,
+  feedback: () => QuestionChannel | null,
+) {
+  const windows = new Set<string>();
+  const answer = async (questionId: string, text: string) => {
+    const current = deps();
+    if (!current) return;
+    const result = await answerQuestion(questionId, text, current);
+    err(fmt(_('  #{questionId}: {message}'), { questionId, message: result.message }));
+    if (!FAILED.has(result.mode)) return;
+    // Feedback goes to the desktop, not the combined channel: the messenger's own receive loop
+    // answers its person in the chat, and a click here must not post "not taken" there.
+    const channel = feedback();
+    if (!channel) return;
+    const owner = result.question?.user;
+    for (const user of current.users) {
+      if (owner && user.id !== owner) continue;
+      await channel.send(user, {
+        title: 'lotse: answer not taken',
+        body: result.message,
+        questionId: null,
+      });
+    }
+  };
+  const report = (questionId: string, error: unknown) =>
+    err(`  #${questionId}: ${error instanceof Error ? error.message : String(error)}`);
+  return {
+    mode: () => desktopMode(readSettings(paths.settingsFile).settings),
+    onAnswer: (questionId: string, text: string) => {
+      answer(questionId, text).catch((error: unknown) => report(questionId, error));
+    },
+    onDialog: (questionId: string) => {
+      const command = currentDialogCommand();
+      if ('problem' in command || windows.has(questionId)) return;
+      windows.add(questionId);
+      openAnswerDialog(command.command, questionId)
+        .then(async (result) => {
+          if (result.kind === 'failed')
+            err(fmt(_('  #{questionId}: {reason}'), { questionId, reason: result.reason }));
+          if (result.kind === 'answer') await answer(questionId, result.text);
+        })
+        .catch((error: unknown) => report(questionId, error))
+        .finally(() => windows.delete(questionId));
+    },
+  };
+}
+
+async function openDesktop(
+  paths: LotsePaths,
+  deps: () => RunDeps | null,
+  feedback: () => QuestionChannel | null,
+): Promise<QuestionChannel> {
+  try {
+    const { desktopChannel } = await import('../../core/desktop-channel.ts');
+    return desktopChannel({
+      onProblem: (problem) => err(fmt(_('  {problem}'), { problem })),
+      dialog: !('problem' in currentDialogCommand()),
+      ...answerHandlers(paths, deps, feedback),
+    });
+  } catch (error) {
+    err(
+      `  no desktop session bus (${error instanceof Error ? error.message : String(error)}); questions go to stderr`,
+    );
+    return stderrChannel();
+  }
+}
+
+interface OpenedChannels {
+  readonly channel: QuestionChannel;
+  /** Present when the messenger is active and complete: the receive loop runs on this link. */
+  readonly messenger: {
+    readonly link: McpLink;
+    readonly settings: MessengerSettings;
+    readonly channel: MessengerChannel;
+  } | null;
+}
+
+/**
+ * The channels settings.json asks for, read once at start (a change needs a restart), each message
+ * routed by its task's profile (`channels`, `messengerDetail`).
+ */
+async function openChannels(
+  paths: LotsePaths,
+  stateDir: string,
+  profiles: readonly Profile[],
+  deps: () => RunDeps | null,
+): Promise<OpenedChannels> {
+  const settings = readSettings(paths.settingsFile).settings;
+  const active = activeChannels(settings);
+  let desktop: QuestionChannel | null = null;
+  const useDesktop = active.includes('desktop');
+  const opened: ChannelRoute[] = [];
+  let messenger: OpenedChannels['messenger'] = null;
+  if (active.includes('messenger')) {
+    const config = messengerSettings(settings);
+    const problem = messengerProblem(config);
+    if (problem) err(fmt(_('  messenger channel not started: {problem}'), { problem }));
+    else {
+      const link = new McpLink(
+        () =>
+          connectMcp(messengerCommand(config), {
+            onStderr: (line) => err(fmt(_('  messenger: {line}'), { line })),
+          }),
+        (line) => err(fmt(_('  {line}'), { line })),
+      );
+      const channel = messengerChannel(link, config, { refs: fileRefStore(messengerRefsFile(stateDir)) });
+      messenger = { link, settings: config, channel };
+      opened.push({ name: 'messenger', channel });
+    }
+  }
+  if (useDesktop || opened.length === 0) {
+    desktop = await openDesktop(paths, deps, () => desktop);
+    opened.unshift({ name: 'desktop', channel: desktop });
+  }
+  for (const note of unreachableProfileNotes(
+    profiles,
+    opened.map((route) => route.name),
+  ))
+    err(fmt(_('  {note}'), { note }));
+  // A channel that failed while another delivered is told here, nowhere else: stderr and listen.log.
+  const failed: ChannelFailure = (name, error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    err(fmt(_('  {name}: {message}'), { name, message }));
+    deps()?.log?.({
+      event: 'error',
+      task: '-',
+      detail: {
+        channel: name,
+        kind: error instanceof Error ? error.name : 'Error',
+        message: message.slice(0, 200),
+      },
+    });
+  };
+  // `deps` is not there until the channel is built; nothing is sent before then.
+  const delivery = (task: string) => {
+    const current = deps();
+    return current ? deliveryOfTask(current, task) : deliveryOf(profiles);
+  };
+  return { channel: routeChannels(opened, delivery, failed), messenger };
+}
+
+/** How long a pass sleeps before it looks at the request settings again. */
+const PASS_MS = 60_000;
+
+const command = (paths: LotsePaths, listen: ListenPaths): CommandModule => ({
+  command: 'listen',
+  describe: _('answer chat requests and ask the person when an agent has a question'),
+  builder: (yargs) =>
+    yargs.option('quiet', { type: 'boolean', describe: _("do not echo the agents' log lines") }).strict(),
+  handler: async (argv) => {
+    const raw = argv as Record<string, unknown>;
+    const quiet = pickArgv<boolean>(raw, 'quiet') === true;
+
+    const loaded = readConfig(listen);
+    if (!loaded) return;
+    for (const note of freeModelNotes(loaded.profiles)) err(fmt(_('  {note}'), { note }));
+    let ready: RunDeps | null = null;
+    const opened = await openChannels(paths, listen.stateDir, loaded.profiles, () => ready);
+    const channel = opened.channel;
+    const agents = trackedAgents();
+    const live = runDeps({ paths, listen, loaded, channel, open: agents.open, quiet });
+    if (!live) return;
+    ready = live;
+
+    const dropped = cancelOrphanedPermissions(live);
+    if (dropped > 0)
+      err(fmt(_('  {dropped} permission question(s) from an earlier listen cancelled'), { dropped }));
+    err(
+      fmt(
+        _('lotse listen — listening for chat requests and answers, questions via {channel}, state in {dir}'),
+        {
+          channel: channel.name,
+          dir: listen.stateDir,
+        },
+      ),
+    );
+
+    let stopping = false;
+    let wake: (() => void) | null = null;
+    const abort = new AbortController();
+    const stop = (why: string) => {
+      if (stopping) return;
+      stopping = true;
+      err(fmt(_('  stopping: {why}'), { why }));
+      abort.abort();
+      wake?.();
+    };
+    const messenger = opened.messenger;
+    const pending = filePendingStore(pendingRequestsFile(listen.stateDir));
+    const holder = messenger
+      ? createRequestsHolder({
+          read: () => {
+            const read = readSettings(paths.settingsFile);
+            return read.problem ? null : requestSettings(messengerSettings(read.settings));
+          },
+          profiles: () => live.profiles.map((profile) => profile.id),
+          build: (settings) =>
+            chatRequests({
+              settings,
+              deps: live,
+              defaultCwd: homedir(),
+              pending,
+              send: (text) => sendToPeer(messenger.link, messenger.settings, text),
+              log: (line) => err(fmt(_('  {line}'), { line })),
+            }),
+        })
+      : null;
+    const checkRequests = () => {
+      const change = holder?.check();
+      if (!change || change.kind === 'unchanged') return;
+      err(fmt(_('  {line}'), { line: change.line }));
+      live.log?.({
+        event: 'request',
+        task: '-',
+        detail: { requests: change.kind === 'changed' && change.on ? 'on' : 'off' },
+      });
+    };
+    checkRequests();
+    if (messenger && holder?.current()) {
+      const left = await recoverPending(
+        pending,
+        (text) => sendToPeer(messenger.link, messenger.settings, text),
+        (line) => err(fmt(_('  {line}'), { line })),
+      );
+      if (left > 0)
+        err(
+          fmt(_('  {left} chat request(s) from an earlier listen were not completed; the chat was told'), {
+            left,
+          }),
+        );
+    }
+    const receive = (signal: AbortSignal) =>
+      runReceiveLoop({
+        link: messenger!.link,
+        settings: messenger!.settings,
+        channel: messenger!.channel,
+        deps: live,
+        cursor: fileCursorStore(messengerCursorFile(listen.stateDir)),
+        refs: fileRefStore(messengerRefsFile(listen.stateDir)),
+        requests: () => holder?.current(),
+        commands: {
+          run: async (args) => reportText(await runReportFromText(args, live)),
+          tasks: () => tasksText(listTasks(listen.tasksDir)),
+          status: () => statusText(statusReport(listen), { known: knownTasks(listen.tasksDir) }),
+        },
+        log: (line) => err(fmt(_('  {line}'), { line })),
+        signal,
+      }).catch((error: unknown) =>
+        err(`  messenger: ${error instanceof Error ? error.message : String(error)}`),
+      );
+    const receiving = messenger ? receive(abort.signal) : null;
+    const onSignal = () => stop('signal');
+    process.on('SIGINT', onSignal);
+    process.on('SIGTERM', onSignal);
+
+    try {
+      while (!stopping) {
+        checkRequests();
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(() => {
+            wake = null;
+            resolve();
+          }, PASS_MS);
+          wake = () => {
+            clearTimeout(timer);
+            wake = null;
+            resolve();
+          };
+        });
+      }
+      // A stop ends the agents, which ends their runs as failed.
+      await agents.closeAll();
+    } finally {
+      process.off('SIGINT', onSignal);
+      process.off('SIGTERM', onSignal);
+      abort.abort();
+      await receiving;
+      await opened.messenger?.link.close();
+      await agents.closeAll();
+    }
+  },
+});
+
+export const listenCommand = command;

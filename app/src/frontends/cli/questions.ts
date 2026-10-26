@@ -2,7 +2,7 @@
  * `lotse questions` — what the agents are waiting on (ADR 0003 §4).
  *
  * Reads the question store and nothing else: no task configuration, no agent, no GI. It works while
- * `serve` runs and while it does not, because the store is the only place a question lives.
+ * `listen` runs and while it does not, because the store is the only place a question lives.
  */
 
 import { _, fmt } from '../../i18n.ts';
@@ -10,11 +10,11 @@ import type { CommandModule } from 'yargs';
 
 import { formatQuestionId, isOpen, type LotsePaths } from '@lotse/core';
 
-import type { ServePaths } from '../../core/paths.ts';
-import { questionBook } from '../../core/serve-state.ts';
+import type { ListenPaths } from '../../core/paths.ts';
+import { questionBook } from '../../core/question-state.ts';
 import { err, out, pickArgv } from './output.ts';
 
-const command = (_paths: LotsePaths, serve: ServePaths): CommandModule => ({
+const command = (_paths: LotsePaths, listen: ListenPaths): CommandModule => ({
   command: 'questions',
   describe: _('list the questions agents are waiting on'),
   builder: (yargs) =>
@@ -28,7 +28,7 @@ const command = (_paths: LotsePaths, serve: ServePaths): CommandModule => ({
     const json = pickArgv<boolean>(raw, 'json') === true;
     const now = new Date();
     const book = questionBook(
-      serve.stateDir,
+      listen.stateDir,
       () => now,
       (problem) => err(fmt(_('  {problem}'), { problem })),
     ).read();

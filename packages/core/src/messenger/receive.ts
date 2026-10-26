@@ -18,7 +18,7 @@
  *   several open ones — but not an id the text names itself. A question that is no longer open is said
  *   so, never replaced by another one. The quote the client put before the text is already gone: the
  *   wait tool is asked for that (`strip_quotes`), Lotse strips nothing itself.
- * - **Only the questions the chat may see.** A task whose `channels` leave out the messenger never sent
+ * - **Only the questions the chat may see.** A profile whose `channels` leave out the messenger never sent
  *   its question here, so a reply cannot answer it — not by plain text, not by its id.
  * - **Every answer is `answerQuestion`** — the same path as `lotse answer` and the dialog — so the
  *   first channel to answer wins and the other hears what the runner says: already answered.
@@ -26,9 +26,10 @@
 
 import { createHash } from 'node:crypto';
 
-import { deliveryOf } from '../serve/config.ts';
-import { answerQuestion, type AnswerResult, type ServeDeps } from '../serve/runner.ts';
-import { formatQuestionId, openQuestions, parseAnswer } from '../serve/questions.ts';
+import { deliveryOfTask } from '../profile/delivery.ts';
+import { answerQuestion, type AnswerResult } from '../questions/answer.ts';
+import type { RunDeps } from '../task/deps.ts';
+import { formatQuestionId, openQuestions, parseAnswer } from '../questions/question.ts';
 import { localDeadline, sendToPeer, type MessengerChannel } from './channel.ts';
 import type { McpLink } from './link.ts';
 import { listIds, openIds, parseReply } from './reply.ts';
@@ -96,12 +97,12 @@ export interface ReceiveOptions {
   readonly settings: MessengerSettings;
   /** Where messages come from. Default: the wait tool's long-poll on `link`. */
   readonly source?: MessageSource;
-  readonly serve: ServeDeps;
+  readonly deps: RunDeps;
   readonly cursor: CursorStore;
   readonly signal: AbortSignal;
   /** When given, its unsent questions are retried before each poll while they are still open. */
   readonly channel?: MessengerChannel;
-  /** A line for the person running serve. */
+  /** A line for the person running listen. */
   readonly log?: (line: string) => void;
   /** How long one wait lasts. Default 60 s, kept under the server's own limit when it states one. */
   readonly timeoutS?: number;
@@ -114,7 +115,7 @@ export interface ReceiveOptions {
   readonly requests?: ChatRequests | (() => ChatRequests | undefined);
   /**
    * One pass instead of a loop: poll once for `timeoutS` (a poll that waits no longer than that), handle
-   * what is there, return. For `serve --once`, which must end.
+   * what is there, return. For `listen --once`, which must end.
    */
   readonly once?: boolean;
   /** The sent question messages (`messengerChannel`'s `refs`); absent: replies are read by their text. */
@@ -150,7 +151,7 @@ export function messageKey(message: {
 }
 
 export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
-  const { link, settings, serve, signal } = options;
+  const { link, settings, deps, signal } = options;
   const source = options.source ?? longPollSource(link, settings);
   const log = options.log ?? (() => {});
   const timeoutS = options.timeoutS ?? 60;
@@ -159,7 +160,7 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
   const sleep = options.sleep ?? abortableSleep;
 
   const stored = options.cursor.read();
-  let cursor: Cursor = stored ?? { at: serve.now().toISOString(), seen: [] };
+  let cursor: Cursor = stored ?? { at: deps.now().toISOString(), seen: [] };
   if (stored === null) options.cursor.write(cursor);
   const save = (next: Cursor) => {
     cursor = next;
@@ -191,14 +192,14 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
   };
 
   const inChat = (task: string) => {
-    const { channels } = deliveryOf(serve.config, task);
+    const { channels } = deliveryOfTask(deps, task);
     return !channels || channels.includes('messenger');
   };
 
   // An answer can continue a whole session: it runs beside the loop. `answerQuestion` marks the
   // question answered before its first await, so a second reply to it already reads "answered".
   const answer = (questionId: string, text: string) => {
-    void answerQuestion(questionId, text, serve)
+    void answerQuestion(questionId, text, deps)
       .then((result) => {
         log(`messenger: ${formatQuestionId(questionId)}: ${result.message}`);
         return reply(chatSays(questionId, result));
@@ -242,8 +243,8 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
       if (asked === '') return reply(msg(STRINGS.askWhat, { prefix: requests.prefix }));
       if (asked !== null) return requests.submit(asked, true);
     }
-    const book = serve.questions.read();
-    const open = openQuestions(book, serve.now()).filter((question) => inChat(question.task));
+    const book = deps.questions.read();
+    const open = openQuestions(book, deps.now()).filter((question) => inChat(question.task));
     const ref = replyToId === null ? null : findRef(refs, replyToId);
     const target =
       ref && open.find((question) => question.id === ref.questionId && question.user === ref.user);
@@ -287,7 +288,7 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
   const retryUnsent = async () => {
     if (!options.channel) return;
     const open = new Set(
-      openQuestions(serve.questions.read(), serve.now()).map((question) => `${question.user}/${question.id}`),
+      openQuestions(deps.questions.read(), deps.now()).map((question) => `${question.user}/${question.id}`),
     );
     const delivered = await options.channel.retryUnsent(
       (user, id) => open.has(`${user}/${id}`),
@@ -298,7 +299,7 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
           reason,
         });
         log(`messenger: ${text}`);
-        serve.log?.({
+        deps.log?.({
           event: 'error',
           task: '-',
           detail: {
@@ -336,7 +337,7 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
         if (!message.fromSelf) await handle(message.bodyText, message.replyToId);
         // No `sentAt`: the server's cursor, else now. Assumes the message is not seen again — a
         // restart before the write re-reads it, and the second answer is dropped as already answered.
-        remember(message.sentAt ?? result.cursor ?? serve.now().toISOString(), messageKey(message));
+        remember(message.sentAt ?? result.cursor ?? deps.now().toISOString(), messageKey(message));
       }
       if (result.messages.length > 0 && result.cursor) remember(result.cursor, null);
       delay = backoff.initialMs;

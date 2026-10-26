@@ -17,7 +17,7 @@
  * `parseAnswer`'s; this file only finds *which question* the text belongs to.
  */
 
-import { formatQuestionId, type Question } from '../serve/questions.ts';
+import { formatQuestionId, type Question } from '../questions/question.ts';
 
 export type ReplyIntent =
   /** Answer `questionId` with `text`. */

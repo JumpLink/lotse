@@ -4,7 +4,7 @@
  * reply names again as `replyToId`.
  *
  * A bounded list, newest last: an old question that dropped out simply falls back to reading the
- * reply by its text. The app keeps it in a file, so a restart of `serve` does not lose the link.
+ * reply by its text. The app keeps it in a file, so a restart of `listen` does not lose the link.
  */
 
 export interface SentRef {

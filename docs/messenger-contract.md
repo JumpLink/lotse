@@ -1,6 +1,6 @@
 # The messenger contract
 
-Lotse speaks no messaging protocol. The [messenger channel](serve.md#answering-in-a-chat-the-messenger-channel)
+Lotse speaks no messaging protocol. The [messenger channel](listen.md#answering-in-a-chat-the-messenger-channel)
 is an MCP client: it starts one MCP server over stdio and calls a few of its tools. Any server that
 meets this page can take [Curlew](https://github.com/JumpLink/curlew)'s place
 ([ADR 0008](adr/0008-messenger-channel-as-mcp-contract.md)). Curlew 0.2.0 is the first one that meets
@@ -39,7 +39,7 @@ Input: `{account, peer, after, timeout_s, include_bodies: true, strip_quotes?}`.
 - `timeout_s` is the long wait: 60 s, kept under the server's advertised `waitTimeoutS.max`.
 - Result: `{status: "reply" | "timeout", messages: [{id, bodyText, sentAt, fromSelf, replyToId?}], cursor}`,
   read from `structuredContent`, else from the first text block as JSON. Cursor, seen-set and the
-  one-millisecond look-back are described in [serve-xmpp-curlew.md](serve-xmpp-curlew.md#the-tool-contract).
+  one-millisecond look-back are described in [listen-xmpp-curlew.md](listen-xmpp-curlew.md#the-tool-contract).
 
 ### Capabilities (optional)
 

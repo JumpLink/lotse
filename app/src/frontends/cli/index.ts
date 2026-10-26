@@ -8,7 +8,7 @@ export { providerCommand } from './provider.ts';
 export { questionsCommand } from './questions.ts';
 export { resumeCommand } from './resume.ts';
 export { runCommand } from './run.ts';
-export { serveCommand } from './serve.ts';
+export { listenCommand } from './listen.ts';
 export { sessionsCommand } from './sessions.ts';
 export { startCommand } from './start.ts';
 export { statusCommand } from './status.ts';

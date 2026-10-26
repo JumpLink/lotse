@@ -28,7 +28,7 @@ channel can be added without changing a task.
 
    *Amended 2026-10-12:* a changed file no longer stops `serve`. It is reloaded in place; a run in
    progress finishes with the definition it started with, a file that does not parse leaves the
-   previous tasks in force and logs an `error`. docs/serve.md describes the behaviour.
+   previous tasks in force and logs an `error`. docs/listen.md describes the behaviour.
 
    *Amended 2026-10-11:* `model` is optional on every profile; when it is unset, lotse sends no
    model and the agent's default applies. A private profile on a free model prints a note at
@@ -56,12 +56,12 @@ channel can be added without changing a task.
    which of the three it did. An answer to a closed or expired question is dropped and the
    person is told; a permission question whose run ended — including every open one when
    `serve` restarts — is `cancelled`, so a later yes has nothing to allow (ADR 0002 §8).
-5. **The gate** is `serveGate`: `read` declines every request, `released` allows a listed area
+5. **The gate** is `taskGate`: `read` declines every request, `released` allows a listed area
    (exact tool title, optionally its kind) once per call, and everything else becomes a
    permission question. `*_always` options are stripped and never selected. A yes mints one
    single-use token bound to session, tool and a SHA-256 digest of the call's tool, kind, raw
    input, content and locations; an expired question answers `cancelled`.
-6. **The channel is a seam**: `ServeChannel { name, send(user, {title, body, questionId}) }`.
+6. **The channel is a seam**: `QuestionChannel { name, send(user, {title, body, questionId}) }`.
    A task never names a channel; `serve` hands every message for a user to the one channel it was
    started with. The first implementation is a desktop notification over
    `org.freedesktop.Notifications` (Gio D-Bus), with stderr when no session bus answers. The
@@ -75,7 +75,7 @@ channel can be added without changing a task.
 ## Consequences
 
 - The pure logic — schedule, configuration, questions, gate, runner — lives in
-  `packages/core/src/serve/` with no `gi://` import; the app wires files, locks, the clock and
+  `packages/core/src/task/` and `questions/` with no `gi://` import; the app wires files, locks, the clock and
   the notifier. Tests run the whole path against `FixtureAgent` on Node and GJS.
 - A question can be answered only on the machine that runs `serve` until the Curlew channel reads
   replies. That is the intended order (ADR 0002, order of work 4).

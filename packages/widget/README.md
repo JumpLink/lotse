@@ -163,7 +163,7 @@ the controller checks again once the agent has answered and refuses to send if t
 still unnamed.
 
 `denyFreeHostedModels` (from `@lotse/core`) denies what `isFreeModel` calls free, which is the same
-classification `lotse serve` has used since ADR 0003: any id ending in `-free`, plus the few free ids
+classification `lotse listen` has used since ADR 0003: any id ending in `-free`, plus the few free ids
 without the suffix (`FREE_MODELS_WITHOUT_SUFFIX`), plus an empty or blank id. Every one of them may keep
 what it is sent and train on it. Free also means hosted: the prompt goes to whoever runs it.
 

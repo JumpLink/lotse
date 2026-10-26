@@ -1,0 +1,26 @@
+# systemd user unit for `lotse listen` — an example, not installed by anything in this repository.
+#
+#   install -Dm644 data/lotse-listen.service ~/.config/systemd/user/lotse-listen.service
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now lotse-listen.service
+#
+# `listen` only receives (chat requests, answers, question notices); it starts no task by itself. To run
+# a task on a timer, add your own timer that calls `lotse run <id>` (docs/tasks.md).
+#
+# Point ExecStart at your own `lotse`. `listen` reads users.json, profiles.json and settings.json at
+# start: `systemctl --user restart lotse-listen` after editing them. A task's SKILL.md is read per run.
+
+[Unit]
+Description=lotse listen: messenger requests and questions
+Documentation=https://github.com/JumpLink/lotse/blob/main/docs/listen.md
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/lotse listen --quiet
+Restart=on-failure
+RestartSec=30
+UMask=0077
+
+[Install]
+WantedBy=default.target

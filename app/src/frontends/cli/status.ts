@@ -5,20 +5,20 @@ import type { CommandModule } from 'yargs';
 
 import type { LotsePaths } from '@lotse/core';
 
-import type { ServePaths } from '../../core/paths.ts';
+import type { ListenPaths } from '../../core/paths.ts';
 import { out, pickArgv } from './output.ts';
-import { statusReport, statusText } from './task-commands.ts';
+import { knownTasks, statusReport, statusText } from './task-commands.ts';
 
-const command = (_paths: LotsePaths, serve: ServePaths): CommandModule => ({
+const command = (_paths: LotsePaths, listen: ListenPaths): CommandModule => ({
   command: 'status',
   describe: _('show running tasks, recent runs and open questions'),
   builder: (yargs) =>
     yargs.option('json', { type: 'boolean', describe: _('print the status as JSON') }).strict(),
   handler: (argv) => {
-    const report = statusReport(serve);
+    const report = statusReport(listen);
     if (pickArgv<boolean>(argv as Record<string, unknown>, 'json') === true)
       out(JSON.stringify(report, null, 2));
-    else out(statusText(report));
+    else out(statusText(report, { known: knownTasks(listen.tasksDir) }));
   },
 });
 

@@ -2,7 +2,7 @@
 
 A profile says who a session runs as: which agent, which model, which tools, how much it may do.
 It is a concept of Lotse's own ([ADR 0007](adr/0007-profiles-tasks-triggers.md)), so every host
-that starts a session reads the same file: `lotse serve`, requests from the chat and, as they pick
+that starts a session reads the same file: `lotse listen`, requests from the chat and, as they pick
 it up, the widget and headless jobs.
 
 ## The file
@@ -24,11 +24,9 @@ in `@lotse/core`; every property has a title and a description.
 
 ## Serve keeps the binding
 
-tasks.json still has `profiles`, but there they only bind a profile to a person: `id`, `user`,
-`channels`, `messengerDetail`. For an id that exists in profiles.json, `agent`, `model` and `data`
-come from profiles.json and win over tasks.json, silently, and `data` may be left out. An id only in
-tasks.json works as before (it still needs `data`). Requests from the chat name a tasks.json profile,
-because they need a user.
+A profile carries its own `user` (an id from [users.json](listen.md)), `channels` and
+`messengerDetail`; with one user in users.json, `user` may be left out. Requests from the chat name a
+profile, because they need a user.
 
 ## How a session gets its tools and rights
 
@@ -60,10 +58,10 @@ Boolean agent config options are shown the same way, as switches in the config r
 
 ## Migration
 
-With no profiles.json and a tasks.json that has `profiles`, `serve` writes profiles.json once from
-them (`id`, `agent`, `model`, `data`), prints one notice and never changes tasks.json, which keeps
-working. An existing profiles.json is never overwritten. Behaviour is unchanged: a migrated profile
-has no options, servers, preamble or rights limit.
+With no profiles.json and a legacy tasks.json that has `profiles`, `listen` writes profiles.json once
+from them (`id`, `agent`, `model`, `data`), prints one notice and never changes tasks.json, which is
+not read afterwards. An existing profiles.json is never overwritten. A migrated profile has no
+options, servers, preamble or rights limit; with several users, set `user` by hand.
 
 ## For hosts
 

@@ -4,7 +4,7 @@
  * `$XDG_CONFIG_HOME/lotse/tasks/<id>/SKILL.md` follows the Agent Skills layout: YAML frontmatter, then
  * the prompt. `name` is the id and must equal the directory; lotse's own settings live under
  * `metadata` as `lotse-*` strings, so the file stays a valid skill for any other reader. Core does
- * not read files: the host passes the text in, like the task file and the profiles file.
+ * not read files: the host passes the text in, like the profiles file.
  *
  * The frontmatter is a deliberate subset of YAML — flat `key: value` lines, one `metadata:` map,
  * plain or quoted scalars — so no YAML dependency is needed. Anything outside it is a problem the
@@ -16,14 +16,10 @@
 
 import type { McpServer } from '@lotse/acp';
 
+import { _, fmt } from '../i18n.ts';
 import { isId } from '../parse.ts';
-import {
-  DEFAULT_QUESTION_LIMITS,
-  PERSON_NEEDED_OFF,
-  type PersonNeededConfig,
-  type ServeConfig,
-  type ServeTask,
-} from '../serve/config.ts';
+import type { Profile } from '../profile/profile.ts';
+import { PERSON_NEEDED_OFF, type PersonNeededConfig, type Task } from './task.ts';
 
 /** The metadata keys lotse reads. Any other `lotse-*` key is reported as a typo. */
 export const TASK_METADATA = {
@@ -46,7 +42,7 @@ export interface SkillTask {
   readonly description: string;
   /** MCP server names of the profile this task may use. `null`: all of them. */
   readonly allowedTools: readonly string[] | null;
-  /** A profile id of tasks.json. `null`: the only profile there is. */
+  /** A profile id of profiles.json. `null`: the only profile there is. */
   readonly profile: string | null;
   readonly rights: 'read' | 'confirm';
   readonly params: readonly TaskParam[];
@@ -265,8 +261,9 @@ export function parseParamPairs(pairs: readonly string[]): Record<string, string
   for (const pair of pairs) {
     const cut = pair.indexOf('=');
     const name = cut < 0 ? '' : pair.slice(0, cut);
-    if (!PARAM_NAME.test(name)) throw new TaskUsageError(`"${pair}" is not a parameter like name=value`);
-    if (name in params) throw new TaskUsageError(`parameter "${name}" is given twice`);
+    if (!PARAM_NAME.test(name))
+      throw new TaskUsageError(fmt(_('"{pair}" is not a parameter like name=value'), { pair }));
+    if (name in params) throw new TaskUsageError(fmt(_('parameter "{name}" is given twice'), { name }));
     params[name] = pair.slice(cut + 1);
   }
   return params;
@@ -283,7 +280,7 @@ export function splitWords(text: string): string[] {
 /** What follows `/run` in the chat: the task id, then `k=v` words. Throws `TaskUsageError`. */
 export function parseRunArgs(text: string): { id: string; params: Record<string, string> } {
   const [id, ...rest] = splitWords(text);
-  if (!id || !isId(id)) throw new TaskUsageError('say which task to run, like: /run <task> name=value');
+  if (!id || !isId(id)) throw new TaskUsageError(_('say which task to run, like: /run <task> name=value'));
   return { id, params: parseParamPairs(rest) };
 }
 
@@ -298,16 +295,22 @@ export function renderTask(
   for (const name of Object.keys(given)) {
     if (!skill.params.some((param) => param.name === name))
       throw new TaskUsageError(
-        `task "${skill.id}" has no parameter "${name}"` +
-          (skill.params.length > 0
-            ? ` (it takes ${skill.params.map((param) => param.name).join(', ')})`
-            : ''),
+        skill.params.length > 0
+          ? fmt(_('task "{id}" has no parameter "{name}" (it takes {params})'), {
+              id: skill.id,
+              name,
+              params: skill.params.map((param) => param.name).join(', '),
+            })
+          : fmt(_('task "{id}" has no parameter "{name}"'), { id: skill.id, name }),
       );
   }
   const values: Record<string, string> = {};
   for (const param of skill.params) {
     const value = given[param.name] ?? param.default;
-    if (value === null) throw new TaskUsageError(`task "${skill.id}" needs the parameter "${param.name}"`);
+    if (value === null)
+      throw new TaskUsageError(
+        fmt(_('task "{id}" needs the parameter "{name}"'), { id: skill.id, name: param.name }),
+      );
     values[param.name] = value;
   }
   const fill = (text: string) => text.replace(PLACEHOLDER, (_whole, name: string) => values[name] ?? '');
@@ -332,62 +335,37 @@ export function narrowServers(
 }
 
 /**
- * The `ServeTask` a SKILL.md stands for, bound to a profile of `config`. Throws `TaskFileError` when
+ * The `Task` a SKILL.md stands for, bound to a profile of `profiles`. `rendered` is its prompt and
+ * precheck with the parameters filled in; absent, the SKILL.md's own text. Throws `TaskFileError` when
  * the profile is unknown or `allowed-tools` would widen it.
  */
-export function serveTaskOf(skill: SkillTask, config: ServeConfig): ServeTask {
+export function taskOf(
+  skill: SkillTask,
+  profiles: readonly Profile[],
+  rendered: { readonly prompt: string; readonly precheck: string | null } = {
+    prompt: skill.body,
+    precheck: skill.precheck,
+  },
+): Task {
   const profile = skill.profile
-    ? config.profiles.find((candidate) => candidate.id === skill.profile)
-    : config.profiles.length === 1
-      ? config.profiles[0]
+    ? profiles.find((candidate) => candidate.id === skill.profile)
+    : profiles.length === 1
+      ? profiles[0]
       : undefined;
   if (!profile)
     throw new TaskFileError([
       skill.profile
-        ? `${TASK_METADATA.profile} "${skill.profile}" is not a profile of tasks.json`
-        : `${TASK_METADATA.profile} is required when tasks.json has more than one profile`,
+        ? `${TASK_METADATA.profile} "${skill.profile}" is not a profile of profiles.json`
+        : `${TASK_METADATA.profile} is required when profiles.json has more than one profile`,
     ]);
   return {
     id: skill.id,
     profile: profile.id,
-    prompt: skill.body,
-    promptFile: null,
+    prompt: rendered.prompt,
     cwd: skill.cwd,
-    mcpServers: narrowServers(profile.base?.mcpServers ?? [], skill.allowedTools),
-    answerMcpServers: null,
-    precheck: skill.precheck ? { profile: null, prompt: skill.precheck, promptFile: null } : null,
+    mcpServers: narrowServers(profile.mcpServers, skill.allowedTools),
+    precheck: rendered.precheck === null ? null : { prompt: rendered.precheck },
     rights: skill.rights,
-    released: [],
-    questions: DEFAULT_QUESTION_LIMITS,
-    notify: 'questions',
     personNeeded: skill.personNeeded,
-    channels: null,
-    messengerDetail: null,
   };
-}
-
-/** The SKILL.md a task of tasks.json becomes (the migration, ADR 0007 §7). */
-export function skillFromTask(task: ServeTask, prompt: string, precheck: string | null): string {
-  const q = (value: string) => JSON.stringify(value);
-  const metadata = [
-    `  ${TASK_METADATA.profile}: ${q(task.profile)}`,
-    `  ${TASK_METADATA.rights}: ${q(task.rights === 'read' ? 'read' : 'confirm')}`,
-    `  ${TASK_METADATA.cwd}: ${q(task.cwd)}`,
-    ...(task.personNeeded.enabled
-      ? [`  ${TASK_METADATA.personNeeded}: ${q(String(task.personNeeded.timeoutMin ?? 'true'))}`]
-      : []),
-    ...(precheck ? [`  ${TASK_METADATA.precheck}: ${q(precheck.replace(/\s+/g, ' ').trim())}`] : []),
-  ];
-  return [
-    '---',
-    `name: ${task.id}`,
-    `description: ${q(`Migrated from tasks.json (task ${task.id})`)}`,
-    ...(task.mcpServers.length > 0 ? [`allowed-tools: ${task.mcpServers.map((s) => s.name).join(' ')}`] : []),
-    'metadata:',
-    ...metadata,
-    '---',
-    '',
-    `${prompt.trim()}`,
-    '',
-  ].join('\n');
 }

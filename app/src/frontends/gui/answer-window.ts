@@ -2,7 +2,7 @@
  * The answer window: one question, a place to type, Send and Later (`core/answer-dialog.ts`).
  *
  * **It answers nothing itself.** Send writes `answerFrame(text)` to stdout and quits; the caller (`lotse
- * answer`, or `serve` after a click) hands the text to `answerQuestion`. Later — the button, Esc, closing
+ * answer`, or `listen` after a click) hands the text to `answerQuestion`. Later — the button, Esc, closing
  * the window — quits without a frame. What is shown is `core/answer-view.ts`.
  *
  * **Its own application instance** (`NON_UNIQUE`): two questions open two windows, and an open main
@@ -24,15 +24,15 @@ import { findQuestions, normalizeQuestionId, type Question } from '@lotse/core';
 
 import { answerFrame } from '../../core/answer-dialog.ts';
 import { answerView, type AnswerView } from '../../core/answer-view.ts';
-import { servePaths } from '../../core/paths.ts';
-import { questionBook } from '../../core/serve-state.ts';
+import { listenPaths } from '../../core/paths.ts';
+import { questionBook } from '../../core/question-state.ts';
 import { APP_ID } from './constants.ts';
 
 function readQuestion(idText: string): Question | null {
   const id = normalizeQuestionId(idText);
   if (!id) return null;
   const book = questionBook(
-    servePaths().stateDir,
+    listenPaths().stateDir,
     () => new Date(),
     (problem) => console.error(`lotse: ${problem}`),
   );

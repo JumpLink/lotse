@@ -31,7 +31,7 @@ jobs:
     steps:
       # gjs only: the test bundle spawns a child process over stdio and nothing else. No GTK, no
       # GI typelib — an ACP client has no widgets in Scheibe 1. libsoup3: the bundle imports Soup at start,
-      # because `serve` hosts the person_needed endpoint on node:http.
+      # because `listen` hosts the person_needed endpoint on node:http.
       - name: Install system prerequisites
         run: >
           dnf install -y --setopt=install_weak_deps=False

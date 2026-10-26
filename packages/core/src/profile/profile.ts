@@ -1,20 +1,19 @@
 /**
  * The profile — lotse's own idea of "who a session runs as" (ADR 0007) — and the file it lives in.
  *
- * A profile used to exist only inside `lotse serve`'s tasks.json. It is a concept of its own: serve's
- * runner, a messenger request, the widget and a headless job all start a session, and each needs the
- * same answer to "which agent, which model, which tools, how much may it do". That answer is
- * `profiles.json`, read here once and handed to every host as text — like the task file, core does
- * not read files.
- *
- * What stays in tasks.json is the serve side of a profile of the same id: its user and its channels.
+ * A profile is a concept of its own: listen's runner, a messenger request, the widget and a headless
+ * job all start a session, and each needs the same answer to "which agent, which model, which tools,
+ * how much may it do, whose messages and where". That answer is `profiles.json`, read here once and
+ * handed to every host as text — core does not read files.
  */
 
 import type { McpServer } from '@lotse/acp';
 
+import { CHANNEL_NAMES, type ChannelName } from '../messenger/settings.ts';
 import { duplicates, id, isRecord, list, object, optionalString } from '../parse.ts';
-import type { RightsLevel } from '../serve/config.ts';
-import { schemaKeys } from '../serve/schema.ts';
+import { schemaKeys } from '../schema.ts';
+import type { RightsLevel } from '../task/task.ts';
+import type { MessengerDetail } from './delivery.ts';
 import { PROFILES_SCHEMA } from './schema.ts';
 
 /** A configuration option's value: a select's value id, or a switch's on/off. */
@@ -36,6 +35,12 @@ export interface Profile {
   readonly rights: RightsLevel | null;
   /** A label for the person. It never blocks a run (ADR 0002, amendment of 2026-10-11). */
   readonly data: 'private' | 'public';
+  /** The user it belongs to (`users.json`). `null`: the only user there is. */
+  readonly user: string | null;
+  /** The channels its messages may use. `null`: every active one. */
+  readonly channels: readonly ChannelName[] | null;
+  /** How much of a question the messenger gets. `null`: `full`. */
+  readonly messengerDetail: MessengerDetail | null;
 }
 
 /** Every problem in the file at once, so one edit fixes all of them. */
@@ -106,7 +111,34 @@ function parseProfile(value: unknown, where: string, problems: string[]): Profil
     preamble: optionalString(record['preamble'], `${label}.preamble`, problems),
     rights: rights === 'read' || rights === 'confirm' || rights === 'released' ? rights : null,
     data: data === 'public' ? 'public' : 'private',
+    user: optionalString(record['user'], `${label}.user`, problems),
+    ...parseDelivery(record, label, problems),
   };
+}
+
+function parseDelivery(
+  record: Record<string, unknown>,
+  where: string,
+  problems: string[],
+): { channels: ChannelName[] | null; messengerDetail: MessengerDetail | null } {
+  let channels: ChannelName[] | null = null;
+  const rawChannels = record['channels'];
+  if (rawChannels !== undefined) {
+    const valid =
+      Array.isArray(rawChannels) &&
+      rawChannels.length > 0 &&
+      rawChannels.every((name) => CHANNEL_NAMES.includes(name as ChannelName));
+    if (valid) channels = [...new Set(rawChannels as ChannelName[])];
+    else
+      problems.push(
+        `${where}.channels must be a non-empty list of ${CHANNEL_NAMES.map((name) => `"${name}"`).join(', ')} — leave it out for every channel`,
+      );
+  }
+  const detail = record['messengerDetail'];
+  if (detail !== undefined && detail !== 'full' && detail !== 'notice') {
+    problems.push(`${where}.messengerDetail must be "full" or "notice"`);
+  }
+  return { channels, messengerDetail: detail === 'full' || detail === 'notice' ? detail : null };
 }
 
 function parseConfigOptions(

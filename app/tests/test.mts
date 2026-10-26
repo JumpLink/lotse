@@ -64,16 +64,16 @@ import questionActions from './unit/core/question-actions.test.ts';
 import answerDialog from './unit/core/answer-dialog.test.ts';
 import answerView from './unit/core/answer-view.test.ts';
 
-import serveConfig from './unit/serve/config.test.ts';
-import serveQuestions from './unit/serve/questions.test.ts';
-import serveGate from './unit/serve/gate.test.ts';
-import serveState from './unit/serve/serve-state.test.ts';
-import serveRunner from './unit/serve/runner.test.ts';
-import servePerson from './unit/serve/person.test.ts';
-import serveMessenger from './unit/serve/messenger.test.ts';
-import serveContract from './unit/serve/contract.test.ts';
-import serveRequests from './unit/serve/requests.test.ts';
-import serveReload from './unit/serve/reload.test.ts';
+import users from './unit/listen/users.test.ts';
+import listenQuestions from './unit/listen/questions.test.ts';
+import taskGate from './unit/listen/gate.test.ts';
+import runState from './unit/listen/run-state.test.ts';
+import listenRunner from './unit/listen/runner.test.ts';
+import listenPerson from './unit/listen/person.test.ts';
+import listenMessenger from './unit/listen/messenger.test.ts';
+import listenContract from './unit/listen/contract.test.ts';
+import listenRequests from './unit/listen/requests.test.ts';
+import listenChatText from './unit/listen/chat-text.test.ts';
 import task from './unit/task/task.test.ts';
 import profile from './unit/profile/profile.test.ts';
 import profileMigrate from './unit/profile/migrate.test.ts';
@@ -144,16 +144,16 @@ run({
   questionActions,
   answerDialog,
   answerView,
-  serveConfig,
-  serveQuestions,
-  serveGate,
-  serveState,
-  serveRunner,
-  servePerson,
-  serveMessenger,
-  serveContract,
-  serveRequests,
-  serveReload,
+  users,
+  listenQuestions,
+  taskGate,
+  runState,
+  listenRunner,
+  listenPerson,
+  listenMessenger,
+  listenContract,
+  listenRequests,
+  listenChatText,
   task,
   profile,
   profileMigrate,

@@ -1,16 +1,16 @@
 /**
  * The profiles file's shape as a JSON Schema — one value a settings page, an editor and the parser all
- * read. Same contract as `serve/schema.ts`: every property carries a `title` and a `description`, the
+ * read. Same contract as `users/schema.ts`: every property carries a `title` and a `description`, the
  * parser's key lists come from here, and what a schema cannot say (a duplicate id) stays in `profile.ts`.
  */
 
-import { ID_PATTERN, MCP_SERVER, type SchemaNode } from '../serve/schema.ts';
+import { ID_PATTERN, MCP_SERVER, type SchemaNode } from '../schema.ts';
 
 export const PROFILES_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   title: 'lotse profiles',
   description:
-    'The profiles every lotse host shares — serve, the messenger, the widget and headless jobs. Read at start.',
+    'The profiles every lotse host shares — listen, the messenger, the widget and headless jobs. `listen` reads it at start.',
   type: 'object',
   additionalProperties: false,
   required: ['version', 'profiles'],
@@ -77,12 +77,39 @@ export const PROFILES_SCHEMA = {
           description:
             'The most a session under this profile may do, whatever a task asks for: read declines every permission request, confirm asks for each, released also allows the areas a task lists. Empty: no limit.',
         },
+        user: {
+          type: 'string',
+          minLength: 1,
+          title: 'User',
+          description:
+            "The id of the person in users.json this profile's questions go to. Empty: the only user there is.",
+        },
+        channels: {
+          type: 'array',
+          minItems: 1,
+          title: 'Channels',
+          description: 'The channels its messages may use. Leave it out for every active channel.',
+          items: {
+            type: 'string',
+            enum: ['desktop', 'messenger'],
+            title: 'Channel',
+            description: 'A channel name as in channel.active in the settings file.',
+          },
+        },
+        messengerDetail: {
+          type: 'string',
+          enum: ['full', 'notice'],
+          default: 'full',
+          title: 'Messenger detail',
+          description:
+            'full: the question itself goes to the chat. notice: only that a question waits, and where to read it.',
+        },
         data: {
           type: 'string',
           enum: ['private', 'public'],
           title: 'Data',
           description:
-            'Whether sessions on this profile see private data. A label for you: serve notes a private profile on a free model at start and runs it all the same.',
+            'Whether sessions on this profile see private data. A label for you: listen notes a private profile on a free model at start and runs it all the same.',
         },
       },
     },

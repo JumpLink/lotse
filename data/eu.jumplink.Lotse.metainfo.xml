@@ -79,7 +79,7 @@
           <li>Local models and any OpenAI-compatible endpoint can be added as a provider for the bundled OpenCode.</li>
           <!-- TRANSLATORS: Release notes for version 0.3.0 - provider settings page in Preferences -->
           <li>Provider settings in Preferences: connect or log out of providers and manage your own.</li>
-          <!-- TRANSLATORS: Release notes for version 0.3.0 - answering a lotse serve question from the desktop -->
+          <!-- TRANSLATORS: Release notes for version 0.3.0 - answering a lotse listen question from the desktop -->
           <li>Questions from scheduled tasks can be answered from a notification or an answer window.</li>
           <!-- TRANSLATORS: Release notes for version 0.3.0 - structured tool calls in the transcript -->
           <li>Tool calls are stored in the conversation with their details, and a host can show its own tools with its own title and icon.</li>

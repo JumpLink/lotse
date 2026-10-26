@@ -1,14 +1,15 @@
 /**
- * The messenger as a `ServeChannel`: a question goes to the person as one chat message, through the
+ * The messenger as a `QuestionChannel`: a question goes to the person as one chat message, through the
  * configured MCP server's send tool. The answers come back through `receive.ts`.
  *
  * The message carries the question id in its first line ("lotse · task · #A3") and says how to reply,
  * because the person answers in the chat and the id is how the reply finds its question.
  */
 
-import type { ServeChannel, ServeMessage } from '../serve/channel.ts';
-import { deliveryOf, type ServeConfig, type ServeUser } from '../serve/config.ts';
-import { formatQuestionId } from '../serve/questions.ts';
+import type { QuestionChannel, QuestionMessage } from '../questions/channel.ts';
+import type { Delivery } from '../profile/delivery.ts';
+import type { User } from '../users/users.ts';
+import { formatQuestionId } from '../questions/question.ts';
 import type { McpLink } from './link.ts';
 import { memoryRefs, recordRefs, type RefStore } from './refs.ts';
 import type { ChannelName, MessengerSettings } from './settings.ts';
@@ -29,8 +30,21 @@ export function localDeadline(iso: string, locale?: string): string {
   });
 }
 
+/** A moment as the person's clock shows it ("15.10., 18:10"); an unreadable one stays as it came. */
+export function localTime(iso: string, locale?: string): string {
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return iso;
+  return at.toLocaleString(locale, {
+    day: 'numeric',
+    month: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
+}
+
 /** The text of `message` as one chat message. */
-export function messengerText(message: ServeMessage): string {
+export function messengerText(message: QuestionMessage): string {
   const parts = [message.title, message.text ?? message.body];
   if (message.asks && message.questionId) {
     const id = formatQuestionId(message.questionId);
@@ -85,8 +99,8 @@ export async function sendToPeer(link: McpLink, settings: MessengerSettings, tex
 
 /** A question message that did not reach the chat, kept in memory until it does or stops being open. */
 interface Unsent {
-  readonly user: ServeUser;
-  readonly message: ServeMessage;
+  readonly user: User;
+  readonly message: QuestionMessage;
   attempts: number;
   due: number;
 }
@@ -102,7 +116,7 @@ export interface MessengerChannelOptions {
 
 export const RETRY_DELAYS_MS: readonly number[] = [30_000, 60_000, 120_000, 300_000, 600_000];
 
-export interface MessengerChannel extends ServeChannel {
+export interface MessengerChannel extends QuestionChannel {
   /**
    * Send again the questions that failed before, if they are due and `isOpen` still says nobody has
    * answered them. A message that was delivered is never in the list, so nothing goes out twice.
@@ -122,7 +136,7 @@ export function messengerChannel(
   const now = options.now ?? Date.now;
   const delays = options.retryDelaysMs ?? RETRY_DELAYS_MS;
   const refs = options.refs ?? memoryRefs();
-  const sendQuestion = async (user: ServeUser, message: ServeMessage) => {
+  const sendQuestion = async (user: User, message: QuestionMessage) => {
     const ids = await sendToPeerWithIds(link, settings, messengerText(message));
     if (message.asks && message.questionId) recordRefs(refs, user.id, message.questionId, ids);
   };
@@ -130,7 +144,7 @@ export function messengerChannel(
   const keyOf = (user: string, questionId: string) => `${user}/${questionId}`;
   return {
     name: 'messenger',
-    async send(user: ServeUser, message: ServeMessage) {
+    async send(user: User, message: QuestionMessage) {
       try {
         await sendQuestion(user, message);
       } catch (error) {
@@ -180,7 +194,10 @@ export type ChannelFailure = (channel: string, error: unknown) => void;
  * one that is down must not hide the question from the other. But a channel that failed is never
  * silent: `onFailure` hears each one, even when another channel got the message through.
  */
-export function combineChannels(channels: readonly ServeChannel[], onFailure?: ChannelFailure): ServeChannel {
+export function combineChannels(
+  channels: readonly QuestionChannel[],
+  onFailure?: ChannelFailure,
+): QuestionChannel {
   if (channels.length === 1) return channels[0]!;
   return {
     name: channels.map((channel) => channel.name).join(' + '),
@@ -204,9 +221,9 @@ export function combineChannels(channels: readonly ServeChannel[], onFailure?: C
 
 /**
  * `message` with no question text and no run output: the title (task and id) stays, the body says a
- * message waits and where to read it. What the messenger gets for a task with `messengerDetail: "notice"`.
+ * message waits and where to read it. What the messenger gets for a profile with `messengerDetail: "notice"`.
  */
-export function noticeOf(message: ServeMessage): ServeMessage {
+export function noticeOf(message: QuestionMessage): QuestionMessage {
   const task = message.task ?? 'lotse';
   const body = message.asks ? msg(STRINGS.noticeQuestion, { task }) : msg(STRINGS.noticeMessage, { task });
   return {
@@ -222,30 +239,28 @@ export function noticeOf(message: ServeMessage): ServeMessage {
 /** An opened channel and the name a task's `channels` list uses for it (the stderr fallback is `desktop`). */
 export interface ChannelRoute {
   readonly name: ChannelName;
-  readonly channel: ServeChannel;
+  readonly channel: QuestionChannel;
 }
 
 /**
- * The opened channels, each message sent only to those its task allows (`deliveryOf`), and to the
- * messenger as a notice when the task asks for one. A message without a task — serve's own news — goes
- * to all of them. A task none of whose channels is open sends nothing: its question waits in the store.
- * `config` may be a function, read per message, so a reloaded task file routes by its new tasks.
+ * The opened channels, each message sent only to those its task's profile allows (`delivery`), and
+ * to the messenger as a notice when the profile asks for one. A message without a task — listen's own
+ * news — goes to all of them. A task none of whose channels is open sends nothing: its question waits
+ * in the store.
  */
 export function routeChannels(
   routes: readonly ChannelRoute[],
-  config: ServeConfig | (() => ServeConfig),
+  delivery: (task: string) => Delivery,
   onFailure?: ChannelFailure,
-): ServeChannel {
+): QuestionChannel {
   return {
     name: routes.map((route) => route.channel.name).join(' + '),
     async send(user, message) {
-      const delivery = message.task
-        ? deliveryOf(typeof config === 'function' ? config() : config, message.task)
-        : null;
-      const allowed = routes.filter((route) => !delivery?.channels || delivery.channels.includes(route.name));
+      const where = message.task ? delivery(message.task) : null;
+      const allowed = routes.filter((route) => !where?.channels || where.channels.includes(route.name));
       if (allowed.length === 0) return;
-      const notice = delivery?.messengerDetail === 'notice' ? noticeOf(message) : null;
-      const channels = allowed.map((route): ServeChannel => {
+      const notice = where?.messengerDetail === 'notice' ? noticeOf(message) : null;
+      const channels = allowed.map((route): QuestionChannel => {
         if (route.name !== 'messenger' || !notice) return route.channel;
         return { name: route.channel.name, send: (to) => route.channel.send(to, notice) };
       });

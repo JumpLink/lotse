@@ -16,13 +16,8 @@
 
 import type { McpServer } from '@lotse/acp';
 
-import {
-  REQUEST_TASK,
-  runRequest,
-  type RequestRun,
-  type RequestRunResult,
-  type ServeDeps,
-} from '../serve/runner.ts';
+import { REQUEST_TASK, type RunDeps } from '../task/deps.ts';
+import { runRequest, type RequestRun, type RequestRunResult } from '../task/request.ts';
 import type { RequestSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
 
@@ -47,7 +42,7 @@ export interface PendingRequest {
 }
 
 /**
- * Tell the chat about the requests an earlier `serve` left unfinished, then forget them. One message
+ * Tell the chat about the requests an earlier `listen` left unfinished, then forget them. One message
  * however many there were. Returns how many. A message that cannot be sent is logged and the list is
  * still cleared: the next start must not repeat it.
  */
@@ -75,16 +70,16 @@ export interface ChatRequestsOptions {
   /** Where unanswered requests are noted. Absent: nothing is kept across a restart. */
   readonly pending?: PendingStore;
   readonly settings: RequestSettings;
-  /** Read per run, so a reloaded tasks.json is seen. */
-  readonly serve: ServeDeps;
+  /** Read per run, so a changed profiles.json is seen. */
+  readonly deps: RunDeps;
   /** The working directory when `settings.cwd` is empty. */
   readonly defaultCwd: string;
   /** Send one message to the peer. A failure is logged here, never thrown at the caller. */
   readonly send: (text: string) => Promise<void>;
-  /** A line for the person running serve. */
+  /** A line for the person running listen. */
   readonly log?: (line: string) => void;
   /** The run itself; tests put a fake here. Default `runRequest`. */
-  readonly run?: (request: RequestRun, deps: ServeDeps) => Promise<RequestRunResult>;
+  readonly run?: (request: RequestRun, deps: RunDeps) => Promise<RequestRunResult>;
 }
 
 export interface ChatRequests {
@@ -173,12 +168,12 @@ function toMcpServers(settings: RequestSettings): McpServer[] {
 }
 
 export function chatRequests(options: ChatRequestsOptions): ChatRequests {
-  const { settings, serve } = options;
+  const { settings, deps } = options;
   const log = options.log ?? (() => {});
   const run = options.run ?? runRequest;
   const maxConcurrent = Math.max(1, Math.floor(settings.maxConcurrent));
   const windowMs = Math.max(0, settings.followUpMinutes) * 60_000;
-  const instance = `${serve.now().getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const instance = `${deps.now().getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const queue: Pending[] = [];
   const running = new Set<Pending>();
   let counter = 0;
@@ -187,7 +182,7 @@ export function chatRequests(options: ChatRequestsOptions): ChatRequests {
   let waiters: (() => void)[] = [];
 
   const record = (detail: Record<string, string>, event: 'request' | 'error' = 'request') =>
-    serve.log?.({ event, task: REQUEST_TASK, detail });
+    deps.log?.({ event, task: REQUEST_TASK, detail });
 
   const say = async (text: string) => {
     try {
@@ -235,7 +230,7 @@ export function chatRequests(options: ChatRequestsOptions): ChatRequests {
           text: item.text,
           sessionId: item.sessionId,
         },
-        serve,
+        deps,
       );
       const { run: outcome, how } = result;
       const notes = [item.note, how === 'fresh' ? msg(STRINGS.followUpFresh) : null].filter(
@@ -246,7 +241,7 @@ export function chatRequests(options: ChatRequestsOptions): ChatRequests {
       const parts = splitForChat([...notes, reply].join('\n\n'));
       for (const part of parts) await say(part);
       if (outcome.outcome !== 'failed' && outcome.sessionId && windowMs > 0)
-        last = { sessionId: outcome.sessionId, until: serve.now().getTime() + windowMs };
+        last = { sessionId: outcome.sessionId, until: deps.now().getTime() + windowMs };
       record({
         phase: 'end',
         request: n,
@@ -282,7 +277,7 @@ export function chatRequests(options: ChatRequestsOptions): ChatRequests {
     prefix: settings.prefix,
     submit(text, fresh) {
       counter += 1;
-      const now = serve.now().getTime();
+      const now = deps.now().getTime();
       const open = !fresh && last !== null && now < last.until;
       const hint =
         !fresh && !open && last !== null
@@ -295,7 +290,7 @@ export function chatRequests(options: ChatRequestsOptions): ChatRequests {
         sessionId: open ? last!.sessionId : null,
         note: hint,
       };
-      note((list) => [...list, { id: item.key, at: serve.now().toISOString() }]);
+      note((list) => [...list, { id: item.key, at: deps.now().toISOString() }]);
       // Said once: the next plain message is simply a new request.
       if (hint) last = null;
       queue.push(item);

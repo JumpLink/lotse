@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-26 16:35+0100\n"
+"POT-Creation-Date: 2026-10-26 18:01+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -161,6 +161,171 @@ msgstr ""
 msgid "MCP server {name}. A change applies from the next message."
 msgstr ""
 
+#: packages/core/src/messenger/strings.ts:16
+msgid "No question is waiting for an answer."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:18
+msgid ""
+"Several questions are open: {ids}. Start your reply with the id, for example "
+"\"{example}\"."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:20
+msgid "Say what to answer after {id}, for example \"{example}\"."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:21
+msgid "The command failed: {reason}"
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:22
+msgid "Could not apply the answer: {reason}"
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:23
+msgid "Reply: {id} yes or {id} no"
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:24
+msgid "Reply: {id} done"
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:25
+msgid "Reply: {id} <your answer>"
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:26
+msgid "Valid until {time}"
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:27
+msgid "Got it, {id}."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:29
+msgid ""
+"Got it, {id}, but the run failed. `lotse questions` and the listen log have "
+"the details."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:31
+msgid "{id} is already {status}."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:32
+msgid "{id} is no longer waiting for an answer."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:33
+msgid "{id} expired at {time}."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:34
+msgid "{id} was not delivered at first; it is now."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:35
+msgid "{id} still not delivered ({reason}); will try again."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:36
+msgid ""
+"{id} not delivered ({reason}); giving up. `lotse questions` still lists it."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:38
+msgid ""
+"A question is waiting in {task}. Its text is not sent to this chat: read it "
+"with `lotse questions` or on the desktop."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:40
+msgid "{task} has a message for you. Its text is not sent to this chat."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:41
+msgid "{id} is not answered in this chat. Use `lotse answer` or the desktop."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:42
+msgid "The messenger connection is down; retrying in {seconds} s."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:44
+msgid ""
+"What should I do? Write it after {prefix}, for example \"{prefix} what is on "
+"my calendar today\"."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:46
+msgid "Busy with another request; yours is queued (position {position})."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:47
+msgid "The request failed. The listen log has the details."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:48
+msgid "Done, but the agent gave no answer."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:49
+msgid "That conversation could not be continued; this is a new one."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:50
+msgid ""
+"More than {minutes} min since the last answer, so this is a new conversation."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:51
+msgid ""
+"Your last request was not completed (listen restarted). Please send it again."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:52
+msgid ""
+"{count} requests were not completed (listen restarted). Please send them "
+"again."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:53
+msgid "[shortened, {count} more characters]"
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:54
+msgid "({part}/{parts})"
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:55
+msgid "I need you: {origin} wants {kind}."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:56
+msgid "Open or scan this: {link}"
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:58
+msgid ""
+"Reply \"done\" when you have done it yourself, or reply with the code and I "
+"will enter it."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:60
+msgid "Reply \"done\" when you are through."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:61
+msgid ""
+"{id} is no longer waiting for a code; reply \"done\" once you have done it "
+"yourself."
+msgstr ""
+
+#: packages/core/src/messenger/strings.ts:62
+msgid "{id} needs \"done\"{orCode}."
+msgstr ""
+
 #: packages/core/src/model-policy.ts:211
 msgid ""
 "This model is not allowed here. Pick another one from the model list, then "
@@ -232,6 +397,46 @@ msgstr ""
 
 #: packages/core/src/permission.ts:379
 msgid "The agent calls these: {names}"
+msgstr ""
+
+#: packages/core/src/questions/answer.ts:116
+msgid " or the code"
+msgstr ""
+
+#: packages/core/src/task/run.ts:62
+msgid "the agent asked a question that was not recorded"
+msgstr ""
+
+#: packages/core/src/task/run.ts:64
+msgid "a request was declined"
+msgstr ""
+
+#: packages/core/src/task/run.ts:83
+msgid "there is no task \"{id}\"; `lotse tasks` lists them"
+msgstr ""
+
+#: packages/core/src/task/skill.ts:265
+msgid "\"{pair}\" is not a parameter like name=value"
+msgstr ""
+
+#: packages/core/src/task/skill.ts:266
+msgid "parameter \"{name}\" is given twice"
+msgstr ""
+
+#: packages/core/src/task/skill.ts:283
+msgid "say which task to run, like: /run <task> name=value"
+msgstr ""
+
+#: packages/core/src/task/skill.ts:299
+msgid "task \"{id}\" has no parameter \"{name}\" (it takes {params})"
+msgstr ""
+
+#: packages/core/src/task/skill.ts:304
+msgid "task \"{id}\" has no parameter \"{name}\""
+msgstr ""
+
+#: packages/core/src/task/skill.ts:312
+msgid "task \"{id}\" needs the parameter \"{name}\""
 msgstr ""
 
 #: packages/core/src/transcript-items.ts:359

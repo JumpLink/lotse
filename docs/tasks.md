@@ -51,10 +51,10 @@ usage error.
 
 ## Migration
 
-Tasks in `tasks.json` stay runnable. The first time Lotse reads `tasks.json` it writes each task to
-`tasks/<id>/SKILL.md` when that directory does not exist, and prints one notice. It never overwrites a
-directory, never changes or deletes `tasks.json`, and does nothing the second time. Legacy tasks take no
-parameters.
+A legacy `tasks.json` is migrated once at start: each task becomes `tasks/<id>/SKILL.md` when that
+directory does not exist, with one notice. Lotse never overwrites a directory, never changes or
+deletes `tasks.json`, does nothing the second time and reads the file no more afterwards. Migrated
+tasks take no parameters.
 
 ## Commands
 
