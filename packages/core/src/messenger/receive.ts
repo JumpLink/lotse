@@ -79,6 +79,14 @@ export interface CursorStore {
   write(cursor: Cursor): void;
 }
 
+/** The chat commands `/run`, `/tasks`, `/status`: no model call, each returns the text to reply with. */
+export interface ChatCommands {
+  /** `args` is what follows `/run`: a task id and `k=v` pairs. */
+  run(args: string): Promise<string>;
+  tasks(): string;
+  status(): string;
+}
+
 export interface ReceiveOptions {
   readonly link: McpLink;
   readonly settings: MessengerSettings;
@@ -105,6 +113,8 @@ export interface ReceiveOptions {
   readonly once?: boolean;
   /** The sent question messages (`messengerChannel`'s `refs`); absent: replies are read by their text. */
   readonly refs?: RefStore;
+  /** When given, `/run`, `/tasks` and `/status` are answered from it, before any other reading of a message. */
+  readonly commands?: ChatCommands | (() => ChatCommands | undefined);
 }
 
 interface WaitMessage {
@@ -234,10 +244,33 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
       });
   };
 
+  // A run can take long: it goes beside the loop, like an answer, and its result is the reply.
+  const command = (text: string): boolean => {
+    const commands = typeof options.commands === 'function' ? options.commands() : options.commands;
+    const word = /^\s*(\/run|\/tasks|\/status)(?:\s+([\s\S]*))?$/i.exec(text);
+    if (!commands || !word) return false;
+    const name = word[1]!.toLowerCase();
+    const args = (word[2] ?? '').trim();
+    const said = async () => {
+      if (name === '/tasks') return commands.tasks();
+      if (name === '/status') return commands.status();
+      return commands.run(args);
+    };
+    void said()
+      .then((text) => reply(text))
+      .catch((error: unknown) => {
+        const reason = error instanceof Error ? error.message : String(error);
+        log(`messenger: ${name}: ${reason}`);
+        return reply(msg(STRINGS.commandFailed, { reason }));
+      });
+    return true;
+  };
+
   const refs = options.refs ?? memoryRefs();
 
   const handle = async (rawText: string, replyToId: string | null) => {
     const text = replyToId === null ? rawText : stripQuote(rawText);
+    if (command(text)) return;
     const requests = typeof options.requests === 'function' ? options.requests() : options.requests;
     if (requests) {
       const asked = matchPrefix(text, requests.prefix);

@@ -58,6 +58,14 @@ import { err, pickArgv } from './output.ts';
 import { createReloader, liveDeps } from './serve-reload.ts';
 import { createRequestsHolder } from './serve-requests.ts';
 import { readTasks, reportRemovedSchedules, serveDeps, trackedAgents } from './serve-deps.ts';
+import {
+  reportText,
+  runReportFromText,
+  statusReport,
+  statusText,
+  tasksOf,
+  tasksText,
+} from './task-commands.ts';
 
 const FAILED = new Set(['unknown', 'dropped', 'expired', 'busy', 'invalid']);
 
@@ -318,6 +326,11 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
         cursor: fileCursorStore(messengerCursorFile(serve.stateDir)),
         refs: fileRefStore(messengerRefsFile(serve.stateDir)),
         requests: () => holder?.current(),
+        commands: {
+          run: async (args) => reportText(await runReportFromText(args, live)),
+          tasks: () => tasksText(tasksOf(serve, live.config)),
+          status: () => statusText(statusReport(serve)),
+        },
         log: (line) => err(fmt(_('  {line}'), { line })),
         signal,
       }).catch((error: unknown) =>

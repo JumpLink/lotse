@@ -17,6 +17,7 @@ export const STRINGS = {
   noQuestionOpen: 'No question is waiting for an answer.',
   severalOpen: 'Several questions are open: {ids}. Start your reply with the id, for example "{example}".',
   missingText: 'Say what to answer after {id}, for example "{example}".',
+  commandFailed: 'The command failed: {reason}',
   answerFailed: 'Could not apply the answer: {reason}',
   replyHintPermission: 'Reply: {id} yes or {id} no',
   replyHintPerson: 'Reply: {id} done',
