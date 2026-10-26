@@ -94,7 +94,7 @@ lotse cancel <id>                         # session/cancel
 lotse auth [--agent opencode]             # trap 1's way out
 lotse login [provider] [--method id]       # login, no terminal (docs/login.md)
 lotse agents                              # launchers, SOURCE, what lotse would use
-lotse serve [--quiet]                   # receive only: chat requests, answers, question notices (ADR 0003)
+lotse listen [--quiet]                  # receive only: chat requests, answers, question notices (ADR 0003)
 lotse questions [--all] [--json]          # what the tasks' agents are waiting on
 lotse answer <id> [text..] [--dialog]     # yes/no or a reply; no text opens the answer window
 lotse run <id> [--param k=v] [--json]     # a task now; exit 0 done 1 failed 2 usage 3 needs a person
@@ -104,7 +104,7 @@ lotse tasks | status [--json]             # runnable tasks (docs/tasks.md) | run
 
 **Read before touching the CLI** — full prose in [docs/cli-behaviour.md](docs/cli-behaviour.md):
 
-- `serve` is [ADR 0003](docs/adr/0003-serve-tasks-questions-channel.md); read it before touching `packages/core/src/serve/`. A new task field goes into `serve/schema.ts` (`SERVE_CONFIG_SCHEMA`) first. Pure logic in core, GI only in `app/src/core/desktop-channel.ts` (imported lazily so `answer` stays GI-free). Guide: [docs/serve.md](docs/serve.md).
+- `listen` is [ADR 0003](docs/adr/0003-serve-tasks-questions-channel.md); read it before touching `packages/core/src/serve/`. A new task field goes into `serve/schema.ts` (`SERVE_CONFIG_SCHEMA`) first. Pure logic in core, GI only in `app/src/core/desktop-channel.ts` (imported lazily so `answer` stays GI-free). Guide: [docs/listen.md](docs/listen.md).
 - **Bundled before host, and the bundled copy is off PATH** (`/app/extra/agents`, never `/app/bin`: it would shadow the person's own opencode and its login). Precedence `--agent` / `LOTSE_APP_AGENT` > setting > bundled > host; a setting that cannot be honoured is reported, never skipped silently; a recorded `agentSource` is resumed on that copy or fails, never falls to the other. A bundled copy runs in the sandbox with its own `HOME`/`XDG_*`.
 - **One turn, not a REPL** — a decision, not a missing feature. **stdout is the answer, stderr is everything about it.** Ctrl-C is `session/cancel`, not a kill. A piped stdin cannot ask, so it declines. Read every option with `pickArgv` (yargs exposes `--deny-all` under two spellings; a gate that silently stopped firing is the worst failure).
 
@@ -155,7 +155,7 @@ packages under `packages/*` follow the same split. No SPDX headers in sources.
    holds is everything about *how* the choice is made: no allow option holds the focus in any frame, only
    `allow_once` is `SUGGESTED`, the terminal's `y` takes `allow_once` when both allows are offered *and
    says so on the prompt line*, and there is **no timeout** — a diff takes longer than any deadline
-   lotse could pick. **`lotse serve` amends this** ([ADR 0002](docs/adr/0002-assistant-in-continuous-operation.md), built per [ADR 0003](docs/adr/0003-serve-tasks-questions-channel.md), `serve/gate.ts`):
+   lotse could pick. **`lotse listen` amends this** ([ADR 0002](docs/adr/0002-assistant-in-continuous-operation.md), built per [ADR 0003](docs/adr/0003-serve-tasks-questions-channel.md), `serve/gate.ts`):
    its gate answers `allow_once` only for a question the person answered yes or an area the person
    released in the task configuration, and that policy only narrows what the owning app allows. It
    strips every `*_always` option and never selects one; a yes mints one single-use token bound to
@@ -255,7 +255,7 @@ rests on four measured facts — read [data/README.md](data/README.md) before ch
 ## What is deliberately not here yet
 
 A web surface (**not** adwaita-web, which is the browser path per beifahrer ADR 0008) · Telegram bot (becomes a Curlew
-backend) · the XMPP channel for `lotse serve` (the `Channel` seam is there, curlew is not wired) · MCP
+backend) · the XMPP channel for `lotse listen` (the `Channel` seam is there, curlew is not wired) · MCP
 wiring against the real apps and the principal policy beyond one task's rights (decided in
 [ADR 0002](docs/adr/0002-assistant-in-continuous-operation.md), not built) · troedler integration ·
 a Claude Code adapter (decided, not built; terms and billing: [docs/claude-code.md](docs/claude-code.md)).

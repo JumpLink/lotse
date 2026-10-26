@@ -1,6 +1,6 @@
 /**
  * Opening the answer window from a process without GTK: `lotse answer <id>` with no text, and a click on
- * a `serve` notification.
+ * a `listen` notification.
  *
  * **The window only collects text.** It runs in the GUI bundle (`lotse-app … --answer <id>`), because a
  * `gi://Gtk` in the CLI bundle would load GTK for every `lotse sessions` over SSH (`gui/main.ts`). It
@@ -8,7 +8,7 @@
  * window is never a second way to answer — only a second way to type.
  *
  * Without a display, or without the window's bundle next to this one, there is no dialog and the
- * caller says why: the CLI keeps its usage error, `serve` keeps the plain notification.
+ * caller says why: the CLI keeps its usage error, `listen` keeps the plain notification.
  */
 
 import { spawn } from 'node:child_process';

@@ -1,8 +1,8 @@
 /**
- * Reading the task configuration for `lotse serve` (ADR 0003 §1).
+ * Reading the task configuration for `lotse listen` (ADR 0003 §1).
  *
  * The file is read once, at start, together with every prompt file it names; the hash covers all of
- * them. `serve` recomputes the hash on every pass and stops when it differs, so an edit takes effect
+ * them. `listen` recomputes the hash on every pass and stops when it differs, so an edit takes effect
  * on a restart the person performs, never under a run that is already going (ADR 0002 §3).
  */
 
@@ -41,7 +41,7 @@ export class TasksFileMissingError extends Error {
   constructor(file: string) {
     super(
       `there is no task configuration at ${file}. Copy examples/tasks.example.json there, fill it in, ` +
-        'and `chmod 600` it — docs/serve.md describes every field.',
+        'and `chmod 600` it — docs/listen.md describes every field.',
     );
     this.name = 'TasksFileMissingError';
   }

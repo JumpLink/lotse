@@ -27,10 +27,10 @@ app/src/frontends/cli/provider.ts
 app/src/frontends/cli/questions.ts
 app/src/frontends/cli/resume.ts
 app/src/frontends/cli/run.ts
-app/src/frontends/cli/serve-deps.ts
-app/src/frontends/cli/serve-reload.ts
-app/src/frontends/cli/serve-requests.ts
-app/src/frontends/cli/serve.ts
+app/src/frontends/cli/listen-deps.ts
+app/src/frontends/cli/listen-reload.ts
+app/src/frontends/cli/chat-requests.ts
+app/src/frontends/cli/listen.ts
 app/src/frontends/cli/sessions.ts
 app/src/frontends/cli/start.ts
 app/src/frontends/cli/status.ts

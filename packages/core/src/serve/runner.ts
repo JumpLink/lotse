@@ -6,7 +6,7 @@
  * real ones; a test wires a `FixtureAgent` and an array, and the whole path — prompt, permission
  * question, yes, resume — runs on Node and GJS with no process anywhere.
  *
- * **Two processes share the question store.** `serve` holds a permission request open and polls the
+ * **Two processes share the question store.** `listen` holds a permission request open and polls the
  * store until the question is answered or expires; `lotse answer` is a second process that writes
  * the answer. That is why a waiting run reads the store rather than a variable, and why a permission
  * question whose run is gone is marked `cancelled` — a yes to it then has nothing to allow and is
@@ -209,7 +209,7 @@ export function ceilingReached(task: ServeTask, questions: readonly Question[], 
 }
 
 /**
- * Mark every open permission question `cancelled`: the run that held its request is gone. `serve`
+ * Mark every open permission question `cancelled`: the run that held its request is gone. `listen`
  * calls this at start, so a yes after a restart is dropped rather than applied to anything.
  */
 export function cancelOrphanedPermissions(deps: Pick<ServeDeps, 'questions' | 'now' | 'log'>): number {
@@ -222,7 +222,7 @@ export function cancelOrphanedPermissions(deps: Pick<ServeDeps, 'questions' | 'n
     return {
       ...question,
       status: 'cancelled' as const,
-      resolution: 'serve restarted; the request it would answer is gone',
+      resolution: 'listen restarted; the request it would answer is gone',
     };
   });
   if (count > 0) deps.questions.write(next);
@@ -545,7 +545,7 @@ export async function answerQuestion(idText: string, text: string, deps: ServeDe
         question,
       );
     const held = isHeld(question.user, question.id);
-    // Not held and not deferred: the waiting call lives in another process (`serve`), which reads the store.
+    // Not held and not deferred: the waiting call lives in another process (`listen`), which reads the store.
     if (held || !question.deferred) {
       if (reply.kind === 'code') {
         if (!held || !offerCode(question.user, question.id, reply.code))

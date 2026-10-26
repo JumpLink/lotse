@@ -98,7 +98,7 @@ const ROUTED = parseServeConfig(
   }),
 );
 
-function serveDeps(book: { value: Question[] }): ServeDeps {
+function runDeps(book: { value: Question[] }): ServeDeps {
   return {
     config: ROUTED,
     questions: {
@@ -141,11 +141,11 @@ async function looping(
 ): Promise<void> {
   const link = linkTo(fake);
   const abort = new AbortController();
-  const deps = serveDeps(book);
+  const deps = runDeps(book);
   const loop = runReceiveLoop({
     link,
     settings: SETTINGS,
-    serve: deps,
+    deps: deps,
     cursor,
     signal: abort.signal,
     ...(refs ? { refs } : {}),
@@ -280,8 +280,8 @@ export default async () => {
     });
     await it('a reply question asks for text; a report carries no hint', async () => {
       expect(messengerText({ ...asks, asks: 'reply' })).toContain('Reply: #A3 <your answer>');
-      expect(messengerText({ title: 'lotse serve stopped', body: 'why', questionId: null })).toBe(
-        'lotse serve stopped\n\nwhy',
+      expect(messengerText({ title: 'lotse listen stopped', body: 'why', questionId: null })).toBe(
+        'lotse listen stopped\n\nwhy',
       );
     });
     await it('sends {account, to, text} through the configured send tool', async () => {
@@ -457,7 +457,7 @@ export default async () => {
       });
     });
 
-    await it('an unrestricted task and serve news go to every channel in full', async () => {
+    await it('an unrestricted task and listen news go to every channel in full', async () => {
       const desktop: ServeMessage[] = [];
       const chat: ServeMessage[] = [];
       const channel = routeChannels(
@@ -468,7 +468,7 @@ export default async () => {
         ROUTED,
       );
       await channel.send(user, asking('t'));
-      await channel.send(user, { title: 'lotse serve stopped', body: 'why', questionId: null });
+      await channel.send(user, { title: 'lotse listen stopped', body: 'why', questionId: null });
       expect(chat.map((m) => m.text ?? m.body)).toStrictEqual([secret, 'why']);
       expect(desktop.length).toBe(2);
     });
@@ -563,7 +563,7 @@ export default async () => {
         const loop = runReceiveLoop({
           link,
           settings: SETTINGS,
-          serve: serveDeps(book),
+          deps: runDeps(book),
           cursor: memoryCursor(BEFORE),
           signal: abort.signal,
           channel,
@@ -1007,7 +1007,7 @@ export default async () => {
         link,
         settings: SETTINGS,
         source,
-        serve: serveDeps(book),
+        deps: runDeps(book),
         cursor: memoryCursor(BEFORE),
         signal: abort.signal,
         timeoutS: 1,

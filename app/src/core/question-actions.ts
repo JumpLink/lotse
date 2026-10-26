@@ -98,7 +98,7 @@ export function deliveryFor(
 
 /**
  * Which notification asks which question. The server's ids are per server, so the map lives as long as
- * the `serve` that sent them; a closed notification is forgotten, and a click after that is ignored.
+ * the `listen` that sent them; a closed notification is forgotten, and a click after that is ignored.
  */
 export class NotificationRegistry {
   readonly #questions = new Map<number, string>();

@@ -10,13 +10,13 @@ import type { CommandModule } from 'yargs';
 
 import { parseParamPairs, TaskUsageError, type LotsePaths } from '@lotse/core';
 
-import type { ServePaths } from '../../core/paths.ts';
+import type { ListenPaths } from '../../core/paths.ts';
 import { stderrChannel } from '../../core/stderr-channel.ts';
 import { err, out, pickArgv } from './output.ts';
-import { readTasks, serveDeps, trackedAgents } from './serve-deps.ts';
+import { readTasks, runDeps, trackedAgents } from './listen-deps.ts';
 import { reportText, runReport } from './task-commands.ts';
 
-const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
+const command = (paths: LotsePaths, listen: ListenPaths): CommandModule => ({
   command: 'run <id>',
   describe: _('run a task now'),
   builder: (yargs) =>
@@ -40,10 +40,10 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
       process.exitCode = 2;
       return;
     }
-    const loaded = readTasks(serve);
+    const loaded = readTasks(listen);
     if (!loaded) return;
     const agents = trackedAgents();
-    const deps = serveDeps({ paths, serve, loaded, channel: stderrChannel(), open: agents.open, quiet });
+    const deps = runDeps({ paths, listen, loaded, channel: stderrChannel(), open: agents.open, quiet });
     if (!deps) return;
     try {
       const report = await runReport(id, params, deps);

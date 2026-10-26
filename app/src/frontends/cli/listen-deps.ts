@@ -1,5 +1,5 @@
 /**
- * What `serve` and `answer` both need: the task configuration, the agent each profile runs on, the
+ * What `listen` and `answer` both need: the task configuration, the agent each profile runs on, the
  * state files, and the channel. Each step prints its reason and sets the exit code when it has
  * nothing to return, the same contract as `choose.ts`, so a handler only has to stop.
  */
@@ -19,7 +19,7 @@ import {
 } from '@lotse/core';
 import { messengerSettings, readSettings } from '../../core/settings.ts';
 
-import type { ServePaths } from '../../core/paths.ts';
+import type { ListenPaths } from '../../core/paths.ts';
 import { actionLog, questionBook, runState, taskLock } from '../../core/serve-state.ts';
 import {
   loadTasks,
@@ -38,25 +38,25 @@ export function reportRemovedSchedules(loaded: LoadedTasks): void {
     err(fmt(_("tasks.json: 'schedule' is no longer supported and is ignored (task {id})"), { id }));
 }
 
-export function readTasks(serve: ServePaths): LoadedTasks | null {
+export function readTasks(listen: ListenPaths): LoadedTasks | null {
   try {
-    if (migrateProfiles(serve.tasksFile, serve.profilesFile))
+    if (migrateProfiles(listen.tasksFile, listen.profilesFile))
       err(
         fmt(
           _(
             'The profiles in tasks.json were copied to {file}, which every lotse host now shares. tasks.json keeps working; edit the profiles there.',
           ),
-          { file: serve.profilesFile },
+          { file: listen.profilesFile },
         ),
       );
-    const loaded = loadTasks(serve.tasksFile, serve.profilesFile);
-    if (migrateTasks(loaded, serve.tasksDir).length > 0)
+    const loaded = loadTasks(listen.tasksFile, listen.profilesFile);
+    if (migrateTasks(loaded, listen.tasksDir).length > 0)
       err(
         fmt(
           _(
             'The tasks in tasks.json were copied to {dir}, one SKILL.md each. tasks.json keeps working and is not changed; edit the tasks there.',
           ),
-          { dir: serve.tasksDir },
+          { dir: listen.tasksDir },
         ),
       );
     if (loaded.warning) err(fmt(_('  {warning}'), { warning: loaded.warning }));
@@ -73,9 +73,9 @@ export function readTasks(serve: ServePaths): LoadedTasks | null {
       throw error;
     err(
       error instanceof ServeConfigError
-        ? `${serve.tasksFile}: ${error.message}`
+        ? `${listen.tasksFile}: ${error.message}`
         : error instanceof ProfilesError
-          ? `${serve.profilesFile}: ${error.message}`
+          ? `${listen.profilesFile}: ${error.message}`
           : error.message,
     );
     process.exitCode = 1;
@@ -83,7 +83,7 @@ export function readTasks(serve: ServePaths): LoadedTasks | null {
   }
 }
 
-/** Every profile's agent, resolved once at start: a launcher that is missing stops `serve` before any run. */
+/** Every profile's agent, resolved once at start: a launcher that is missing stops `listen` before any run. */
 function agentsFor(paths: LotsePaths, loaded: LoadedTasks): Map<string, AgentCommand> | null {
   const commands = new Map<string, AgentCommand>();
   for (const profile of loaded.config.profiles) {
@@ -94,7 +94,7 @@ function agentsFor(paths: LotsePaths, loaded: LoadedTasks): Map<string, AgentCom
   return commands;
 }
 
-/** Agents still open, so a stopping `serve` can end them instead of leaving them behind. */
+/** Agents still open, so a stopping `listen` can end them instead of leaving them behind. */
 export interface OpenAgents {
   readonly open: ServeDeps['open'];
   closeAll(): Promise<void>;
@@ -125,7 +125,7 @@ export function trackedAgents(): OpenAgents {
 
 export interface DepsOptions {
   readonly paths: LotsePaths;
-  readonly serve: ServePaths;
+  readonly listen: ListenPaths;
   readonly loaded: LoadedTasks;
   readonly channel: ServeChannel;
   readonly open: ServeDeps['open'];
@@ -137,11 +137,11 @@ function personDefaultMin(paths: LotsePaths): number {
   return read.problem ? 30 : requestSettings(messengerSettings(read.settings)).personNeededMinutes;
 }
 
-export function serveDeps(options: DepsOptions): ServeDeps | null {
+export function runDeps(options: DepsOptions): ServeDeps | null {
   const commands = agentsFor(options.paths, options.loaded);
   if (!commands) return null;
   const now = () => new Date();
-  const { stateDir } = options.serve;
+  const { stateDir } = options.listen;
   return {
     config: options.loaded.config,
     open: options.open,
@@ -153,7 +153,7 @@ export function serveDeps(options: DepsOptions): ServeDeps | null {
     promptFor: (task) => options.loaded.promptFor(task),
     precheckPromptFor: (task) => options.loaded.precheckPromptFor(task),
     previousRun: (task) => runState(stateDir).all()[task] ?? null,
-    skill: (id) => readSkill(options.serve.tasksDir, id),
+    skill: (id) => readSkill(options.listen.tasksDir, id),
     record: (result) => runState(stateDir).record(result),
     channel: options.channel,
     questions: questionBook(stateDir, now, (problem) => err(fmt(_('  {problem}'), { problem }))),

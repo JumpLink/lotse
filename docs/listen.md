@@ -1,6 +1,6 @@
-# `lotse serve` — the receiver: chat requests and questions that ask before they act
+# `lotse listen` — the receiver: chat requests and questions that ask before they act
 
-`lotse serve` is a long-running process that **only receives**. It listens for
+`lotse listen` is a long-running process that **only receives**. It listens for
 
 - **requests from the chat**: `/ask <text>` (and a plain message when requests are on), `/run <id>`,
   `/tasks` and `/status` — see [Requests from the chat](#requests-from-the-chat);
@@ -13,7 +13,7 @@ It starts no task on its own and has no clock: scheduling was removed (ADR 0007)
 A [task](tasks.md) starts instead from one of three places:
 
 - `lotse run <id>` in a terminal;
-- `/run <id>` in the chat that `serve` listens to;
+- `/run <id>` in the chat that `listen` listens to;
 - an outside trigger you set up yourself (a systemd timer, cron, a calendar hook) that calls
   `lotse run <id>`. Lotse does not ship one; a timer is a few lines of systemd and stays under your
   control. Exit code `3` of `lotse run` means a question waits for you.
@@ -22,35 +22,28 @@ The contract behind it is [ADR 0003](adr/0003-serve-tasks-questions-channel.md);
 is [ADR 0002](adr/0002-assistant-in-continuous-operation.md).
 
 ```bash
-lotse serve [--quiet]              # listen for chat requests and answers
+lotse listen [--quiet]              # listen for chat requests and answers
 lotse questions [--all] [--json]   # open questions (--all: also answered, expired, cancelled)
 lotse answer <id> [text…] [--dialog]  # yes/no for a permission, free text for a reply;
                                       # without text (or with --dialog) the answer window opens
 ```
 
-The startup line says what it does: `lotse serve — listening for chat requests and answers, questions via
+The startup line says what it does: `lotse listen — listening for chat requests and answers, questions via
 desktop + messenger, state in …`. With no messenger configured it listens for `lotse answer` and the
 desktop buttons only.
-
-### Why it is still called `serve`
-
-It still *serves*: it is the one process other hosts talk to (the chat, the notification buttons,
-`lotse answer`). A name like `listen` or `receive` would be more exact now that it starts nothing,
-but the command is in people's systemd units, so the rename is not worth breaking them. If it is ever
-renamed, `serve` stays as an alias for a release.
 
 ## The user file (`tasks.json`)
 
 `$XDG_CONFIG_HOME/lotse/tasks.json` (`LOTSE_TASKS_FILE` overrides it), never in this repository, binds
 people and channels to profiles. Start from [examples/tasks.example.json](../examples/tasks.example.json)
-and keep the file at mode `0600`; `serve` warns when it is readable by others. Tasks themselves live in
+and keep the file at mode `0600`; `listen` warns when it is readable by others. Tasks themselves live in
 [`tasks/<id>/SKILL.md`](tasks.md); the `tasks` array in this file is the legacy format, still runnable
 and copied once to SKILL.md files.
 
 - **users**: `{id, addresses}`. The desktop channel needs no address.
-- **profiles**: `{id, user, agent?, model?, data, channels?, messengerDetail?}`. This is the serve binding of a profile: its person and channels. For an id that is also in [profiles.json](profiles.md), `agent`, `model` and `data` come from there and `data` may be left out; otherwise `data` is `private` or `public` and is required.
+- **profiles**: `{id, user, agent?, model?, data, channels?, messengerDetail?}`. This is the listen binding of a profile: its person and channels. For an id that is also in [profiles.json](profiles.md), `agent`, `model` and `data` come from there and `data` may be left out; otherwise `data` is `private` or `public` and is required.
   `model` is optional: leave it out and the agent's default model applies. A private profile on a
-  free model gets a note at start. That choice is yours, so `serve` does not block it.
+  free model gets a note at start. That choice is yours, so `listen` does not block it.
   When the agent does not offer the pinned model, the run retries once after about 15 s with the same
   model and a fresh session (the agent may be refreshing its list), then fails; there is no fallback model.
 - **tasks** (legacy): `{id, profile, prompt | promptFile, cwd, mcpServers, rights, released,
@@ -60,19 +53,19 @@ and copied once to SKILL.md files.
 
 Unknown keys are errors, and every problem is reported at start.
 
-### Editing the file while `serve` runs
+### Editing the file while `listen` runs
 
-`serve` looks at the file and its prompt files at least once a minute and applies a change in place;
+`listen` looks at the file and its prompt files at least once a minute and applies a change in place;
 there is nothing to restart.
 
 - A **run in progress is never interrupted.** It finishes with the definition it started with.
-- **An invalid file is ignored.** `serve` keeps the previous one, prints the problem, writes an
-  `error` entry (`kind: reload`) to `serve.log` and keeps running. Fix the file and the next pass loads
+- **An invalid file is ignored.** `listen` keeps the previous one, prints the problem, writes an
+  `error` entry (`kind: reload`) to `listen.log` and keeps running. Fix the file and the next pass loads
   it; the same bad save is reported once.
 - Channels and agents come from `settings.json` and are read at start. A reload re-resolves each
   profile's agent, but a change to which channels are open needs a restart.
 
-Runs of one task never overlap, across `serve`, `lotse run` and `lotse answer` alike.
+Runs of one task never overlap, across `listen`, `lotse run` and `lotse answer` alike.
 
 ### Precheck
 
@@ -106,8 +99,8 @@ for all its tasks or on a task. A task can only narrow its profile, never widen 
 
 - `channels`: a non-empty list of `desktop` and `messenger`. The task's messages go only there.
   With a list on both, the task gets the channels in both. A channel the profile excludes stays
-  excluded when a task names it, and `serve` says so at start. A reply in the chat cannot answer a
-  question that was not sent to the chat. When none of the remaining channels is active, `serve`
+  excluded when a task names it, and `listen` says so at start. A reply in the chat cannot answer a
+  question that was not sent to the chat. When none of the remaining channels is active, `listen`
   says so at start; the questions are then in `lotse questions` only.
 - `messengerDetail`: `full` (default) sends the question to the chat. `notice` sends only its id
   and that a question waits in the task, without the question text or the run's message. Read it
@@ -124,7 +117,7 @@ when an id would name something private.
 1. **Permission questions.** The agent asks for a tool the rights do not cover. You get a notification
    with an id such as `#A1`, and the run waits. `lotse answer A1 yes` (or `ja`, `ok`, `no`, `nein`)
    decides it; a yes allows that one call with those arguments, once. An unanswered question
-   expires to `cancelled`. If the run ends or `serve` restarts first, the question is cancelled too,
+   expires to `cancelled`. If the run ends or `listen` restarts first, the question is cancelled too,
    and a later yes allows nothing.
 2. **Reply questions.** A turn that ends normally with a last line ending in `?` becomes a
    question. `lotse answer A2 <text>` continues the session: `session/load`, else `session/resume`,
@@ -141,7 +134,7 @@ a promise or on the agent asking permission for an MCP tool.
 ### When only you can continue: `person_needed`
 
 A task with `personNeeded: {enabled: true, timeoutMin?}` gets an MCP tool, `person_needed`, served by
-`serve` itself on 127.0.0.1 (a random path per run, never written to disk). The agent calls it when a
+`listen` itself on 127.0.0.1 (a random path per run, never written to disk). The agent calls it when a
 step is yours alone, for example a beifahrer recipe that returns `status: "needs_person"`:
 
 ```
@@ -155,7 +148,7 @@ Preferences → "Wait for you", `lotse messenger --person-needed-minutes`).
 
 - Reply `done` (`fertig`): you did it yourself → `done`. `no` → `declined`.
 - With `acceptsCode: true` you may reply with the code (4–10 letters or digits) → `code`, and the agent
-  enters it. The code lives only in `serve`'s memory: never in the question store, the log, a transcript or a
+  enters it. The code lives only in `listen`'s memory: never in the question store, the log, a transcript or a
   message from lotse (`••••`).
 - With `link` (a login QR code's content, from `person.link`) the message carries "Open or scan this: <link>".
   It is a session challenge: it goes into the message only — not into the question store or the log — and,
@@ -179,14 +172,14 @@ error. The deferred item reaches the daily reminder task only if its prompt read
 
 `$XDG_STATE_HOME/lotse/` (`LOTSE_STATE_DIR` overrides it), mode `0600` in a `0700` directory:
 `questions.json`, `runs.json` (last run, outcome, precheck verdict and session per task; outcome is
-`done`, `asked`, `declined`, `nothing`, `skipped` or `failed`), `serve.log` (JSON lines, ids and
+`done`, `asked`, `declined`, `nothing`, `skipped` or `failed`), `listen.log` (JSON lines, ids and
 kinds only, never a prompt or a reply — the one exception is `run-summary`: the final message of a task run, flattened and cut to 300 characters), `pending-requests.json` (ids and times of chat requests not yet answered, never their text) and `locks/`. Closed questions are kept for 7 days.
 
 ## Running it as a service
 
-[data/lotse-serve.service](../data/lotse-serve.service) is an example systemd user unit. Nothing
+[data/lotse-listen.service](../data/lotse-listen.service) is an example systemd user unit. Nothing
 installs it; the install commands are in its header. An edit to `tasks.json` is picked up by the
-running service; `systemctl --user restart lotse-serve` is only needed for a change to `settings.json`.
+running service; `systemctl --user restart lotse-listen` is only needed for a change to `settings.json`.
 
 ## Channels
 
@@ -227,7 +220,7 @@ explicitly; without a display the command says so and nothing opens.
 - `dialog`: the answer window opens right away. Without a display, or without the window, the
   notification is sent instead.
 
-`serve` reads the setting for every question, so a change needs no restart; it lives in the settings
+`listen` reads the setting for every question, so a change needs no restart; it lives in the settings
 file rather than the task file because channels are opened once, at start.
 
 The window is part of the GUI bundle (`lotse-app.gjs.mjs`, built by `gjsify workspace lotse-cli
@@ -268,11 +261,11 @@ wait-for-reply tool for the answer. Any MCP server with those two tools fits; th
 `account` is the messenger account to send from (for curlew its account id, not the address), `peer`
 the address to talk to. No secret belongs in
 `args` (the settings file refuses secret-looking keys). The same fields are under *Preferences →
-Messenger* in the app. `serve` reads `active` and `messenger` once at start, so **restart `serve`
-to apply a change**. Incomplete settings (no account or peer) are reported at start and `serve` runs
+Messenger* in the app. `listen` reads `active` and `messenger` once at start, so **restart `listen`
+to apply a change**. Incomplete settings (no account or peer) are reported at start and `listen` runs
 with the desktop channel alone.
 
-For curlew, three things must hold ([XMPP via Curlew](serve-xmpp-curlew.md) is the step-by-step
+For curlew, three things must hold ([XMPP via Curlew](listen-xmpp-curlew.md) is the step-by-step
 guide, with the tool contract and a round-trip test):
 
 - `curlew daemon` is running; replies only arrive while it is.
@@ -321,12 +314,12 @@ result's cursor.
 
 The position in the conversation is kept in `messenger-cursor.json` in the state directory, so a
 restart neither replays old replies nor loses one. The first start begins at "now". If the MCP
-server dies, `serve` restarts it with a growing pause (5 s up to 5 min). A channel that fails while another one
-delivers is never silent: `serve` prints `<channel>: <error>` on stderr and writes an `error` entry
-(channel, kind, message) to `serve.log`. A question the messenger could not send is sent again by the
-receive loop after 30 s, 1, 2, 5 and 10 min, while it is still open; after the last try `serve` says
+server dies, `listen` restarts it with a growing pause (5 s up to 5 min). A channel that fails while another one
+delivers is never silent: `listen` prints `<channel>: <error>` on stderr and writes an `error` entry
+(channel, kind, message) to `listen.log`. A question the messenger could not send is sent again by the
+receive loop after 30 s, 1, 2, 5 and 10 min, while it is still open; after the last try `listen` says
 it gave up (`lotse questions` still lists it). The retry list lives in memory, so a restart of
-`serve` drops it. lotse adds no encryption of its own: a
+`listen` drops it. lotse adds no encryption of its own: a
 question is as private as the messenger path it travels, and it names the task and the action. To
 keep a task's questions out of the chat, set its `channels` or `messengerDetail: "notice"`.
 
@@ -402,11 +395,11 @@ lotse messenger --requests on --request-profile assistant --request-rights confi
 
 The other flags are `--request-prefix`, `--request-preamble`, `--request-cwd` and
 `--max-concurrent`; `--request-mcp-server none` clears the list. `--request-mcp-env 'calendar:NAME=value; …'` sets the servers' environment (`none` clears it); setting servers again keeps the env of servers with the same name. The same fields are under
-*Preferences → Requests from the chat*. A running `serve` applies a change within a minute, like tasks.json: a request in progress finishes as it was started, new messages use the new settings, and a `reload` entry is logged. A profile `tasks.json` does not define is reported, and the chat then answers questions only.
+*Preferences → Requests from the chat*. A running `listen` applies a change within a minute, like tasks.json: a request in progress finishes as it was started, new messages use the new settings, and a `reload` entry is logged. A profile `tasks.json` does not define is reported, and the chat then answers questions only.
 
-Requests accepted and not yet answered are noted in `pending-requests.json`. If `serve` dies meanwhile, its next start tells the chat once "not completed, please send it again"; it never re-runs a request, since it may already have written something.
+Requests accepted and not yet answered are noted in `pending-requests.json`. If `listen` dies meanwhile, its next start tells the chat once "not completed, please send it again"; it never re-runs a request, since it may already have written something.
 
-`serve.log` gets a `request` entry when a request is queued, starts and ends (request number,
+`listen.log` gets a `request` entry when a request is queued, starts and ends (request number,
 profile, `new`/`loaded`/`resumed`/`fresh`, outcome, session id, number of messages sent) and an
 `error` entry (`phase: request`) when a run throws — never what was asked or answered. A request
 runs as the synthetic task `@chat` (no `run-summary`).

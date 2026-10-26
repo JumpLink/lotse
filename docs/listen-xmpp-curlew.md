@@ -1,6 +1,6 @@
-# Answering `lotse serve` over XMPP with Curlew
+# Answering `lotse listen` over XMPP with Curlew
 
-This guide wires the [messenger channel](serve.md#answering-in-a-chat-the-messenger-channel) to
+This guide wires the [messenger channel](listen.md#answering-in-a-chat-the-messenger-channel) to
 [Curlew](https://github.com/JumpLink/curlew): a bot account sends each question to your own XMPP
 address, and you answer from any XMPP client on your phone or desktop. lotse speaks no XMPP itself;
 it starts `curlew mcp` and calls two of its tools.
@@ -37,7 +37,7 @@ Add one grant to Curlew's configuration (`$XDG_CONFIG_HOME/curlew/config.json`):
 That is all the messenger channel needs. `send_message` (questions and lotse's short replies such as
 "answered") requires it, for that exact account and address. `xmpp_wait_reply` reads Curlew's local
 index and needs no grant. Without the grant, `curlew mcp` does not list `send_message`, every send
-fails, and `serve` prints the error on stderr and in `serve.log`.
+fails, and `listen` prints the error on stderr and in `listen.log`.
 
 ## Keep `curlew daemon` running
 
@@ -71,7 +71,7 @@ In `$XDG_CONFIG_HOME/lotse/settings.json` (or *Preferences → Messenger*):
 
 When Curlew is not on `PATH`, `command` and `args` may start it any other way, for example from a
 checkout: `"command": "gjsify", "args": ["run", "/path/to/curlew/app/dist/curlew.gjs.mjs", "mcp"]`.
-Restart `serve` after any change to these settings.
+Restart `listen` after any change to these settings.
 
 ## The tool contract
 
@@ -86,9 +86,9 @@ Curlew's place:
 | `waitTool` | `{account, peer, after, timeout_s, include_bodies: true, strip_quotes: true}` (`strip_quotes` only when the tool has it) | `{status: "reply" \| "timeout", messages: [{id, bodyText, sentAt, fromSelf, replyToId?}], cursor}` |
 
 `replyToId` is the id of the message a message replies to (XEP-0461); Curlew also removes the quoted
-fallback text (XEP-0428) from `bodyText`. See [Reply to the question's message](serve.md#reply-to-the-questions-message).
+fallback text (XEP-0428) from `bodyText`. See [Reply to the question's message](listen.md#reply-to-the-questions-message).
 
-`after` is an ISO 8601 time: on the first start, the time `serve` started, and from then on the
+`after` is an ISO 8601 time: on the first start, the time `listen` started, and from then on the
 `cursor` the wait tool returned (else the `sentAt` of the last handled message), kept in
 `messenger-cursor.json`. The tool must return only messages sent strictly after `after`. A message
 with `fromSelf: true` is skipped. lotse reads the result from `structuredContent`, else from the
@@ -101,14 +101,14 @@ second one only in a later poll, after the cursor already reached that time. So 
 millisecond it has not read yet. A server without `id` works too: lotse then tells messages apart by
 a hash of `sentAt` and the text, so two identical texts in one millisecond count as one.
 
-With [requests from the chat](serve.md#requests-from-the-chat) on, a message that answers no question
+With [requests from the chat](listen.md#requests-from-the-chat) on, a message that answers no question
 starts an agent session, and the answer comes back through `sendTool`. A request that should reach
 Curlew's own tools (or another server) names it in `requests.mcpServers`.
 
 ## Keep private tasks out of the chat
 
 By default every active channel gets every question. Two keys narrow that per task or per profile
-(details: [Which channels a task uses](serve.md#which-channels-a-task-uses)):
+(details: [Which channels a task uses](listen.md#which-channels-a-task-uses)):
 
 - `messengerDetail: "notice"` sends the chat only the question id and that a question waits in the
   task. Read the question with `lotse questions` or on the desktop; you can still answer in the chat
@@ -139,7 +139,7 @@ Buttons for answering in the chat are planned
 
 ## Test the round trip
 
-1. Start `lotse serve` and check that its first lines say `questions via desktop + messenger` and
+1. Start `lotse listen` and check that its first lines say `questions via desktop + messenger` and
    name no `messenger:` error.
 2. Add a task that touches nothing and ends with a question, for example:
 
@@ -154,12 +154,12 @@ Buttons for answering in the chat are planned
    }
    ```
 
-   A running `serve` picks up the saved file within a minute, with no restart. `serve` starts no task;
+   A running `listen` picks up the saved file within a minute, with no restart. `listen` starts no task;
    start this one with `lotse run messenger-test` (or `/run messenger-test` in the chat).
 3. The question arrives in your XMPP client as `lotse · messenger-test · #A1`. Reply `#A1 hello`.
 4. Within about a minute lotse answers in the chat with a short "Got it, #A1.", and
    `lotse questions --all` shows the question as answered.
 
 If the question arrives but the answer does not, check that `curlew daemon` is running. If nothing
-arrives, check the grant (the account id and the address must match exactly) and `serve`'s stderr.
+arrives, check the grant (the account id and the address must match exactly) and `listen`'s stderr.
 Remove the test task when you are done.

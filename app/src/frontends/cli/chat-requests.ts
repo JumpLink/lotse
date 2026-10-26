@@ -1,5 +1,5 @@
 /**
- * Applying an edited `channel.messenger.requests` to a running `serve` (docs/serve.md, "Requests from the
+ * Applying an edited `channel.messenger.requests` to a running `listen` (docs/listen.md, "Requests from the
  * chat"). Looked at once per pass, like tasks.json: a change becomes the `ChatRequests` that messages
  * arriving afterwards go to, while a request already running finishes inside the instance it started in.
  * A settings.json that cannot be read keeps the previous instance.

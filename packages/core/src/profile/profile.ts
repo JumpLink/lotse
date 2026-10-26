@@ -1,13 +1,13 @@
 /**
  * The profile — lotse's own idea of "who a session runs as" (ADR 0007) — and the file it lives in.
  *
- * A profile used to exist only inside `lotse serve`'s tasks.json. It is a concept of its own: serve's
+ * A profile used to exist only inside `lotse listen`'s tasks.json. It is a concept of its own: listen's
  * runner, a messenger request, the widget and a headless job all start a session, and each needs the
  * same answer to "which agent, which model, which tools, how much may it do". That answer is
  * `profiles.json`, read here once and handed to every host as text — like the task file, core does
  * not read files.
  *
- * What stays in tasks.json is the serve side of a profile of the same id: its user and its channels.
+ * What stays in tasks.json is the listen side of a profile of the same id: its user and its channels.
  */
 
 import type { McpServer } from '@lotse/acp';

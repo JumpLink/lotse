@@ -92,7 +92,7 @@ import Template from './chat.blp';
  * person answers it; `'decline'` answers it without asking. There is deliberately no third value
  * that selects an option: a host may add a rule that *narrows* what the agent gets — "never in this
  * directory", "not while unattended" — and may not hand out an approval nobody gave. That is
- * guardrail 2 of `AGENTS.md` one layer up, and `lotse serve`'s own gate
+ * guardrail 2 of `AGENTS.md` one layer up, and `lotse listen`'s own gate
  * (`docs/adr/0002-assistant-in-continuous-operation.md`) is written to the same shape.
  */
 export type HostGateAnswer = 'ask' | 'decline';
@@ -887,7 +887,7 @@ export class LotseChat extends Adw.Bin {
   /**
    * Send a prompt as the composer would, draft cleared first.
    *
-   * For a host control that is not the entry — lotse's `LOTSE_APP_THINKING`, a `lotse serve` task.
+   * For a host control that is not the entry — lotse's `LOTSE_APP_THINKING`, a `lotse listen` task.
    * The guard `#onSend` applies is the *entry's* (an empty line is not a prompt); a caller that has
    * a sentence in hand has already passed it.
    */

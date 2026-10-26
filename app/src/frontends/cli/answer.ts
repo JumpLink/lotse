@@ -16,10 +16,10 @@ import type { CommandModule } from 'yargs';
 import { answerQuestion, type LotsePaths } from '@lotse/core';
 
 import { currentDialogCommand, openAnswerDialog } from '../../core/answer-dialog.ts';
-import type { ServePaths } from '../../core/paths.ts';
+import type { ListenPaths } from '../../core/paths.ts';
 import { stderrChannel } from '../../core/stderr-channel.ts';
 import { err, out, pickArgv } from './output.ts';
-import { readTasks, serveDeps, trackedAgents } from './serve-deps.ts';
+import { readTasks, runDeps, trackedAgents } from './listen-deps.ts';
 
 const FAILED = new Set(['unknown', 'dropped', 'expired', 'busy', 'invalid']);
 
@@ -46,14 +46,14 @@ async function answerWith(
   text: string,
   quiet: boolean,
   paths: LotsePaths,
-  serve: ServePaths,
+  listen: ListenPaths,
 ): Promise<void> {
-  const loaded = readTasks(serve);
+  const loaded = readTasks(listen);
   if (!loaded) return;
   const agents = trackedAgents();
-  // The agent's reply is printed here; a question it asks back reaches the person through `serve`'s
+  // The agent's reply is printed here; a question it asks back reaches the person through `listen`'s
   // channel on its next question, and through `lotse questions` right away.
-  const deps = serveDeps({ paths, serve, loaded, channel: stderrChannel(), open: agents.open, quiet });
+  const deps = runDeps({ paths, listen, loaded, channel: stderrChannel(), open: agents.open, quiet });
   if (!deps) return;
   try {
     const result = await answerQuestion(id, text, deps);
@@ -65,7 +65,7 @@ async function answerWith(
   }
 }
 
-const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
+const command = (paths: LotsePaths, listen: ListenPaths): CommandModule => ({
   command: 'answer <id> [text..]',
   describe: _('answer a question from `lotse questions`; yes/no for a permission, text for a reply'),
   builder: (yargs) =>
@@ -90,10 +90,10 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
       process.exitCode = 1;
       return;
     }
-    if (given) return answerWith(id, given, quiet, paths, serve);
+    if (given) return answerWith(id, given, quiet, paths, listen);
     try {
       const text = await textFromDialog(id, dialog);
-      if (text) await answerWith(id, text, quiet, paths, serve);
+      if (text) await answerWith(id, text, quiet, paths, listen);
     } catch (error) {
       err(error instanceof Error ? error.message : String(error));
       process.exitCode = 1;

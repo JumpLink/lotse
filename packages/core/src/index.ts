@@ -506,7 +506,7 @@ export {
 } from './empty-state.ts';
 export { noticeDue, NOTICE_IDS, type NoticeId } from './notices.ts';
 
-// ── `lotse serve`: tasks, questions to a person, the channel seam (ADR 0003) ─────────────
+// ── `lotse listen`: tasks, questions to a person, the channel seam (ADR 0003) ─────────────
 export {
   DEFAULT_PERSON_TIMEOUT_MIN,
   PERSON_KINDS,

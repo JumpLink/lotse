@@ -46,7 +46,7 @@ function result(patch: Partial<RunResult>): RunResult {
 }
 
 export default async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'lotse-serve-state-'));
+  const dir = mkdtempSync(join(tmpdir(), 'lotse-listen-state-'));
   const stateDir = join(dir, 'state');
 
   try {
@@ -98,7 +98,7 @@ export default async () => {
         const log = actionLog(stateDir, () => NOW);
         log({ event: 'run', task: 't', detail: { phase: 'start' } });
         log({ event: 'run', task: 't', detail: { phase: 'end' } });
-        const file = join(stateDir, 'serve.log');
+        const file = join(stateDir, 'listen.log');
         const lines = readFileSync(file, 'utf8').trim().split('\n');
         expect(lines.length).toBe(2);
         expect(JSON.parse(lines[0]!).at).toBe(NOW.toISOString());

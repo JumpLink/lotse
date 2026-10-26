@@ -73,8 +73,8 @@ export function xdgStateHome(env: NodeJS.ProcessEnv = process.env): string {
   return explicit && explicit.startsWith('/') ? explicit : join(homedir(), '.local', 'state');
 }
 
-/** Where `lotse serve` keeps its question store, run state, action log and locks (ADR 0003 §7). */
-export interface ServePaths {
+/** Where `lotse listen` keeps its question store, run state, action log and locks (ADR 0003 §7). */
+export interface ListenPaths {
   readonly stateDir: string;
   /** The task configuration: private, outside the repository, read once at start. */
   readonly tasksFile: string;
@@ -85,7 +85,7 @@ export interface ServePaths {
 }
 
 /** `LOTSE_STATE_DIR`, `LOTSE_TASKS_FILE`, `LOTSE_PROFILES_FILE` and `LOTSE_TASKS_DIR` override the XDG defaults. */
-export function servePaths(env: NodeJS.ProcessEnv = process.env): ServePaths {
+export function listenPaths(env: NodeJS.ProcessEnv = process.env): ListenPaths {
   return {
     stateDir: envKnob(env, 'STATE_DIR') || join(xdgStateHome(env), 'lotse'),
     tasksFile: envKnob(env, 'TASKS_FILE') || join(configDir(env), 'tasks.json'),

@@ -1,7 +1,7 @@
 /**
  * The MCP endpoint a run's agent calls `person_needed` on: HTTP on 127.0.0.1, one random path per run.
  *
- * It lives inside `serve` on purpose. The code the person sends is handed to the waiting call in this
+ * It lives inside `listen` on purpose. The code the person sends is handed to the waiting call in this
  * process's memory (`person.ts`); a second process, or a file between the two, would be somewhere a
  * code could be left behind. It speaks the small part of MCP a tool server needs — `initialize`,
  * `ping`, `tools/list`, `tools/call` — answering each POST with plain JSON, which streamable HTTP

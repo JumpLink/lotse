@@ -1,6 +1,6 @@
 /**
  * Where the messenger's receive loop stands: the `sentAt` of the last reply it handled and the ids seen at
- * that millisecond, kept in `<state dir>/messenger-cursor.json` so a restart of `serve` neither replays old
+ * that millisecond, kept in `<state dir>/messenger-cursor.json` so a restart of `listen` neither replays old
  * replies as answers nor skips one that arrived while it was down. A missing or unreadable file means
  * "start from now" — the safe side, because an old reply answered twice is dropped but a stale one
  * answered at all is not. A file from before `seen` existed reads as a cursor with none.

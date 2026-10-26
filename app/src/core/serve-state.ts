@@ -1,8 +1,8 @@
 /**
- * The files `lotse serve` keeps under its state directory (ADR 0003 §7): the question store, the run
+ * The files `lotse listen` keeps under its state directory (ADR 0003 §7): the question store, the run
  * state, the action log and one lock per task.
  *
- * **Two processes write here.** `serve` and `lotse answer` both read the question store fresh and
+ * **Two processes write here.** `listen` and `lotse answer` both read the question store fresh and
  * write it whole; `writePrivateFile` renames atomically, so a reader sees the old list or the new one,
  * never half of one. The per-task lock keeps a run and an answer from driving the same task at once.
  *
@@ -113,9 +113,9 @@ export function runState(stateDir: string): RunState {
   };
 }
 
-/** The action log, `serve.log`: one JSON line per entry, with a timestamp. */
+/** The action log, `listen.log`: one JSON line per entry, with a timestamp. */
 export function actionLog(stateDir: string, now: () => Date): (entry: ServeLogEntry) => void {
-  const file = join(stateDir, 'serve.log');
+  const file = join(stateDir, 'listen.log');
   return (entry) => {
     ensureDir(stateDir);
     const fresh = !existsSync(file);

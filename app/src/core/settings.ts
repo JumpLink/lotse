@@ -1,5 +1,5 @@
 /**
- * What a person chose, kept between runs: which agent to start, and how `lotse serve` puts a question
+ * What a person chose, kept between runs: which agent to start, and how `lotse listen` puts a question
  * on the desktop (`channel.desktop.mode`).
  *
  * **No secret can live here, by construction.** `parseSettings` is an allowlist — `version`, `agent`
@@ -40,7 +40,7 @@ import { writePrivateFile } from './private-file.ts';
 
 /**
  * How the desktop channel asks: `notification` (a notification whose buttons answer or open the dialog)
- * or `dialog` (the answer window opens as soon as a question arrives). `serve` reads it per question, so
+ * or `dialog` (the answer window opens as soon as a question arrives). `listen` reads it per question, so
  * a change needs no restart.
  */
 export type DesktopMode = 'notification' | 'dialog';
@@ -51,7 +51,7 @@ export const DEFAULT_DESKTOP_MODE: DesktopMode = 'notification';
 
 export interface ChannelSettings {
   readonly desktop: { readonly mode: DesktopMode };
-  /** Which channels `serve` asks on. Absent: the desktop only. Read at start, so a change needs a restart. */
+  /** Which channels `listen` asks on. Absent: the desktop only. Read at start, so a change needs a restart. */
   readonly active?: readonly ChannelName[];
   /** The messenger's MCP server, account and peer. Absent: its defaults (curlew) with no account. */
   readonly messenger?: MessengerSettings;
@@ -371,7 +371,7 @@ export function withDesktopMode(settings: Settings, mode: DesktopMode): Settings
   return { ...settings, channel: { ...settings.channel, desktop: { mode } } };
 }
 
-/** The channels `serve` asks on: the settings' own list, else the desktop alone. */
+/** The channels `listen` asks on: the settings' own list, else the desktop alone. */
 export function activeChannels(settings: Settings): readonly ChannelName[] {
   return settings.channel?.active ?? DEFAULT_ACTIVE_CHANNELS;
 }

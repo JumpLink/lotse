@@ -28,7 +28,7 @@ channel can be added without changing a task.
 
    *Amended 2026-10-12:* a changed file no longer stops `serve`. It is reloaded in place; a run in
    progress finishes with the definition it started with, a file that does not parse leaves the
-   previous tasks in force and logs an `error`. docs/serve.md describes the behaviour.
+   previous tasks in force and logs an `error`. docs/listen.md describes the behaviour.
 
    *Amended 2026-10-11:* `model` is optional on every profile; when it is unset, lotse sends no
    model and the agent's default applies. A private profile on a free model prints a note at

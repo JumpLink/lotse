@@ -1,10 +1,10 @@
 /**
- * Which messenger server `serve` talks to, and as whom — the shape of `channel.messenger` in
+ * Which messenger server `listen` talks to, and as whom — the shape of `channel.messenger` in
  * settings.json. Curlew is the default, not a requirement: any MCP server that meets the contract
  * (docs/messenger-contract.md) fits, its tools named here.
  *
  * `account` and `peer` have no default (they are the person's own), and may be empty in the file so the
- * settings page can save a half-filled form; `messengerProblem` says what is still missing, and `serve`
+ * settings page can save a half-filled form; `messengerProblem` says what is still missing, and `listen`
  * then runs without the messenger and says why.
  */
 

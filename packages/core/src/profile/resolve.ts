@@ -2,7 +2,7 @@
  * A profile turned into what a host needs to start a session (ADR 0007 §2).
  *
  * `resolveProfile` is the one place that answers "which agent, model, options, tools and preamble does
- * this profile mean". The serve runner and the messenger requests use it today; the widget and
+ * this profile mean". The listen runner and the messenger requests use it today; the widget and
  * `runJob` hosts take the same result (`jobOptionsOf` for the latter). Finding the launcher stays the
  * host's — core knows no launcher table — so it is passed in.
  */
@@ -55,21 +55,21 @@ export function narrowRights(requested: RightsLevel, limit: RightsLevel | null):
 const NO_OPTIONS = {} as const;
 
 /**
- * The profile a serve profile stands for: the shared one it was bound to, with the agent, model and
- * data it ended up with (the precheck overrides the model, so those must win over `base`). A serve
+ * The profile a listen profile stands for: the shared one it was bound to, with the agent, model and
+ * data it ended up with (the precheck overrides the model, so those must win over `base`). A listen
  * profile with no shared one is the legacy case: agent, model and data only.
  */
-export function profileFromServe(serve: ServeProfile): Profile {
+export function profileFromServe(listen: ServeProfile): Profile {
   return {
     configOptions: NO_OPTIONS,
     mcpServers: [],
     preamble: null,
     rights: null,
-    ...serve.base,
-    id: serve.id,
-    agent: serve.agent,
-    model: serve.model,
-    data: serve.data,
+    ...listen.base,
+    id: listen.id,
+    agent: listen.agent,
+    model: listen.model,
+    data: listen.data,
   };
 }
 

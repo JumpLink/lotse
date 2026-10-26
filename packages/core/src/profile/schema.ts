@@ -10,7 +10,7 @@ export const PROFILES_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   title: 'lotse profiles',
   description:
-    'The profiles every lotse host shares — serve, the messenger, the widget and headless jobs. Read at start.',
+    'The profiles every lotse host shares — listen, the messenger, the widget and headless jobs. Read at start.',
   type: 'object',
   additionalProperties: false,
   required: ['version', 'profiles'],
@@ -82,7 +82,7 @@ export const PROFILES_SCHEMA = {
           enum: ['private', 'public'],
           title: 'Data',
           description:
-            'Whether sessions on this profile see private data. A label for you: serve notes a private profile on a free model at start and runs it all the same.',
+            'Whether sessions on this profile see private data. A label for you: listen notes a private profile on a free model at start and runs it all the same.',
         },
       },
     },

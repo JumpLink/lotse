@@ -1,5 +1,5 @@
 /**
- * `lotse serve` — the long-running receiver: it answers the person's chat requests (`/ask`, `/run`,
+ * `lotse listen` — the long-running receiver: it answers the person's chat requests (`/ask`, `/run`,
  * `/tasks`, `/status`) and carries their answers to the agents' questions (ADR 0003). It starts no
  * task on its own; a task starts with `lotse run` or `/run`.
  *
@@ -7,7 +7,7 @@
  * The messenger receive loop and the notification buttons do the actual work between passes.
  *
  * Before every pass the configuration hash is checked. A changed file is reloaded in place
- * (`serve-reload.ts`): runs that are going finish with the definition they started with, later runs use
+ * (`listen-reload.ts`): runs that are going finish with the definition they started with, later runs use
  * the new one, and a file that no longer parses leaves the previous one in force.
  */
 
@@ -43,7 +43,7 @@ import {
 } from '@lotse/core';
 
 import { currentDialogCommand, openAnswerDialog } from '../../core/answer-dialog.ts';
-import type { ServePaths } from '../../core/paths.ts';
+import type { ListenPaths } from '../../core/paths.ts';
 import { currentTasksHash, loadTasks } from '../../core/serve-config.ts';
 import {
   fileCursorStore,
@@ -56,9 +56,9 @@ import {
 import { activeChannels, desktopMode, messengerSettings, readSettings } from '../../core/settings.ts';
 import { stderrChannel } from '../../core/stderr-channel.ts';
 import { err, pickArgv } from './output.ts';
-import { createReloader, liveDeps } from './serve-reload.ts';
-import { createRequestsHolder } from './serve-requests.ts';
-import { readTasks, reportRemovedSchedules, serveDeps, trackedAgents } from './serve-deps.ts';
+import { createReloader, liveDeps } from './listen-reload.ts';
+import { createRequestsHolder } from './chat-requests.ts';
+import { readTasks, reportRemovedSchedules, runDeps, trackedAgents } from './listen-deps.ts';
 import {
   reportText,
   runReportFromText,
@@ -195,7 +195,7 @@ async function openChannels(
     opened.map((route) => route.name),
   ))
     err(fmt(_('  {note}'), { note }));
-  // A channel that failed while another delivered is told here, nowhere else: stderr and serve.log.
+  // A channel that failed while another delivered is told here, nowhere else: stderr and listen.log.
   const failed: ChannelFailure = (name, error) => {
     const message = error instanceof Error ? error.message : String(error);
     err(fmt(_('  {name}: {message}'), { name, message }));
@@ -215,8 +215,8 @@ async function openChannels(
 /** How long a pass sleeps before it looks at the task file and the request settings again. */
 const PASS_MS = 60_000;
 
-const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
-  command: 'serve',
+const command = (paths: LotsePaths, listen: ListenPaths): CommandModule => ({
+  command: 'listen',
   describe: _('answer chat requests and ask the person when an agent has a question'),
   builder: (yargs) =>
     yargs.option('quiet', { type: 'boolean', describe: _("do not echo the agents' log lines") }).strict(),
@@ -224,31 +224,31 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     const raw = argv as Record<string, unknown>;
     const quiet = pickArgv<boolean>(raw, 'quiet') === true;
 
-    const loaded = readTasks(serve);
+    const loaded = readTasks(listen);
     if (!loaded) return;
     for (const note of freeModelNotes(loaded.config)) err(fmt(_('  {note}'), { note }));
     let ready: ServeDeps | null = null;
     let activeConfig = loaded.config;
     const opened = await openChannels(
       paths,
-      serve.stateDir,
+      listen.stateDir,
       () => activeConfig,
       () => ready,
     );
     const channel = opened.channel;
     const agents = trackedAgents();
-    const deps = serveDeps({ paths, serve, loaded, channel, open: agents.open, quiet });
+    const deps = runDeps({ paths, listen, loaded, channel, open: agents.open, quiet });
     if (!deps) return;
     const reloader = createReloader(
       {
-        tasksFile: serve.tasksFile,
-        load: (file) => loadTasks(file, serve.profilesFile),
-        hashNow: (file, config) => currentTasksHash(file, config, serve.profilesFile),
+        tasksFile: listen.tasksFile,
+        load: (file) => loadTasks(file, listen.profilesFile),
+        hashNow: (file, config) => currentTasksHash(file, config, listen.profilesFile),
         build: (next) => {
           // Building deps resolves agents, which sets the exit code when one is missing; a refused
-          // reload must not turn a serve that keeps running into a failed one.
+          // reload must not turn a listen that keeps running into a failed one.
           const exitCode = process.exitCode;
-          const built = serveDeps({ paths, serve, loaded: next, channel, open: agents.open, quiet });
+          const built = runDeps({ paths, listen, loaded: next, channel, open: agents.open, quiet });
           if (!built) process.exitCode = exitCode;
           return built;
         },
@@ -261,13 +261,13 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
 
     const dropped = cancelOrphanedPermissions(live);
     if (dropped > 0)
-      err(fmt(_('  {dropped} permission question(s) from an earlier serve cancelled'), { dropped }));
+      err(fmt(_('  {dropped} permission question(s) from an earlier listen cancelled'), { dropped }));
     err(
       fmt(
-        _('lotse serve — listening for chat requests and answers, questions via {channel}, state in {dir}'),
+        _('lotse listen — listening for chat requests and answers, questions via {channel}, state in {dir}'),
         {
           channel: channel.name,
-          dir: serve.stateDir,
+          dir: listen.stateDir,
         },
       ),
     );
@@ -283,7 +283,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
       wake?.();
     };
     const messenger = opened.messenger;
-    const pending = filePendingStore(pendingRequestsFile(serve.stateDir));
+    const pending = filePendingStore(pendingRequestsFile(listen.stateDir));
     const holder = messenger
       ? createRequestsHolder({
           read: () => {
@@ -294,7 +294,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
           build: (settings) =>
             chatRequests({
               settings,
-              serve: live,
+              deps: live,
               defaultCwd: homedir(),
               pending,
               send: (text) => sendToPeer(messenger.link, messenger.settings, text),
@@ -321,7 +321,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
       );
       if (left > 0)
         err(
-          fmt(_('  {left} chat request(s) from an earlier serve were not completed; the chat was told'), {
+          fmt(_('  {left} chat request(s) from an earlier listen were not completed; the chat was told'), {
             left,
           }),
         );
@@ -331,14 +331,14 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
         link: messenger!.link,
         settings: messenger!.settings,
         channel: messenger!.channel,
-        serve: live,
-        cursor: fileCursorStore(messengerCursorFile(serve.stateDir)),
-        refs: fileRefStore(messengerRefsFile(serve.stateDir)),
+        deps: live,
+        cursor: fileCursorStore(messengerCursorFile(listen.stateDir)),
+        refs: fileRefStore(messengerRefsFile(listen.stateDir)),
         requests: () => holder?.current(),
         commands: {
           run: async (args) => reportText(await runReportFromText(args, live)),
-          tasks: () => tasksText(tasksOf(serve, live.config)),
-          status: () => statusText(statusReport(serve)),
+          tasks: () => tasksText(tasksOf(listen, live.config)),
+          status: () => statusText(statusReport(listen)),
         },
         log: (line) => err(fmt(_('  {line}'), { line })),
         signal,
@@ -358,7 +358,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
           activeConfig = fresh.config;
           if (fresh.warning) err(fmt(_('  {warning}'), { warning: fresh.warning }));
           reportRemovedSchedules(fresh);
-          err(fmt(_('  {file} reloaded'), { file: serve.tasksFile }));
+          err(fmt(_('  {file} reloaded'), { file: listen.tasksFile }));
           freshDeps.log?.({
             event: 'reload',
             task: '-',
@@ -366,7 +366,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
           });
         } else if (change.kind === 'rejected') {
           const message = fmt(_('{file} not reloaded, keeping the previous one: {problem}'), {
-            file: serve.tasksFile,
+            file: listen.tasksFile,
             problem: change.message,
           });
           err(fmt(_('  {message}'), { message }));
@@ -402,4 +402,4 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
   },
 });
 
-export const serveCommand = command;
+export const listenCommand = command;

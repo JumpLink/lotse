@@ -1,5 +1,5 @@
 /**
- * The task configuration `lotse serve` runs from — users, profiles, tasks — and its validation.
+ * The task configuration `lotse listen` runs from — users, profiles, tasks — and its validation.
  *
  * **Configuration, not code** (ADR 0002 §3). lotse knows no task, no person and no address; all of
  * that arrives here as JSON from a private file outside the repository. This module only says whether
@@ -11,7 +11,7 @@
  * The keys each object may have come from `SERVE_CONFIG_SCHEMA` (`schema.ts`), so the schema a
  * settings page edits and the parser cannot drift apart.
  *
- * **Read once, hashed.** `configHash` covers the file and every prompt file it names. `serve` keeps
+ * **Read once, hashed.** `configHash` covers the file and every prompt file it names. `listen` keeps
  * the hash and stops when it changes, so an edit — by the person or by a session that should not have
  * been able to make it — takes effect on a restart the person performs (ADR 0002 §3, §6).
  */
@@ -27,14 +27,14 @@ import type { Profile } from '../profile/profile.ts';
 import { parseDuration } from './duration.ts';
 import { SERVE_CONFIG_SCHEMA, schemaKeys } from './schema.ts';
 
-/** A person `serve` works for. `addresses` are channel addresses; the desktop channel needs none. */
+/** A person `listen` works for. `addresses` are channel addresses; the desktop channel needs none. */
 export interface ServeUser {
   readonly id: string;
   readonly addresses: readonly string[];
 }
 
 /**
- * Who a task runs as and on what: the serve-side binding of a profile — its user and where its messages
+ * Who a task runs as and on what: the listen-side binding of a profile — its user and where its messages
  * go. A named model is pinned: there is no fallback when the agent does not offer it (ADR 0002 §5). No
  * model: lotse sends none and the agent's own default applies.
  *
@@ -169,7 +169,7 @@ export class ServeConfigError extends Error {
 }
 
 /**
- * One sentence per private profile on a free model, for `serve` to print at start. A free model may be
+ * One sentence per private profile on a free model, for `listen` to print at start. A free model may be
  * unvetted for private data; choosing one is the person's call, so this informs and blocks nothing.
  */
 export function freeModelNotes(config: ServeConfig): string[] {
@@ -261,7 +261,7 @@ export function parseServeConfig(text: string, options: ParseServeOptions = {}):
   return { users, profiles, tasks };
 }
 
-/** The hash `serve` keeps: the file and every prompt file, in order, each length-prefixed. */
+/** The hash `listen` keeps: the file and every prompt file, in order, each length-prefixed. */
 export function configHash(texts: readonly string[]): string {
   const hash = createHash('sha256');
   for (const text of texts) hash.update(`${text.length}:${text}\n`);

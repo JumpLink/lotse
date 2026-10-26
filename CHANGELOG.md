@@ -8,10 +8,13 @@ and also records changes that are not a release of their own.
 
 ### Changed
 
+- **`lotse serve` is now `lotse listen`.** Breaking, no alias: update the `ExecStart` of a systemd unit (the example is
+  now `data/lotse-listen.service`). The action log moved from `serve.log` to `listen.log` in the state directory;
+  an old `serve.log` stays where it is. The guide is [docs/listen.md](docs/listen.md).
 - **`lotse serve` only receives.** What was left of the task loop is gone: `runServeTask` (its work is
   `runTask`) and exports no host used (`ceilingReached`, `followUpPrompt`, `requestTask`, `userOf`,
   `actionOf`, `isReleased`, `toolOf`), and `emptyMcpToggles()` (use `NO_MCP_TOGGLES`). The startup line and
-  the reload messages no longer count tasks. [docs/serve.md](docs/serve.md) describes the receive-only
+  the reload messages no longer count tasks. [docs/listen.md](docs/listen.md) describes the receive-only
   role, how tasks start instead (`lotse run`, `/run`, an outside trigger) and why the command is still
   called `serve`.
 
@@ -94,7 +97,7 @@ and also records changes that are not a release of their own.
 
 - **Reply to the question's message in the chat.** A messenger reply (XEP-0461) binds the answer to
   the question that message carried, ahead of the one-open-question guess; the quote fallback is dropped.
-  Needs a Curlew that returns `replyToId`. See [docs/serve.md](docs/serve.md#reply-to-the-questions-message).
+  Needs a Curlew that returns `replyToId`. See [docs/listen.md](docs/listen.md#reply-to-the-questions-message).
 
 - **Translations.** The app, the widget, the CLI and the notifications are translated with gettext
   (English msgids, German catalogue). Two domains: `eu.jumplink.Lotse` (app) and `lotse` (widget and core).
@@ -105,7 +108,7 @@ and also records changes that are not a release of their own.
   that only you can go on (a login, a code, an approval), waits, and continues on `done` or on a code you
   reply with. No reply in time leaves a deferred open question in `lotse questions`. The code never
   reaches the store, the log or a transcript, and a task that may receive one is refused on a free model.
-  The wait is a setting (Preferences, `--person-needed-minutes`). See `docs/serve.md`.
+  The wait is a setting (Preferences, `--person-needed-minutes`). See `docs/listen.md`.
 
 - **A warning while a free model is in use.** A card above the composer says that free-model providers
   may store what is sent and train on it, so it is not for tax or client data. Closing it holds for that
@@ -149,7 +152,7 @@ First release published by CI with provenance: the app and the four libraries sh
   and, for a permission, **Allow once** / **Decline**, when the notification server shows actions.
   `lotse answer <id>` without text (or with `--dialog`) opens an answer window. The setting
   `channel.desktop.mode` (`notification` | `dialog`, also in Preferences) can open the window
-  right away instead. See [docs/serve.md](docs/serve.md#answering-from-the-desktop).
+  right away instead. See [docs/listen.md](docs/listen.md#answering-from-the-desktop).
 - **Answering over a messenger** (#57). `lotse serve` reaches its person through an MCP server
   (curlew by default); lotse itself speaks no XMPP. Settings `channel.active` and
   `channel.messenger` (also in Preferences). The first answer wins across desktop and messenger,

@@ -1,5 +1,5 @@
 /**
- * The gate `lotse serve` answers `session/request_permission` with — ADR 0002 §7.
+ * The gate `lotse listen` answers `session/request_permission` with — ADR 0002 §7.
  *
  * It answers from the person's decisions only: an area the task configuration released, or a
  * question the person answered yes. Everything else is a new question, or a decline. Three rules
@@ -61,7 +61,7 @@ export interface GateDecision {
   readonly why: 'released' | 'token' | 'yes' | 'no' | 'expired' | 'refused' | 'read-only' | 'no-allow-once';
 }
 
-/** The options `serve` may choose from: the agent's list without any `*_always`. */
+/** The options `listen` may choose from: the agent's list without any `*_always`. */
 export function stripAlways(options: readonly PermissionOption[]): PermissionOption[] {
   return options.filter((option) => option.kind === 'allow_once' || option.kind === 'reject_once');
 }

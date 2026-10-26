@@ -2,7 +2,7 @@
 
 A profile says who a session runs as: which agent, which model, which tools, how much it may do.
 It is a concept of Lotse's own ([ADR 0007](adr/0007-profiles-tasks-triggers.md)), so every host
-that starts a session reads the same file: `lotse serve`, requests from the chat and, as they pick
+that starts a session reads the same file: `lotse listen`, requests from the chat and, as they pick
 it up, the widget and headless jobs.
 
 ## The file
@@ -60,7 +60,7 @@ Boolean agent config options are shown the same way, as switches in the config r
 
 ## Migration
 
-With no profiles.json and a tasks.json that has `profiles`, `serve` writes profiles.json once from
+With no profiles.json and a tasks.json that has `profiles`, `listen` writes profiles.json once from
 them (`id`, `agent`, `model`, `data`), prints one notice and never changes tasks.json, which keeps
 working. An existing profiles.json is never overwritten. Behaviour is unchanged: a migrated profile
 has no options, servers, preamble or rights limit.

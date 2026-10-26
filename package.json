@@ -205,7 +205,7 @@
                 },
                 {
                   "item": "Questions from scheduled tasks can be answered from a notification or an answer window.",
-                  "translatorHint": "Release notes for version 0.3.0 - answering a lotse serve question from the desktop"
+                  "translatorHint": "Release notes for version 0.3.0 - answering a lotse listen question from the desktop"
                 },
                 {
                   "item": "Tool calls are stored in the conversation with their details, and a host can show its own tools with its own title and icon.",

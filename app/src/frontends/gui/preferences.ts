@@ -1,5 +1,5 @@
 /**
- * The preferences dialog: which agent lotse connects to, how `lotse serve` asks, and which chat requests
+ * The preferences dialog: which agent lotse connects to, how `lotse listen` asks, and which chat requests
  * it takes.
  *
  * **Action rows with radio check buttons, not an `Adw.ComboRow`.** A combo row shows one line per item
@@ -83,7 +83,7 @@ export type SelectOutcome = 'chose' | 'unchanged' | 'refused' | 'failed' | 'miss
 const scopeLine = () => _('A change applies the next time lotse starts. This window keeps its agent.');
 
 const modeLine = () =>
-  _('How lotse serve shows a question an agent asks. A change applies to the next question.');
+  _('How lotse listen shows a question an agent asks. A change applies to the next question.');
 
 const modeRows = (): readonly {
   readonly mode: DesktopMode;
@@ -104,7 +104,7 @@ const modeRows = (): readonly {
 
 const messengerLine = () =>
   _(
-    'Also ask in a chat, through an MCP server such as curlew, and read the reply as the answer. The first answer wins. A change applies within a minute to a running lotse serve; runs under way finish as they were.',
+    'Also ask in a chat, through an MCP server such as curlew, and read the reply as the answer. The first answer wins. A change applies within a minute to a running lotse listen; runs under way finish as they were.',
   );
 
 type MessengerField = 'command' | 'args' | 'account' | 'peer' | 'sendTool' | 'waitTool';
@@ -120,7 +120,7 @@ const messengerFields = (): readonly { readonly field: MessengerField; readonly 
 
 const requestsLine = () =>
   _(
-    'A message that answers no question starts an agent run, and the answer comes back in the chat. A change applies the next time lotse serve starts.',
+    'A message that answers no question starts an agent run, and the answer comes back in the chat. A change applies the next time lotse listen starts.',
   );
 
 type RequestField = 'prefix' | 'profile' | 'preamble' | 'cwd' | 'mcpServers' | 'mcpEnv';

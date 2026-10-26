@@ -1,10 +1,10 @@
 /**
- * Questions `serve` puts to its person: ids, expiry, and reading an answer without a model.
+ * Questions `listen` puts to its person: ids, expiry, and reading an answer without a model.
  *
  * Two kinds, because an agent can be stuck in two ways:
  *
  * - **`permission`** — a `session/request_permission` that neither a token nor a released area
- *   answers. The request is *held* by the `serve` process that received it; the question is how the
+ *   answers. The request is *held* by the `listen` process that received it; the question is how the
  *   person answers it. When that process ends, the request is gone, and a yes to it is dropped
  *   rather than applied to anything else (ADR 0002 §8).
  * - **`reply`** — the turn ended with the agent asking something. Nothing is held; an answer
@@ -46,7 +46,7 @@ export interface Question {
   /** `yes`, `no`, or `text` — never the text itself, which went to the session. */
   readonly answer: AnswerKind | null;
   readonly answeredAt: string | null;
-  /** What `serve` did, as one sentence. `lotse answer` prints it. */
+  /** What `listen` did, as one sentence. `lotse answer` prints it. */
   readonly resolution: string | null;
   /** `person` only: the wait ran out, the run is gone, and an answer continues the session. */
   readonly deferred?: boolean;

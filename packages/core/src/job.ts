@@ -354,7 +354,7 @@ async function answerPermission(
   return option?.kind === 'allow_once' ? chosen : null;
 }
 
-/** Select `model` through the session's model option, as `serve` does. No fallback, ever. */
+/** Select `model` through the session's model option, as `listen` does. No fallback, ever. */
 async function selectModel(
   client: AgentHandle['client'],
   sessionId: string,

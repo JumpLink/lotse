@@ -1,8 +1,8 @@
 /**
  * The first `ServeChannel`: a desktop notification over `org.freedesktop.Notifications`.
  *
- * Gio D-Bus rather than GNotification, because `serve` is not a `GApplication` and has no desktop
- * file to attach one to. Imported lazily by `serve` (`await import`), so nothing that merely lists
+ * Gio D-Bus rather than GNotification, because `listen` is not a `GApplication` and has no desktop
+ * file to attach one to. Imported lazily by `listen` (`await import`), so nothing that merely lists
  * or answers questions loads GI, and a session without a notification daemon falls back to stderr
  * instead of failing the run that wanted to ask (`stderr-channel.ts`).
  *

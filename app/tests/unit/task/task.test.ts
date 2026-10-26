@@ -317,7 +317,7 @@ export default async () => {
         const loop = runReceiveLoop({
           link,
           settings: SETTINGS,
-          serve: d,
+          deps: d,
           cursor,
           signal: abort.signal,
           timeoutS: 1,

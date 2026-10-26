@@ -6,7 +6,7 @@
 - Related: [vision](../vision.md),
   [ADR 0003](0003-serve-tasks-questions-channel.md) (the channel seam),
   [ADR 0007](0007-profiles-tasks-triggers.md),
-  [docs/serve-xmpp-curlew.md](../serve-xmpp-curlew.md),
+  [docs/listen-xmpp-curlew.md](../listen-xmpp-curlew.md),
   [gjsify#2389](https://github.com/gjsify/gjsify/issues/2389) (MCP SDK v2 on GJS)
 
 ## Context

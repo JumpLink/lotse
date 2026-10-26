@@ -81,17 +81,17 @@ lotse auth [--agent opencode]              # the interactive-login escape hatch
 lotse login [provider]                     # log in through the agent's OAuth flow, no terminal (opencode v2)
 lotse provider list|add|remove [id]        # local models / OpenAI-compatible endpoints for the bundled opencode
 lotse agents                               # the launchers that are registered, and whether the binary is on PATH
-lotse serve                                # receive chat requests and answers; notify on a question
-lotse messenger [--requests on|off …]      # show or set the requests serve takes from the chat
+lotse listen                              # receive chat requests and answers; notify on a question
+lotse messenger [--requests on|off …]      # show or set the requests `lotse listen` takes from the chat
 lotse questions [--all] [--json]           # the questions agents are waiting on
 lotse answer <id> [text…] [--dialog]       # yes/no, a reply, or the answer window
 ```
 
 Custom providers and their rules (keys, LAN, local-model hints): [docs/custom-providers.md](docs/custom-providers.md).
 
-`lotse serve` answers requests from the chat and asks you, by
+`lotse listen` answers requests from the chat and asks you, by
 desktop notification or, if you configure it, in a chat through an MCP server such as curlew, when an
-agent needs a decision. How to set it up: [docs/serve.md](docs/serve.md); profiles: [docs/profiles.md](docs/profiles.md); tasks: [docs/tasks.md](docs/tasks.md); messenger server contract: [docs/messenger-contract.md](docs/messenger-contract.md).
+agent needs a decision. How to set it up: [docs/listen.md](docs/listen.md); profiles: [docs/profiles.md](docs/profiles.md); tasks: [docs/tasks.md](docs/tasks.md); messenger server contract: [docs/messenger-contract.md](docs/messenger-contract.md).
 
 ## Run the surface
 
@@ -137,7 +137,7 @@ Through 0.1.1 that directory was `$XDG_DATA_HOME/kurier` (and `$XDG_CONFIG_HOME/
 renames each one once on startup, when the new name is free; it never merges two directories and
 keeps using the old one — saying so on stderr — if the move fails.
 
-`lotse serve` keeps its questions, the last run per task and an action log under
+`lotse listen` keeps its questions, the last run per task and an action log under
 `$XDG_STATE_HOME/lotse/` (mode `0600`). The log holds ids and kinds, never a prompt or a reply.
 
 A session record says what is *reachable*, never what is *allowed*. Nothing in it can grant a

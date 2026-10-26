@@ -2,7 +2,7 @@
  * The task file's shape as a JSON Schema — one value a settings page, an editor and the parser all read.
  *
  * **The parser's key lists come from here** (`schemaKeys`), so a field added to the schema and not to
- * `parseServeConfig` is an unknown-key error in the first test, not a page that edits a field `serve`
+ * `parseServeConfig` is an unknown-key error in the first test, not a page that edits a field `listen`
  * rejects. Every property carries a `title` (a label) and a `description` (one or two sentences a person
  * can act on); a test walks the whole tree and fails on a property without both.
  *
@@ -82,8 +82,8 @@ const DELIVERY = {
 
 export const SERVE_CONFIG_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
-  title: 'lotse serve tasks',
-  description: 'Users, profiles and the tasks `lotse serve` knows. Read once at start.',
+  title: 'lotse listen tasks',
+  description: 'Users, profiles and the tasks `lotse listen` knows. Read once at start.',
   type: 'object',
   additionalProperties: false,
   required: ['version', 'users', 'profiles', 'tasks'],
@@ -92,7 +92,7 @@ export const SERVE_CONFIG_SCHEMA = {
     users: {
       type: 'array',
       title: 'Users',
-      description: 'The people serve works for. The first build serves one.',
+      description: 'The people listen works for. The first build serves one.',
       items: { $ref: '#/$defs/user' },
     },
     profiles: {
@@ -164,7 +164,7 @@ export const SERVE_CONFIG_SCHEMA = {
           enum: ['private', 'public'],
           title: 'Data',
           description:
-            'Only without a profile of this id in profiles.json, where it is required: whether the tasks on this profile see private data. A label for you: serve notes a private profile on a free model at start and runs it all the same.',
+            'Only without a profile of this id in profiles.json, where it is required: whether the tasks on this profile see private data. A label for you: listen notes a private profile on a free model at start and runs it all the same.',
         },
         ...DELIVERY,
       },

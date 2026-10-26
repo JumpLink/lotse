@@ -129,12 +129,12 @@ Curlew backend later.
    "nothing open". A request runs as an ad-hoc session with a configured profile and rights tier
    (default `read`, which declines every permission request); with `confirm`, a write still needs a
    yes through the questions of this section. Within a set time after its answer, a plain message
-   continues the same session. Set up in [serve.md](../serve.md#requests-from-the-chat).
+   continues the same session. Set up in [listen.md](../listen.md#requests-from-the-chat).
 9. **The channel goes through Curlew, never through messenger code in lotse.** lotse defines a
    channel interface (send a text to an address, read new messages since a position). Its first
    implementation is an MCP client against Curlew's server, using the assistant's own account and
    the send tool Curlew grants for it. Messages from the person's own accounts are only read.
-   Implemented in `packages/core/src/messenger/`; set up in [serve.md](../serve.md).
+   Implemented in `packages/core/src/messenger/`; set up in [listen.md](../listen.md).
 10. **State and log are declared.** Read positions, open questions, users and profiles, and an
    action log go under lotse's data directory, mode 0600 in 0700. The log has one line per
    trigger, question, answer and allowed action, with source ids instead of message text. Tiers:

@@ -35,7 +35,7 @@ import {
   withRequests,
 } from '../../../src/core/settings.ts';
 import { applyRequestFlags } from '../../../src/frontends/cli/messenger.ts';
-import { createRequestsHolder } from '../../../src/frontends/cli/serve-requests.ts';
+import { createRequestsHolder } from '../../../src/frontends/cli/chat-requests.ts';
 import { withFakeMcp, type FakeMcp } from '../../support/fake-mcp.ts';
 
 const SETTINGS: MessengerSettings = {
@@ -83,7 +83,7 @@ interface Clock {
   ms: number;
 }
 
-function serveDeps(
+function runDeps(
   book: { value: Question[] },
   clock: Clock = { ms: NOW },
   entries: ServeLogEntry[] = [],
@@ -159,10 +159,10 @@ async function looping(
 ): Promise<void> {
   const link = new McpLink(() => connectMcp(fake.command));
   const abort = new AbortController();
-  const deps = serveDeps(book);
+  const deps = runDeps(book);
   const requests = chatRequests({
     settings: ON,
-    serve: deps,
+    deps: deps,
     defaultCwd: '/home/example',
     send: (text) => sendToPeer(link, SETTINGS, text),
     run: runner.run,
@@ -170,7 +170,7 @@ async function looping(
   const loop = runReceiveLoop({
     link,
     settings: SETTINGS,
-    serve: deps,
+    deps: deps,
     cursor,
     signal: abort.signal,
     timeoutS: 1,
@@ -243,7 +243,7 @@ export default async () => {
       const entries: ServeLogEntry[] = [];
       const requests = chatRequests({
         settings: { ...ON, preamble: 'Be brief.' },
-        serve: serveDeps({ value: [] }, { ms: NOW }, entries),
+        deps: runDeps({ value: [] }, { ms: NOW }, entries),
         defaultCwd: '/home/example',
         send: async (text) => void out.push(text),
         run: runner.run,
@@ -274,7 +274,7 @@ export default async () => {
       const entries: ServeLogEntry[] = [];
       const requests = chatRequests({
         settings: ON,
-        serve: serveDeps({ value: [] }, { ms: NOW }, entries),
+        deps: runDeps({ value: [] }, { ms: NOW }, entries),
         defaultCwd: '/home/example',
         send: async (text) => void out.push(text),
         run: runner.run,
@@ -297,7 +297,7 @@ export default async () => {
       const runner = fakeRunner();
       const requests = chatRequests({
         settings: { ...ON, maxConcurrent: 2 },
-        serve: serveDeps({ value: [] }),
+        deps: runDeps({ value: [] }),
         defaultCwd: '/home/example',
         send: async () => {},
         run: runner.run,
@@ -315,7 +315,7 @@ export default async () => {
       const clock = { ms: NOW };
       const requests = chatRequests({
         settings: ON,
-        serve: serveDeps({ value: [] }, clock),
+        deps: runDeps({ value: [] }, clock),
         defaultCwd: '/home/example',
         send: async (text) => void out.push(text),
         run: runner.run,
@@ -354,7 +354,7 @@ export default async () => {
       const out: string[] = [];
       const requests = chatRequests({
         settings: ON,
-        serve: serveDeps({ value: [] }),
+        deps: runDeps({ value: [] }),
         defaultCwd: '/home/example',
         send: async (text) => void out.push(text),
         run: runner.run,
@@ -376,7 +376,7 @@ export default async () => {
       const entries: ServeLogEntry[] = [];
       const requests = chatRequests({
         settings: ON,
-        serve: serveDeps({ value: [] }, { ms: NOW }, entries),
+        deps: runDeps({ value: [] }, { ms: NOW }, entries),
         defaultCwd: '/home/example',
         send: async (text) => void out.push(text),
         run: runner.run,
@@ -392,8 +392,8 @@ export default async () => {
       runner.calls[1]!.release(new Error('agent crashed'));
       await requests.idle();
       expect(out).toStrictEqual([
-        'The request failed. The serve log has the details.',
-        'The request failed. The serve log has the details.',
+        'The request failed. The listen log has the details.',
+        'The request failed. The listen log has the details.',
       ]);
       expect(entries.some((entry) => entry.event === 'error')).toBe(true);
     });
@@ -549,7 +549,7 @@ export default async () => {
       const runner = fakeRunner();
       const requests = chatRequests({
         settings: { ...ON, mcpServers: [SERVER] },
-        serve: serveDeps({ value: [] }),
+        deps: runDeps({ value: [] }),
         defaultCwd: '/home/example',
         send: async () => {},
         run: runner.run,
@@ -599,7 +599,7 @@ export default async () => {
       const pending = memory();
       const requests = chatRequests({
         settings: ON,
-        serve: serveDeps({ value: [] }),
+        deps: runDeps({ value: [] }),
         defaultCwd: '/home/example',
         send: async () => {},
         pending,
@@ -692,10 +692,10 @@ export default async () => {
         const runner = fakeRunner();
         const link = new McpLink(() => connectMcp(fake.command));
         const abort = new AbortController();
-        const deps = serveDeps({ value: [] });
+        const deps = runDeps({ value: [] });
         let current = chatRequests({
           settings: ON,
-          serve: deps,
+          deps: deps,
           defaultCwd: '/h',
           send: (t) => sendToPeer(link, SETTINGS, t),
           run: runner.run,
@@ -703,7 +703,7 @@ export default async () => {
         const loop = runReceiveLoop({
           link,
           settings: SETTINGS,
-          serve: deps,
+          deps: deps,
           cursor: memoryCursor(BEFORE),
           signal: abort.signal,
           timeoutS: 1,
@@ -716,7 +716,7 @@ export default async () => {
           await until(() => runner.calls.length === 1, 'the first run');
           current = chatRequests({
             settings: { ...ON, prefix: '/do' },
-            serve: deps,
+            deps: deps,
             defaultCwd: '/h',
             send: (t) => sendToPeer(link, SETTINGS, t),
             run: runner.run,
@@ -740,10 +740,10 @@ export default async () => {
       await withFakeMcp({}, async (fake) => {
         const runner = fakeRunner();
         const link = new McpLink(() => connectMcp(fake.command));
-        const deps = serveDeps({ value: [] });
+        const deps = runDeps({ value: [] });
         const requests = chatRequests({
           settings: ON,
-          serve: deps,
+          deps: deps,
           defaultCwd: '/h',
           send: (t) => sendToPeer(link, SETTINGS, t),
           run: runner.run,
@@ -752,7 +752,7 @@ export default async () => {
         await runReceiveLoop({
           link,
           settings: SETTINGS,
-          serve: deps,
+          deps: deps,
           cursor: memoryCursor(BEFORE),
           signal: new AbortController().signal,
           timeoutS: 1,
@@ -772,7 +772,7 @@ export default async () => {
         await runReceiveLoop({
           link,
           settings: SETTINGS,
-          serve: serveDeps({ value: [] }),
+          deps: runDeps({ value: [] }),
           cursor: memoryCursor(BEFORE),
           signal: new AbortController().signal,
           timeoutS: 1,

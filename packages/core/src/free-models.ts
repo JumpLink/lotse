@@ -37,7 +37,7 @@ export const FREE_MODELS_WITHOUT_SUFFIX: readonly string[] = ['opencode/big-pick
 /**
  * A model id from a provider's free tier, which may keep and train on what it is sent.
  *
- * **A classification, not a policy**: who may prompt one is decided by `lotse serve`'s task
+ * **A classification, not a policy**: who may prompt one is decided by `lotse listen`'s task
  * configuration (`serve/config.ts`), a host's `ModelPolicy` (`model-policy.ts`) and the person, who is
  * shown `FREE_MODEL_WARNING`. All of them read this one function.
  *

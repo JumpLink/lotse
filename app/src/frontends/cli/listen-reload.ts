@@ -1,5 +1,5 @@
 /**
- * Applying an edited task file to a running `serve` (docs/serve.md, "Editing the task file").
+ * Applying an edited task file to a running `listen` (docs/listen.md, "Editing the task file").
  *
  * The file is looked at once per pass. A change that parses becomes the new configuration for every
  * run that STARTS afterwards; a run already going keeps the `ServeDeps` it was handed, which is what

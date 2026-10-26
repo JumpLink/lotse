@@ -2,7 +2,7 @@ import { describe, expect, it } from '@gjsify/unit';
 
 import { parseServeConfig, type ServeConfig, type ServeDeps } from '@lotse/core';
 
-import { createReloader, liveDeps } from '../../../src/frontends/cli/serve-reload.ts';
+import { createReloader, liveDeps } from '../../../src/frontends/cli/listen-reload.ts';
 import type { LoadedTasks } from '../../../src/core/serve-config.ts';
 
 function config(tasks: Record<string, unknown>[]): ServeConfig {
@@ -55,7 +55,7 @@ function fixture(initial: Record<string, unknown>[]) {
 const EVERY = { id: 'a', prompt: 'p' };
 
 export default async () => {
-  await describe('serve reload', async () => {
+  await describe('listen reload', async () => {
     await it('reports nothing while the file is unchanged', async () => {
       const { reloader } = fixture([EVERY]);
       expect(reloader.check().kind).toBe('unchanged');

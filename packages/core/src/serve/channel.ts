@@ -1,7 +1,7 @@
 /**
- * How `serve` reaches its person — the seam ADR 0002 §9 asks for.
+ * How `listen` reaches its person — the seam ADR 0002 §9 asks for.
  *
- * A task names a profile, the profile a user, and `serve` hands every message for that user to the
+ * A task names a profile, the profile a user, and `listen` hands every message for that user to the
  * `ServeChannel` it was started with — one, or several combined (`combineChannels`). A task or profile
  * may narrow that to some channels and keep the question text off the messenger (`channels`,
  * `messengerDetail`); `routeChannels` applies it, by the `task` a message carries. The first channel is a desktop notification (the app's `desktop-notifier.ts`);
@@ -20,7 +20,7 @@ export interface ServeMessage {
   readonly body: string;
   /** The question this message asks, so a channel with replies can thread the answer to it. */
   readonly questionId: string | null;
-  /** The task the message is about, so a router can apply its `channels`. Absent: serve's own news. */
+  /** The task the message is about, so a router can apply its `channels`. Absent: listen's own news. */
   readonly task?: string;
   /**
    * Set only on the message that asks the question, not on one that reports about it (expired), so a

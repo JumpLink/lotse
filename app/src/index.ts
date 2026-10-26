@@ -32,20 +32,20 @@ import {
   providerCommand,
   questionsCommand,
   resumeCommand,
-  serveCommand,
+  listenCommand,
   sessionsCommand,
   startCommand,
 } from './frontends/cli/index.ts';
 import { gjsMainLoop, runMain } from './core/main.ts';
 import { migratedPaths } from './core/migrate.ts';
-import { servePaths } from './core/paths.ts';
+import { listenPaths } from './core/paths.ts';
 
 // The one place the process environment becomes paths; everything below is handed them. The
 // one-time move from the directories lotse wrote happens here too (`core/migrate.ts`), and its
 // notes go to stderr: a directory that moved — or could not be moved — is something *about* the
 // answer, never the answer a pipe is reading.
 const { paths, notes } = migratedPaths();
-const serve = servePaths();
+const listen = listenPaths();
 for (const note of notes) console.error(`lotse: ${note}`);
 
 function reportError(err: unknown): void {
@@ -64,12 +64,12 @@ const parseArgs = () =>
     .command(providerCommand(paths))
     .command(agentsCommand(paths))
     .command(messengerCommand(paths))
-    .command(serveCommand(paths, serve))
-    .command(questionsCommand(paths, serve))
-    .command(answerCommand(paths, serve))
-    .command(runCommand(paths, serve))
-    .command(tasksCommand(paths, serve))
-    .command(statusCommand(paths, serve))
+    .command(listenCommand(paths, listen))
+    .command(questionsCommand(paths, listen))
+    .command(answerCommand(paths, listen))
+    .command(runCommand(paths, listen))
+    .command(tasksCommand(paths, listen))
+    .command(statusCommand(paths, listen))
     .demandCommand(1, 'Please provide a command — `lotse --help` lists them all.')
     .strictCommands()
     .scriptName('lotse')

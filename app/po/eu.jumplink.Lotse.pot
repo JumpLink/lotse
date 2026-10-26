@@ -304,7 +304,7 @@ msgid ""
 msgstr ""
 
 #: app/src/frontends/cli/auth.ts:70 app/src/frontends/cli/cancel.ts:64
-#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:166
+#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/listen-deps.ts:166
 #: app/src/frontends/cli/start.ts:90
 msgid "  [agent] {line}"
 msgstr ""
@@ -361,19 +361,19 @@ msgstr ""
 msgid "session/cancel sent for {id}"
 msgstr ""
 
-#: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/serve.ts:182
-#: app/src/frontends/cli/serve.ts:301 app/src/frontends/cli/serve.ts:308
-#: app/src/frontends/cli/serve.ts:320 app/src/frontends/cli/serve.ts:343
+#: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/listen.ts:182
+#: app/src/frontends/cli/listen.ts:301 app/src/frontends/cli/listen.ts:308
+#: app/src/frontends/cli/listen.ts:320 app/src/frontends/cli/listen.ts:343
 msgid "  {line}"
 msgstr ""
 
 #: app/src/frontends/cli/choose.ts:38 app/src/frontends/cli/questions.ts:33
-#: app/src/frontends/cli/serve-deps.ts:159 app/src/frontends/cli/serve.ts:134
+#: app/src/frontends/cli/listen-deps.ts:159 app/src/frontends/cli/listen.ts:134
 msgid "  {problem}"
 msgstr ""
 
 #: app/src/frontends/cli/choose.ts:43 app/src/frontends/cli/provider.ts:205
-#: app/src/frontends/cli/serve.ts:197 app/src/frontends/cli/serve.ts:229
+#: app/src/frontends/cli/listen.ts:197 app/src/frontends/cli/listen.ts:229
 msgid "  {note}"
 msgstr ""
 
@@ -442,7 +442,7 @@ msgid "cancelled."
 msgstr ""
 
 #: app/src/frontends/cli/messenger.ts:126
-msgid "show or set the requests serve takes from the chat"
+msgid "show or set the requests `lotse listen` takes from the chat"
 msgstr ""
 
 #: app/src/frontends/cli/messenger.ts:129
@@ -666,84 +666,84 @@ msgstr ""
 msgid "print the result as JSON"
 msgstr ""
 
-#: app/src/frontends/cli/serve-deps.ts:38
+#: app/src/frontends/cli/listen-deps.ts:38
 msgid ""
 "tasks.json: 'schedule' is no longer supported and is ignored (task {id})"
 msgstr ""
 
-#: app/src/frontends/cli/serve-deps.ts:47
+#: app/src/frontends/cli/listen-deps.ts:47
 msgid ""
 "The profiles in tasks.json were copied to {file}, which every lotse host now "
 "shares. tasks.json keeps working; edit the profiles there."
 msgstr ""
 
-#: app/src/frontends/cli/serve-deps.ts:57
+#: app/src/frontends/cli/listen-deps.ts:57
 msgid ""
 "The tasks in tasks.json were copied to {dir}, one SKILL.md each. tasks.json "
 "keeps working and is not changed; edit the tasks there."
 msgstr ""
 
-#: app/src/frontends/cli/serve-deps.ts:62 app/src/frontends/cli/serve.ts:359
+#: app/src/frontends/cli/listen-deps.ts:62 app/src/frontends/cli/listen.ts:359
 msgid "  {warning}"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:87
+#: app/src/frontends/cli/listen.ts:87
 msgid "  #{questionId}: {message}"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:117
+#: app/src/frontends/cli/listen.ts:117
 msgid "  #{questionId}: {reason}"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:175
+#: app/src/frontends/cli/listen.ts:175
 msgid "  messenger channel not started: {problem}"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:180
+#: app/src/frontends/cli/listen.ts:180
 msgid "  messenger: {line}"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:201
+#: app/src/frontends/cli/listen.ts:201
 msgid "  {name}: {message}"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:220
+#: app/src/frontends/cli/listen.ts:220
 msgid "answer chat requests and ask the person when an agent has a question"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:222
+#: app/src/frontends/cli/listen.ts:222
 msgid "do not echo the agents' log lines"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:264
-msgid "  {dropped} permission question(s) from an earlier serve cancelled"
+#: app/src/frontends/cli/listen.ts:264
+msgid "  {dropped} permission question(s) from an earlier listen cancelled"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:267
+#: app/src/frontends/cli/listen.ts:267
 msgid ""
-"lotse serve — listening for chat requests and answers, questions via "
+"lotse listen — listening for chat requests and answers, questions via "
 "{channel}, state in {dir}"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:281
+#: app/src/frontends/cli/listen.ts:281
 msgid "  stopping: {why}"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:324
+#: app/src/frontends/cli/listen.ts:324
 msgid ""
-"  {left} chat request(s) from an earlier serve were not completed; the chat "
+"  {left} chat request(s) from an earlier listen were not completed; the chat "
 "was told"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:361
+#: app/src/frontends/cli/listen.ts:361
 msgid "  {file} reloaded"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:368
+#: app/src/frontends/cli/listen.ts:368
 msgid "{file} not reloaded, keeping the previous one: {problem}"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:372
+#: app/src/frontends/cli/listen.ts:372
 msgid "  {message}"
 msgstr ""
 
@@ -880,7 +880,7 @@ msgstr ""
 
 #: app/src/frontends/gui/preferences.ts:86
 msgid ""
-"How lotse serve shows a question an agent asks. A change applies to the next "
+"How lotse listen shows a question an agent asks. A change applies to the next "
 "question."
 msgstr ""
 
@@ -904,7 +904,7 @@ msgstr ""
 msgid ""
 "Also ask in a chat, through an MCP server such as curlew, and read the reply "
 "as the answer. The first answer wins. A change applies within a minute to a "
-"running lotse serve; runs under way finish as they were."
+"running lotse listen; runs under way finish as they were."
 msgstr ""
 
 #: app/src/frontends/gui/preferences.ts:113
@@ -934,7 +934,7 @@ msgstr ""
 #: app/src/frontends/gui/preferences.ts:123
 msgid ""
 "A message that answers no question starts an agent run, and the answer comes "
-"back in the chat. A change applies the next time lotse serve starts."
+"back in the chat. A change applies the next time lotse listen starts."
 msgstr ""
 
 #: app/src/frontends/gui/preferences.ts:129

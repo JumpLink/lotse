@@ -17,7 +17,7 @@ import {
   type TaskRun,
 } from '@lotse/core';
 
-import type { ServePaths } from '../../core/paths.ts';
+import type { ListenPaths } from '../../core/paths.ts';
 import { listTasks, type TaskEntry } from '../../core/serve-config.ts';
 import { questionBook, runningTasks, runState, type RunRecord } from '../../core/serve-state.ts';
 
@@ -89,15 +89,15 @@ export interface StatusReport {
   readonly questions: readonly { id: string; task: string; kind: string; expiresAt: string }[];
 }
 
-export function statusReport(serve: ServePaths, now: Date = new Date()): StatusReport {
+export function statusReport(listen: ListenPaths, now: Date = new Date()): StatusReport {
   const book = questionBook(
-    serve.stateDir,
+    listen.stateDir,
     () => now,
     () => {},
   ).read();
   return {
-    running: runningTasks(serve.stateDir),
-    recent: runState(serve.stateDir).all(),
+    running: runningTasks(listen.stateDir),
+    recent: runState(listen.stateDir).all(),
     questions: book
       .filter((question) => isOpen(question, now))
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
@@ -126,5 +126,5 @@ export function statusText(report: StatusReport): string {
   return lines.join('\n');
 }
 
-export const tasksOf = (serve: ServePaths, config: ServeConfig): TaskEntry[] =>
-  listTasks(serve.tasksDir, config);
+export const tasksOf = (listen: ListenPaths, config: ServeConfig): TaskEntry[] =>
+  listTasks(listen.tasksDir, config);
