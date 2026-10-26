@@ -26,6 +26,14 @@ import {
 import type { AgentCommand } from '../agents/stdio.ts';
 import { projectConfigOptions } from '../config.ts';
 import { chunkToText } from '../policy.ts';
+import { applyConfigOptions, ProfileOptionError } from '../profile/apply.ts';
+import {
+  narrowRights,
+  profileFromServe,
+  resolveProfile,
+  withPreamble,
+  type ProfileSession,
+} from '../profile/resolve.ts';
 import { runTurn, withAuthHint, type AgentHandle, type OpenAgentOptions } from '../run.ts';
 import type { ServeChannel } from './channel.ts';
 import {
@@ -236,14 +244,14 @@ export async function runTask(task: ServeTask, deps: ServeDeps): Promise<RunResu
         });
       }
     }
-    const run = await runSession(task, deps, startedAt, async (client, extra) => {
+    const run = await runSession(task, deps, startedAt, async (client, extra, profile) => {
       const session = await withAuthHint('session/new', () =>
-        client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers, ...extra] }),
+        client.newSession({ cwd: task.cwd, mcpServers: [...serversFor(task, profile), ...extra] }),
       );
       return {
         sessionId: session.sessionId,
         configOptions: session.configOptions ?? null,
-        text: deps.promptFor(task),
+        text: withPreamble(profile.preamble, deps.promptFor(task)),
       };
     });
     return task.precheck ? { ...run, precheck: 'work' } : run;
@@ -296,6 +304,7 @@ async function runPrecheck(
     ? deps.config.profiles.find((candidate) => candidate.id === check.profile)
     : null;
   const profile: ServeProfile = named ?? { ...taskProfile, model: null };
+  const resolved = sessionOf(deps, profile);
   const user = userOf(deps.config, taskProfile);
   let handle: AgentHandle | null = null;
   let sessionId: string | null = null;
@@ -321,16 +330,17 @@ async function runPrecheck(
     let session!: Awaited<ReturnType<AcpClient['newSession']>>;
     for (let attempt = 0; ; attempt += 1) {
       handle = await deps.open({
-        command: deps.commandFor(profile),
+        command: resolved.command,
         gate: { permission: gate },
         ...(deps.onAgentLog ? { onLog: deps.onAgentLog } : {}),
       });
+      // Only the task's own servers: the precheck stays read-only, so it inherits nothing from a profile.
       session = await withAuthHint('session/new', () =>
         handle!.client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers] }),
       );
       sessionId = session.sessionId;
       try {
-        await pinModel(handle.client, session.sessionId, session.configOptions ?? null, profile);
+        await pinSession(handle.client, session.sessionId, session.configOptions ?? null, resolved);
         break;
       } catch (error) {
         if (!(error instanceof ModelUnavailableError) || attempt > 0) throw error;
@@ -534,23 +544,21 @@ export async function answerQuestion(idText: string, text: string, deps: ServeDe
       : parsed.kind === 'text'
         ? parsed.text
         : text.trim();
-    const run = await runSession(task, deps, now, async (client, extra) => {
-      const continued = await continueSession(client, task, question.sessionId, extra);
+    const run = await runSession(task, deps, now, async (client, extra, profile) => {
+      const servers = serversFor(task, profile, 'answer');
+      const continued = await continueSession(client, task.cwd, question.sessionId, servers, extra);
       if (continued) {
         how = continued.how;
         return { sessionId: question.sessionId, configOptions: continued.configOptions, text: answerText };
       }
       how = 'follow-up';
       const session = await withAuthHint('session/new', () =>
-        client.newSession({
-          cwd: task.cwd,
-          mcpServers: [...(task.answerMcpServers ?? task.mcpServers), ...extra],
-        }),
+        client.newSession({ cwd: task.cwd, mcpServers: [...servers, ...extra] }),
       );
       return {
         sessionId: session.sessionId,
         configOptions: session.configOptions ?? null,
-        text: followUpPrompt(task, question, answerText),
+        text: withPreamble(profile.preamble, followUpPrompt(task, question, answerText)),
       };
     });
     const said = {
@@ -635,14 +643,16 @@ export async function runRequest(request: RequestRun, deps: ServeDeps): Promise<
   const task = requestTask(request);
   profileOf(deps.config, task);
   let how: RequestMode = 'new';
-  const opening = request.preamble.trim() ? `${request.preamble.trim()}\n\n${request.text}` : request.text;
   const run = await runSession(
     task,
     deps,
     deps.now(),
-    async (client, extra) => {
+    async (client, extra, profile) => {
+      const servers = serversFor(task, profile);
+      // The request's own preamble replaces the profile's, like its servers do.
+      const opening = withPreamble(request.preamble.trim() || profile.preamble, request.text);
       if (request.sessionId) {
-        const continued = await continueSession(client, task, request.sessionId, extra);
+        const continued = await continueSession(client, task.cwd, request.sessionId, servers, extra);
         if (continued) {
           how = continued.how;
           return { sessionId: request.sessionId, configOptions: continued.configOptions, text: request.text };
@@ -650,7 +660,7 @@ export async function runRequest(request: RequestRun, deps: ServeDeps): Promise<
         how = 'fresh';
       }
       const session = await withAuthHint('session/new', () =>
-        client.newSession({ cwd: task.cwd, mcpServers: [...task.mcpServers, ...extra] }),
+        client.newSession({ cwd: task.cwd, mcpServers: [...servers, ...extra] }),
       );
       return { sessionId: session.sessionId, configOptions: session.configOptions ?? null, text: opening };
     },
@@ -680,17 +690,20 @@ async function runSession(
   task: ServeTask,
   deps: ServeDeps,
   startedAt: Date,
-  start: (client: AcpClient, extra: readonly McpServer[]) => Promise<Started>,
+  start: (client: AcpClient, extra: readonly McpServer[], profile: ProfileSession) => Promise<Started>,
   options: { readonly replyQuestions: boolean } = { replyQuestions: true },
 ): Promise<RunResult> {
   const profile = profileOf(deps.config, task);
+  const resolved = sessionOf(deps, profile);
   const user = userOf(deps.config, profile);
   let handle: AgentHandle | null = null;
   let sessionId: string | null = null;
   let declined = false;
+  // The profile's limit can only lower what the task asked for; the areas of `released` go with it.
+  const rights = narrowRights(task.rights, resolved.rights);
   const gate = serveGate({
-    rights: task.rights,
-    released: task.released,
+    rights,
+    released: rights === 'released' ? task.released : [],
     now: () => deps.now().getTime(),
     ask: (request, action, text) => ask(task, user, request.sessionId, action, text, deps),
     onDecision: (decision: GateDecision) => {
@@ -719,14 +732,14 @@ async function runSession(
     let started!: Started;
     for (let attempt = 0; ; attempt += 1) {
       handle = await deps.open({
-        command: deps.commandFor(profile),
+        command: resolved.command,
         gate: { permission: gate },
         ...(deps.onAgentLog ? { onLog: deps.onAgentLog } : {}),
       });
-      started = await start(handle.client, person ? [person.server] : []);
+      started = await start(handle.client, person ? [person.server] : [], resolved);
       sessionId = started.sessionId;
       try {
-        await pinModel(handle.client, started.sessionId, started.configOptions, profile);
+        await pinSession(handle.client, started.sessionId, started.configOptions, resolved);
         break;
       } catch (error) {
         if (!(error instanceof ModelUnavailableError) || attempt > 0) throw error;
@@ -788,7 +801,7 @@ async function runSession(
       task: task.id,
       detail: { kind: error instanceof Error ? error.name : 'Error' },
     });
-    if (error instanceof ModelUnavailableError) {
+    if (error instanceof ModelUnavailableError || error instanceof ProfileOptionError) {
       await deps.channel.send(user, {
         title: `lotse · ${task.id} stopped`,
         body: reason,
@@ -807,11 +820,12 @@ async function runSession(
 /** `session/load`, else `session/resume`; `null` when the agent offers neither. */
 async function continueSession(
   client: AcpClient,
-  task: ServeTask,
+  cwd: string,
   sessionId: string,
+  servers: readonly McpServer[],
   extra: readonly McpServer[],
 ): Promise<{ how: 'loaded' | 'resumed'; configOptions: SessionConfigOption[] | null } | null> {
-  const params = { cwd: task.cwd, mcpServers: [...(task.answerMcpServers ?? task.mcpServers), ...extra] };
+  const params = { cwd, mcpServers: [...servers, ...extra] };
   if (client.supportsLoadSession) {
     try {
       const loaded = await withAuthHint('session/load', () => client.loadSession({ sessionId, ...params }));
@@ -869,24 +883,55 @@ async function retryAfterUnavailable(
   await deps.sleep(deps.modelRetryMs ?? DEFAULT_MODEL_RETRY_MS);
 }
 
+/** The profile resolved for this run; the launcher is the app's, found by `commandFor`. */
+function sessionOf(deps: ServeDeps, profile: ServeProfile): ProfileSession {
+  return resolveProfile(profileFromServe(profile), { agent: () => deps.commandFor(profile) });
+}
+
+/**
+ * The servers a turn's new or continued session gets. The task's own list replaces the profile's —
+ * a task that names servers has decided which tools it gets — and the answer turn of a reply question
+ * may narrow or widen that again.
+ */
+function serversFor(
+  task: ServeTask,
+  profile: ProfileSession,
+  turn: 'first' | 'answer' = 'first',
+): McpServer[] {
+  const first = task.mcpServers.length > 0 ? task.mcpServers : profile.mcpServers;
+  return [...(turn === 'answer' ? (task.answerMcpServers ?? first) : first)];
+}
+
+/** The profile's model, then its other options, on a session that just started. */
+async function pinSession(
+  client: AcpClient,
+  sessionId: string,
+  options: SessionConfigOption[] | null,
+  profile: ProfileSession,
+): Promise<void> {
+  let current = options;
+  if (profile.model) current = await pinModel(client, sessionId, current, profile.model);
+  if (Object.keys(profile.configOptions).length > 0) {
+    await applyConfigOptions(client, sessionId, current, profile.configOptions);
+  }
+}
+
 async function pinModel(
   client: AcpClient,
   sessionId: string,
   options: SessionConfigOption[] | null,
-  profile: ServeProfile,
-): Promise<void> {
-  if (!profile.model) return;
+  model: string,
+): Promise<SessionConfigOption[] | null> {
   const control = projectConfigOptions(options).find((candidate) => candidate.category === 'model');
-  if (
-    !control ||
-    control.kind !== 'select' ||
-    !control.values.some((value) => value.value === profile.model)
-  ) {
-    throw new ModelUnavailableError(profile.model);
+  if (!control || control.kind !== 'select' || !control.values.some((value) => value.value === model)) {
+    throw new ModelUnavailableError(model);
   }
-  if (control.currentValue !== profile.model) {
-    await client.setConfigOption({ sessionId, configId: control.id, value: profile.model });
-  }
+  if (control.currentValue === model) return options;
+  const answer = await client.setConfigOption({ sessionId, configId: control.id, value: model });
+  return (
+    answer.configOptions ??
+    (options ?? []).map((option) => (option.id === control.id ? { ...option, currentValue: model } : option))
+  );
 }
 
 // ─── questions ───────────────────────────────────────────────────────────────────────────────
