@@ -34,17 +34,14 @@ function currentValueOf(options: SessionConfigOption[] | undefined, id: string):
 export default async () => {
   await describe('the capability announcement', async () => {
     await it('announces session.configOptions, because lotse can act on the options', async () => {
-      expect(LOTSE_CLIENT_CAPABILITIES.session?.configOptions).toStrictEqual({});
+      expect(LOTSE_CLIENT_CAPABILITIES.session?.configOptions).toStrictEqual({ boolean: {} });
     });
 
-    await it('does NOT announce boolean options, and the fixture is why', async () => {
-      // `opencode acp` 2.0.19 answers `InvalidConfigOptionError` for any value that is not a
-      // string, so it implements no boolean options at all. `{}` under `boolean` would be a promise
-      // the agent is entitled to break — and one this repository has no surface for yet.
+    await it('announces boolean options, because the config row draws switches', async () => {
       const capabilities = LOTSE_CLIENT_CAPABILITIES.session?.configOptions as
         | { boolean?: unknown }
         | undefined;
-      expect(capabilities?.boolean ?? null).toBe(null);
+      expect(capabilities?.boolean).toStrictEqual({});
     });
 
     await it('goes out in initialize, under clientCapabilities', async () => {
@@ -54,7 +51,7 @@ export default async () => {
       const sent = fixture.calls(CLIENT_METHODS.initialize)[0]?.params as {
         clientCapabilities?: { session?: unknown };
       };
-      expect(sent?.clientCapabilities?.session).toStrictEqual({ configOptions: {} });
+      expect(sent?.clientCapabilities?.session).toStrictEqual({ configOptions: { boolean: {} } });
       client.close();
     });
   });
@@ -185,8 +182,8 @@ export default async () => {
       client.close();
     });
 
-    await it('a tagged boolean value is refused by an agent that takes no booleans', async () => {
-      // This is why `LOTSE_CLIENT_CAPABILITIES` omits `boolean`. The refusal is the measurement.
+    await it('a tagged boolean value is refused by an agent that takes no booleans (opencode 2.0.19)', async () => {
+      // The measurement: opencode refuses it, so the row only offers a switch the agent itself reported.
       const fixture = new FixtureAgent();
       const client = new AcpClient({ transport: fixture.transport });
       await client.initialize();

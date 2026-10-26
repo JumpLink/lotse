@@ -28,12 +28,13 @@
  * authority over the agent, which is the "always allow" mistake in different clothes (see
  * `LOTSE_CLIENT_CAPABILITIES`).
  *
- * **A `boolean` option is skipped, and that is not an oversight.** lotse announces
- * `session.configOptions: {}` without the `boolean` capability (`gate.ts`), so an agent entitled to
- * believe it has promised no booleans — and the one agent measured (`opencode acp` 2.0.19) refuses a
- * tagged value outright. `projectConfigOptions` still projects them, because the `type` check belongs
- * to the protocol boundary; announcing the capability and drawing the widget go in together, and
- * until then a switch would be a control the agent is not obliged to honour.
+ * **A `boolean` option is a switch, drawn beside the dropdowns.** lotse announces
+ * `session.configOptions.boolean` (`gate.ts`) together with the widget that draws it, so an agent may
+ * send one. Switches are a list of their own (`ConfigRowView.switches`) rather than a second kind of
+ * `ConfigRowControl`: a dropdown has values, an index and a placeholder, a switch has none of them, and
+ * one shape for both would be a type whose half is always unset. The one agent measured
+ * (`opencode acp` 2.0.19) offers none and refuses a tagged value; agents that do offer them are
+ * answered with the tagged form `configValue` builds.
  */
 import { _, N_ } from './i18n.ts';
 import {
@@ -132,6 +133,17 @@ export interface ConfigRowControl {
   readonly selectable: boolean;
 }
 
+/** One boolean option: on or off, with what a widget needs to label it. */
+export interface ConfigRowSwitch {
+  readonly id: string;
+  readonly name: string;
+  /** The tooltip: the agent's `description` when it sent one, otherwise the name. */
+  readonly description: string;
+  readonly on: boolean;
+  /** False while a set is in flight: one set at a time, and no queue behind it. */
+  readonly selectable: boolean;
+}
+
 /** The whole row: whether it exists, and what is on it. */
 export interface ConfigRowView {
   /**
@@ -144,6 +156,8 @@ export interface ConfigRowView {
    */
   readonly visible: boolean;
   readonly controls: readonly ConfigRowControl[];
+  /** The agent's boolean options, in its order. Drawn as switches after the dropdowns. */
+  readonly switches: readonly ConfigRowSwitch[];
   readonly busy: boolean;
   /** The refusal sentence, or `null`. Cleared by the next set and by any new agent answer. */
   readonly error: string | null;
@@ -190,7 +204,7 @@ export const REFUSED = N_('The agent did not change this. Its previous value is 
  * window spends most of its life in, and it should have one name.
  */
 export function emptyConfigRow(): ConfigRowView {
-  return { visible: false, controls: [], busy: false, error: null };
+  return { visible: false, controls: [], switches: [], busy: false, error: null };
 }
 
 /**
@@ -206,10 +220,12 @@ export function configRowInput(input: ConfigRowInput): ConfigRowView {
     ...control,
     selectable: !busy,
   }));
-  if (controls.length === 0) return emptyConfigRow();
+  const switches = projectSwitches(input.options).map((entry) => ({ ...entry, selectable: !busy }));
+  if (controls.length === 0 && switches.length === 0) return emptyConfigRow();
   return {
     visible: true,
     controls,
+    switches,
     busy,
     // While a set is in flight there is nothing to say about the previous one: the row is about to
     // be replaced by the answer, and a refusal that is still being read as the state is a lie.
@@ -224,7 +240,23 @@ export function configRowInput(input: ConfigRowInput): ConfigRowView {
  */
 const choosePlaceholder = () => _('Choose…');
 
-/** Project, and keep only what the row can draw. See the header on why a switch is not that. */
+/** The boolean options, as switches. */
+function projectSwitches(options: SessionConfigOption[] | null): ConfigRowSwitch[] {
+  const switches: ConfigRowSwitch[] = [];
+  for (const control of projectConfigOptions(options)) {
+    if (control.kind !== 'switch') continue;
+    switches.push({
+      id: control.id,
+      name: control.name,
+      description: control.description ?? control.name,
+      on: control.currentValue,
+      selectable: true,
+    });
+  }
+  return switches;
+}
+
+/** Project, and keep only the dropdowns; `projectSwitches` takes the booleans. */
 function projectSelects(
   options: SessionConfigOption[] | null,
   modelPolicy?: ModelPolicy,
@@ -298,8 +330,7 @@ export function configSelection(
  * the agent did not offer is not sent.** A caller that resolved an id from somewhere else (a stale
  * list, a dev hook, a bug) gets `null` here rather than a request the agent will refuse.
  *
- * A `boolean` control is `null` too, and for the same reason `projectSelects` does not put one on the
- * row: nothing may send a tagged boolean while `LOTSE_CLIENT_CAPABILITIES` does not announce it.
+ * A `boolean` control is `null` here: it has no value ids, and `configSwitchRequest` is its door.
  */
 export function configRequest(
   control: ConfigControl,
@@ -308,6 +339,21 @@ export function configRequest(
   if (control.kind !== 'select') return null;
   if (!control.values.some((entry) => entry.value === value)) return null;
   return configValue(control, value);
+}
+
+/** The value payload for setting a switch, or `null` when the control is not one. */
+export function configSwitchRequest(
+  control: ConfigControl,
+  on: boolean,
+): SetSessionConfigOptionRequest['value'] | null {
+  if (control.kind !== 'switch') return null;
+  return configValue(control, on);
+}
+
+/** Whether flipping `controlId` to `on` is a change: an unknown switch and the current state are not. */
+export function isSwitchChange(view: ConfigRowView, controlId: string, on: boolean): boolean {
+  const entry = view.switches.find((candidate) => candidate.id === controlId);
+  return entry !== undefined && entry.on !== on;
 }
 
 /**

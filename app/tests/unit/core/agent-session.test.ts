@@ -655,6 +655,65 @@ export default async () => {
     });
   });
 
+  await describe('agent-session — MCP server toggles', async () => {
+    const SERVERS: McpServer[] = [
+      { name: 'steuer', command: '/app/bin/steuer', args: ['mcp'], env: [] },
+      { type: 'http', name: 'remote', url: 'https://example.invalid/mcp', headers: [] },
+    ];
+    const resumes = (h: Harness) => h.agent.calls('session/resume');
+
+    await it('resumes with the shorter list before the next prompt, once', async () => {
+      const h = harness({ mcpServers: SERVERS });
+      await h.session.prompt('one');
+      const before = resumes(h).length;
+      h.session.setMcpServer('remote', false);
+      expect(h.session.mcpToggles.toggles.map((t) => t.on)).toEqualArray([true, false]);
+      expect(resumes(h).length).toBe(before);
+      await h.session.prompt('two');
+      expect(resumes(h).length).toBe(before + 1);
+      const sent = resumes(h).at(-1)?.params as { mcpServers: McpServer[] };
+      expect(sent.mcpServers.map((s) => s.name)).toEqualArray(['steuer']);
+      await h.session.prompt('three');
+      expect(resumes(h).length).toBe(before + 1);
+    });
+
+    await it('does not resume when nothing changed, or when a toggle went off and on again', async () => {
+      const h = harness({ mcpServers: SERVERS });
+      await h.session.prompt('one');
+      const before = resumes(h).length;
+      h.session.setMcpServer('remote', false);
+      h.session.setMcpServer('remote', true);
+      await h.session.prompt('two');
+      expect(resumes(h).length).toBe(before);
+    });
+
+    await it('offers no toggles for a host without servers', async () => {
+      const h = harness();
+      expect(h.session.mcpToggles.visible).toBe(false);
+    });
+
+    await it('disables the toggles and never resumes when the agent offers no session/resume', async () => {
+      const h = harness({ mcpServers: SERVERS, capabilities: { sessionCapabilities: {} } });
+      await h.session.prompt('one');
+      expect(h.session.mcpToggles.selectable).toBe(false);
+      h.session.setMcpServer('remote', false);
+      expect(h.session.mcpToggles.toggles.map((t) => t.on)).toEqualArray([true, true]);
+      await h.session.prompt('two');
+      expect(resumes(h).length).toBe(0);
+      expect(h.agent.calls('session/new').length).toBe(0);
+    });
+
+    await it('sends a list chosen before the first prompt with session/new', async () => {
+      const h = harness({ bind: false, mcpServers: SERVERS });
+      h.session.startConversation('/synthetic/project');
+      h.session.setMcpServer('steuer', false);
+      await h.session.prompt('hello');
+      const params = h.agent.calls('session/new')[0]?.params as { mcpServers: McpServer[] };
+      expect(params.mcpServers.map((s) => s.name)).toEqualArray(['remote']);
+      expect(h.session.mcpToggles.toggles.map((t) => t.on)).toEqualArray([false, true]);
+    });
+  });
+
   await describe('agent-session — the gate, with no surface that can ask', async () => {
     const PERMISSION = [
       { optionId: 'allow', name: 'Allow once', kind: 'allow_once' as const },
