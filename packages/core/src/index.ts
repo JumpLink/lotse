@@ -626,8 +626,10 @@ export {
   runReceiveLoop,
   type Cursor,
   type CursorStore,
+  type ChatCommands,
   type ReceiveOptions,
 } from './messenger/receive.ts';
+export { isId } from './parse.ts';
 export { SERVE_CONFIG_SCHEMA, schemaKeys, type SchemaNode } from './serve/schema.ts';
 export { ProfileOptionError, applyConfigOptions } from './profile/apply.ts';
 export { profilesFromTasks } from './profile/migrate.ts';
@@ -649,10 +651,12 @@ export {
   ceilingReached,
   followUpPrompt,
   parseVerdict,
+  LOCKED,
   precheckText,
   REQUEST_TASK,
   requestTask,
   runRequest,
+  runServeTask,
   runTask,
   userOf,
   type AnswerMode,
@@ -665,5 +669,21 @@ export {
   type RunOutcome,
   type RunResult,
   type ServeDeps,
+  type TaskRun,
   type ServeLogEntry,
 } from './serve/runner.ts';
+export {
+  TASK_METADATA,
+  TaskFileError,
+  TaskUsageError,
+  narrowServers,
+  parseParamPairs,
+  parseRunArgs,
+  parseSkillTask,
+  renderTask,
+  serveTaskOf,
+  skillFromTask,
+  splitWords,
+  type SkillTask,
+  type TaskParam,
+} from './task/skill.ts';

@@ -36,6 +36,10 @@ export function list(value: unknown, where: string, problems: string[]): unknown
   return value;
 }
 
+export function isId(value: string): boolean {
+  return ID.test(value);
+}
+
 export function id(value: unknown, where: string, problems: string[]): string {
   if (typeof value !== 'string' || !ID.test(value)) {
     problems.push(`${where}.id must be lowercase letters, digits, "-" or "_" (at most 40)`);

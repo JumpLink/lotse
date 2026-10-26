@@ -74,6 +74,8 @@ import {
   type PersonOutcome,
 } from './person.ts';
 import { STRINGS, msg } from '../messenger/strings.ts';
+import { TaskFileError, renderTask, serveTaskOf, type SkillTask } from '../task/skill.ts';
+import { TaskUsageError } from '../task/skill.ts';
 
 /** The question list, wherever it lives. Read fresh on every look: another process writes it too. */
 export interface QuestionBook {
@@ -124,6 +126,10 @@ export interface ServeDeps {
   readonly personDefaultMin?: number;
   /** How long to wait before the one retry after the agent did not offer the model. Default 15 s. */
   readonly modelRetryMs?: number;
+  /** A SKILL.md task by id, or `null` when there is none. Throws `TaskFileError` for one that does not parse. */
+  readonly skill?: (id: string) => SkillTask | null;
+  /** Keeps the run for `lotse status` and the precheck's "last run". Absent: not kept. */
+  readonly record?: (result: RunResult) => void;
   /** Take the task's run lock; `null` when another run of it holds it. Absent: no cross-process lock. */
   readonly lock?: (task: string) => (() => void) | null;
   readonly log?: (entry: ServeLogEntry) => void;
@@ -223,8 +229,70 @@ export function cancelOrphanedPermissions(deps: Pick<ServeDeps, 'questions' | 'n
   return count;
 }
 
-/** One run of a task: a new session, the task's prompt, one turn. */
-export async function runTask(task: ServeTask, deps: ServeDeps): Promise<RunResult> {
+/** How a task run ended, for the caller to route (ADR 0007 §4). `runTask` sends nothing to a channel. */
+export type TaskRun =
+  | { readonly status: 'done'; readonly output: string }
+  | { readonly status: 'needs-person'; readonly questionId: string }
+  | { readonly status: 'failed'; readonly reason: string };
+
+/** Why a run did not start: another run of the task holds its lock. */
+export const LOCKED = 'locked';
+
+const BUSY_REASON = 'another run of this task is still in progress';
+
+function taskRunOf(run: RunResult): TaskRun {
+  if (run.outcome === 'skipped' && run.reason === BUSY_REASON) return { status: 'failed', reason: LOCKED };
+  switch (run.outcome) {
+    case 'done':
+      return { status: 'done', output: run.reply ?? '' };
+    case 'nothing':
+      return { status: 'done', output: run.reason ?? '' };
+    case 'asked':
+      return run.questionId
+        ? { status: 'needs-person', questionId: run.questionId }
+        : { status: 'failed', reason: 'the agent asked a question that was not recorded' };
+    case 'declined':
+      return { status: 'failed', reason: run.reason ?? 'a request was declined' };
+    default:
+      return { status: 'failed', reason: run.reason ?? run.outcome };
+  }
+}
+
+/**
+ * Run a task on demand: its SKILL.md (else the task of tasks.json of that id) with `params` filled in.
+ * Profile, gate, questions, `person_needed`, precheck, the task's lock and the run record are the same
+ * as for every run. Throws `TaskUsageError` for an unknown task or bad parameters.
+ */
+export async function runTask(
+  id: string,
+  params: Readonly<Record<string, string>>,
+  deps: ServeDeps,
+): Promise<TaskRun> {
+  let task: ServeTask;
+  let scoped: ServeDeps = deps;
+  try {
+    const skill = deps.skill?.(id) ?? null;
+    if (skill) {
+      const text = renderTask(skill, params);
+      task = serveTaskOf(skill, deps.config);
+      scoped = { ...deps, promptFor: () => text.prompt, precheckPromptFor: () => text.precheck ?? '' };
+    } else {
+      const legacy = deps.config.tasks.find((candidate) => candidate.id === id);
+      if (!legacy) throw new TaskUsageError(`there is no task "${id}"; \`lotse tasks\` lists them`);
+      if (Object.keys(params).length > 0) throw new TaskUsageError(`task "${id}" takes no parameters`);
+      task = legacy;
+    }
+  } catch (error) {
+    if (error instanceof TaskFileError) return { status: 'failed', reason: error.message };
+    throw error;
+  }
+  const run = await runServeTask(task, scoped);
+  if (taskRunOf(run).status !== 'failed' || run.reason !== BUSY_REASON) deps.record?.(run);
+  return taskRunOf(run);
+}
+
+/** One run of a configured task: a new session, the task's prompt, one turn. */
+export async function runServeTask(task: ServeTask, deps: ServeDeps): Promise<RunResult> {
   const startedAt = deps.now();
   const reason = ceilingReached(task, deps.questions.read(), startedAt);
   if (reason) {
@@ -513,7 +581,7 @@ export async function answerQuestion(idText: string, text: string, deps: ServeDe
     personDone = true;
   }
 
-  const task = deps.config.tasks.find((candidate) => candidate.id === question.task);
+  const task = taskById(deps, question.task);
   if (!task) {
     update(deps, question, { status: 'cancelled', resolution: 'its task is no longer configured' });
     return none(
@@ -1162,10 +1230,21 @@ function update(deps: Pick<ServeDeps, 'questions'>, question: Question, patch: P
   return updated;
 }
 
+/** A task of SKILL.md, else of tasks.json; `undefined` when neither names it (any more). */
+function taskById(deps: ServeDeps, id: string): ServeTask | undefined {
+  try {
+    const skill = deps.skill?.(id);
+    if (skill) return serveTaskOf(skill, deps.config);
+  } catch {
+    return undefined;
+  }
+  return deps.config.tasks.find((candidate) => candidate.id === id);
+}
+
 function busy(task: ServeTask, startedAt: Date, deps: ServeDeps): RunResult {
   deps.log?.({ event: 'skip', task: task.id, detail: { why: 'running' } });
   return result(task, 'skipped', startedAt, deps.now(), {
-    reason: 'another run of this task is still in progress',
+    reason: BUSY_REASON,
   });
 }
 

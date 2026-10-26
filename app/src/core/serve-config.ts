@@ -6,17 +6,22 @@
  * on a restart the person performs, never under a run that is already going (ADR 0002 §3).
  */
 
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join } from 'node:path';
 
 import {
   configHash,
+  isId,
   parseProfiles,
+  parseSkillTask,
+  skillFromTask,
   parseServeConfig,
   profilesFromTasks,
   tasksWithRemovedSchedule,
   type ServeConfig,
   type ServeTask,
+  type SkillTask,
+  TaskFileError,
 } from '@lotse/core';
 
 import { writePrivateFile } from './private-file.ts';
@@ -79,6 +84,75 @@ export function migrateProfiles(tasksFile: string, profilesFile: string): boolea
   if (text === null) return false;
   writePrivateFile(profilesFile, text, 'profiles');
   return true;
+}
+
+/**
+ * Write `tasks/<id>/SKILL.md` for every task of tasks.json that has no directory yet (ADR 0007 §7).
+ * A directory that exists is never touched and tasks.json is only read. Returns the ids it wrote.
+ */
+export function migrateTasks(loaded: LoadedTasks, tasksDir: string): string[] {
+  const written: string[] = [];
+  for (const task of loaded.config.tasks) {
+    const dir = join(tasksDir, task.id);
+    if (existsSync(dir) || !isId(task.id)) continue;
+    const precheck = task.precheck ? loaded.precheckPromptFor(task) : null;
+    mkdirSync(dir, { recursive: true, mode: 0o700 });
+    writePrivateFile(join(dir, 'SKILL.md'), skillFromTask(task, loaded.promptFor(task), precheck), 'skill');
+    written.push(task.id);
+  }
+  return written;
+}
+
+/** One task's SKILL.md, or `null` when there is no such directory. Throws `TaskFileError`. */
+export function readSkill(tasksDir: string, id: string): SkillTask | null {
+  if (!isId(id)) return null;
+  const file = join(tasksDir, id, 'SKILL.md');
+  if (!existsSync(file)) return null;
+  return parseSkillTask(id, readFileSync(file, 'utf8'), { cwd: join(tasksDir, id) });
+}
+
+/** What `lotse tasks` shows for one task. */
+export interface TaskEntry {
+  readonly id: string;
+  readonly source: 'skill' | 'tasks.json';
+  readonly description: string;
+  readonly params: readonly string[];
+  /** Why a SKILL.md cannot be run, when it cannot. */
+  readonly problem: string | null;
+}
+
+/** Every SKILL.md directory, then the tasks of tasks.json no directory shadows. */
+export function listTasks(tasksDir: string, config: ServeConfig): TaskEntry[] {
+  const entries: TaskEntry[] = [];
+  const dirs = existsSync(tasksDir)
+    ? readdirSync(tasksDir, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory() && existsSync(join(tasksDir, entry.name, 'SKILL.md')))
+        .map((entry) => entry.name)
+        .sort()
+    : [];
+  for (const id of dirs) {
+    try {
+      const skill = readSkill(tasksDir, id);
+      if (!skill) continue;
+      entries.push({
+        id,
+        source: 'skill',
+        description: skill.description,
+        params: skill.params.map((param) =>
+          param.default === null ? param.name : `${param.name}=${param.default}`,
+        ),
+        problem: null,
+      });
+    } catch (error) {
+      if (!(error instanceof TaskFileError)) throw error;
+      entries.push({ id, source: 'skill', description: '', params: [], problem: error.message });
+    }
+  }
+  for (const task of config.tasks) {
+    if (dirs.includes(task.id)) continue;
+    entries.push({ id: task.id, source: 'tasks.json', description: '', params: [], problem: null });
+  }
+  return entries;
 }
 
 function readProfilesText(profilesFile: string | undefined): string | null {
