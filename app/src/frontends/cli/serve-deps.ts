@@ -24,6 +24,8 @@ import { actionLog, questionBook, runState, taskLock } from '../../core/serve-st
 import {
   loadTasks,
   migrateProfiles,
+  migrateTasks,
+  readSkill,
   TasksFileMissingError,
   type LoadedTasks,
 } from '../../core/serve-config.ts';
@@ -48,6 +50,15 @@ export function readTasks(serve: ServePaths): LoadedTasks | null {
         ),
       );
     const loaded = loadTasks(serve.tasksFile, serve.profilesFile);
+    if (migrateTasks(loaded, serve.tasksDir).length > 0)
+      err(
+        fmt(
+          _(
+            'The tasks in tasks.json were copied to {dir}, one SKILL.md each. tasks.json keeps working and is not changed; edit the tasks there.',
+          ),
+          { dir: serve.tasksDir },
+        ),
+      );
     if (loaded.warning) err(fmt(_('  {warning}'), { warning: loaded.warning }));
     reportRemovedSchedules(loaded);
     return loaded;
@@ -142,6 +153,8 @@ export function serveDeps(options: DepsOptions): ServeDeps | null {
     promptFor: (task) => options.loaded.promptFor(task),
     precheckPromptFor: (task) => options.loaded.precheckPromptFor(task),
     previousRun: (task) => runState(stateDir).all()[task] ?? null,
+    skill: (id) => readSkill(options.serve.tasksDir, id),
+    record: (result) => runState(stateDir).record(result),
     channel: options.channel,
     questions: questionBook(stateDir, now, (problem) => err(fmt(_('  {problem}'), { problem }))),
     now,

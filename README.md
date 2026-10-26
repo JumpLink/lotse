@@ -91,7 +91,7 @@ Custom providers and their rules (keys, LAN, local-model hints): [docs/custom-pr
 
 `lotse serve` answers requests from the chat and asks you, by
 desktop notification or, if you configure it, in a chat through an MCP server such as curlew, when an
-agent needs a decision. How to set it up: [docs/serve.md](docs/serve.md); profiles: [docs/profiles.md](docs/profiles.md).
+agent needs a decision. How to set it up: [docs/serve.md](docs/serve.md); profiles: [docs/profiles.md](docs/profiles.md); tasks: [docs/tasks.md](docs/tasks.md).
 
 ## Run the surface
 

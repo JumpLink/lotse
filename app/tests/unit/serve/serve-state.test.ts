@@ -86,9 +86,7 @@ export default async () => {
     await describe('runState', async () => {
       await it('keeps when and how, never the reply', async () => {
         const runs = runState(stateDir);
-        expect(runs.lastRun('t')).toBeNull();
         runs.record(result({}));
-        expect(runs.lastRun('t')).toStrictEqual(NOW);
         const text = readFileSync(join(stateDir, 'runs.json'), 'utf8');
         expect(text).not.toContain('private answer');
         expect(runs.all()['t']!.outcome).toBe('done');

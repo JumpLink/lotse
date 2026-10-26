@@ -22,6 +22,9 @@ import { hideBin } from 'yargs/helpers';
 import {
   agentsCommand,
   answerCommand,
+  runCommand,
+  statusCommand,
+  tasksCommand,
   authCommand,
   cancelCommand,
   loginCommand,
@@ -63,6 +66,9 @@ const parseArgs = () =>
     .command(serveCommand(paths, serve))
     .command(questionsCommand(paths, serve))
     .command(answerCommand(paths, serve))
+    .command(runCommand(paths, serve))
+    .command(tasksCommand(paths, serve))
+    .command(statusCommand(paths, serve))
     .demandCommand(1, 'Please provide a command — `lotse --help` lists them all.')
     .strictCommands()
     .scriptName('lotse')

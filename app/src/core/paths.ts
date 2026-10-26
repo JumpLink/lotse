@@ -80,14 +80,17 @@ export interface ServePaths {
   readonly tasksFile: string;
   /** The profiles every host shares (ADR 0007). Optional: without it the profiles of tasks.json apply. */
   readonly profilesFile: string;
+  /** One directory per task, each with a SKILL.md (ADR 0007 §6). */
+  readonly tasksDir: string;
 }
 
-/** `LOTSE_STATE_DIR`, `LOTSE_TASKS_FILE` and `LOTSE_PROFILES_FILE` override the XDG defaults. */
+/** `LOTSE_STATE_DIR`, `LOTSE_TASKS_FILE`, `LOTSE_PROFILES_FILE` and `LOTSE_TASKS_DIR` override the XDG defaults. */
 export function servePaths(env: NodeJS.ProcessEnv = process.env): ServePaths {
   return {
     stateDir: envKnob(env, 'STATE_DIR') || join(xdgStateHome(env), 'lotse'),
     tasksFile: envKnob(env, 'TASKS_FILE') || join(configDir(env), 'tasks.json'),
     profilesFile: envKnob(env, 'PROFILES_FILE') || join(configDir(env), 'profiles.json'),
+    tasksDir: envKnob(env, 'TASKS_DIR') || join(configDir(env), 'tasks'),
   };
 }
 

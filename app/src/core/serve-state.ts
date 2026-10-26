@@ -15,6 +15,7 @@ import {
   chmodSync,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -76,7 +77,6 @@ export interface RunRecord {
 }
 
 export interface RunState {
-  lastRun(task: string): Date | null;
   record(result: RunResult): void;
   all(): Readonly<Record<string, RunRecord>>;
 }
@@ -95,11 +95,6 @@ export function runState(stateDir: string): RunState {
     }
   };
   return {
-    lastRun: (task) => {
-      const at = read()[task]?.startedAt;
-      const ms = at ? Date.parse(at) : Number.NaN;
-      return Number.isNaN(ms) ? null : new Date(ms);
-    },
     record: (result) => {
       const runs = read();
       runs[result.task] = {
@@ -137,6 +132,20 @@ function alive(pid: number): boolean {
   } catch (error) {
     return (error as NodeJS.ErrnoException).code !== 'ESRCH';
   }
+}
+
+/** The tasks whose lock a live process holds — what `lotse status` calls running. */
+export function runningTasks(stateDir: string): string[] {
+  const dir = join(stateDir, 'locks');
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((name) => name.endsWith('.lock'))
+    .filter((name) => {
+      const pid = Number.parseInt(readFileSync(join(dir, name), 'utf8'), 10);
+      return Number.isInteger(pid) && pid > 0 && alive(pid);
+    })
+    .map((name) => name.slice(0, -'.lock'.length))
+    .sort();
 }
 
 /**

@@ -2,8 +2,8 @@
 
 `lotse serve` is a long-running process. It answers [requests from the chat](#requests-from-the-chat)
 and sends a desktop notification (or a chat message) when an agent needs a decision from you. You
-answer with `lotse answer`. Time-based scheduling was removed; running a task on demand with
-`lotse run` is planned. A `schedule` key left in `tasks.json` is ignored, with one notice per task. The contract
+answer with `lotse answer`. Time-based scheduling was removed; running a task on demand is
+[`lotse run`](tasks.md). A `schedule` key left in `tasks.json` is ignored, with one notice per task. The contract
 behind it is [ADR 0003](adr/0003-serve-tasks-questions-channel.md); the design it builds on is
 [ADR 0002](adr/0002-assistant-in-continuous-operation.md).
 
@@ -53,7 +53,7 @@ Runs of one task never overlap, across `serve` and `lotse answer` alike.
 ### Precheck
 
 `precheck: {profile?, prompt | promptFile}` is part of the task schema, but nothing runs it while
-scheduling is gone; it is kept for the planned `lotse run`. It describes a cheap turn before the task, usually on a small
+scheduling is gone; `lotse run` runs it (see [tasks](tasks.md)). It describes a cheap turn before the task, usually on a small
 model, that answers one question: is there anything to do? Its last line must be `WORK` or
 `NOTHING`. Only `WORK` starts the real run.
 

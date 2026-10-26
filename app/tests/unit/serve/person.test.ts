@@ -9,7 +9,7 @@ import {
   parsePersonReply,
   parseServeConfig,
   personRefusal,
-  runTask,
+  runServeTask,
   type PersonHandler,
   type PersonNeededInput,
   type PersonOutcome,
@@ -133,7 +133,7 @@ export default async () => {
       h.onSleep = async () => {
         if (h.book[0]?.status === 'open') await answerQuestion('#A1', 'fertig', h.deps);
       };
-      const run = await runTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('done');
       expect(outcome!.outcome).toBe('done');
       expect(h.book[0]!.kind).toBe('person');
@@ -148,7 +148,7 @@ export default async () => {
       h.onSleep = async () => {
         if (h.book[0]?.status === 'open') await answerQuestion('#A1', CODE, h.deps);
       };
-      await runTask(h.deps.config.tasks[0]!, h.deps);
+      await runServeTask(h.deps.config.tasks[0]!, h.deps);
       expect(h.sent[0]!.text).toContain(LINK);
       expect(JSON.stringify([h.book, h.log]).includes('challenge=zz81')).toBe(false);
     });
@@ -172,7 +172,7 @@ export default async () => {
       h.onSleep = async () => {
         if (h.book[0]?.status === 'open') said = (await answerQuestion('#A1', CODE, h.deps)).message;
       };
-      await runTask(h.deps.config.tasks[0]!, h.deps);
+      await runServeTask(h.deps.config.tasks[0]!, h.deps);
       expect(outcome).toStrictEqual({ outcome: 'code', code: CODE });
       expect(h.book[0]!.answer).toBe('text');
       expect(h.book[0]!.resolution).toBe('code received');
@@ -193,7 +193,7 @@ export default async () => {
         refused = first.mode;
         await answerQuestion('#A1', 'done', h.deps);
       };
-      await runTask(h.deps.config.tasks[0]!, h.deps);
+      await runServeTask(h.deps.config.tasks[0]!, h.deps);
       expect(refused).toBe('invalid');
       expect(outcome!.outcome).toBe('done');
     });
@@ -201,7 +201,7 @@ export default async () => {
     await it('no reply in time returns timeout and leaves a deferred open item', async () => {
       let outcome: PersonOutcome | null = null;
       const h = harness(config(), async (call) => void (outcome = await call(INPUT)));
-      const run = await runTask(h.deps.config.tasks[0]!, h.deps);
+      const run = await runServeTask(h.deps.config.tasks[0]!, h.deps);
       expect(run.outcome).toBe('done');
       expect(outcome!.outcome).toBe('timeout');
       expect(h.book[0]!.status).toBe('open');
@@ -217,13 +217,13 @@ export default async () => {
       );
       h.step = 60_000;
       h.onSleep = () => void (polls += 1);
-      await runTask(h.deps.config.tasks[0]!, h.deps);
+      await runServeTask(h.deps.config.tasks[0]!, h.deps);
       expect(polls).toBe(3);
     });
 
     await it('a deferred item answered with "done" continues the session; a code is refused', async () => {
       const h = harness(config(), async (call) => void (await call(INPUT)));
-      await runTask(h.deps.config.tasks[0]!, h.deps);
+      await runServeTask(h.deps.config.tasks[0]!, h.deps);
       const late = await answerQuestion('#A1', CODE, h.deps);
       expect(late.mode).toBe('invalid');
       expect(JSON.stringify([late, h.book, h.log]).includes(CODE)).toBe(false);
@@ -239,7 +239,7 @@ export default async () => {
       h.onSleep = async () => {
         if (h.book[0]?.status === 'open') await answerQuestion('#A1', 'no', h.deps);
       };
-      await runTask(h.deps.config.tasks[0]!, h.deps);
+      await runServeTask(h.deps.config.tasks[0]!, h.deps);
       expect(outcome!.outcome).toBe('declined');
     });
 
@@ -253,7 +253,7 @@ export default async () => {
       h.onSleep = async () => {
         if (h.book[0]?.status === 'open') await answerQuestion('#A1', 'done', h.deps);
       };
-      await runTask(h.deps.config.tasks[0]!, h.deps);
+      await runServeTask(h.deps.config.tasks[0]!, h.deps);
       expect(second).toContain('already waiting');
       expect(h.book.length).toBe(1);
     });
@@ -289,7 +289,7 @@ export default async () => {
       const h = harness(config({ model: null }), async (call) => {
         await call(INPUT).catch((error: Error) => void (message = error.message));
       });
-      await runTask(h.deps.config.tasks[0]!, h.deps);
+      await runServeTask(h.deps.config.tasks[0]!, h.deps);
       expect(message).toContain('names its model');
       expect(h.book.length).toBe(0);
     });

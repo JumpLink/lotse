@@ -13,6 +13,9 @@ and also records changes that are not a release of their own.
   `lotse serve`, requests from the chat and, exported as `resolveProfile`, the widget and `runJob` hosts.
   An existing tasks.json with `profiles` is migrated to profiles.json once, with one notice; tasks.json is
   never changed and keeps working. See [docs/profiles.md](docs/profiles.md).
+- **Tasks run on demand** (ADR 0007, items 4–11). `runTask(id, params, deps)` in `@lotse/core`, tasks as
+  `tasks/<id>/SKILL.md`, a one-shot migration of `tasks.json`, `lotse run`, `lotse tasks`, `lotse status`
+  and the chat commands `/run`, `/tasks`, `/status`. See [docs/tasks.md](docs/tasks.md).
 
 - **MCP server toggles in the widget.** One toggle per MCP server in the composer config row; a change
   applies from the next turn via ACP `session/resume` and is disabled when the agent lacks that
