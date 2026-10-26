@@ -92,7 +92,7 @@ function readLine(prompt: string): Promise<string | null> {
  */
 export async function readSecret(prompt: string): Promise<string | null> {
   if (!process.stdin.isTTY) {
-    // Events, not `for await`: GJS's stdin is not async-iterable (measured: "process.stdin is not iterable").
+    // Events, not `for await`: SIGINT has to end the read too, and a listener does that without a race.
     return new Promise((resolve) => {
       const chunks: Buffer[] = [];
       process.stdin.on('data', (chunk) => chunks.push(Buffer.from(chunk as Uint8Array)));
@@ -291,11 +291,6 @@ const command = (paths: LotsePaths): CommandModule => ({
     } finally {
       process.off('SIGINT', onInterrupt);
       await server.close();
-      // The command is finished, so end it. Measured on GJS: any child `startServer` has launched — even
-      // a plain `sh` that exits by itself — leaves the main loop running after the handler returns, while
-      // the same child through a bare `spawn` does not; the cause is not isolated yet. Without this line
-      // `lotse login` prints its result and then never returns. The delay lets stdout drain first.
-      setTimeout(() => process.exit(process.exitCode ?? 0), 50);
     }
   },
 });

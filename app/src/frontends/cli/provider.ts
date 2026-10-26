@@ -137,8 +137,6 @@ const command = (paths: LotsePaths): CommandModule => ({
       fail(key ? message.split(key).join('[key]') : message);
     } finally {
       await server.close();
-      // Same as `lotse login`: on GJS a child `startServer` launched keeps the main loop alive.
-      setTimeout(() => process.exit(process.exitCode ?? 0), 50);
     }
   },
 });
