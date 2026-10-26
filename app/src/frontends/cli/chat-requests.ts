@@ -8,6 +8,8 @@
 import type { ChatRequests, RequestSettings } from '@lotse/core';
 import { requestProblem } from '@lotse/core';
 
+import { _, fmt } from '../../i18n.ts';
+
 export type RequestsChange =
   | { readonly kind: 'unchanged' }
   | { readonly kind: 'changed'; readonly line: string; readonly on: boolean }
@@ -43,20 +45,24 @@ export function createRequestsHolder(options: RequestsHolderOptions): RequestsHo
       const problem = requestProblem(settings, profiles);
       if (problem) {
         instance = undefined;
-        return { kind: 'problem', line: `chat requests not started: ${problem}` };
+        return { kind: 'problem', line: fmt(_('chat requests not started: {problem}'), { problem }) };
       }
       if (!settings.enabled) {
         instance = undefined;
-        return first ? { kind: 'unchanged' } : { kind: 'changed', on: false, line: 'chat requests off' };
+        return first ? { kind: 'unchanged' } : { kind: 'changed', on: false, line: _('chat requests off') };
       }
       instance = options.build(settings);
-      const what = `profile ${settings.profile}, rights ${settings.rights}, prefix ${settings.prefix}`;
+      const what = fmt(_('profile {profile}, rights {rights}, prefix {prefix}'), {
+        profile: settings.profile,
+        rights: settings.rights,
+        prefix: settings.prefix,
+      });
       return {
         kind: 'changed',
         on: true,
         line: first
-          ? `chat requests on: ${what}`
-          : `chat requests reloaded: ${what} (a request in progress finishes as it was)`,
+          ? fmt(_('chat requests on: {what}'), { what })
+          : fmt(_('chat requests reloaded: {what} (a request in progress finishes as it was)'), { what }),
       };
     },
   };

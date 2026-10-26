@@ -30,6 +30,19 @@ export function localDeadline(iso: string, locale?: string): string {
   });
 }
 
+/** A moment as the person's clock shows it ("15.10., 18:10"); an unreadable one stays as it came. */
+export function localTime(iso: string, locale?: string): string {
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return iso;
+  return at.toLocaleString(locale, {
+    day: 'numeric',
+    month: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
+}
+
 /** The text of `message` as one chat message. */
 export function messengerText(message: QuestionMessage): string {
   const parts = [message.title, message.text ?? message.body];

@@ -10,6 +10,7 @@
 
 import type { AcpClient, McpServer, SessionConfigOption, StopReason } from '@lotse/acp';
 
+import { _, fmt } from '../i18n.ts';
 import { chunkToText } from '../policy.ts';
 import { ProfileOptionError } from '../profile/apply.ts';
 import { narrowRights, profileOf, withPreamble, type ProfileSession } from '../profile/resolve.ts';
@@ -58,9 +59,9 @@ function taskRunOf(run: RunResult): TaskRun {
     case 'asked':
       return run.questionId
         ? { status: 'needs-person', questionId: run.questionId }
-        : { status: 'failed', reason: 'the agent asked a question that was not recorded' };
+        : { status: 'failed', reason: _('the agent asked a question that was not recorded') };
     case 'declined':
-      return { status: 'failed', reason: run.reason ?? 'a request was declined' };
+      return { status: 'failed', reason: run.reason ?? _('a request was declined') };
     default:
       return { status: 'failed', reason: run.reason ?? run.outcome };
   }
@@ -79,7 +80,7 @@ export async function runTask(
   let task: Task;
   try {
     const skill = deps.skill(id);
-    if (!skill) throw new TaskUsageError(`there is no task "${id}"; \`lotse tasks\` lists them`);
+    if (!skill) throw new TaskUsageError(fmt(_('there is no task "{id}"; `lotse tasks` lists them'), { id }));
     task = taskOf(skill, deps.profiles, renderTask(skill, params));
   } catch (error) {
     if (error instanceof TaskFileError) return { status: 'failed', reason: error.message };

@@ -631,6 +631,7 @@ export {
   messengerText,
   noticeOf,
   localDeadline,
+  localTime,
   routeChannels,
   sendToPeer,
   sendToPeerWithIds,

@@ -73,6 +73,7 @@ import listenPerson from './unit/listen/person.test.ts';
 import listenMessenger from './unit/listen/messenger.test.ts';
 import listenContract from './unit/listen/contract.test.ts';
 import listenRequests from './unit/listen/requests.test.ts';
+import listenChatText from './unit/listen/chat-text.test.ts';
 import task from './unit/task/task.test.ts';
 import profile from './unit/profile/profile.test.ts';
 import profileMigrate from './unit/profile/migrate.test.ts';
@@ -152,6 +153,7 @@ run({
   listenMessenger,
   listenContract,
   listenRequests,
+  listenChatText,
   task,
   profile,
   profileMigrate,

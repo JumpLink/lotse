@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: eu.jumplink.Lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-26 16:35+0100\n"
+"POT-Creation-Date: 2026-10-26 18:00+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -304,7 +304,7 @@ msgid ""
 msgstr ""
 
 #: app/src/frontends/cli/auth.ts:70 app/src/frontends/cli/cancel.ts:64
-#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/listen-deps.ts:166
+#: app/src/frontends/cli/listen-deps.ts:147 app/src/frontends/cli/resume.ts:96
 #: app/src/frontends/cli/start.ts:90
 msgid "  [agent] {line}"
 msgstr ""
@@ -361,20 +361,100 @@ msgstr ""
 msgid "session/cancel sent for {id}"
 msgstr ""
 
+#: app/src/frontends/cli/chat-requests.ts:48
+msgid "chat requests not started: {problem}"
+msgstr ""
+
+#: app/src/frontends/cli/chat-requests.ts:52
+msgid "chat requests off"
+msgstr ""
+
+#: app/src/frontends/cli/chat-requests.ts:55
+msgid "profile {profile}, rights {rights}, prefix {prefix}"
+msgstr ""
+
+#: app/src/frontends/cli/chat-requests.ts:64
+msgid "chat requests on: {what}"
+msgstr ""
+
+#: app/src/frontends/cli/chat-requests.ts:65
+msgid ""
+"chat requests reloaded: {what} (a request in progress finishes as it was)"
+msgstr ""
+
 #: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/listen.ts:182
-#: app/src/frontends/cli/listen.ts:301 app/src/frontends/cli/listen.ts:308
-#: app/src/frontends/cli/listen.ts:320 app/src/frontends/cli/listen.ts:343
+#: app/src/frontends/cli/listen.ts:282 app/src/frontends/cli/listen.ts:289
+#: app/src/frontends/cli/listen.ts:301 app/src/frontends/cli/listen.ts:324
 msgid "  {line}"
 msgstr ""
 
-#: app/src/frontends/cli/choose.ts:38 app/src/frontends/cli/questions.ts:33
-#: app/src/frontends/cli/listen-deps.ts:159 app/src/frontends/cli/listen.ts:134
+#: app/src/frontends/cli/choose.ts:38 app/src/frontends/cli/listen-deps.ts:140
+#: app/src/frontends/cli/listen.ts:134 app/src/frontends/cli/questions.ts:33
 msgid "  {problem}"
 msgstr ""
 
-#: app/src/frontends/cli/choose.ts:43 app/src/frontends/cli/provider.ts:205
-#: app/src/frontends/cli/listen.ts:197 app/src/frontends/cli/listen.ts:229
+#: app/src/frontends/cli/choose.ts:43 app/src/frontends/cli/listen.ts:197
+#: app/src/frontends/cli/listen.ts:234 app/src/frontends/cli/provider.ts:205
 msgid "  {note}"
+msgstr ""
+
+#: app/src/frontends/cli/listen-deps.ts:46
+msgid ""
+"The users, profiles and tasks of tasks.json were copied to {dir}, one file "
+"or directory each. tasks.json is not read any more and not changed; edit the "
+"new files."
+msgstr ""
+
+#: app/src/frontends/cli/listen-deps.ts:58
+msgid "  {warning}"
+msgstr ""
+
+#: app/src/frontends/cli/listen.ts:87
+msgid "  #{questionId}: {message}"
+msgstr ""
+
+#: app/src/frontends/cli/listen.ts:117
+msgid "  #{questionId}: {reason}"
+msgstr ""
+
+#: app/src/frontends/cli/listen.ts:175
+msgid "  messenger channel not started: {problem}"
+msgstr ""
+
+#: app/src/frontends/cli/listen.ts:180
+msgid "  messenger: {line}"
+msgstr ""
+
+#: app/src/frontends/cli/listen.ts:201
+msgid "  {name}: {message}"
+msgstr ""
+
+#: app/src/frontends/cli/listen.ts:225
+msgid "answer chat requests and ask the person when an agent has a question"
+msgstr ""
+
+#: app/src/frontends/cli/listen.ts:227
+msgid "do not echo the agents' log lines"
+msgstr ""
+
+#: app/src/frontends/cli/listen.ts:245
+msgid "  {dropped} permission question(s) from an earlier listen cancelled"
+msgstr ""
+
+#: app/src/frontends/cli/listen.ts:248
+msgid ""
+"lotse listen — listening for chat requests and answers, questions via "
+"{channel}, state in {dir}"
+msgstr ""
+
+#: app/src/frontends/cli/listen.ts:262
+msgid "  stopping: {why}"
+msgstr ""
+
+#: app/src/frontends/cli/listen.ts:305
+msgid ""
+"  {left} chat request(s) from an earlier listen were not completed; the chat "
+"was told"
 msgstr ""
 
 #: app/src/frontends/cli/login.ts:120
@@ -450,7 +530,7 @@ msgid "start an agent run for a chat message: on or off"
 msgstr ""
 
 #: app/src/frontends/cli/messenger.ts:132
-msgid "the tasks.json profile a request runs with"
+msgid "the profile a request runs with"
 msgstr ""
 
 #: app/src/frontends/cli/messenger.ts:136
@@ -666,87 +746,6 @@ msgstr ""
 msgid "print the result as JSON"
 msgstr ""
 
-#: app/src/frontends/cli/listen-deps.ts:38
-msgid ""
-"tasks.json: 'schedule' is no longer supported and is ignored (task {id})"
-msgstr ""
-
-#: app/src/frontends/cli/listen-deps.ts:47
-msgid ""
-"The profiles in tasks.json were copied to {file}, which every lotse host now "
-"shares. tasks.json keeps working; edit the profiles there."
-msgstr ""
-
-#: app/src/frontends/cli/listen-deps.ts:57
-msgid ""
-"The tasks in tasks.json were copied to {dir}, one SKILL.md each. tasks.json "
-"keeps working and is not changed; edit the tasks there."
-msgstr ""
-
-#: app/src/frontends/cli/listen-deps.ts:62 app/src/frontends/cli/listen.ts:359
-msgid "  {warning}"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:87
-msgid "  #{questionId}: {message}"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:117
-msgid "  #{questionId}: {reason}"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:175
-msgid "  messenger channel not started: {problem}"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:180
-msgid "  messenger: {line}"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:201
-msgid "  {name}: {message}"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:220
-msgid "answer chat requests and ask the person when an agent has a question"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:222
-msgid "do not echo the agents' log lines"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:264
-msgid "  {dropped} permission question(s) from an earlier listen cancelled"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:267
-msgid ""
-"lotse listen — listening for chat requests and answers, questions via "
-"{channel}, state in {dir}"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:281
-msgid "  stopping: {why}"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:324
-msgid ""
-"  {left} chat request(s) from an earlier listen were not completed; the chat "
-"was told"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:361
-msgid "  {file} reloaded"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:368
-msgid "{file} not reloaded, keeping the previous one: {problem}"
-msgstr ""
-
-#: app/src/frontends/cli/listen.ts:372
-msgid "  {message}"
-msgstr ""
-
 #: app/src/frontends/cli/sessions.ts:20
 msgid "list the sessions lotse has recorded"
 msgstr ""
@@ -797,47 +796,75 @@ msgstr ""
 msgid "print the status as JSON"
 msgstr ""
 
-#: app/src/frontends/cli/task-commands.ts:63
+#: app/src/frontends/cli/task-commands.ts:65
 msgid "Done."
 msgstr ""
 
-#: app/src/frontends/cli/task-commands.ts:65
+#: app/src/frontends/cli/task-commands.ts:67
 msgid "Waiting for you: {id}. Answer it with `lotse answer {id} <text>`."
 msgstr ""
 
-#: app/src/frontends/cli/task-commands.ts:69
+#: app/src/frontends/cli/task-commands.ts:71
 msgid "Not started: {reason}"
 msgstr ""
 
-#: app/src/frontends/cli/task-commands.ts:71
+#: app/src/frontends/cli/task-commands.ts:73
 msgid "Failed: {reason}"
 msgstr ""
 
-#: app/src/frontends/cli/task-commands.ts:76
+#: app/src/frontends/cli/task-commands.ts:74
+msgid "another run of this task is still in progress"
+msgstr ""
+
+#: app/src/frontends/cli/task-commands.ts:80
 msgid "No tasks."
 msgstr ""
 
-#: app/src/frontends/cli/task-commands.ts:112
+#: app/src/frontends/cli/task-commands.ts:119
+msgid "done"
+msgstr ""
+
+#: app/src/frontends/cli/task-commands.ts:121
+msgid "waiting for you"
+msgstr ""
+
+#: app/src/frontends/cli/task-commands.ts:123
+msgid "declined"
+msgstr ""
+
+#: app/src/frontends/cli/task-commands.ts:125
+msgid "nothing to do"
+msgstr ""
+
+#: app/src/frontends/cli/task-commands.ts:127
+msgid "skipped"
+msgstr ""
+
+#: app/src/frontends/cli/task-commands.ts:129
+msgid "failed"
+msgstr ""
+
+#: app/src/frontends/cli/task-commands.ts:145
 msgid "Running: {tasks}"
 msgstr ""
 
-#: app/src/frontends/cli/task-commands.ts:113
+#: app/src/frontends/cli/task-commands.ts:146
 msgid "Nothing is running."
 msgstr ""
 
-#: app/src/frontends/cli/task-commands.ts:117
+#: app/src/frontends/cli/task-commands.ts:153
 msgid "{task}: {outcome} at {time}"
 msgstr ""
 
-#: app/src/frontends/cli/task-commands.ts:120
+#: app/src/frontends/cli/task-commands.ts:161
 msgid "Open: {id} ({task}) until {time}"
 msgstr ""
 
-#: app/src/frontends/cli/tasks.ts:15
+#: app/src/frontends/cli/tasks.ts:16
 msgid "list the tasks that can be run"
 msgstr ""
 
-#: app/src/frontends/cli/tasks.ts:17
+#: app/src/frontends/cli/tasks.ts:18
 msgid "print the tasks as JSON"
 msgstr ""
 
@@ -880,8 +907,8 @@ msgstr ""
 
 #: app/src/frontends/gui/preferences.ts:86
 msgid ""
-"How lotse listen shows a question an agent asks. A change applies to the next "
-"question."
+"How lotse listen shows a question an agent asks. A change applies to the "
+"next question."
 msgstr ""
 
 #: app/src/frontends/gui/preferences.ts:95
@@ -942,7 +969,7 @@ msgid "Prefix that always starts a request"
 msgstr ""
 
 #: app/src/frontends/gui/preferences.ts:130
-msgid "Profile (from tasks.json)"
+msgid "Profile (from profiles.json)"
 msgstr ""
 
 #: app/src/frontends/gui/preferences.ts:131

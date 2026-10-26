@@ -1,5 +1,6 @@
 /** `lotse answer <id> <text>` and an answer from the chat: what the text does to the question. */
 
+import { _ } from '../i18n.ts';
 import { withPreamble } from '../profile/resolve.ts';
 import { msg, STRINGS } from '../messenger/strings.ts';
 import { withAuthHint } from '../run.ts';
@@ -112,7 +113,7 @@ export async function answerQuestion(idText: string, text: string, deps: RunDeps
         'invalid',
         msg(STRINGS.personNeedsAnswer, {
           id: label,
-          orCode: question.acceptsCode && !question.deferred ? ' or the code' : '',
+          orCode: question.acceptsCode && !question.deferred ? _(' or the code') : '',
         }),
         question,
       );

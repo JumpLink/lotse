@@ -16,6 +16,7 @@
 
 import type { McpServer } from '@lotse/acp';
 
+import { _, fmt } from '../i18n.ts';
 import { isId } from '../parse.ts';
 import type { Profile } from '../profile/profile.ts';
 import { PERSON_NEEDED_OFF, type PersonNeededConfig, type Task } from './task.ts';
@@ -260,8 +261,9 @@ export function parseParamPairs(pairs: readonly string[]): Record<string, string
   for (const pair of pairs) {
     const cut = pair.indexOf('=');
     const name = cut < 0 ? '' : pair.slice(0, cut);
-    if (!PARAM_NAME.test(name)) throw new TaskUsageError(`"${pair}" is not a parameter like name=value`);
-    if (name in params) throw new TaskUsageError(`parameter "${name}" is given twice`);
+    if (!PARAM_NAME.test(name))
+      throw new TaskUsageError(fmt(_('"{pair}" is not a parameter like name=value'), { pair }));
+    if (name in params) throw new TaskUsageError(fmt(_('parameter "{name}" is given twice'), { name }));
     params[name] = pair.slice(cut + 1);
   }
   return params;
@@ -278,7 +280,7 @@ export function splitWords(text: string): string[] {
 /** What follows `/run` in the chat: the task id, then `k=v` words. Throws `TaskUsageError`. */
 export function parseRunArgs(text: string): { id: string; params: Record<string, string> } {
   const [id, ...rest] = splitWords(text);
-  if (!id || !isId(id)) throw new TaskUsageError('say which task to run, like: /run <task> name=value');
+  if (!id || !isId(id)) throw new TaskUsageError(_('say which task to run, like: /run <task> name=value'));
   return { id, params: parseParamPairs(rest) };
 }
 
@@ -293,16 +295,22 @@ export function renderTask(
   for (const name of Object.keys(given)) {
     if (!skill.params.some((param) => param.name === name))
       throw new TaskUsageError(
-        `task "${skill.id}" has no parameter "${name}"` +
-          (skill.params.length > 0
-            ? ` (it takes ${skill.params.map((param) => param.name).join(', ')})`
-            : ''),
+        skill.params.length > 0
+          ? fmt(_('task "{id}" has no parameter "{name}" (it takes {params})'), {
+              id: skill.id,
+              name,
+              params: skill.params.map((param) => param.name).join(', '),
+            })
+          : fmt(_('task "{id}" has no parameter "{name}"'), { id: skill.id, name }),
       );
   }
   const values: Record<string, string> = {};
   for (const param of skill.params) {
     const value = given[param.name] ?? param.default;
-    if (value === null) throw new TaskUsageError(`task "${skill.id}" needs the parameter "${param.name}"`);
+    if (value === null)
+      throw new TaskUsageError(
+        fmt(_('task "{id}" needs the parameter "{name}"'), { id: skill.id, name: param.name }),
+      );
     values[param.name] = value;
   }
   const fill = (text: string) => text.replace(PLACEHOLDER, (_whole, name: string) => values[name] ?? '');

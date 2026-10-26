@@ -59,7 +59,14 @@ import { stderrChannel } from '../../core/stderr-channel.ts';
 import { err, pickArgv } from './output.ts';
 import { createRequestsHolder } from './chat-requests.ts';
 import { readConfig, runDeps, trackedAgents } from './listen-deps.ts';
-import { reportText, runReportFromText, statusReport, statusText, tasksText } from './task-commands.ts';
+import {
+  knownTasks,
+  reportText,
+  runReportFromText,
+  statusReport,
+  statusText,
+  tasksText,
+} from './task-commands.ts';
 
 const FAILED = new Set(['unknown', 'dropped', 'expired', 'busy', 'invalid']);
 
@@ -312,7 +319,7 @@ const command = (paths: LotsePaths, listen: ListenPaths): CommandModule => ({
         commands: {
           run: async (args) => reportText(await runReportFromText(args, live)),
           tasks: () => tasksText(listTasks(listen.tasksDir)),
-          status: () => statusText(statusReport(listen)),
+          status: () => statusText(statusReport(listen), { known: knownTasks(listen.tasksDir) }),
         },
         log: (line) => err(fmt(_('  {line}'), { line })),
         signal,

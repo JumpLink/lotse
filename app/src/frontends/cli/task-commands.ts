@@ -9,6 +9,8 @@ import { _, fmt } from '../../i18n.ts';
 import {
   formatQuestionId,
   isOpen,
+  LOCKED,
+  localTime,
   parseRunArgs,
   runTask,
   TaskUsageError,
@@ -19,7 +21,7 @@ import {
 import type { ListenPaths } from '../../core/paths.ts';
 import { questionBook } from '../../core/question-state.ts';
 import { runningTasks, runState, type RunRecord } from '../../core/run-state.ts';
-import type { TaskEntry } from '../../core/skills.ts';
+import { listTasks, type TaskEntry } from '../../core/skills.ts';
 
 /** `lotse run`'s exit codes: done, failed, usage error, needs a person. */
 export const EXIT = { done: 0, failed: 1, usage: 2, 'needs-person': 3 } as const;
@@ -68,7 +70,9 @@ export function reportText(report: RunReport): string {
     case 'usage':
       return fmt(_('Not started: {reason}'), { reason: result.reason });
     default:
-      return fmt(_('Failed: {reason}'), { reason: result.reason });
+      return fmt(_('Failed: {reason}'), {
+        reason: result.reason === LOCKED ? _('another run of this task is still in progress') : result.reason,
+      });
   }
 }
 
@@ -105,23 +109,65 @@ export function statusReport(listen: ListenPaths, now: Date = new Date()): Statu
   };
 }
 
-export function statusText(report: StatusReport): string {
+/** How many finished runs `/status` and `lotse status` list. */
+const RECENT_RUNS = 10;
+
+/** A run's outcome in words. */
+function outcomeText(outcome: RunRecord['outcome']): string {
+  switch (outcome) {
+    case 'done':
+      return _('done');
+    case 'asked':
+      return _('waiting for you');
+    case 'declined':
+      return _('declined');
+    case 'nothing':
+      return _('nothing to do');
+    case 'skipped':
+      return _('skipped');
+    default:
+      return _('failed');
+  }
+}
+
+export interface StatusTextOptions {
+  /** The ids of the tasks that exist; a run of any other task is left out. Everything, when absent. */
+  readonly known?: ReadonlySet<string>;
+  /** For tests; people get the host's locale. */
+  readonly locale?: string;
+}
+
+export function statusText(report: StatusReport, options: StatusTextOptions = {}): string {
+  const { known, locale } = options;
   const lines: string[] = [];
   lines.push(
     report.running.length > 0
       ? fmt(_('Running: {tasks}'), { tasks: report.running.join(', ') })
       : _('Nothing is running.'),
   );
-  const recent = Object.entries(report.recent).sort((a, b) => b[1].endedAt.localeCompare(a[1].endedAt));
-  for (const [task, run] of recent.slice(0, 10))
-    lines.push(fmt(_('{task}: {outcome} at {time}'), { task, outcome: run.outcome, time: run.endedAt }));
+  const recent = Object.entries(report.recent)
+    .filter(([task]) => !known || known.has(task))
+    .sort((a, b) => b[1].endedAt.localeCompare(a[1].endedAt));
+  for (const [task, run] of recent.slice(0, RECENT_RUNS))
+    lines.push(
+      fmt(_('{task}: {outcome} at {time}'), {
+        task,
+        outcome: outcomeText(run.outcome),
+        time: localTime(run.endedAt, locale),
+      }),
+    );
   for (const question of report.questions)
     lines.push(
       fmt(_('Open: {id} ({task}) until {time}'), {
         id: question.id,
         task: question.task,
-        time: question.expiresAt,
+        time: localTime(question.expiresAt, locale),
       }),
     );
   return lines.join('\n');
+}
+
+/** The ids of the tasks in `tasksDir`, for `statusText`. */
+export function knownTasks(tasksDir: string): ReadonlySet<string> {
+  return new Set(listTasks(tasksDir).map((entry) => entry.id));
 }

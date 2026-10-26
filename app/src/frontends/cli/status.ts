@@ -7,7 +7,7 @@ import type { LotsePaths } from '@lotse/core';
 
 import type { ListenPaths } from '../../core/paths.ts';
 import { out, pickArgv } from './output.ts';
-import { statusReport, statusText } from './task-commands.ts';
+import { knownTasks, statusReport, statusText } from './task-commands.ts';
 
 const command = (_paths: LotsePaths, listen: ListenPaths): CommandModule => ({
   command: 'status',
@@ -18,7 +18,7 @@ const command = (_paths: LotsePaths, listen: ListenPaths): CommandModule => ({
     const report = statusReport(listen);
     if (pickArgv<boolean>(argv as Record<string, unknown>, 'json') === true)
       out(JSON.stringify(report, null, 2));
-    else out(statusText(report));
+    else out(statusText(report, { known: knownTasks(listen.tasksDir) }));
   },
 });
 

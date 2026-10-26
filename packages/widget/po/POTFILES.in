@@ -1,8 +1,8 @@
-packages/core/src/agent-session.ts
 packages/core/src/agents/catalog.ts
 packages/core/src/agents/choice.ts
 packages/core/src/agents/detect.ts
 packages/core/src/agents/dev-agent.ts
+packages/core/src/agent-session.ts
 packages/core/src/agents/flatpak-module.ts
 packages/core/src/agents/install.ts
 packages/core/src/agents/isolation.ts
@@ -58,7 +58,8 @@ packages/core/src/paths.ts
 packages/core/src/permission.ts
 packages/core/src/policy.ts
 packages/core/src/profile/apply.ts
-packages/core/src/profile/migrate.ts
+packages/core/src/profile/delivery.ts
+packages/core/src/profile/legacy.ts
 packages/core/src/profile/profile.ts
 packages/core/src/profile/resolve.ts
 packages/core/src/profile/schema.ts
@@ -72,7 +73,6 @@ packages/core/src/questions/question.ts
 packages/core/src/run.ts
 packages/core/src/schema.ts
 packages/core/src/scroll.ts
-packages/core/src/task/config.ts
 packages/core/src/task/deps.ts
 packages/core/src/task/gate.ts
 packages/core/src/task/precheck.ts
@@ -80,10 +80,13 @@ packages/core/src/task/request.ts
 packages/core/src/task/run.ts
 packages/core/src/task/session.ts
 packages/core/src/task/skill.ts
+packages/core/src/task/task.ts
 packages/core/src/transcript-items.ts
 packages/core/src/transcript.ts
 packages/core/src/turn.ts
 packages/core/src/usage.ts
+packages/core/src/users/schema.ts
+packages/core/src/users/users.ts
 packages/widget/src/chat.blp
 packages/widget/src/chat.ts
 packages/widget/src/composer.ts
