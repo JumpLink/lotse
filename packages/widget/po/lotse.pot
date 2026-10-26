@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-26 15:02+0100\n"
+"POT-Creation-Date: 2026-10-26 15:49+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -44,11 +44,11 @@ msgstr ""
 msgid "Stopped."
 msgstr ""
 
-#: packages/core/src/config-row.ts:184
+#: packages/core/src/config-row.ts:198
 msgid "The agent did not change this. Its previous value is still in use."
 msgstr ""
 
-#: packages/core/src/config-row.ts:225
+#: packages/core/src/config-row.ts:241
 msgid "Choose…"
 msgstr ""
 
@@ -147,6 +147,18 @@ msgstr ""
 msgid ""
 "The agent offered no one-time approval for a tool the host confirms, so "
 "nothing was approved."
+msgstr ""
+
+#: packages/core/src/mcp-toggles.ts:87
+msgid "This agent cannot change MCP servers in a running conversation."
+msgstr ""
+
+#: packages/core/src/mcp-toggles.ts:94
+msgid "MCP server {name}"
+msgstr ""
+
+#: packages/core/src/mcp-toggles.ts:96
+msgid "MCP server {name}. A change applies from the next message."
 msgstr ""
 
 #: packages/core/src/model-policy.ts:211
@@ -252,11 +264,11 @@ msgstr ""
 msgid "Dismiss warning"
 msgstr ""
 
-#: packages/widget/src/chat.ts:543
+#: packages/widget/src/chat.ts:556
 msgid "Working in {path}"
 msgstr ""
 
-#: packages/widget/src/chat.ts:848 packages/widget/src/provider-settings.ts:200
+#: packages/widget/src/chat.ts:861 packages/widget/src/provider-settings.ts:200
 #: packages/widget/src/provider-settings.ts:203
 msgid "Providers"
 msgstr ""

@@ -63,10 +63,13 @@ import Gtk from '@girs/gtk-4.0';
 import {
   configSelection,
   emptyConfigRow,
+  emptyMcpToggles,
   isConfigChange,
   modelControl,
   type ConfigRowControl,
+  type ConfigRowSwitch,
   type ConfigRowView,
+  type McpTogglesView,
 } from '@lotse/core';
 import { CSS } from './css.ts';
 
@@ -82,6 +85,10 @@ export interface ConfigRowOptions {
    * every answer.
    */
   readonly onSelect: (controlId: string, value: string) => void;
+  /** A boolean option (switch) was flipped by the person. */
+  readonly onSwitch?: (controlId: string, on: boolean) => void;
+  /** An MCP server toggle was flipped by the person. */
+  readonly onMcpToggle?: (name: string, on: boolean) => void;
 }
 
 export class ConfigRow {
@@ -95,6 +102,9 @@ export class ConfigRow {
   readonly #flow: Gtk.FlowBox;
   readonly #caption: Gtk.Label;
   readonly #onSelect: (controlId: string, value: string) => void;
+  readonly #onSwitch: (controlId: string, on: boolean) => void;
+  readonly #onMcpToggle: (name: string, on: boolean) => void;
+  #mcp: McpTogglesView = emptyMcpToggles();
   /**
    * The last view rendered.
    *
@@ -126,6 +136,8 @@ export class ConfigRow {
 
   constructor(options: ConfigRowOptions) {
     this.#onSelect = options.onSelect;
+    this.#onSwitch = options.onSwitch ?? (() => {});
+    this.#onMcpToggle = options.onMcpToggle ?? (() => {});
     this.#view = emptyConfigRow();
 
     this.#caption = new Gtk.Label({
@@ -177,12 +189,22 @@ export class ConfigRow {
     this.#render();
   }
 
+  /**
+   * The MCP server toggles. Drawn in the same flow as the dropdowns, so the 360 px floor wraps them
+   * with the rest instead of the row growing a second layout.
+   */
+  setMcpToggles(view: McpTogglesView): void {
+    this.#mcp = view;
+    this.#render();
+  }
+
   #render(): void {
     // `visible` on the box, because the box **is** the widget the composer lays out. It used to be the
     // clamp around it, for the same reason: hiding something further in leaves the parent allocating
     // space for a row that is not there.
-    this.#box.visible = this.#view.visible;
-    if (!this.#view.visible) {
+    const shown = this.#view.visible || this.#mcp.visible;
+    this.#box.visible = shown;
+    if (!shown) {
       this.#caption.label = '';
       this.#caption.visible = false;
       return;
@@ -198,11 +220,65 @@ export class ConfigRow {
       for (const control of this.#view.controls) {
         this.#flow.append(this.#buildControl(control));
       }
+      for (const entry of this.#view.switches) {
+        this.#flow.append(this.#buildSwitch(entry));
+      }
+      for (const toggle of this.#mcp.toggles) {
+        this.#flow.append(this.#buildMcpToggle(toggle, this.#mcp.selectable));
+      }
     } finally {
       this.#rendering = false;
     }
     this.#caption.label = this.#view.error ?? '';
     this.#caption.visible = this.#caption.label !== '';
+  }
+
+  /**
+   * A boolean option: the name beside a `Gtk.Switch`. The agent's words go in a label created with
+   * `useMarkup: false`, like every other label that can carry them.
+   */
+  #buildSwitch(entry: ConfigRowSwitch): Gtk.Widget {
+    const toggle = new Gtk.Switch({
+      active: entry.on,
+      sensitive: entry.selectable,
+      valign: Gtk.Align.CENTER,
+    });
+    toggle.update_property([Gtk.AccessibleProperty.LABEL], [entry.name]);
+    toggle.connect('notify::active', () => {
+      if (this.#rendering || toggle.active === entry.on) return;
+      this.#onSwitch(entry.id, toggle.active);
+    });
+    const label = new Gtk.Label({ label: entry.name, useMarkup: false, ellipsize: 3, xalign: 0 });
+    const box = new Gtk.Box({
+      orientation: Gtk.Orientation.HORIZONTAL,
+      spacing: 6,
+      tooltipText: entry.description === entry.name ? entry.name : `${entry.name} — ${entry.description}`,
+    });
+    box.append(label);
+    box.append(toggle);
+    return box;
+  }
+
+  /**
+   * One MCP server of the conversation: a toggle button named after the server. A button, not a switch,
+   * so the server name is the control and the row stays as narrow as a dropdown. The tooltip is core's
+   * sentence, which says why it is disabled when the agent cannot resume.
+   */
+  #buildMcpToggle(entry: McpTogglesView['toggles'][number], selectable: boolean): Gtk.Widget {
+    const button = new Gtk.ToggleButton({
+      label: entry.name,
+      active: entry.on,
+      sensitive: selectable,
+      tooltipText: entry.tooltip,
+      valign: Gtk.Align.CENTER,
+      cssClasses: ['flat', CSS.configControl],
+    });
+    button.update_property([Gtk.AccessibleProperty.LABEL], [entry.label]);
+    button.connect('toggled', () => {
+      if (this.#rendering || button.active === entry.on) return;
+      this.#onMcpToggle(entry.name, button.active);
+    });
+    return button;
   }
 
   /** One control: a dropdown, clamped so it shares the measure with the others. */
