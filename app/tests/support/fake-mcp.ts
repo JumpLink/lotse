@@ -4,7 +4,9 @@
  * in the room. It is written to a temp directory and started as `node <file>`, the way the stand-in
  * agent is, so the same test runs on GJS and on Node.
  *
- * It behaves like curlew's two tools and nothing else:
+ * It behaves like curlew's two tools and nothing else — plus, with `contract`, the 0.2.0 additions
+ * (`format` and `strip_quotes` inputs, `messaging_capabilities`); without it, an older server whose
+ * tools list no such input:
  *
  * - `send_message {account, to, text}` → `{conversationId, sentAt, originId}` (`o1`, `o2`, …), listed unless `noSend`.
  * - `xmpp_wait_reply {account, peer, after, timeout_s}` → `{status:'reply', messages, cursor}` for the
@@ -31,10 +33,13 @@ const opts = JSON.parse(process.env.FAKE_MCP_OPTIONS || '{}');
 const log = (line) => fs.appendFileSync(dir + '/calls', JSON.stringify(line) + '\n');
 const inbox = () => { try { return JSON.parse(fs.readFileSync(dir + '/inbox', 'utf8')); } catch { return []; } };
 const out = (message) => process.stdout.write(JSON.stringify(message) + '\n');
+const schema = (properties) => ({ type: 'object', properties });
 const tools = [
-  { name: 'send_message', description: 'send', inputSchema: { type: 'object', properties: {} } },
-  { name: 'xmpp_wait_reply', description: 'wait', inputSchema: { type: 'object', properties: {} } },
+  { name: 'send_message', description: 'send', inputSchema: schema(opts.contract ? { account: {}, to: {}, text: {}, format: {} } : {}) },
+  { name: 'xmpp_wait_reply', description: 'wait', inputSchema: schema(opts.contract ? { account: {}, peer: {}, after: {}, strip_quotes: {} } : {}) },
+  ...(opts.contract ? [{ name: 'messaging_capabilities', description: 'caps', inputSchema: schema({}) }] : []),
 ].filter((tool) => !(opts.noSend && tool.name === 'send_message'));
+const unquote = (body) => body.replace(/^(>.*\n)+\n?/, '');
 const nulls = new Set();
 let waits = 0;
 let sends = 0;
@@ -48,6 +53,9 @@ async function call(name, args) {
     if (opts.sendError) return { isError: true, content: [{ type: 'text', text: opts.sendError }] };
     return text({ conversationId: 'c1', sentAt: new Date().toISOString(), originId: 'o' + sends });
   }
+  if (name === 'messaging_capabilities') {
+    return text({ protocols: [{ protocol: 'xmpp', accounts: ['main'], maxMessageChars: 8000, waitTimeoutS: { default: 60, max: opts.maxWaitS ?? 120 } }] });
+  }
   if (name === 'xmpp_wait_reply') {
     waits += 1;
     if (opts.dieAfterWaits && waits >= opts.dieAfterWaits && !fs.existsSync(dir + '/died')) {
@@ -60,7 +68,7 @@ async function call(name, args) {
       const all = inbox();
       const idx = all.map((m, i) => i).filter((i) => (all[i].sentAt === null ? !nulls.has(i) : all[i].sentAt > args.after));
       if (idx.length > 0) {
-        const fresh = idx.map((i) => all[i]);
+        const fresh = idx.map((i) => (args.strip_quotes ? { ...all[i], bodyText: unquote(all[i].bodyText) } : all[i]));
         idx.forEach((i) => { if (all[i].sentAt === null) nulls.add(i); });
         return text({ status: 'reply', messages: fresh, cursor: fresh[fresh.length - 1].sentAt ?? args.after });
       }
@@ -89,6 +97,10 @@ readline.createInterface({ input: process.stdin }).on('line', async (line) => {
 `;
 
 export interface FakeMcpOptions {
+  /** Offer what Curlew 0.2.0 does: `format`, `strip_quotes` (the server strips), `messaging_capabilities`. */
+  readonly contract?: boolean;
+  /** The wait limit `messaging_capabilities` reports. Default 120. */
+  readonly maxWaitS?: number;
   readonly noSend?: boolean;
   readonly sendError?: string;
   /** The first n sends fail with "database is locked", later ones succeed. */

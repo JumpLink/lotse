@@ -28,6 +28,12 @@ export interface McpCallOptions {
   readonly signal?: AbortSignal;
 }
 
+/** One tool of `tools/list`: its name and the property names of its input schema. */
+export interface McpToolInfo {
+  readonly name: string;
+  readonly inputs: readonly string[];
+}
+
 /** The part of an MCP server the messenger needs: call a tool, and know when the server is gone. */
 export interface McpTools {
   /**
@@ -35,8 +41,8 @@ export interface McpTools {
    * block parsed as JSON, else that text. A tool error (`isError`) throws `McpToolError`.
    */
   call(tool: string, args: Readonly<Record<string, unknown>>, options?: McpCallOptions): Promise<unknown>;
-  /** The tools the server lists — used to say "this server has no send_message" instead of failing later. */
-  listTools(): Promise<readonly string[]>;
+  /** The tools the server lists, with the names of their inputs — what `negotiateContract` reads. */
+  describeTools(): Promise<readonly McpToolInfo[]>;
   /** Settles when the connection ends, for whatever reason. Never rejects. */
   readonly closed: Promise<void>;
   close(): Promise<void>;
@@ -166,9 +172,12 @@ export async function connectMcp(command: AgentCommand, options: ConnectOptions 
       })) as ToolResult;
       return resultValue(tool, result);
     },
-    async listTools() {
+    async describeTools() {
       const listed = await client.listTools();
-      return listed.tools.map((tool) => tool.name);
+      return listed.tools.map((tool) => ({
+        name: tool.name,
+        inputs: Object.keys(tool.inputSchema?.properties ?? {}),
+      }));
     },
     async close() {
       await client.close().catch(() => {});

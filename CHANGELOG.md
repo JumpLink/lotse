@@ -23,8 +23,16 @@ and also records changes that are not a release of their own.
   options now show as switches, and Lotse advertises the `boolean` config-option capability. See
   [docs/profiles.md](docs/profiles.md).
 
+- **Messenger contract** (ADR 0008, phase 5b). Lotse sends Markdown and the messenger server renders,
+  splits and strips quotes; the optional `messaging_capabilities` tool (setting `capabilitiesTool`)
+  is negotiated per connection, and an older server gets plain text with one notice. Receiving sits
+  behind the `MessageSource` seam (long-poll today). Needs Curlew 0.2.0 for the full behaviour. See
+  [docs/messenger-contract.md](docs/messenger-contract.md).
+
 ### Removed
 
+- **Local messenger rendering.** `xmpp-style.ts` (XEP-0393 renderer, image splitting, Curlew
+  constants) and the local `stripQuote` are gone; the server does this now.
 - **Time-based scheduling in `lotse serve`.** The `schedule` task key, the scheduler loop, `serve --once`
   and the due-time bookkeeping are gone; `serve` now only answers chat requests and handles questions.
   An old `schedule` key in `tasks.json` is ignored with one notice per task. `precheck` stays in the

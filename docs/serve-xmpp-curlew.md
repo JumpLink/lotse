@@ -75,12 +75,15 @@ Restart `serve` after any change to these settings.
 
 ## The tool contract
 
-Any MCP server that offers these two tools works in Curlew's place:
+**Curlew 0.2.0 or newer is the minimum** for Markdown, splitting and quote stripping; an older
+Curlew still works with plain text. The full contract, the capability tool and the fallback are in
+[messenger-contract.md](messenger-contract.md). Any MCP server that offers these two tools works in
+Curlew's place:
 
 | Call | Arguments lotse sends | Result lotse reads |
 |---|---|---|
-| `sendTool` | `{account, to, text}` | `originId`, the id a reply to that message will name (optional); an error result counts as not sent |
-| `waitTool` | `{account, peer, after, timeout_s, include_bodies: true}` | `{status: "reply" \| "timeout", messages: [{id, bodyText, sentAt, fromSelf, replyToId?}], cursor}` |
+| `sendTool` | `{account, to, text, format: "markdown"}` (`format` only when the tool has it) | `originIds` (one id per part), else `originId`; the ids a reply will name; an error result counts as not sent |
+| `waitTool` | `{account, peer, after, timeout_s, include_bodies: true, strip_quotes: true}` (`strip_quotes` only when the tool has it) | `{status: "reply" \| "timeout", messages: [{id, bodyText, sentAt, fromSelf, replyToId?}], cursor}` |
 
 `replyToId` is the id of the message a message replies to (XEP-0461); Curlew also removes the quoted
 fallback text (XEP-0428) from `bodyText`. See [Reply to the question's message](serve.md#reply-to-the-questions-message).

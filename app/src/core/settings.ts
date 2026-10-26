@@ -148,7 +148,16 @@ export function parseSettings(raw: string): ParsedSettings {
   return withChannel({ id, source });
 }
 
-const MESSENGER_KEYS = ['command', 'args', 'account', 'peer', 'sendTool', 'waitTool', 'requests'] as const;
+const MESSENGER_KEYS = [
+  'command',
+  'args',
+  'account',
+  'peer',
+  'sendTool',
+  'waitTool',
+  'capabilitiesTool',
+  'requests',
+] as const;
 
 const REQUEST_KEYS = [
   'enabled',
@@ -279,6 +288,10 @@ function parseMessenger(value: unknown): MessengerSettings | string {
     if (field === null) return `"channel.messenger.${key}" must be a string`;
     out[key] = field;
   }
+  const capabilitiesTool = value['capabilitiesTool'];
+  if (capabilitiesTool !== undefined && typeof capabilitiesTool !== 'string') {
+    return '"channel.messenger.capabilitiesTool" must be a string';
+  }
   const args = value['args'] === undefined ? MESSENGER_DEFAULTS.args : value['args'];
   if (!Array.isArray(args) || !args.every((arg) => typeof arg === 'string')) {
     return '"channel.messenger.args" must be a list of strings';
@@ -286,6 +299,7 @@ function parseMessenger(value: unknown): MessengerSettings | string {
   return {
     ...(out as unknown as MessengerSettings),
     args: args as string[],
+    ...(typeof capabilitiesTool === 'string' && capabilitiesTool.trim() !== '' ? { capabilitiesTool } : {}),
     ...(requests ? { requests } : {}),
   };
 }

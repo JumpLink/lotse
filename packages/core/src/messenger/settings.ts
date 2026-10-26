@@ -1,7 +1,7 @@
 /**
  * Which messenger server `serve` talks to, and as whom — the shape of `channel.messenger` in
- * settings.json. Curlew is the default, not a requirement: any MCP server with a "send a text to a peer"
- * tool and a "wait for a reply after a cursor" tool fits, named here.
+ * settings.json. Curlew is the default, not a requirement: any MCP server that meets the contract
+ * (docs/messenger-contract.md) fits, its tools named here.
  *
  * `account` and `peer` have no default (they are the person's own), and may be empty in the file so the
  * settings page can save a half-filled form; `messengerProblem` says what is still missing, and `serve`
@@ -23,10 +23,12 @@ export interface MessengerSettings {
   readonly account: string;
   /** Who to talk to (curlew: an address). */
   readonly peer: string;
-  /** The server's tool that sends `{account, to, text}`. */
+  /** The server's tool that sends `{account, to, text, format}`. */
   readonly sendTool: string;
-  /** The server's tool that waits for a reply `{account, peer, after, timeout_s, include_bodies}`. */
+  /** The server's tool that waits for a reply `{account, peer, after, timeout_s, include_bodies, strip_quotes}`. */
   readonly waitTool: string;
+  /** The server's read-only tool that describes its limits. Absent: `messaging_capabilities`. */
+  readonly capabilitiesTool?: string;
   /** Requests the person starts from the chat. Absent: `REQUEST_DEFAULTS`, which is off. */
   readonly requests?: RequestSettings;
 }

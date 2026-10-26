@@ -40,6 +40,7 @@ packages/core/src/login/providers.ts
 packages/core/src/login/session.ts
 packages/core/src/mcp-toggles.ts
 packages/core/src/messenger/channel.ts
+packages/core/src/messenger/contract.ts
 packages/core/src/messenger/link.ts
 packages/core/src/messenger/mcp-client.ts
 packages/core/src/messenger/receive.ts
@@ -47,8 +48,8 @@ packages/core/src/messenger/refs.ts
 packages/core/src/messenger/reply.ts
 packages/core/src/messenger/requests.ts
 packages/core/src/messenger/settings.ts
+packages/core/src/messenger/source.ts
 packages/core/src/messenger/strings.ts
-packages/core/src/messenger/xmpp-style.ts
 packages/core/src/model-policy.ts
 packages/core/src/notices.ts
 packages/core/src/onboarding.ts
