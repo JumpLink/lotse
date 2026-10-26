@@ -97,6 +97,8 @@ lotse agents                              # launchers, SOURCE, what lotse would 
 lotse serve [--quiet]                   # chat requests and questions, a long-running service (ADR 0003)
 lotse questions [--all] [--json]          # what the tasks' agents are waiting on
 lotse answer <id> [text..] [--dialog]     # yes/no or a reply; no text opens the answer window
+lotse run <id> [--param k=v] [--json]     # a task now; exit 0 done 1 failed 2 usage 3 needs a person
+lotse tasks | status [--json]             # runnable tasks (docs/tasks.md) | running, last runs, open questions
 ```
 
 
