@@ -270,6 +270,13 @@ export interface LotseHooks extends FrameworkHooks {
    * what a host writes.
    */
   modelPolicy?: string[];
+
+  /**
+   * `LOTSE_APP_MCP` — a comma list of MCP server names the window offers, so the per-conversation
+   * toggles in the config row can be photographed. Lotse's own window passes no servers; each name
+   * becomes an inert stdio entry (the stand-in agent never starts it).
+   */
+  mcp?: string[];
 }
 
 /**
@@ -326,6 +333,7 @@ export function readHooks(env: Record<string, string | undefined> = process.env)
     // A list for `SWITCH`'s reason, and read here for the same one. `main.ts` turns it into a
     // predicate; this file only says what the variable's text is.
     modelPolicy: hookList(env, 'MODEL_POLICY'),
+    mcp: hookList(env, 'MCP'),
     thinking: hookFlag(env, 'THINKING'),
     prompt: hookValue(env, 'PROMPT'),
   };
