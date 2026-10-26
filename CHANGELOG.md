@@ -31,6 +31,9 @@ and also records changes that are not a release of their own.
 
 - The Flatpak manifest's source tag is `v0.5.0` in `package.json` too, so regenerating it no longer
   builds the 0.4.0 sources.
+- `lotse login` and `lotse provider` end on their own on GJS. Before, a child process kept the main
+  loop alive; the fix is in gjsify ([#2388](https://github.com/gjsify/gjsify/pull/2388)), so the
+  forced `process.exit` after 50 ms and the `process.exitCode` workaround are gone (#13).
 
 ## 0.5.0 — 2026-10-22
 
