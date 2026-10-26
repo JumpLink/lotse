@@ -70,7 +70,7 @@ export interface ChatRequestsOptions {
   /** Where unanswered requests are noted. Absent: nothing is kept across a restart. */
   readonly pending?: PendingStore;
   readonly settings: RequestSettings;
-  /** Read per run, so a reloaded tasks.json is seen. */
+  /** Read per run, so a changed profiles.json is seen. */
   readonly deps: RunDeps;
   /** The working directory when `settings.cwd` is empty. */
   readonly defaultCwd: string;

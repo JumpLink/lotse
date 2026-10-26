@@ -11,12 +11,17 @@ and also records changes that are not a release of their own.
 - **`lotse serve` is now `lotse listen`.** Breaking, no alias: update the `ExecStart` of a systemd unit (the example is
   now `data/lotse-listen.service`). The action log moved from `serve.log` to `listen.log` in the state directory;
   an old `serve.log` stays where it is. The guide is [docs/listen.md](docs/listen.md).
+- **Users moved to `users.json`, `tasks.json` is gone.** Users live in `$XDG_CONFIG_HOME/lotse/users.json`
+  (`LOTSE_USERS_FILE`), profiles in profiles.json, tasks in `tasks/<id>/SKILL.md`. With no users.json, a
+  legacy tasks.json is copied once to users.json, profiles.json and the task directories, with one notice;
+  it is never changed and not read afterwards. `listen` reads users and profiles at start (restart after
+  editing) and the SKILL.md of a task on every run; the reloader is gone. A task no longer sets its own
+  question limits, `notify`, `answerMcpServers`, channels or `messengerDetail`; the profile does.
 - **`lotse serve` only receives.** What was left of the task loop is gone: `runServeTask` (its work is
   `runTask`) and exports no host used (`ceilingReached`, `followUpPrompt`, `requestTask`, `userOf`,
   `actionOf`, `isReleased`, `toolOf`), and `emptyMcpToggles()` (use `NO_MCP_TOGGLES`). The startup line and
   the reload messages no longer count tasks. [docs/listen.md](docs/listen.md) describes the receive-only
-  role, how tasks start instead (`lotse run`, `/run`, an outside trigger) and why the command is still
-  called `serve`.
+  role, how tasks start instead (`lotse run`, `/run`, an outside trigger).
 
 ### Added
 

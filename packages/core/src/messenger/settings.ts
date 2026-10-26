@@ -33,14 +33,14 @@ export interface MessengerSettings {
   readonly requests?: RequestSettings;
 }
 
-/** One environment variable of an MCP server, the shape tasks.json and ACP use. */
+/** One environment variable of an MCP server, the shape ACP uses. */
 export interface RequestEnvVariable {
   readonly name: string;
   readonly value: string;
 }
 
 /**
- * A stdio MCP server an ad-hoc run gets. `env` is declared like a tasks.json entry's, but a secret-looking
+ * A stdio MCP server an ad-hoc run gets. `env` is declared like an ACP entry's, but a secret-looking
  * name is refused: settings.json holds no credential.
  */
 export interface RequestMcpServer {
@@ -52,13 +52,13 @@ export interface RequestMcpServer {
 
 /**
  * A message from the peer that answers no question starts an agent run (`requests.ts`). The run is
- * not a task of tasks.json: it borrows one of its profiles for the agent, the model and the user.
+ * not a task: it borrows one of the profiles for the agent, the model and the user.
  */
 export interface RequestSettings {
   readonly enabled: boolean;
   /** A message starting with this is always a new request, never an answer. */
   readonly prefix: string;
-  /** A profile id of tasks.json. */
+  /** A profile id of profiles.json. */
   readonly profile: string;
   /** Put in front of the person's first message of a session. */
   readonly preamble: string;
@@ -106,7 +106,7 @@ export function requestProblem(settings: RequestSettings, profiles: readonly str
   if (!settings.enabled) return null;
   if (settings.profile.trim() === '') return 'channel.messenger.requests needs a profile';
   if (!profiles.includes(settings.profile))
-    return `channel.messenger.requests names profile "${settings.profile}", which tasks.json does not define`;
+    return `channel.messenger.requests names profile "${settings.profile}", which profiles.json does not define`;
   if (settings.prefix.trim() === '') return 'channel.messenger.requests needs a prefix';
   return null;
 }

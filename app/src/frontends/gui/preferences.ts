@@ -127,7 +127,7 @@ type RequestField = 'prefix' | 'profile' | 'preamble' | 'cwd' | 'mcpServers' | '
 
 const requestFields = (): readonly { readonly field: RequestField; readonly title: string }[] => [
   { field: 'prefix', title: _('Prefix that always starts a request') },
-  { field: 'profile', title: _('Profile (from tasks.json)') },
+  { field: 'profile', title: _('Profile (from profiles.json)') },
   { field: 'preamble', title: _('Preamble for a new session') },
   { field: 'cwd', title: _('Working directory (empty: home)') },
   { field: 'mcpServers', title: _('MCP servers (name=command args; …)') },

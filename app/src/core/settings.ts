@@ -192,7 +192,7 @@ function parseRequestServer(value: unknown, index: number): RequestMcpServer | s
   return { name, command, args: args as string[], ...(env.length > 0 ? { env } : {}) };
 }
 
-/** `env` as tasks.json declares it, a list of `{name, value}`; a secret-looking name is refused. */
+/** `env` as ACP declares it, a list of `{name, value}`; a secret-looking name is refused. */
 function parseEnv(value: unknown, path: string): RequestEnvVariable[] | string {
   if (value === undefined) return [];
   if (!Array.isArray(value)) return `"${path}" must be a list of {name, value}`;

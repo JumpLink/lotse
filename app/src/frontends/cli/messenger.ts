@@ -129,7 +129,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       .option('requests', { type: 'string', describe: _('start an agent run for a chat message: on or off') })
       .option('request-profile', {
         type: 'string',
-        describe: _('the tasks.json profile a request runs with'),
+        describe: _('the profile a request runs with'),
       })
       .option('request-prefix', {
         type: 'string',

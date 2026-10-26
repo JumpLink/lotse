@@ -1,6 +1,6 @@
 /**
  * Applying an edited `channel.messenger.requests` to a running `listen` (docs/listen.md, "Requests from the
- * chat"). Looked at once per pass, like tasks.json: a change becomes the `ChatRequests` that messages
+ * chat"). Looked at once per pass: a change becomes the `ChatRequests` that messages
  * arriving afterwards go to, while a request already running finishes inside the instance it started in.
  * A settings.json that cannot be read keeps the previous instance.
  */
@@ -16,7 +16,7 @@ export type RequestsChange =
 export interface RequestsHolderOptions {
   /** The settings as the file is now; `null` when it cannot be read (the previous ones stay). */
   readonly read: () => RequestSettings | null;
-  /** The profile ids tasks.json has right now. */
+  /** The profile ids profiles.json has right now. */
   readonly profiles: () => readonly string[];
   readonly build: (settings: RequestSettings) => ChatRequests;
 }

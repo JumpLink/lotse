@@ -4,9 +4,8 @@ Moved from `AGENTS.md` (issue #15, context budget). The command list stays in [A
 
 **`listen` is [ADR 0003](adr/0003-serve-tasks-questions-channel.md), read it before touching
 `packages/core/src/task/` and `questions/`**; the person's guide is [docs/listen.md](listen.md). It only receives (chat requests, answers, question notices) and starts no task; tasks run on demand
-([docs/tasks.md](tasks.md)). Users, channels and legacy tasks live in
-`$XDG_CONFIG_HOME/lotse/tasks.json` (never in the repo, `examples/tasks.example.json` is the shape), reloaded in place when it or a prompt file changes (`app/src/frontends/cli/listen-reload.ts`; running tasks
-finish with their old definition, an invalid file keeps the old one). Pure logic in core, GI
+([docs/tasks.md](tasks.md)). Users live in
+`$XDG_CONFIG_HOME/lotse/users.json` (never in the repo, `examples/users.example.json` is the shape), read at start like profiles.json (restart after editing); tasks are `tasks/<id>/SKILL.md`, read per run. Pure logic in core, GI
 only in `app/src/core/desktop-channel.ts`, which `listen.ts` imports lazily so `answer` stays GI-free.
 `serve/schema.ts` (`SERVE_CONFIG_SCHEMA`) is the one list of allowed keys, and the parser derives
 from it: a new field goes there first, with a title and a description.

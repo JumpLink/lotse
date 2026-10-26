@@ -32,38 +32,27 @@ The startup line says what it does: `lotse listen — listening for chat request
 desktop + messenger, state in …`. With no messenger configured it listens for `lotse answer` and the
 desktop buttons only.
 
-## The user file (`tasks.json`)
+## The user file (`users.json`)
 
-`$XDG_CONFIG_HOME/lotse/tasks.json` (`LOTSE_TASKS_FILE` overrides it), never in this repository, binds
-people and channels to profiles. Start from [examples/tasks.example.json](../examples/tasks.example.json)
-and keep the file at mode `0600`; `listen` warns when it is readable by others. Tasks themselves live in
-[`tasks/<id>/SKILL.md`](tasks.md); the `tasks` array in this file is the legacy format, still runnable
-and copied once to SKILL.md files.
+`$XDG_CONFIG_HOME/lotse/users.json` (`LOTSE_USERS_FILE` overrides it), never in this repository, lists
+the people questions go to. Start from [examples/users.example.json](../examples/users.example.json)
+and keep the file at mode `0600`; `listen` warns when it is readable by others. The schema is
+`USERS_SCHEMA` in `@lotse/core`.
 
 - **users**: `{id, addresses}`. The desktop channel needs no address.
-- **profiles**: `{id, user, agent?, model?, data, channels?, messengerDetail?}`. This is the listen binding of a profile: its person and channels. For an id that is also in [profiles.json](profiles.md), `agent`, `model` and `data` come from there and `data` may be left out; otherwise `data` is `private` or `public` and is required.
-  `model` is optional: leave it out and the agent's default model applies. A private profile on a
-  free model gets a note at start. That choice is yours, so `listen` does not block it.
-  When the agent does not offer the pinned model, the run retries once after about 15 s with the same
-  model and a fresh session (the agent may be refreshing its list), then fails; there is no fallback model.
-- **tasks** (legacy): `{id, profile, prompt | promptFile, cwd, mcpServers, rights, released,
-  questions, notify, precheck?, channels?, messengerDetail?}`. A `promptFile` resolves relative to the file. `mcpServers` is passed to
-  `session/new` unchanged. `answerMcpServers` (optional) replaces it for the turn that continues
-  a reply question (`lotse answer`). A `schedule` key is ignored, with one notice per task.
 
-Unknown keys are errors, and every problem is reported at start.
+Which person, channels and detail level a session uses is set on its profile in
+[profiles.json](profiles.md); tasks are [`tasks/<id>/SKILL.md`](tasks.md). Unknown keys are errors, and
+every problem is reported at start.
 
-### Editing the file while `listen` runs
+### Editing the files while `listen` runs
 
-`listen` looks at the file and its prompt files at least once a minute and applies a change in place;
-there is nothing to restart.
+`listen` reads users.json, profiles.json and `settings.json` at start: restart it after editing them
+(`systemctl --user restart lotse-listen`). A task's SKILL.md is read on every run, so an edit applies to
+the next run. A **run in progress is never interrupted.**
 
-- A **run in progress is never interrupted.** It finishes with the definition it started with.
-- **An invalid file is ignored.** `listen` keeps the previous one, prints the problem, writes an
-  `error` entry (`kind: reload`) to `listen.log` and keeps running. Fix the file and the next pass loads
-  it; the same bad save is reported once.
-- Channels and agents come from `settings.json` and are read at start. A reload re-resolves each
-  profile's agent, but a change to which channels are open needs a restart.
+A legacy `tasks.json` is copied once to users.json, profiles.json and `tasks/<id>/SKILL.md` when those
+are missing; `listen` prints one notice, never changes the old file and does not read it afterwards.
 
 Runs of one task never overlap, across `listen`, `lotse run` and `lotse answer` alike.
 
@@ -178,8 +167,8 @@ kinds only, never a prompt or a reply — the one exception is `run-summary`: th
 ## Running it as a service
 
 [data/lotse-listen.service](../data/lotse-listen.service) is an example systemd user unit. Nothing
-installs it; the install commands are in its header. An edit to `tasks.json` is picked up by the
-running service; `systemctl --user restart lotse-listen` is only needed for a change to `settings.json`.
+installs it; the install commands are in its header. After an edit to users.json,
+profiles.json or `settings.json`, run `systemctl --user restart lotse-listen`.
 
 ## Channels
 
@@ -378,10 +367,10 @@ characters; beyond that the last is cut short with a note.
 |---|---|---|
 | `enabled` | `false` | Requests on or off. |
 | `prefix` | `/ask` | Marks a message as a new request. |
-| `profile` | — | A profile id of `tasks.json`: agent, model, user. Required when enabled. |
+| `profile` | — | A profile id of profiles.json: agent, model, user. Required when enabled. |
 | `preamble` | `""` | Put before the first message of a new session. |
 | `cwd` | `""` | The session's working directory; empty: the home directory. |
-| `mcpServers` | `[]` | Stdio MCP servers the session gets (`name`, `command`, `args`, optional `env` as `[{name, value}]` like tasks.json; a credential-looking name is refused). |
+| `mcpServers` | `[]` | Stdio MCP servers the session gets (`name`, `command`, `args`, optional `env` as `[{name, value}]` like ACP; a credential-looking name is refused). |
 | `rights` | `read` | `read`: every permission request is declined, nothing is asked. `confirm`: each one becomes a question in the chat (and on the desktop), and a write needs your yes. |
 | `followUpMinutes` | `30` | How long after an answer a plain message continues that session; `0`: never. |
 | `maxConcurrent` | `1` | Requests running at the same time. |
@@ -395,7 +384,7 @@ lotse messenger --requests on --request-profile assistant --request-rights confi
 
 The other flags are `--request-prefix`, `--request-preamble`, `--request-cwd` and
 `--max-concurrent`; `--request-mcp-server none` clears the list. `--request-mcp-env 'calendar:NAME=value; …'` sets the servers' environment (`none` clears it); setting servers again keeps the env of servers with the same name. The same fields are under
-*Preferences → Requests from the chat*. A running `listen` applies a change within a minute, like tasks.json: a request in progress finishes as it was started, new messages use the new settings, and a `reload` entry is logged. A profile `tasks.json` does not define is reported, and the chat then answers questions only.
+*Preferences → Requests from the chat*. A running `listen` applies a change within a minute: a request in progress finishes as it was started, new messages use the new settings, and a `reload` entry is logged. A profile profiles.json does not define is reported, and the chat then answers questions only.
 
 Requests accepted and not yet answered are noted in `pending-requests.json`. If `listen` dies meanwhile, its next start tells the chat once "not completed, please send it again"; it never re-runs a request, since it may already have written something.
 

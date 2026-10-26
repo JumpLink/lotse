@@ -671,7 +671,7 @@ export default async () => {
       expect(holder.current()).toBe(undefined);
       expect(built.length).toBe(2);
     });
-    await it('a profile tasks.json lacks is a problem, and a later tasks.json can fix it', async () => {
+    await it('a profile profiles.json lacks is a problem, and a later profiles.json can fix it', async () => {
       const state = { settings: ON as RequestSettings | null, profiles: ['other'] };
       const holder = holderFor(state, []);
       expect(holder.check().kind).toBe('problem');

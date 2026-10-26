@@ -7,8 +7,8 @@
 # `listen` only receives (chat requests, answers, question notices); it starts no task by itself. To run
 # a task on a timer, add your own timer that calls `lotse run <id>` (docs/tasks.md).
 #
-# Point ExecStart at your own `lotse`. `listen` reloads tasks.json in place (ADR 0003), so an edit needs
-# no restart; `systemctl --user restart lotse-listen` is for settings.json.
+# Point ExecStart at your own `lotse`. `listen` reads users.json, profiles.json and settings.json at
+# start: `systemctl --user restart lotse-listen` after editing them. A task's SKILL.md is read per run.
 
 [Unit]
 Description=lotse listen: messenger requests and questions
