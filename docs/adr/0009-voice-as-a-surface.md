@@ -41,7 +41,9 @@ Measurements on 2026-10-26:
    providers are plain HTTP/WebSocket clients or local subprocesses, the way Lotse already starts
    agents. Capture and playback (GStreamer over PipeWire) live in the app. First providers:
    - TTS: `pocket` (a configurable server URL, compatible with sprechstunde's server), `mistral`,
-     `kugel`.
+     `kugel`, and `spiel`: any voice installed for GNOME's [Spiel](https://project-spiel.org)
+     speech-provider standard (D-Bus providers, voices as Flatpak extensions, e.g. Piper with
+     German voices), reached through `libspiel`'s GObject introspection from the app.
    - STT: `mistral` (Voxtral); a local engine (whisper.cpp) later.
 4. **Engines are a device setting, not a profile field.** Whether Pocket runs depends on the
    machine, so provider, model, voice and server URL sit in Lotse's settings, with a fallback voice
@@ -77,7 +79,11 @@ Measurements on 2026-10-26:
 - Pocket is the first local engine and runs on this machine, not on a server. It is too large to
   ship in the base package (Python + PyTorch, ~1.5 GB with weights), so it is **installed on
   request**: an optional Flatpak extension, and outside Flatpak a per-user install the way
-  [ADR 0006](0006-per-user-agent-install.md) installs the pinned agent. Lotse starts it as a
+  [ADR 0006](0006-per-user-agent-install.md) installs the pinned agent. The alternative to weigh
+  first: Pocket as a **Spiel speech provider** (`libspeechprovider`). No such provider exists
+  (checked 2026-10-26: Spiel ships Piper, eSpeak and Mimic 3), but one would serve every Spiel app
+  (Orca too), and Lotse would need no Pocket-specific install path. Spiel's Flatpak repo is its own,
+  not Flathub, and last moved in 2025-12; that maintenance risk is part of the choice. Lotse starts it as a
   subprocess on a local port and stops it with the session. The `pocket` provider also accepts a
   server URL, so a weaker device can use a Pocket server elsewhere or pick a cloud voice.
 - Whether Pocket is the best local voice is not measured yet: sprechstunde has a speed and memory
