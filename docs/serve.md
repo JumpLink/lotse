@@ -21,7 +21,7 @@ repository. Start from [examples/tasks.example.json](../examples/tasks.example.j
 file at mode `0600`; `serve` warns when it is readable by others.
 
 - **users**: `{id, addresses}`. The desktop channel needs no address.
-- **profiles**: `{id, user, agent?, model?, data, channels?, messengerDetail?}`. `data` is `private` or `public` and is required.
+- **profiles**: `{id, user, agent?, model?, data, channels?, messengerDetail?}`. This is the serve binding of a profile: its person and channels. For an id that is also in [profiles.json](profiles.md), `agent`, `model` and `data` come from there and `data` may be left out; otherwise `data` is `private` or `public` and is required.
   `model` is optional: leave it out and the agent's default model applies. A private profile on a
   free model gets a note at start. That choice is yours, so `serve` does not block it.
   When the agent does not offer the pinned model, `serve` retries once after about 15 s with the same

@@ -231,8 +231,8 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     const reloader = createReloader(
       {
         tasksFile: serve.tasksFile,
-        load: loadTasks,
-        hashNow: currentTasksHash,
+        load: (file) => loadTasks(file, serve.profilesFile),
+        hashNow: (file, config) => currentTasksHash(file, config, serve.profilesFile),
         build: (next) => {
           // Building deps resolves agents, which sets the exit code when one is missing; a refused
           // reload must not turn a serve that keeps running into a failed one.

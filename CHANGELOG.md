@@ -6,6 +6,14 @@ and also records changes that are not a release of their own.
 
 ## Unreleased
 
+### Added
+
+- **Profiles are Lotse's own concept** (ADR 0007, step 1–3). A standalone `Profile` with its own
+  `profiles.json` (agent, model, `configOptions`, `mcpServers`, `preamble`, `rights`, `data`) is shared by
+  `lotse serve`, requests from the chat and, exported as `resolveProfile`, the widget and `runJob` hosts.
+  An existing tasks.json with `profiles` is migrated to profiles.json once, with one notice; tasks.json is
+  never changed and keeps working. See [docs/profiles.md](docs/profiles.md).
+
 ### Removed
 
 - **Time-based scheduling in `lotse serve`.** The `schedule` task key, the scheduler loop, `serve --once`

@@ -51,9 +51,15 @@ packages/core/src/messenger/xmpp-style.ts
 packages/core/src/model-policy.ts
 packages/core/src/notices.ts
 packages/core/src/onboarding.ts
+packages/core/src/parse.ts
 packages/core/src/paths.ts
 packages/core/src/permission.ts
 packages/core/src/policy.ts
+packages/core/src/profile/apply.ts
+packages/core/src/profile/migrate.ts
+packages/core/src/profile/profile.ts
+packages/core/src/profile/resolve.ts
+packages/core/src/profile/schema.ts
 packages/core/src/run.ts
 packages/core/src/scroll.ts
 packages/core/src/serve/channel.ts

@@ -72,6 +72,8 @@ import serveMessenger from './unit/serve/messenger.test.ts';
 import serveXmppStyle from './unit/serve/xmpp-style.test.ts';
 import serveRequests from './unit/serve/requests.test.ts';
 import serveReload from './unit/serve/reload.test.ts';
+import profile from './unit/profile/profile.test.ts';
+import profileMigrate from './unit/profile/migrate.test.ts';
 
 import hookValue from './unit/gui/hook-value.test.ts';
 import modelPolicyHook from './unit/gui/model-policy-hook.test.ts';
@@ -147,6 +149,8 @@ run({
   serveXmppStyle,
   serveRequests,
   serveReload,
+  profile,
+  profileMigrate,
   hookValue,
   modelPolicyHook,
   toolLine,

@@ -7,9 +7,11 @@ import {
   OPENCODE_COMMAND,
   answerQuestion,
   cancelOrphanedPermissions,
+  parseProfiles,
   parseServeConfig,
   parseVerdict,
   precheckText,
+  runRequest,
   runTask,
   type Question,
   type ServeConfig,
@@ -450,6 +452,98 @@ export default async () => {
       const h = harness(config(), { chunks: [''] });
       await runTask(h.deps.config.tasks[0]!, h.deps);
       expect(h.log.some((item) => item.event === 'run-summary')).toBe(false);
+    });
+  });
+  await describe('a shared profile (profiles.json)', async () => {
+    const SERVER = { name: 'from-profile', command: 'x', args: [], env: [] };
+
+    function shared(profile: Record<string, unknown>, task: Record<string, unknown> = {}): ServeConfig {
+      return parseServeConfig(
+        JSON.stringify({
+          version: 1,
+          users: [{ id: 'me' }],
+          profiles: [{ id: 'p', user: 'me' }],
+          tasks: [{ id: 't', profile: 'p', prompt: 'Do the thing.', cwd: '/fixture', ...task }],
+        }),
+        {
+          profiles: parseProfiles(
+            JSON.stringify({ version: 1, profiles: [{ id: 'p', data: 'public', ...profile }] }),
+          ),
+        },
+      );
+    }
+
+    const sentPrompt = (h: Harness): string =>
+      JSON.stringify(h.agents[0]!.calls('session/prompt')[0]!.params);
+
+    await it('gives the task its servers when it has none, and the task wins when it has some', async () => {
+      const inherited = harness(shared({ mcpServers: [SERVER] }));
+      await runTask(inherited.deps.config.tasks[0]!, inherited.deps);
+      expect(JSON.stringify(inherited.agents[0]!.calls('session/new')[0]!.params)).toContain('from-profile');
+
+      const own = harness(
+        shared({ mcpServers: [SERVER] }, { mcpServers: [{ name: 'own', command: 'x', args: [], env: [] }] }),
+      );
+      await runTask(own.deps.config.tasks[0]!, own.deps);
+      const params = JSON.stringify(own.agents[0]!.calls('session/new')[0]!.params);
+      expect(params).toContain('own');
+      expect(params).not.toContain('from-profile');
+    });
+
+    await it('puts the preamble in front of the first prompt', async () => {
+      const h = harness(shared({ preamble: 'Be brief.' }));
+      await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(sentPrompt(h)).toContain('Be brief.');
+    });
+
+    await it('sets configOptions after the model', async () => {
+      const h = harness(shared({ model: 'github-copilot/gpt-5.5-codex', configOptions: { effort: 'high' } }));
+      const run = await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(run.outcome).toBe('done');
+      expect(h.agents[0]!.configSets.map((set) => set.configId)).toStrictEqual(['model', 'effort']);
+    });
+
+    await it('stops on an option the agent does not offer, without a retry', async () => {
+      const h = harness(shared({ configOptions: { nonsense: 'x' } }));
+      const run = await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(run.outcome).toBe('failed');
+      expect(h.agents.length).toBe(1);
+      expect(h.sent.length).toBe(1);
+    });
+
+    await it('narrows the task rights to the profile limit', async () => {
+      const h = harness(shared({ rights: 'read' }, { rights: 'confirm' }), { permissionOptions: ONCE });
+      const run = await runTask(h.deps.config.tasks[0]!, h.deps);
+      expect(run.outcome).toBe('declined');
+      expect(h.book.length).toBe(0);
+    });
+
+    await it('lets a request override servers and preamble, else uses the profile', async () => {
+      const profile = { mcpServers: [SERVER], preamble: 'Profile lead.' };
+      const base = {
+        profile: 'p',
+        cwd: '/fixture',
+        rights: 'read' as const,
+        text: 'Hello',
+        sessionId: null,
+      };
+      const plain = harness(shared(profile));
+      await runRequest({ ...base, mcpServers: [], preamble: '' }, plain.deps);
+      expect(JSON.stringify(plain.agents[0]!.calls('session/new')[0]!.params)).toContain('from-profile');
+      expect(sentPrompt(plain)).toContain('Profile lead.');
+
+      const own = harness(shared(profile));
+      await runRequest(
+        {
+          ...base,
+          mcpServers: [{ name: 'asked', command: 'x', args: [], env: [] }],
+          preamble: 'Request lead.',
+        },
+        own.deps,
+      );
+      expect(JSON.stringify(own.agents[0]!.calls('session/new')[0]!.params)).not.toContain('from-profile');
+      expect(sentPrompt(own)).toContain('Request lead.');
+      expect(sentPrompt(own)).not.toContain('Profile lead.');
     });
   });
 };

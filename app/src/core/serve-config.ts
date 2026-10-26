@@ -11,11 +11,15 @@ import { dirname, isAbsolute, join } from 'node:path';
 
 import {
   configHash,
+  parseProfiles,
   parseServeConfig,
+  profilesFromTasks,
   tasksWithRemovedSchedule,
   type ServeConfig,
   type ServeTask,
 } from '@lotse/core';
+
+import { writePrivateFile } from './private-file.ts';
 
 export interface LoadedTasks {
   readonly config: ServeConfig;
@@ -47,8 +51,9 @@ function texts(
   tasksFile: string,
   config: ServeConfig,
   first: string,
+  profilesText: string | null,
 ): { all: string[]; prompts: Map<string, string>; prechecks: Map<string, string> } {
-  const all = [first];
+  const all = profilesText === null ? [first] : [first, profilesText];
   const read = (source: { prompt: string | null; promptFile: string | null }): string => {
     if (source.prompt !== null) return source.prompt;
     const text = readFileSync(promptPath(tasksFile, source.promptFile ?? ''), 'utf8');
@@ -64,12 +69,35 @@ function texts(
   return { all, prompts, prechecks };
 }
 
-/** Parse the file and read its prompt files. Throws `ServeConfigError` or `TasksFileMissingError`. */
-export function loadTasks(tasksFile: string): LoadedTasks {
+/**
+ * profiles.json from the profiles still in tasks.json, once (ADR 0007 §3). Only when profiles.json is
+ * absent, never over an existing one, and tasks.json is only read. `true` when it wrote the file.
+ */
+export function migrateProfiles(tasksFile: string, profilesFile: string): boolean {
+  if (existsSync(profilesFile) || !existsSync(tasksFile)) return false;
+  const text = profilesFromTasks(readFileSync(tasksFile, 'utf8'));
+  if (text === null) return false;
+  writePrivateFile(profilesFile, text, 'profiles');
+  return true;
+}
+
+function readProfilesText(profilesFile: string | undefined): string | null {
+  return profilesFile !== undefined && existsSync(profilesFile) ? readFileSync(profilesFile, 'utf8') : null;
+}
+
+/**
+ * Parse the file and read its prompt files, and the shared profiles of `profilesFile` when it exists.
+ * Throws `ServeConfigError`, `ProfilesError` or `TasksFileMissingError`.
+ */
+export function loadTasks(tasksFile: string, profilesFile?: string): LoadedTasks {
   if (!existsSync(tasksFile)) throw new TasksFileMissingError(tasksFile);
   const text = readFileSync(tasksFile, 'utf8');
-  const config = parseServeConfig(text);
-  const { all, prompts, prechecks } = texts(tasksFile, config, text);
+  const profilesText = readProfilesText(profilesFile);
+  const config = parseServeConfig(
+    text,
+    profilesText === null ? {} : { profiles: parseProfiles(profilesText) },
+  );
+  const { all, prompts, prechecks } = texts(tasksFile, config, text, profilesText);
   const mode = statSync(tasksFile).mode & 0o777;
   return {
     config,
@@ -85,9 +113,15 @@ export function loadTasks(tasksFile: string): LoadedTasks {
 }
 
 /** The hash as it is on disk now, for the same tasks; `null` when a file cannot be read any more. */
-export function currentTasksHash(tasksFile: string, config: ServeConfig): string | null {
+export function currentTasksHash(
+  tasksFile: string,
+  config: ServeConfig,
+  profilesFile?: string,
+): string | null {
   try {
-    return configHash(texts(tasksFile, config, readFileSync(tasksFile, 'utf8')).all);
+    return configHash(
+      texts(tasksFile, config, readFileSync(tasksFile, 'utf8'), readProfilesText(profilesFile)).all,
+    );
   } catch {
     return null;
   }
