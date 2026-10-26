@@ -92,7 +92,7 @@ lotse cancel <id>                         # session/cancel
 lotse auth [--agent opencode]             # trap 1's way out
 lotse login [provider] [--method id]       # login, no terminal (docs/login.md)
 lotse agents                              # launchers, SOURCE, what lotse would use
-lotse serve [--once] [--quiet]            # scheduled tasks, a long-running service (ADR 0003)
+lotse serve [--quiet]                   # chat requests and questions, a long-running service (ADR 0003)
 lotse questions [--all] [--json]          # what the tasks' agents are waiting on
 lotse answer <id> [text..] [--dialog]     # yes/no or a reply; no text opens the answer window
 ```

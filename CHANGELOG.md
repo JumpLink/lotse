@@ -6,6 +6,13 @@ and also records changes that are not a release of their own.
 
 ## Unreleased
 
+### Removed
+
+- **Time-based scheduling in `lotse serve`.** The `schedule` task key, the scheduler loop, `serve --once`
+  and the due-time bookkeeping are gone; `serve` now only answers chat requests and handles questions.
+  An old `schedule` key in `tasks.json` is ignored with one notice per task. `precheck` stays in the
+  schema, unused. Running a task on demand (`lotse run`) is planned.
+
 ### Changed
 
 - **Toolchain:** gjsify 0.54.0 → 0.64.11 (also the committed `build-aux/gjsify.gjs.mjs` and the offline

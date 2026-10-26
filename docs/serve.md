@@ -1,12 +1,14 @@
-# `lotse serve` — scheduled tasks that ask before they act
+# `lotse serve` — chat requests and questions that ask before they act
 
-`lotse serve` is a long-running process. It runs agent tasks on a schedule and sends a desktop
-notification when an agent needs a decision from you. You answer with `lotse answer`. The contract
+`lotse serve` is a long-running process. It answers [requests from the chat](#requests-from-the-chat)
+and sends a desktop notification (or a chat message) when an agent needs a decision from you. You
+answer with `lotse answer`. Time-based scheduling was removed; running a task on demand with
+`lotse run` is planned. A `schedule` key left in `tasks.json` is ignored, with one notice per task. The contract
 behind it is [ADR 0003](adr/0003-serve-tasks-questions-channel.md); the design it builds on is
 [ADR 0002](adr/0002-assistant-in-continuous-operation.md).
 
 ```bash
-lotse serve [--once] [--quiet]     # run due tasks; --once runs what is due now and exits
+lotse serve [--quiet]              # serve chat requests and questions
 lotse questions [--all] [--json]   # open questions (--all: also answered, expired, cancelled)
 lotse answer <id> [text…] [--dialog]  # yes/no for a permission, free text for a reply;
                                       # without text (or with --dialog) the answer window opens
@@ -24,7 +26,7 @@ file at mode `0600`; `serve` warns when it is readable by others.
   free model gets a note at start. That choice is yours, so `serve` does not block it.
   When the agent does not offer the pinned model, `serve` retries once after about 15 s with the same
   model and a fresh session (the agent may be refreshing its list), then fails; there is no fallback model.
-- **tasks**: `{id, profile, schedule, prompt | promptFile, cwd, mcpServers, rights, released,
+- **tasks**: `{id, profile, prompt | promptFile, cwd, mcpServers, rights, released,
   questions, notify, precheck?, channels?, messengerDetail?}`. A `promptFile` resolves relative to the task file. `mcpServers` is passed to
   `session/new` unchanged. `answerMcpServers` (optional) replaces it for the turn that continues
   a reply question (`lotse answer`).
@@ -33,16 +35,12 @@ Unknown keys are errors, and every problem is reported at start.
 
 ### Editing the task file while `serve` runs
 
-`serve` looks at the task file and its prompt files before every pass (at least once a minute) and
+`serve` looks at the task file and its prompt files at least once a minute and
 applies a change in place; there is nothing to restart.
 
 - A **run in progress is never interrupted.** It finishes with the definition it started with. A task
   you removed is not started again, but its running instance completes; a changed task uses the new
   definition from its next run.
-- **Nothing fires just because of the reload.** Schedules count from the last recorded run, so editing
-  a task does not make it due. The existing rule for new tasks applies unchanged: a task you add runs at
-  its first look when its schedule is `every` (as at start), while an `at` task that has never run waits
-  for its next time.
 - **An invalid file is ignored.** `serve` keeps the previous tasks, prints the problem, writes an
   `error` entry (`kind: reload`) to `serve.log` and keeps running. Fix the file and the next pass loads
   it; the same bad save is reported once.
@@ -50,17 +48,12 @@ applies a change in place; there is nothing to restart.
   profile's agent, but a change to which channels are open needs a restart. The routing per task
   (`channels`, `messengerDetail`) follows the reloaded tasks.
 
-### Schedules
-
-- `{"every": "30m"}`: units `m`, `h`, `d`, at least `1m`.
-- `{"at": "07:30", "days": ["mon", "fri"]}`: local time; no `days` means every day. A run missed
-  while `serve` was down fires once on start. A task that has never run waits for the next time.
-
 Runs of one task never overlap, across `serve` and `lotse answer` alike.
 
 ### Precheck
 
-`precheck: {profile?, prompt | promptFile}` runs a cheap turn before the task, usually on a small
+`precheck: {profile?, prompt | promptFile}` is part of the task schema, but nothing runs it while
+scheduling is gone; it is kept for the planned `lotse run`. It describes a cheap turn before the task, usually on a small
 model, that answers one question: is there anything to do? Its last line must be `WORK` or
 `NOTHING`. Only `WORK` starts the real run.
 
@@ -173,7 +166,7 @@ error. The deferred item reaches the daily reminder task only if its prompt read
 `$XDG_STATE_HOME/lotse/` (`LOTSE_STATE_DIR` overrides it), mode `0600` in a `0700` directory:
 `questions.json`, `runs.json` (last run, outcome, precheck verdict and session per task; outcome is
 `done`, `asked`, `declined`, `nothing`, `skipped` or `failed`), `serve.log` (JSON lines, ids and
-kinds only, never a prompt or a reply — the one exception is `run-summary`: the final message of each scheduled run, flattened and cut to 300 characters), `pending-requests.json` (ids and times of chat requests not yet answered, never their text) and `locks/`. Closed questions are kept for 7 days.
+kinds only, never a prompt or a reply — the one exception is `run-summary`: the final message of a task run, flattened and cut to 300 characters), `pending-requests.json` (ids and times of chat requests not yet answered, never their text) and `locks/`. Closed questions are kept for 7 days.
 
 ## Running it as a service
 
@@ -315,8 +308,7 @@ result's cursor.
 
 The position in the conversation is kept in `messenger-cursor.json` in the state directory, so a
 restart neither replays old replies nor loses one. The first start begins at "now". If the MCP
-server dies, `serve` restarts it with a growing pause (5 s up to 5 min). There is no receive loop in
-`serve --once`: after its runs it makes ONE receive pass (a poll of at most 5 s, answers and requests in it are handled, a request it starts is awaited) and exits; nothing is waited for beyond that. A channel that fails while another one
+server dies, `serve` restarts it with a growing pause (5 s up to 5 min). A channel that fails while another one
 delivers is never silent: `serve` prints `<channel>: <error>` on stderr and writes an `error` entry
 (channel, kind, message) to `serve.log`. A question the messenger could not send is sent again by the
 receive loop after 30 s, 1, 2, 5 and 10 min, while it is still open; after the last try `serve` says
@@ -404,4 +396,4 @@ Requests accepted and not yet answered are noted in `pending-requests.json`. If 
 `serve.log` gets a `request` entry when a request is queued, starts and ends (request number,
 profile, `new`/`loaded`/`resumed`/`fresh`, outcome, session id, number of messages sent) and an
 `error` entry (`phase: request`) when a run throws — never what was asked or answered. A request
-runs as the synthetic task `@chat` (no `run-summary`). `serve --once` handles requests that arrive during its one receive pass.
+runs as the synthetic task `@chat` (no `run-summary`).
