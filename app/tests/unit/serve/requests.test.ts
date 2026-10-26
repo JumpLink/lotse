@@ -57,7 +57,7 @@ const CONFIG = parseServeConfig(
     version: 1,
     users: [{ id: 'me' }],
     profiles: [{ id: 'p', user: 'me', data: 'public' }],
-    tasks: [{ id: 't', profile: 'p', schedule: { every: '1h' }, prompt: 'x', cwd: '/fixture' }],
+    tasks: [{ id: 't', profile: 'p', prompt: 'x', cwd: '/fixture' }],
   }),
 );
 

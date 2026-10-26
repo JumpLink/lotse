@@ -24,10 +24,17 @@ import { loadTasks, TasksFileMissingError, type LoadedTasks } from '../../core/s
 import { agentForNew } from './choose.ts';
 import { err } from './output.ts';
 
+/** One line per task whose file still has the removed `schedule`. It is ignored; nothing fails. */
+export function reportRemovedSchedules(loaded: LoadedTasks): void {
+  for (const id of loaded.removedSchedules)
+    err(fmt(_("tasks.json: 'schedule' is no longer supported and is ignored (task {id})"), { id }));
+}
+
 export function readTasks(serve: ServePaths): LoadedTasks | null {
   try {
     const loaded = loadTasks(serve.tasksFile);
     if (loaded.warning) err(fmt(_('  {warning}'), { warning: loaded.warning }));
+    reportRemovedSchedules(loaded);
     return loaded;
   } catch (error) {
     if (!(error instanceof ServeConfigError || error instanceof TasksFileMissingError)) throw error;

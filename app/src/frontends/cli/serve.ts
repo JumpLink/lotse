@@ -1,9 +1,9 @@
 /**
- * `lotse serve` — run the configured tasks on their schedules (ADR 0003).
+ * `lotse serve` — the long-running service: it answers the person's chat requests and carries their
+ * answers to the agents' questions (ADR 0003). It starts no task on its own; there is no schedule.
  *
- * One process, one pass per wake-up: look for due tasks, start each that is not already running,
- * record how it ended, sleep until the next one is due. Runs of different tasks overlap; runs of the
- * same task never do (the `running` set here, the lock file across processes).
+ * One process, one pass per minute: reload what changed, look at the request settings, sleep.
+ * The messenger receive loop and the notification buttons do the actual work between passes.
  *
  * Before every pass the configuration hash is checked. A changed file is reloaded in place
  * (`serve-reload.ts`): runs that are going finish with the definition they started with, later runs use
@@ -17,24 +17,20 @@ import type { CommandModule } from 'yargs';
 
 import {
   answerQuestion,
-  attemptClock,
   cancelOrphanedPermissions,
   chatRequests,
   recoverPending,
   connectMcp,
   requestSettings,
   sendToPeer,
-  dueTasks,
   freeModelNotes,
   McpLink,
   messengerChannel,
   type MessengerChannel,
   messengerCommand,
   messengerProblem,
-  nextWakeMs,
   runReceiveLoop,
   routeChannels,
-  runTask,
   unreachableTaskNotes,
   type ChannelFailure,
   type ChannelRoute,
@@ -43,13 +39,11 @@ import {
   type ServeConfig,
   type ServeDeps,
   type MessengerSettings,
-  type ServeTask,
 } from '@lotse/core';
 
 import { currentDialogCommand, openAnswerDialog } from '../../core/answer-dialog.ts';
 import type { ServePaths } from '../../core/paths.ts';
 import { currentTasksHash, loadTasks } from '../../core/serve-config.ts';
-import { runState } from '../../core/serve-state.ts';
 import {
   fileCursorStore,
   fileRefStore,
@@ -63,7 +57,7 @@ import { stderrChannel } from '../../core/stderr-channel.ts';
 import { err, pickArgv } from './output.ts';
 import { createReloader, liveDeps } from './serve-reload.ts';
 import { createRequestsHolder } from './serve-requests.ts';
-import { readTasks, serveDeps, trackedAgents } from './serve-deps.ts';
+import { readTasks, reportRemovedSchedules, serveDeps, trackedAgents } from './serve-deps.ts';
 
 const FAILED = new Set(['unknown', 'dropped', 'expired', 'busy', 'invalid']);
 
@@ -207,23 +201,16 @@ async function openChannels(
   return { channel: routeChannels(opened, config, failed), messenger };
 }
 
-/** How long `serve --once` waits for a reply once its runs are done. */
-const ONCE_WAIT_S = 5;
+/** How long a pass sleeps before it looks at the task file and the request settings again. */
+const PASS_MS = 60_000;
 
 const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
   command: 'serve',
-  describe: _('run the scheduled tasks and ask the person when an agent has a question'),
+  describe: _('answer chat requests and ask the person when an agent has a question'),
   builder: (yargs) =>
-    yargs
-      .option('once', {
-        type: 'boolean',
-        describe: _('run the tasks that are due now, wait for them, and exit'),
-      })
-      .option('quiet', { type: 'boolean', describe: _("do not echo the agents' log lines") })
-      .strict(),
+    yargs.option('quiet', { type: 'boolean', describe: _("do not echo the agents' log lines") }).strict(),
   handler: async (argv) => {
     const raw = argv as Record<string, unknown>;
-    const once = pickArgv<boolean>(raw, 'once') === true;
     const quiet = pickArgv<boolean>(raw, 'quiet') === true;
 
     const loaded = readTasks(serve);
@@ -260,8 +247,6 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     // The receive loop and the notification buttons outlive a reload, so they read the current deps.
     const live = liveDeps(() => reloader.current().deps);
     ready = live;
-    const runs = runState(serve.stateDir);
-    const clock = attemptClock((id) => runs.lastRun(id));
 
     const dropped = cancelOrphanedPermissions(live);
     if (dropped > 0)
@@ -324,8 +309,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
           }),
         );
     }
-    // `--once` has no loop: after its runs, the receive loop makes one bounded pass (below).
-    const receive = (extra: { once?: boolean; timeoutS?: number; signal: AbortSignal }) =>
+    const receive = (signal: AbortSignal) =>
       runReceiveLoop({
         link: messenger!.link,
         settings: messenger!.settings,
@@ -335,37 +319,14 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
         refs: fileRefStore(messengerRefsFile(serve.stateDir)),
         requests: () => holder?.current(),
         log: (line) => err(fmt(_('  {line}'), { line })),
-        ...extra,
+        signal,
       }).catch((error: unknown) =>
         err(`  messenger: ${error instanceof Error ? error.message : String(error)}`),
       );
-    const receiving = messenger && !once ? receive({ signal: abort.signal }) : null;
+    const receiving = messenger ? receive(abort.signal) : null;
     const onSignal = () => stop('signal');
     process.on('SIGINT', onSignal);
     process.on('SIGTERM', onSignal);
-
-    const running = new Map<string, Promise<void>>();
-    const start = (task: ServeTask, runDeps: ServeDeps) => {
-      const done = runTask(task, runDeps)
-        .then((result) => {
-          if (result.outcome === 'skipped') clock.skipped(task.id, new Date(result.startedAt));
-          else runs.record(result);
-          const tail = result.reason
-            ? `: ${result.reason}`
-            : result.questionId
-              ? ` (#${result.questionId})`
-              : '';
-          err(fmt(_('  {id}: {outcome}{tail}'), { id: task.id, outcome: result.outcome, tail }));
-        })
-        .catch((error: unknown) =>
-          err(`  ${task.id}: ${error instanceof Error ? error.message : String(error)}`),
-        )
-        .finally(() => {
-          running.delete(task.id);
-          wake?.();
-        });
-      running.set(task.id, done);
-    };
 
     try {
       while (!stopping) {
@@ -374,6 +335,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
           const { loaded: fresh, deps: freshDeps } = reloader.current();
           activeConfig = fresh.config;
           if (fresh.warning) err(fmt(_('  {warning}'), { warning: fresh.warning }));
+          reportRemovedSchedules(fresh);
           const parts = [
             change.added.length > 0 ? `added ${change.added.join(', ')}` : '',
             change.removed.length > 0
@@ -399,24 +361,11 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
           });
         }
         checkRequests();
-        const current = reloader.current().deps;
-        const now = current.now();
-        for (const task of dueTasks(
-          current.config,
-          clock.lastRun,
-          new Set(running.keys()),
-          now,
-          clock.since,
-        )) {
-          start(task, current);
-        }
-        if (once) break;
-        const ms = nextWakeMs(current.config, clock.lastRun, current.now(), undefined, clock.since);
         await new Promise<void>((resolve) => {
           const timer = setTimeout(() => {
             wake = null;
             resolve();
-          }, ms);
+          }, PASS_MS);
           wake = () => {
             clearTimeout(timer);
             wake = null;
@@ -424,14 +373,8 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
           };
         });
       }
-      // `--once` waits for its runs; a stop ends the agents, which ends their runs as failed.
-      if (stopping) await agents.closeAll();
-      await Promise.all(running.values());
-      // `--once`: one bounded look for answers to what the runs asked, then the requests it started.
-      if (once && messenger && !stopping) {
-        await receive({ once: true, timeoutS: ONCE_WAIT_S, signal: abort.signal });
-        await holder?.current()?.idle();
-      }
+      // A stop ends the agents, which ends their runs as failed.
+      await agents.closeAll();
     } finally {
       process.off('SIGINT', onSignal);
       process.off('SIGTERM', onSignal);

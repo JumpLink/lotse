@@ -58,12 +58,12 @@ packages/core/src/run.ts
 packages/core/src/scroll.ts
 packages/core/src/serve/channel.ts
 packages/core/src/serve/config.ts
+packages/core/src/serve/duration.ts
 packages/core/src/serve/gate.ts
 packages/core/src/serve/person-server.ts
 packages/core/src/serve/person.ts
 packages/core/src/serve/questions.ts
 packages/core/src/serve/runner.ts
-packages/core/src/serve/schedule.ts
 packages/core/src/serve/schema.ts
 packages/core/src/transcript-items.ts
 packages/core/src/transcript.ts

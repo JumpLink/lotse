@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: eu.jumplink.Lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-22 22:08+0200\n"
+"POT-Creation-Date: 2026-10-26 14:40+0100\n"
 "Language-Team: German\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -181,18 +181,18 @@ msgstr "wird geprüft…"
 msgid "no agent is available"
 msgstr "kein Agent verfügbar"
 
-#: app/src/core/settings-view.ts:184
+#: app/src/core/settings-view.ts:185
 msgid ""
 "lotse will not overwrite that file, so choosing an agent is turned off here."
 msgstr ""
 "lotse überschreibt diese Datei nicht, daher ist die Agentenauswahl hier "
 "abgeschaltet."
 
-#: app/src/core/settings-view.ts:186
+#: app/src/core/settings-view.ts:187
 msgid "Your next choice first moves that file to {path}."
 msgstr "Deine nächste Auswahl verschiebt diese Datei zuerst nach {path}."
 
-#: app/src/core/settings-view.ts:191
+#: app/src/core/settings-view.ts:192
 msgid ""
 "Your saved choice, {choice}, is not available here, so lotse starts "
 "{instead} instead."
@@ -200,7 +200,7 @@ msgstr ""
 "Deine gespeicherte Auswahl, {choice}, ist hier nicht verfügbar; lotse "
 "startet stattdessen {instead}."
 
-#: app/src/core/settings-view.ts:193
+#: app/src/core/settings-view.ts:194
 msgid "no agent (none is available)"
 msgstr "keinen Agenten (keiner ist verfügbar)"
 
@@ -228,11 +228,11 @@ msgstr "Es wurde nichts heruntergeladen; mit --yes ohne Rückfrage bestätigen"
 msgid "installed {program}"
 msgstr "{program} installiert"
 
-#: app/src/frontends/cli/agents.ts:145
+#: app/src/frontends/cli/agents.ts:151
 msgid "list the agent launchers lotse knows how to start"
 msgstr "die Agenten-Starter auflisten, die lotse starten kann"
 
-#: app/src/frontends/cli/agents.ts:150
+#: app/src/frontends/cli/agents.ts:156
 msgid ""
 "remember which agent to start: <id>, <id>:host, <id>:bundled, or none to "
 "clear"
@@ -240,21 +240,22 @@ msgstr ""
 "merken, welcher Agent gestartet wird: <id>, <id>:host, <id>:bundled oder "
 "none zum Zurücksetzen"
 
-#: app/src/frontends/cli/agents.ts:154
+#: app/src/frontends/cli/agents.ts:160
 msgid ""
 "download the pinned copy of a catalog agent for this user (default: opencode)"
 msgstr ""
-"die festgelegte Version eines Katalog-Agenten für diese Person herunterladen (Standard: opencode)"
+"die festgelegte Version eines Katalog-Agenten für diese Person herunterladen "
+"(Standard: opencode)"
 
-#: app/src/frontends/cli/agents.ts:158
+#: app/src/frontends/cli/agents.ts:164
 msgid "do not ask before downloading"
 msgstr "vor dem Herunterladen nicht nachfragen"
 
-#: app/src/frontends/cli/agents.ts:185 app/src/frontends/cli/messenger.ts:191
+#: app/src/frontends/cli/agents.ts:191 app/src/frontends/cli/messenger.ts:191
 msgid "the earlier settings file was moved to {backup}"
 msgstr "die frühere Einstellungsdatei wurde nach {backup} verschoben"
 
-#: app/src/frontends/cli/agents.ts:207
+#: app/src/frontends/cli/agents.ts:214
 msgid "* the default for --agent"
 msgstr "* der Standard für --agent"
 
@@ -320,7 +321,7 @@ msgstr ""
 "versuche es erneut"
 
 #: app/src/frontends/cli/auth.ts:70 app/src/frontends/cli/cancel.ts:64
-#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:118
+#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:125
 #: app/src/frontends/cli/start.ts:90
 msgid "  [agent] {line}"
 msgstr "  [agent] {line}"
@@ -385,19 +386,19 @@ msgstr "Sitzung {id} gehört zum Agenten „{agent}“, nicht zu „{agentId}“
 msgid "session/cancel sent for {id}"
 msgstr "session/cancel für {id} gesendet"
 
-#: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/serve.ts:299
-#: app/src/frontends/cli/serve.ts:306 app/src/frontends/cli/serve.ts:318
-#: app/src/frontends/cli/serve.ts:337
+#: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/serve.ts:286
+#: app/src/frontends/cli/serve.ts:293 app/src/frontends/cli/serve.ts:305
+#: app/src/frontends/cli/serve.ts:323
 msgid "  {line}"
 msgstr "  {line}"
 
 #: app/src/frontends/cli/choose.ts:38 app/src/frontends/cli/questions.ts:33
-#: app/src/frontends/cli/serve-deps.ts:111 app/src/frontends/cli/serve.ts:131
+#: app/src/frontends/cli/serve-deps.ts:118 app/src/frontends/cli/serve.ts:125
 msgid "  {problem}"
 msgstr "  {problem}"
 
 #: app/src/frontends/cli/choose.ts:43 app/src/frontends/cli/provider.ts:205
-#: app/src/frontends/cli/serve.ts:192 app/src/frontends/cli/serve.ts:231
+#: app/src/frontends/cli/serve.ts:186 app/src/frontends/cli/serve.ts:220
 msgid "  {note}"
 msgstr "  {note}"
 
@@ -704,53 +705,56 @@ msgstr ""
 msgid "— {stopReason} —"
 msgstr "— {stopReason} —"
 
-#: app/src/frontends/cli/serve-deps.ts:30 app/src/frontends/cli/serve.ts:376
+#: app/src/frontends/cli/serve-deps.ts:30
+msgid ""
+"tasks.json: 'schedule' is no longer supported and is ignored (task {id})"
+msgstr ""
+"tasks.json: „schedule“ wird nicht mehr unterstützt und ignoriert (Aufgabe "
+"{id})"
+
+#: app/src/frontends/cli/serve-deps.ts:36 app/src/frontends/cli/serve.ts:339
 msgid "  {warning}"
 msgstr "  {warning}"
 
-#: app/src/frontends/cli/serve.ts:84
+#: app/src/frontends/cli/serve.ts:78
 msgid "  #{questionId}: {message}"
 msgstr "  #{questionId}: {message}"
 
-#: app/src/frontends/cli/serve.ts:114
+#: app/src/frontends/cli/serve.ts:108
 msgid "  #{questionId}: {reason}"
 msgstr "  #{questionId}: {reason}"
 
-#: app/src/frontends/cli/serve.ts:172
+#: app/src/frontends/cli/serve.ts:166
 msgid "  messenger channel not started: {problem}"
 msgstr "  Messenger-Kanal nicht gestartet: {problem}"
 
-#: app/src/frontends/cli/serve.ts:176
+#: app/src/frontends/cli/serve.ts:170
 msgid "  messenger: {line}"
 msgstr "  Messenger: {line}"
 
-#: app/src/frontends/cli/serve.ts:196
+#: app/src/frontends/cli/serve.ts:190
 msgid "  {name}: {message}"
 msgstr "  {name}: {message}"
 
-#: app/src/frontends/cli/serve.ts:215
-msgid "run the scheduled tasks and ask the person when an agent has a question"
+#: app/src/frontends/cli/serve.ts:209
+msgid "answer chat requests and ask the person when an agent has a question"
 msgstr ""
-"die geplanten Aufgaben ausführen und die Person fragen, wenn ein Agent eine "
-"Frage hat"
+"Chat-Anfragen beantworten und die Person fragen, wenn ein Agent eine Frage "
+"hat"
 
-#: app/src/frontends/cli/serve.ts:220
-msgid "run the tasks that are due now, wait for them, and exit"
-msgstr "die jetzt fälligen Aufgaben ausführen, auf sie warten und beenden"
-
-#: app/src/frontends/cli/serve.ts:222
+#: app/src/frontends/cli/serve.ts:212
 msgid "do not echo the agents' log lines"
 msgstr "die Logzeilen der Agenten nicht ausgeben"
 
-#: app/src/frontends/cli/serve.ts:268
+#: app/src/frontends/cli/serve.ts:255
 msgid "  {dropped} permission question(s) from an earlier serve cancelled"
 msgstr "  {dropped} Berechtigungsfrage(n) aus einem früheren serve abgebrochen"
 
-#: app/src/frontends/cli/serve.ts:279
+#: app/src/frontends/cli/serve.ts:266
 msgid "  stopping: {why}"
 msgstr "  wird beendet: {why}"
 
-#: app/src/frontends/cli/serve.ts:322
+#: app/src/frontends/cli/serve.ts:309
 msgid ""
 "  {left} chat request(s) from an earlier serve were not completed; the chat "
 "was told"
@@ -759,10 +763,6 @@ msgstr ""
 "abgeschlossen; der Chat wurde informiert"
 
 #: app/src/frontends/cli/serve.ts:358
-msgid "  {id}: {outcome}{tail}"
-msgstr "  {id}: {outcome}{tail}"
-
-#: app/src/frontends/cli/serve.ts:394
 msgid "  {message}"
 msgstr "  {message}"
 
@@ -1068,3 +1068,9 @@ msgstr ""
 #: app/src/frontends/gui/window.blp:226 app/src/frontends/gui/window.blp:235
 msgid "Copy"
 msgstr "Kopieren"
+
+#~ msgid "run the tasks that are due now, wait for them, and exit"
+#~ msgstr "die jetzt fälligen Aufgaben ausführen, auf sie warten und beenden"
+
+#~ msgid "  {id}: {outcome}{tail}"
+#~ msgstr "  {id}: {outcome}{tail}"

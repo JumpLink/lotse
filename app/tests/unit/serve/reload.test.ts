@@ -1,11 +1,9 @@
 import { describe, expect, it } from '@gjsify/unit';
 
-import { dueTasks, parseServeConfig, type ServeConfig, type ServeDeps } from '@lotse/core';
+import { parseServeConfig, type ServeConfig, type ServeDeps } from '@lotse/core';
 
 import { createReloader, liveDeps } from '../../../src/frontends/cli/serve-reload.ts';
 import type { LoadedTasks } from '../../../src/core/serve-config.ts';
-
-const NOW = new Date('2026-10-10T12:00:00.000Z');
 
 function config(tasks: Record<string, unknown>[]): ServeConfig {
   return parseServeConfig(
@@ -23,6 +21,7 @@ function loaded(tasks: Record<string, unknown>[], hash: string): LoadedTasks {
     config: config(tasks),
     hash,
     warning: null,
+    removedSchedules: [],
     promptFor: () => 'Go.',
     precheckPromptFor: () => '',
   };
@@ -42,7 +41,7 @@ function fixture(initial: Record<string, unknown>[]) {
     {
       tasksFile: '/fixture/tasks.json',
       load: () => {
-        if (file.tasks === 'invalid') throw new Error('tasks[0].schedule: needs "every" or "at"');
+        if (file.tasks === 'invalid') throw new Error('tasks[0].cwd must be an absolute path');
         return loaded(file.tasks, file.hash);
       },
       hashNow: () => file.hash,
@@ -53,7 +52,7 @@ function fixture(initial: Record<string, unknown>[]) {
   return { file, reloader, logged };
 }
 
-const EVERY = { id: 'a', schedule: { every: '1h' } };
+const EVERY = { id: 'a', prompt: 'p' };
 
 export default async () => {
   await describe('serve reload', async () => {
@@ -63,11 +62,11 @@ export default async () => {
     });
 
     await it('applies an edit in place and says what changed', async () => {
-      const { file, reloader } = fixture([EVERY, { id: 'gone', schedule: { every: '2h' } }]);
+      const { file, reloader } = fixture([EVERY, { id: 'gone', prompt: 'p' }]);
       file.hash = 'h2';
       file.tasks = [
-        { ...EVERY, schedule: { every: '30m' } },
-        { id: 'new', schedule: { every: '3h' } },
+        { ...EVERY, prompt: 'changed' },
+        { id: 'new', prompt: 'p' },
       ];
       const result = reloader.check();
       expect(result).toStrictEqual({ kind: 'reloaded', added: ['new'], removed: ['gone'], changed: ['a'] });
@@ -87,12 +86,11 @@ export default async () => {
     });
 
     await it('does not start a removed task again', async () => {
-      const { file, reloader } = fixture([EVERY, { id: 'b', schedule: { every: '1h' } }]);
+      const { file, reloader } = fixture([EVERY, { id: 'b', prompt: 'p' }]);
       file.hash = 'h2';
-      file.tasks = [{ id: 'b', schedule: { every: '1h' } }];
+      file.tasks = [{ id: 'b', prompt: 'p' }];
       reloader.check();
-      const due = dueTasks(reloader.current().deps.config, () => null, new Set(['a']), NOW);
-      expect(due.map((task) => task.id)).toStrictEqual(['b']);
+      expect(reloader.current().deps.config.tasks.map((task) => task.id)).toStrictEqual(['b']);
     });
 
     await it('keeps the previous tasks when the file is invalid, and reports it once', async () => {
@@ -102,7 +100,7 @@ export default async () => {
       file.tasks = 'invalid';
       const first = reloader.check();
       expect(first.kind).toBe('rejected');
-      expect(first.kind === 'rejected' ? first.message : '').toContain('needs "every" or "at"');
+      expect(first.kind === 'rejected' ? first.message : '').toContain('must be an absolute path');
       expect(reloader.current().deps).toBe(before);
       expect(reloader.check().kind).toBe('unchanged');
     });
@@ -113,7 +111,7 @@ export default async () => {
       file.tasks = 'invalid';
       reloader.check();
       file.hash = 'h3';
-      file.tasks = [{ id: 'fixed', schedule: { every: '1h' } }];
+      file.tasks = [{ id: 'fixed', prompt: 'p' }];
       expect(reloader.check().kind).toBe('reloaded');
       expect(reloader.current().deps.config.tasks[0]!.id).toBe('fixed');
     });
@@ -124,7 +122,7 @@ export default async () => {
       const reloader = createReloader(
         {
           tasksFile: '/fixture/tasks.json',
-          load: () => loaded([{ id: 'x', schedule: { every: '1h' } }], 'h2'),
+          load: () => loaded([{ id: 'x', prompt: 'p' }], 'h2'),
           hashNow: () => 'h2',
           build: () => null,
         },
@@ -134,21 +132,12 @@ export default async () => {
       expect(reloader.current().deps).toBe(deps);
     });
 
-    await it('does not fire a time-of-day task that has never run just because of the reload', async () => {
-      const { file, reloader } = fixture([EVERY]);
-      file.hash = 'h2';
-      file.tasks = [EVERY, { id: 'morning', schedule: { at: '07:30' } }];
-      reloader.check();
-      const due = dueTasks(reloader.current().deps.config, (id) => (id === 'a' ? NOW : null), new Set(), NOW);
-      expect(due.map((task) => task.id)).toStrictEqual([]);
-    });
-
     await it('reads through a live view to whatever the current deps are', async () => {
       const { file, reloader } = fixture([EVERY]);
       const live = liveDeps(() => reloader.current().deps);
       expect(live.config.tasks.length).toBe(1);
       file.hash = 'h2';
-      file.tasks = [EVERY, { id: 'b', schedule: { every: '1h' } }];
+      file.tasks = [EVERY, { id: 'b', prompt: 'p' }];
       reloader.check();
       expect(live.config.tasks.length).toBe(2);
     });

@@ -81,7 +81,7 @@ lotse auth [--agent opencode]              # the interactive-login escape hatch
 lotse login [provider]                     # log in through the agent's OAuth flow, no terminal (opencode v2)
 lotse provider list|add|remove [id]        # local models / OpenAI-compatible endpoints for the bundled opencode
 lotse agents                               # the launchers that are registered, and whether the binary is on PATH
-lotse serve [--once]                       # run scheduled tasks; notify when an agent has a question
+lotse serve                                # answer chat requests; notify when an agent has a question
 lotse messenger [--requests on|off …]      # show or set the requests serve takes from the chat
 lotse questions [--all] [--json]           # the questions agents are waiting on
 lotse answer <id> [text…] [--dialog]       # yes/no, a reply, or the answer window
@@ -89,7 +89,7 @@ lotse answer <id> [text…] [--dialog]       # yes/no, a reply, or the answer wi
 
 Custom providers and their rules (keys, LAN, local-model hints): [docs/custom-providers.md](docs/custom-providers.md).
 
-`lotse serve` runs the tasks in `$XDG_CONFIG_HOME/lotse/tasks.json` on a schedule and asks you, by
+`lotse serve` answers requests from the chat and asks you, by
 desktop notification or, if you configure it, in a chat through an MCP server such as curlew, when an
 agent needs a decision. How to set it up: [docs/serve.md](docs/serve.md).
 

@@ -22,7 +22,7 @@ import type { McpServer } from '@lotse/acp';
 
 import { isFreeModel } from '../free-models.ts';
 import { CHANNEL_NAMES, type ChannelName } from '../messenger/settings.ts';
-import { parseDuration, parseSchedule, type Schedule } from './schedule.ts';
+import { parseDuration } from './duration.ts';
 import { SERVE_CONFIG_SCHEMA, schemaKeys } from './schema.ts';
 
 /** A person `serve` works for. `addresses` are channel addresses; the desktop channel needs none. */
@@ -99,7 +99,6 @@ export interface QuestionLimits {
 export interface ServeTask {
   readonly id: string;
   readonly profile: string;
-  readonly schedule: Schedule;
   /** Exactly one of the two. A prompt file is resolved by the app, relative to the config file. */
   readonly prompt: string | null;
   readonly promptFile: string | null;
@@ -181,6 +180,25 @@ const KEYS = {
   questions: schemaKeys(SERVE_CONFIG_SCHEMA.$defs.task.properties.questions),
   personNeeded: schemaKeys(SERVE_CONFIG_SCHEMA.$defs.task.properties.personNeeded),
 };
+
+/** Tasks used to carry a `schedule`; an old file that still does is read and the field ignored. */
+const REMOVED_TASK_KEY = 'schedule';
+
+/** The ids of the tasks in this file that still carry the removed `schedule`, for one notice each. */
+export function tasksWithRemovedSchedule(text: string): string[] {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  const tasks = isRecord(raw) && Array.isArray(raw['tasks']) ? raw['tasks'] : [];
+  return tasks.flatMap((task, index) =>
+    isRecord(task) && REMOVED_TASK_KEY in task
+      ? [typeof task['id'] === 'string' && task['id'] ? task['id'] : `#${index + 1}`]
+      : [],
+  );
+}
 
 /** Parse and validate. Throws `ServeConfigError` listing every problem. */
 export function parseServeConfig(text: string): ServeConfig {
@@ -337,16 +355,9 @@ function parseProfile(value: unknown, where: string, problems: string[]): ServeP
 }
 
 function parseTask(value: unknown, where: string, problems: string[]): ServeTask {
-  const record = object(value, where, problems, KEYS.task);
+  const record = object(value, where, problems, [...KEYS.task, REMOVED_TASK_KEY]);
   const taskId = id(record['id'], where, problems);
   const label = taskId ? `task "${taskId}"` : where;
-
-  let schedule: Schedule = { kind: 'every', ms: 3_600_000, spec: 'every 1h' };
-  try {
-    schedule = parseSchedule(record['schedule']);
-  } catch (error) {
-    problems.push(`${label}.schedule ${error instanceof Error ? error.message : String(error)}`);
-  }
 
   const prompt = optionalString(record['prompt'], `${label}.prompt`, problems);
   const promptFile = optionalString(record['promptFile'], `${label}.promptFile`, problems);
@@ -394,7 +405,6 @@ function parseTask(value: unknown, where: string, problems: string[]): ServeTask
   return {
     id: taskId,
     profile: typeof record['profile'] === 'string' ? record['profile'] : '',
-    schedule,
     prompt,
     promptFile,
     cwd: typeof cwd === 'string' ? cwd : '',

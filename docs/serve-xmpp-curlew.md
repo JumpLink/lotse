@@ -116,7 +116,6 @@ By default every active channel gets every question. Two keys narrow that per ta
 {
   "id": "inbox-review",
   "profile": "assistant",
-  "schedule": { "every": "1d" },
   "prompt": "Sort the new documents and ask before you change anything.",
   "cwd": "/tmp",
   "mcpServers": [],
@@ -145,7 +144,6 @@ Buttons for answering in the chat are planned
    {
      "id": "messenger-test",
      "profile": "assistant",
-     "schedule": { "every": "1d" },
      "prompt": "Reply with exactly one line: 'Messenger test: reply with any word?'",
      "cwd": "/tmp",
      "mcpServers": [],
@@ -153,8 +151,8 @@ Buttons for answering in the chat are planned
    }
    ```
 
-   A running `serve` picks up the saved task file within a minute, with no restart. The task has never run, so it waits for its
-   first due time; `lotse serve --once` in a second terminal runs it right away, with one short receive pass at the end.
+   A running `serve` picks up the saved task file within a minute, with no restart. Nothing runs the task by itself
+   now, so this test needs the planned `lotse run`; until then, check the chat round trip by sending `serve` a request.
 3. The question arrives in your XMPP client as `lotse · messenger-test · #A1`. Reply `#A1 hello`.
 4. Within about a minute lotse answers in the chat with a short "Got it, #A1.", and
    `lotse questions --all` shows the question as answered.

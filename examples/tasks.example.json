@@ -10,7 +10,6 @@
     {
       "id": "morning-summary",
       "profile": "private",
-      "schedule": { "at": "07:30", "days": ["mon", "tue", "wed", "thu", "fri"] },
       "promptFile": "prompts/morning-summary.md",
       "cwd": "/path/to/a/working/directory",
       "mcpServers": [
@@ -32,7 +31,6 @@
     {
       "id": "watch-something-public",
       "profile": "public",
-      "schedule": { "every": "6h" },
       "prompt": "Check <a public source> and ask me if anything needs a decision.",
       "cwd": "/path/to/a/working/directory",
       "mcpServers": [],
