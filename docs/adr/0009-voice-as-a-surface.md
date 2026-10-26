@@ -74,9 +74,15 @@ Measurements on 2026-10-26:
 - Voice works with any ACP agent today, at the cost of a cascade's latency (sprechstunde measured
   ~1.8–2 s to first sound; a coding agent with tools is slower).
 - Lotse gains a keyring dependency and a secret it must never log or put in `--json` output.
-- Pocket can be tried at once against an existing server: the one on the Proxmox host, or a local
-  one started from sprechstunde's compose profile. Shipping Pocket (Python + PyTorch, ~1.5 GB) as an
-  optional Flatpak extension is a separate decision.
+- Pocket is the first local engine and runs on this machine, not on a server. It is too large to
+  ship in the base package (Python + PyTorch, ~1.5 GB with weights), so it is **installed on
+  request**: an optional Flatpak extension, and outside Flatpak a per-user install the way
+  [ADR 0006](0006-per-user-agent-install.md) installs the pinned agent. Lotse starts it as a
+  subprocess on a local port and stops it with the session. The `pocket` provider also accepts a
+  server URL, so a weaker device can use a Pocket server elsewhere or pick a cloud voice.
+- Whether Pocket is the best local voice is not measured yet: sprechstunde has a speed and memory
+  measurement, but no German quality comparison. A listening comparison (sprechstunde's settings
+  UI has an A/B view) decides the default before the extension is built.
 - When an agent starts to advertise audio, Lotse uses it without a code change. For opencode an
   `Upstream (opencode, file by hand)` issue in this repo records the request.
 - Hands-free conversation needs voice activity detection, barge-in and echo cancellation
@@ -90,4 +96,5 @@ Measurements on 2026-10-26:
    playback, play agent audio blocks.
 3. **Dictation:** a microphone button, `SpeechToText` with `mistral`, ACP audio when advertised.
 4. **Hands-free:** VAD, barge-in, echo cancellation.
-5. **Local engines** as Flatpak extensions (Pocket, whisper.cpp).
+5. **Local engines installed on request:** Pocket first (Flatpak extension or per-user install),
+   then whisper.cpp.
