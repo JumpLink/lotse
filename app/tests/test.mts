@@ -70,7 +70,7 @@ import serveState from './unit/serve/serve-state.test.ts';
 import serveRunner from './unit/serve/runner.test.ts';
 import servePerson from './unit/serve/person.test.ts';
 import serveMessenger from './unit/serve/messenger.test.ts';
-import serveXmppStyle from './unit/serve/xmpp-style.test.ts';
+import serveContract from './unit/serve/contract.test.ts';
 import serveRequests from './unit/serve/requests.test.ts';
 import serveReload from './unit/serve/reload.test.ts';
 import task from './unit/task/task.test.ts';
@@ -149,7 +149,7 @@ run({
   serveRunner,
   servePerson,
   serveMessenger,
-  serveXmppStyle,
+  serveContract,
   serveRequests,
   serveReload,
   task,

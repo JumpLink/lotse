@@ -4,16 +4,43 @@
  * `acquire` starts the server on first use and again after it died; `use` runs a call on it and, when
  * the connection (not the tool) failed, starts a fresh one and tries once more. Sending and the receive
  * loop share one link, so there is one `curlew mcp` process, not two.
+ *
+ * It also holds what the server turned out to support (`contractOf`): asked once per connection, so the
+ * send path and the receive loop agree, and a fallback is announced once per link, not per restart.
  */
 
+import { negotiateContract, type MessengerContract } from './contract.ts';
 import { McpToolError, type McpTools } from './mcp-client.ts';
+import type { MessengerSettings } from './settings.ts';
 
 export class McpLink {
   #current: McpTools | null = null;
   #connecting: Promise<McpTools> | null = null;
   #closed = false;
+  readonly #contracts = new WeakMap<McpTools, Promise<MessengerContract>>();
+  #noticed = false;
 
-  constructor(private readonly connect: () => Promise<McpTools>) {}
+  /** `log` hears the one notice that the server is older than the contract. */
+  constructor(
+    private readonly connect: () => Promise<McpTools>,
+    private readonly log?: (line: string) => void,
+  ) {}
+
+  /** What `tools` supports, settled on first use. A failed attempt is not kept. */
+  async contractOf(tools: McpTools, settings: MessengerSettings): Promise<MessengerContract> {
+    let known = this.#contracts.get(tools);
+    if (!known) {
+      known = negotiateContract(tools, settings);
+      this.#contracts.set(tools, known);
+      known.catch(() => this.#contracts.delete(tools));
+    }
+    const contract = await known;
+    if (contract.notice !== null && !this.#noticed) {
+      this.#noticed = true;
+      this.log?.(`messenger: ${contract.notice}`);
+    }
+    return contract;
+  }
 
   async acquire(): Promise<McpTools> {
     if (this.#closed) throw new Error('the messenger link is closed');
