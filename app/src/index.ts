@@ -36,6 +36,7 @@ import {
   sessionsCommand,
   startCommand,
 } from './frontends/cli/index.ts';
+import { gjsMainLoop, runMain } from './core/main.ts';
 import { migratedPaths } from './core/migrate.ts';
 import { servePaths } from './core/paths.ts';
 
@@ -87,15 +88,10 @@ try {
   process.exit(1);
 }
 
-try {
-  await parsed;
-  // fixed upstream in gjsify: natural end of main ignores process.exitCode.
-  // gjsify#2007 merged 2026-10-03 and is not in a release yet; drop this line when the pin carries it.
-  if (process.exitCode) process.exit();
-} catch (err) {
-  reportError(err);
-  // On GJS the top-level await above leaves a pending main loop if the promise never settles, so
-  // this is the line that guarantees the process ends. `exit`, not `exitCode`: a gate that decided
-  // nothing and left a child process behind is worse than a non-zero exit.
-  process.exit(process.exitCode ?? 1);
-}
+// No top-level `await`: on GJS it makes the entry module spin a core while a command only waits.
+runMain(parsed, {
+  loop: gjsMainLoop(),
+  exit: (code) => process.exit(code),
+  report: reportError,
+  exitCode: () => (typeof process.exitCode === 'number' ? process.exitCode : undefined),
+});
