@@ -274,7 +274,12 @@ export class ConfigRow {
       cssClasses: ['flat', CSS.configControl],
     });
     button.update_property([Gtk.AccessibleProperty.LABEL], [entry.label]);
+    // A flat toggle draws no checked state, so "off" is shown by dimming the name.
+    const dim = () =>
+      button.active ? button.remove_css_class('dim-label') : button.add_css_class('dim-label');
+    dim();
     button.connect('toggled', () => {
+      dim();
       if (this.#rendering || button.active === entry.on) return;
       this.#onMcpToggle(entry.name, button.active);
     });
