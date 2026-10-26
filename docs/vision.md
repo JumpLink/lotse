@@ -19,7 +19,8 @@ The profile is the only abstraction Lotse adds. The chat, the widget, the messen
 later voice mode all use the same one. A task narrows its profile and never widens it. A trigger
 is never a permission.
 
-[ADR 0007](adr/0007-profiles-tasks-triggers.md) records the decision and the API.
+[ADR 0007](adr/0007-profiles-tasks-triggers.md) records the decision and the API; the file format
+is in [Profiles](profiles.md).
 
 ## The standard per layer
 

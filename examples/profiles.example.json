@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "profiles": [
+    {
+      "id": "private",
+      "agent": "opencode",
+      "model": "<provider>/<paid-model-id>",
+      "configOptions": { "thought_level": "high" },
+      "mcpServers": [{ "name": "notes", "command": "notes-mcp", "args": [], "env": [] }],
+      "preamble": "Answer briefly and in the language of the question.",
+      "rights": "confirm",
+      "data": "private"
+    },
+    { "id": "public", "data": "public" }
+  ]
+}
