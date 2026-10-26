@@ -22,6 +22,8 @@ import type { McpServer } from '@lotse/acp';
 
 import { isFreeModel } from '../free-models.ts';
 import { CHANNEL_NAMES, type ChannelName } from '../messenger/settings.ts';
+import { duplicates, id, isRecord, list, object, optionalString } from '../parse.ts';
+import type { Profile } from '../profile/profile.ts';
 import { parseDuration } from './duration.ts';
 import { SERVE_CONFIG_SCHEMA, schemaKeys } from './schema.ts';
 
@@ -32,8 +34,12 @@ export interface ServeUser {
 }
 
 /**
- * Who a task runs as and on what. A named model is pinned: there is no fallback when the agent does not
- * offer it (ADR 0002 §5). No model: lotse sends none and the agent's own default applies.
+ * Who a task runs as and on what: the serve-side binding of a profile — its user and where its messages
+ * go. A named model is pinned: there is no fallback when the agent does not offer it (ADR 0002 §5). No
+ * model: lotse sends none and the agent's own default applies.
+ *
+ * `agent`, `model` and `data` come from the `Profile` of the same id in profiles.json (`base`) when
+ * there is one, and from the legacy fields of tasks.json otherwise (ADR 0007).
  */
 export interface ServeProfile {
   readonly id: string;
@@ -44,6 +50,8 @@ export interface ServeProfile {
   readonly model: string | null;
   /** A label for the person. It never blocks a run (ADR 0002, amendment of 2026-10-11). */
   readonly data: 'private' | 'public';
+  /** The shared profile of the same id in profiles.json, which carries the rest (MCP, preamble, rights). */
+  readonly base?: Profile;
   /** The channels its tasks' messages may use. `null`: every active one. A task's own list can only narrow it. */
   readonly channels: readonly ChannelName[] | null;
   /** How much of a question the messenger gets. `null`: `full`. `notice` on the task or here wins. */
@@ -138,6 +146,11 @@ export interface ServeConfig {
   readonly tasks: readonly ServeTask[];
 }
 
+/** What `parseServeConfig` reads besides the file: the profiles of `profiles.json`, when there are any. */
+export interface ParseServeOptions {
+  readonly profiles?: readonly Profile[];
+}
+
 export const DEFAULT_QUESTION_LIMITS: QuestionLimits = {
   expiresMs: 12 * 3_600_000,
   maxOpen: 3,
@@ -154,8 +167,6 @@ export class ServeConfigError extends Error {
     this.problems = problems;
   }
 }
-
-const ID = /^[a-z0-9][a-z0-9_-]{0,39}$/;
 
 /**
  * One sentence per private profile on a free model, for `serve` to print at start. A free model may be
@@ -200,8 +211,11 @@ export function tasksWithRemovedSchedule(text: string): string[] {
   );
 }
 
-/** Parse and validate. Throws `ServeConfigError` listing every problem. */
-export function parseServeConfig(text: string): ServeConfig {
+/**
+ * Parse and validate. Throws `ServeConfigError` listing every problem. A profile whose id is in
+ * `options.profiles` takes agent, model and data from there; its own `data` is then no longer required.
+ */
+export function parseServeConfig(text: string, options: ParseServeOptions = {}): ServeConfig {
   let raw: unknown;
   try {
     raw = JSON.parse(text);
@@ -219,7 +233,7 @@ export function parseServeConfig(text: string): ServeConfig {
     parseUser(value, `users[${index}]`, problems),
   );
   const profiles = list(raw['profiles'], 'profiles', problems).map((value, index) =>
-    parseProfile(value, `profiles[${index}]`, problems),
+    parseProfile(value, `profiles[${index}]`, problems, options.profiles ?? []),
   );
   const tasks = list(raw['tasks'], 'tasks', problems).map((value, index) =>
     parseTask(value, `tasks[${index}]`, problems),
@@ -335,21 +349,30 @@ function parseUser(value: unknown, where: string, problems: string[]): ServeUser
   return { id: id(record['id'], where, problems), addresses: valid ? (addresses as string[]) : [] };
 }
 
-function parseProfile(value: unknown, where: string, problems: string[]): ServeProfile {
+function parseProfile(
+  value: unknown,
+  where: string,
+  problems: string[],
+  shared: readonly Profile[],
+): ServeProfile {
   const record = object(value, where, problems, KEYS.profile);
   const profileId = id(record['id'], where, problems);
+  const base = profileId ? shared.find((candidate) => candidate.id === profileId) : undefined;
   const agent = optionalString(record['agent'], `${where}.agent`, problems);
   const model = optionalString(record['model'], `${where}.model`, problems);
   const data = record['data'];
-  if (data !== 'private' && data !== 'public') {
+  if (!base && data !== 'private' && data !== 'public') {
     problems.push(`${where}.data must be "private" or "public" — say which, there is no default`);
+  } else if (base && data !== undefined && data !== 'private' && data !== 'public') {
+    problems.push(`${where}.data must be "private" or "public"`);
   }
   return {
     id: profileId,
     user: typeof record['user'] === 'string' ? record['user'] : '',
-    agent,
-    model,
-    data: data === 'public' ? 'public' : 'private',
+    agent: base ? base.agent : agent,
+    model: base ? base.model : model,
+    data: base ? base.data : data === 'public' ? 'public' : 'private',
+    ...(base ? { base } : {}),
     ...parseDelivery(record, where, problems),
   };
 }
@@ -494,58 +517,4 @@ function count(value: unknown, where: string, fallback: number, problems: string
     return fallback;
   }
   return value;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function object(
-  value: unknown,
-  where: string,
-  problems: string[],
-  keys: readonly string[],
-): Record<string, unknown> {
-  if (!isRecord(value)) {
-    problems.push(`${where} must be an object`);
-    return {};
-  }
-  for (const key of Object.keys(value)) {
-    if (!keys.includes(key)) problems.push(`${where} has unknown key "${key}"`);
-  }
-  return value;
-}
-
-function list(value: unknown, where: string, problems: string[]): unknown[] {
-  if (!Array.isArray(value)) {
-    problems.push(`"${where}" must be a list`);
-    return [];
-  }
-  return value;
-}
-
-function id(value: unknown, where: string, problems: string[]): string {
-  if (typeof value !== 'string' || !ID.test(value)) {
-    problems.push(`${where}.id must be lowercase letters, digits, "-" or "_" (at most 40)`);
-    return '';
-  }
-  return value;
-}
-
-function optionalString(value: unknown, where: string, problems: string[]): string | null {
-  if (value === undefined || value === null) return null;
-  if (typeof value !== 'string' || value.trim() === '') {
-    problems.push(`${where} must be a non-empty string`);
-    return null;
-  }
-  return value;
-}
-
-function duplicates(items: readonly { id: string }[], what: string, problems: string[]): void {
-  const seen = new Set<string>();
-  for (const item of items) {
-    if (!item.id) continue;
-    if (seen.has(item.id)) problems.push(`${what} "${item.id}" is defined twice`);
-    seen.add(item.id);
-  }
 }

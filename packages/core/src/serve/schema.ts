@@ -30,10 +30,10 @@ export interface SchemaNode {
   readonly $ref?: string;
 }
 
-const ID_PATTERN = '^[a-z0-9][a-z0-9_-]{0,39}$';
+export const ID_PATTERN = '^[a-z0-9][a-z0-9_-]{0,39}$';
 const DURATION_PATTERN = '^\\d+\\s*[mhd]$';
 
-const MCP_SERVER: SchemaNode = {
+export const MCP_SERVER: SchemaNode = {
   type: 'object',
   title: 'MCP server',
   description: 'Passed to the agent unchanged in session/new. lotse reads only its name.',
@@ -133,9 +133,10 @@ export const SERVE_CONFIG_SCHEMA = {
     profile: {
       type: 'object',
       title: 'Profile',
-      description: 'An agent and a model a task runs on, and a label for the data it handles.',
+      description:
+        'Who a task runs as: the user it belongs to and where its messages go. The agent, model and data label come from the profile of the same id in profiles.json; without one, set them here.',
       additionalProperties: false,
-      required: ['id', 'user', 'data'],
+      required: ['id', 'user'],
       properties: {
         id: {
           type: 'string',
@@ -148,21 +149,22 @@ export const SERVE_CONFIG_SCHEMA = {
           type: 'string',
           minLength: 1,
           title: 'Agent',
-          description: 'A launcher id such as opencode. Empty: the agent lotse start would use.',
+          description:
+            'Only without a profile of this id in profiles.json: a launcher id such as opencode. Empty: the agent lotse start would use.',
         },
         model: {
           type: 'string',
           minLength: 1,
           title: 'Model',
           description:
-            "A model id the agent offers. Empty: lotse sends none and the agent's own default applies. A named model the agent does not offer stops the run.",
+            "Only without a profile of this id in profiles.json: a model id the agent offers. Empty: lotse sends none and the agent's own default applies. A named model the agent does not offer stops the run.",
         },
         data: {
           type: 'string',
           enum: ['private', 'public'],
           title: 'Data',
           description:
-            'Whether the tasks on this profile see private data. A label for you: serve notes a private profile on a free model at start and runs it all the same.',
+            'Only without a profile of this id in profiles.json, where it is required: whether the tasks on this profile see private data. A label for you: serve notes a private profile on a free model at start and runs it all the same.',
         },
         ...DELIVERY,
       },

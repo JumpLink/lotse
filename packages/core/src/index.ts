@@ -527,6 +527,7 @@ export {
   tasksWithRemovedSchedule,
   unreachableTaskNotes,
   type MessengerDetail,
+  type ParseServeOptions,
   type PersonNeededConfig,
   type QuestionLimits,
   type ReleasedArea,
@@ -628,6 +629,19 @@ export {
   type ReceiveOptions,
 } from './messenger/receive.ts';
 export { SERVE_CONFIG_SCHEMA, schemaKeys, type SchemaNode } from './serve/schema.ts';
+export { ProfileOptionError, applyConfigOptions } from './profile/apply.ts';
+export { profilesFromTasks } from './profile/migrate.ts';
+export { ProfilesError, parseProfiles, type ConfigOptionValue, type Profile } from './profile/profile.ts';
+export {
+  jobOptionsOf,
+  narrowRights,
+  profileFromServe,
+  resolveProfile,
+  withPreamble,
+  type ProfileResolvers,
+  type ProfileSession,
+} from './profile/resolve.ts';
+export { PROFILES_SCHEMA } from './profile/schema.ts';
 export {
   ModelUnavailableError,
   answerQuestion,
