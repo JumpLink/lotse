@@ -43,17 +43,16 @@ export const LOTSE_IMPLEMENTATION: Implementation = { name: 'lotse', version: '0
  *   `opencode acp` 2.0.19: the agent answers `session/new` with 400+ models, 6 thought levels and
  *   2 modes whether lotse announces this or not — which is a reason to announce, not a reason to
  *   believe the announcement made the options appear.
- * - **`boolean` is omitted, so it will not be sent.** `{}` there means "I can render a switch";
- *   leaving it out means the agent must not include `type: "boolean"` options. The surface does not
- *   exist yet, and a capability announced before it is implemented is a promise the agent is
- *   entitled to act on. It goes in when the switch goes in — next to this line, not in a later
- *   commit that leaves no trace of why.
+ * - **`boolean` is announced, because the row draws switches.** `{}` there means "I can render a
+ *   switch", so an agent may send `type: "boolean"` options and be answered with the tagged value
+ *   `configValue` builds. It went in together with the widget (`ConfigRow`), as the earlier note here
+ *   promised.
  */
 export const LOTSE_CLIENT_CAPABILITIES: ClientCapabilities = {
   fs: { readTextFile: false, writeTextFile: false },
   terminal: false,
   auth: { terminal: false },
-  session: { configOptions: {} },
+  session: { configOptions: { boolean: {} } },
 };
 
 /**

@@ -49,9 +49,20 @@ import {
   configRequest,
   configRowInput,
   isConfigChange,
+  isSwitchChange,
+  configSwitchRequest,
   type ConfigRowView,
 } from './config-row.ts';
 import { findControl, projectConfigOptions, type ConfigControl } from './config.ts';
+import {
+  NO_MCP_TOGGLES,
+  activeMcpServers,
+  mcpServerNames,
+  mcpTogglesView,
+  resumePending,
+  toggleMcpServer,
+  type McpTogglesView,
+} from './mcp-toggles.ts';
 import { conversationRecord, unsavedMessage } from './conversation.ts';
 import { failureKind } from './failure.ts';
 import {
@@ -163,6 +174,11 @@ export interface AgentSessionEvents {
    * that reassembled it from raw options would be a second opinion about what may be drawn.
    */
   onConfig?(view: ConfigRowView): void;
+  /**
+   * The MCP server toggles changed: a switch, a new session, an agent that came or went. Carries a
+   * decided view (`core/mcp-toggles.ts`), on its own clock like `onConfig`.
+   */
+  onMcpToggles?(view: McpTogglesView): void;
   /**
    * A new conversation got its session and its record (already persisted through `create`). The surface
    * lists it; the user's line it already drew stays where it is.
@@ -311,6 +327,11 @@ export class AgentSession {
   readonly #open: (options: OpenAgentOptions) => Promise<AgentHandle>;
   readonly #closeGraceMs: number;
   readonly #mcpServers: McpServer[] | undefined;
+  /** Servers switched off, per conversation; `#mcpOffPending` is the one that has no session yet. */
+  readonly #mcpOff = new Map<SessionId, Set<string>>();
+  #mcpOffPending = new Set<string>();
+  /** The server names the agent holds for each session: what `session/new` or the last resume carried. */
+  readonly #mcpHeld = new Map<SessionId, string[]>();
   readonly #modelPolicy: ModelPolicy | undefined;
   readonly #hostTools: HostToolPolicy | undefined;
   /**
@@ -563,6 +584,7 @@ export class AgentSession {
     }
     this.#emit();
     this.#emitConfig();
+    this.#emitMcp();
   }
 
   /**
@@ -589,9 +611,11 @@ export class AgentSession {
     } else if (failed.status === 'failed' && failed.kind !== 'model' && failed.kind !== 'quota') {
       this.#attachment = this.#handle ? { status: 'attached', name: this.#agentName } : { status: 'none' };
     }
+    this.#mcpOffPending = new Set();
     this.#state = transition(this.#state, { kind: 'chat-reset' });
     this.#emit();
     this.#emitConfig();
+    this.#emitMcp();
   }
 
   /**
@@ -834,7 +858,7 @@ export class AgentSession {
         return;
       }
       const answer = await withAuthHint('session/new', () =>
-        handle.client.newSession({ cwd: pending.cwd, mcpServers: this.#mcpServers ?? [] }),
+        handle.client.newSession({ cwd: pending.cwd, mcpServers: this.#activeMcp(null) }),
       );
       const at = this.#now();
       const record = conversationRecord({
@@ -865,12 +889,16 @@ export class AgentSession {
         this.#pending = null;
       }
       this.#agentSession = session.id;
+      this.#mcpHeld.set(session.id, mcpServerNames(this.#activeMcp(null)));
+      if (this.#mcpOffPending.size > 0) this.#mcpOff.set(session.id, this.#mcpOffPending);
+      if (current) this.#mcpOffPending = new Set();
       this.#turnSession = session.id;
       // Persisted only; the surface drew this line before the handshake began.
       this.#append(session.id, [{ kind: 'user', text: body, at, sessionId: session.id }]);
       this.#takeConfigOptions(answer.configOptions, session.id);
       this.#events.onConversation?.(record, current);
       this.#emit();
+      this.#emitMcp();
       if (this.#cancelRequested) {
         this.#move({ kind: 'turn-ended', stopReason: null, cancelledBy: this.#cancelKind() });
         return;
@@ -917,10 +945,79 @@ export class AgentSession {
         this.#move({ kind: 'turn-ended', stopReason: null, cancelledBy: this.#cancelKind() });
         return;
       }
+      // Awaited only when a resume is due: an unchanged list must add no tick to the turn, whose
+      // timing the tests measure in microtasks.
+      if (this.#mcpResumeDue(handle, session)) {
+        await this.#resumeMcp(handle, session);
+        if (this.#cancelRequested) {
+          this.#move({ kind: 'turn-ended', stopReason: null, cancelledBy: this.#cancelKind() });
+          return;
+        }
+      }
       await this.#deliver(handle, body, session);
     } catch (error) {
       this.#reportFailure(error);
     }
+  }
+
+  /**
+   * Put a changed MCP list in front of the agent, before the prompt that should see it.
+   *
+   * **`session/resume` or nothing.** An agent without it keeps the list it has (the toggles are disabled
+   * for it, `mcpTogglesView`); starting a new session instead would lose the conversation. The held list
+   * is only updated on an answer, so a refused resume is retried by the next turn.
+   */
+  #mcpResumeDue(handle: AgentClientHandle, session: BoundSession): boolean {
+    return (
+      handle.client.supportsResumeSession &&
+      resumePending(this.#mcpHeld.get(session.id) ?? null, this.#activeMcp(session.id))
+    );
+  }
+
+  async #resumeMcp(handle: AgentClientHandle, session: BoundSession): Promise<void> {
+    const active = this.#activeMcp(session.id);
+    const answer = await withAuthHint('resuming the session', () =>
+      handle.client.resumeSession({ sessionId: session.id, cwd: session.cwd, mcpServers: active }),
+    );
+    this.#mcpHeld.set(session.id, mcpServerNames(active));
+    if (answer.configOptions) this.#takeConfigOptions(answer.configOptions, session.id);
+    this.#emitMcp();
+  }
+
+  /** The servers a conversation runs with; `null` is the conversation that has no session yet. */
+  #activeMcp(sessionId: SessionId | null): McpServer[] {
+    const off = sessionId === null ? this.#mcpOffPending : (this.#mcpOff.get(sessionId) ?? new Set<string>());
+    return activeMcpServers(this.#mcpServers ?? [], off);
+  }
+
+  /** The toggles for the conversation on screen. */
+  get mcpToggles(): McpTogglesView {
+    const servers = this.#mcpServers ?? [];
+    if (servers.length === 0) return NO_MCP_TOGGLES;
+    const shown = this.#session?.id ?? null;
+    return mcpTogglesView({
+      servers,
+      off: shown === null ? this.#mcpOffPending : (this.#mcpOff.get(shown) ?? new Set<string>()),
+      agentHolds: shown !== null && this.#agentSession === shown,
+      resume: this.#handle ? this.#handle.client.supportsResumeSession : null,
+    });
+  }
+
+  /** Switch one server for the conversation on screen. Applies from the next turn. */
+  setMcpServer(name: string, on: boolean): void {
+    if (!this.mcpToggles.selectable) return;
+    const servers = this.#mcpServers ?? [];
+    const shown = this.#session?.id ?? null;
+    if (shown === null) {
+      this.#mcpOffPending = toggleMcpServer(servers, this.#mcpOffPending, name, on);
+    } else {
+      this.#mcpOff.set(shown, toggleMcpServer(servers, this.#mcpOff.get(shown) ?? new Set(), name, on));
+    }
+    this.#emitMcp();
+  }
+
+  #emitMcp(): void {
+    this.#events.onMcpToggles?.(this.mcpToggles);
   }
 
   /** Send the prompt and settle the turn. Shared by an opened session and a new conversation. */
@@ -1074,6 +1171,7 @@ export class AgentSession {
     this.#connecting = null;
     this.#processAlive = false;
     this.#agentSession = null;
+    this.#mcpHeld.clear();
     this.#configBySession.clear();
     this.#clearConfigRow();
     this.#emitConfig();
@@ -1374,10 +1472,12 @@ export class AgentSession {
     const answer = await withAuthHint('attaching to the session', () =>
       handle.client.reattach(session.id, {
         cwd: session.cwd,
-        ...(this.#mcpServers ? { mcpServers: this.#mcpServers } : {}),
+        ...(this.#mcpServers ? { mcpServers: this.#activeMcp(session.id) } : {}),
       }),
     );
     this.#agentSession = session.id;
+    this.#mcpHeld.set(session.id, mcpServerNames(this.#activeMcp(session.id)));
+    this.#emitMcp();
     this.#takeConfigOptions(answer.configOptions, session.id);
   }
 
@@ -1474,7 +1574,18 @@ export class AgentSession {
     // whose loser is whichever answer arrives last, and the person would see a value they did not pick.
     if (view.busy) return;
     if (!isConfigChange(view, controlId, value)) return;
-    const request = configRequest(this.#configControl(controlId), value);
+    await this.#sendConfig(controlId, configRequest(this.#configControl(controlId), value));
+  }
+
+  /** Flip a boolean option (a switch). Same refusals and same single door as `setConfigOption`. */
+  async setConfigSwitch(controlId: string, on: boolean): Promise<void> {
+    const view = this.configRow;
+    if (view.busy) return;
+    if (!isSwitchChange(view, controlId, on)) return;
+    await this.#sendConfig(controlId, configSwitchRequest(this.#configControl(controlId), on));
+  }
+
+  async #sendConfig(controlId: string, request: ReturnType<typeof configRequest>): Promise<void> {
     const handle = this.#handle;
     const sessionId = this.#agentSession;
     if (request === null || !handle || sessionId === null) return;

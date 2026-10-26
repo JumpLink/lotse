@@ -17,6 +17,7 @@ import sessionStore from './unit/session/store.test.ts';
 import auth from './unit/core/auth.test.ts';
 import config from './unit/core/config.test.ts';
 import configRow from './unit/core/config-row.test.ts';
+import mcpToggles from './unit/core/mcp-toggles.test.ts';
 import failure from './unit/core/failure.test.ts';
 import freeModels from './unit/core/free-models.test.ts';
 import modelPolicy from './unit/core/model-policy.test.ts';
@@ -124,6 +125,7 @@ run({
   permission,
   hostTools,
   agentSession,
+  mcpToggles,
   cwd,
   conversation,
   notices,

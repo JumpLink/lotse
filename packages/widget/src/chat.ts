@@ -65,6 +65,7 @@ import {
   type FailureNotice,
   type HostToolPolicy,
   type McpServer,
+  type ProfileSession,
   type ModelPolicy,
   type NotAnsweredReason,
   type OnboardingInput,
@@ -133,6 +134,11 @@ export interface LotseChatOptions {
    * without a line of widget-specific code.
    */
   readonly mcpServers?: readonly McpServer[];
+  /**
+   * A resolved profile (`resolveProfile`). Its `mcpServers` seed the conversation's toggles; an explicit
+   * `mcpServers` wins, so a host that passes only that keeps working unchanged.
+   */
+  readonly profile?: ProfileSession;
   /**
    * Nothing could be resolved: Send is off and the `no-agent` page is what `showNoAgent()` shows.
    * Absent: an agent exists.
@@ -371,6 +377,10 @@ export class LotseChat extends Adw.Bin {
       onSelect: (controlId, value) => {
         void this.#agent.setConfigOption(controlId, value);
       },
+      onSwitch: (controlId, on) => {
+        void this.#agent.setConfigSwitch(controlId, on);
+      },
+      onMcpToggle: (name, on) => this.#agent.setMcpServer(name, on),
     });
     this.#agent = new AgentSession({
       command: options.agent,
@@ -380,7 +390,9 @@ export class LotseChat extends Adw.Bin {
       ...(options.resolveAgent ? { resolveAgent: options.resolveAgent } : {}),
       // Forwarded as the host gave them. `@lotse/core` passes them to `session/new` and never reads
       // past `type`, so a host wires its own servers in without a line of widget-specific code.
-      ...(options.mcpServers ? { mcpServers: options.mcpServers } : {}),
+      ...(options.mcpServers || options.profile
+        ? { mcpServers: options.mcpServers ?? options.profile?.mcpServers ?? [] }
+        : {}),
       // **The host's model rule, to the one place that sends a prompt.** The widget keeps no copy: the
       // controller filters the row, computes the composer's block and refuses in front of the wire, so
       // the policy is asked once per question rather than once per surface.
@@ -419,6 +431,7 @@ export class LotseChat extends Adw.Bin {
         // last state move computed — Send still refusing a model the person has already replaced, or
         // worse, still offering to send to one they just picked. Read from `snapshot` again rather
         // than threaded through: the controller is the only honest source for it.
+        onMcpToggles: (view) => this.#config.setMcpToggles(view),
         onConfig: (view) => {
           this.#config.setView(view);
           this.#composer.setInput(composerInput(this.#agent.snapshot, this.#unavailable));

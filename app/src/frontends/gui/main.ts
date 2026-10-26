@@ -169,6 +169,9 @@ const cwd = resolveCwd({ ...process.env, ...(hooks.cwd ? { LOTSE_CWD: hooks.cwd 
  */
 const modelPolicy = modelPolicyFromHook(hooks.modelPolicy ?? []);
 
+// Dev hook only: inert stdio entries, named after `LOTSE_APP_MCP`, to show the per-conversation toggles.
+const mcpServers = (hooks.mcp ?? []).map((name) => ({ name, command: 'true', args: [], env: [] }));
+
 const status = await runAdwaitaApp({
   applicationId: APP_ID,
   css: APP_CSS,
@@ -209,6 +212,7 @@ const status = await runAdwaitaApp({
         : {}),
       newChat: cwd ? { cwd, home: facts.home } : null,
       ...(modelPolicy ? { modelPolicy } : {}),
+      ...(mcpServers.length > 0 ? { mcpServers } : {}),
       // **Only when no agent is pinned.** `LOTSE_APP_AGENT` means "this agent, for everything in this window"
       // — a fixture record naming `opencode` must be answered by the stand-in, not start a real one.
       ...(hooks.agent

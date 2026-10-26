@@ -251,6 +251,8 @@ export interface FixtureAgentOptions {
    * agent, and `opencode` 2.0.19 already refuses anything it does not recognise.
    */
   refuseConfigOptions?: string[];
+  /** Take `{type:'boolean'}` values, like an agent that implements boolean options. Default: refuse them. */
+  acceptBooleans?: boolean;
   /**
    * Push a `config_option_update` after a successful set, the way opencode does when the **model**
    * changes (it does not for `effort` or `mode`). Defaults to true.
@@ -781,6 +783,21 @@ export class FixtureAgent {
   #setConfigOption(id: RequestId | undefined, params: Record<string, unknown> | undefined): void {
     const configId = String(params?.['configId'] ?? '');
     const value = params?.['value'];
+    if (
+      this.#options.acceptBooleans === true &&
+      typeof value === 'object' &&
+      value !== null &&
+      (value as { type?: unknown }).type === 'boolean'
+    ) {
+      const index = this.#configOptions.findIndex((option) => option.id === configId);
+      if (index === -1) return this.#configInvalid(id, 'no such config option', { configId });
+      const on = (value as { value?: unknown }).value === true;
+      this.configSets.push({ configId, value: on });
+      this.#configOptions = this.#configOptions.map((option, at) =>
+        at === index ? ({ ...option, currentValue: on } as SessionConfigOption) : option,
+      );
+      return this.#replyWithOptions(id, params, false);
+    }
     if (typeof value !== 'string') {
       return this.#configInvalid(id, 'this agent takes a value id, not a tagged value', { configId });
     }

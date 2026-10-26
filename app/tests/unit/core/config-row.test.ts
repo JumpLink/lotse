@@ -19,10 +19,12 @@ import {
   applyConfigUpdate,
   configAfterSet,
   configRequest,
+  configSwitchRequest,
   configRowInput,
   configSelection,
   emptyConfigRow,
   isConfigChange,
+  isSwitchChange,
   parseConfigOptionSpec,
   projectConfigOptions,
   type ConfigRowControl,
@@ -143,20 +145,23 @@ export default async () => {
       expect(emptyConfigRow().visible).toBe(false);
     });
 
-    await it('skips a boolean option — lotse announces no booleans', async () => {
-      // `LOTSE_CLIENT_CAPABILITIES` sends `session.configOptions: {}` with no `boolean`, so an agent is
-      // not entitled to send one and opencode refuses a tagged value outright. The projection still
-      // carries booleans (`core/config.ts` checks the protocol boundary); the ROW does not draw them.
+    await it('draws a boolean option as a switch, apart from the dropdowns', async () => {
       const onlyBoolean = configRowInput({
         options: [{ id: 'web', name: 'Web search', type: 'boolean', currentValue: true }],
       });
-      expect(onlyBoolean.visible).toBe(false);
+      expect(onlyBoolean.visible).toBe(true);
+      expect(onlyBoolean.controls.length).toBe(0);
+      expect(onlyBoolean.switches[0]?.id).toBe('web');
+      expect(onlyBoolean.switches[0]?.on).toBe(true);
 
-      // And with a select beside it, the select is drawn and the boolean is gone — not "drawn as empty".
       const mixed = configRowInput({
-        options: [...MEASURED, { id: 'web', name: 'Web search', type: 'boolean', currentValue: true }],
+        options: [...MEASURED, { id: 'web', name: 'Web search', type: 'boolean', currentValue: false }],
       });
       expect(mixed.controls.map((entry) => entry.id)).toEqualArray(['model', 'effort', 'mode']);
+      expect(mixed.switches.map((entry) => entry.id)).toEqualArray(['web']);
+      expect(isSwitchChange(mixed, 'web', true)).toBe(true);
+      expect(isSwitchChange(mixed, 'web', false)).toBe(false);
+      expect(isSwitchChange(mixed, 'nope', true)).toBe(false);
     });
 
     await it('goes insensitive while a set is in flight, and says nothing about the previous one', async () => {
@@ -224,10 +229,13 @@ export default async () => {
       expect(configRequest(controls[1]!, '')).toBe(null);
     });
 
-    await it('never sends a tagged boolean, because lotse announces no boolean capability', async () => {
+    await it('sends a boolean only through the switch door, as a tagged value', async () => {
       const toggle = projectConfigOptions([{ id: 'web', name: 'Web', type: 'boolean', currentValue: true }]);
       expect(toggle[0]?.kind).toBe('switch');
       expect(configRequest(toggle[0]!, 'true')).toBe(null);
+      expect(configSwitchRequest(toggle[0]!, false)).toStrictEqual({ type: 'boolean', value: false });
+      const select = projectConfigOptions(MEASURED);
+      expect(configSwitchRequest(select[0]!, true)).toBe(null);
     });
   });
 
