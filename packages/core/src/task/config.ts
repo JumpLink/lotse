@@ -24,8 +24,8 @@ import { isFreeModel } from '../free-models.ts';
 import { CHANNEL_NAMES, type ChannelName } from '../messenger/settings.ts';
 import { duplicates, id, isRecord, list, object, optionalString } from '../parse.ts';
 import type { Profile } from '../profile/profile.ts';
-import { parseDuration } from './duration.ts';
-import { SERVE_CONFIG_SCHEMA, schemaKeys } from './schema.ts';
+import { parseDuration } from '../questions/duration.ts';
+import { SERVE_CONFIG_SCHEMA, schemaKeys } from '../schema.ts';
 
 /** A person `listen` works for. `addresses` are channel addresses; the desktop channel needs none. */
 export interface ServeUser {

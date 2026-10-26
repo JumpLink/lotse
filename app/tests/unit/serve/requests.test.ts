@@ -23,8 +23,8 @@ import {
   type RequestRunResult,
   type RequestSettings,
   type RunResult,
-  type ServeDeps,
-  type ServeLogEntry,
+  type RunDeps,
+  type RunLogEntry,
 } from '@lotse/core';
 import {
   formatEnvSpecs,
@@ -86,8 +86,8 @@ interface Clock {
 function runDeps(
   book: { value: Question[] },
   clock: Clock = { ms: NOW },
-  entries: ServeLogEntry[] = [],
-): ServeDeps {
+  entries: RunLogEntry[] = [],
+): RunDeps {
   return {
     config: CONFIG,
     questions: {
@@ -96,8 +96,8 @@ function runDeps(
     },
     now: () => new Date(clock.ms),
     sleep: async () => {},
-    log: (entry: ServeLogEntry) => void entries.push(entry),
-  } as unknown as ServeDeps;
+    log: (entry: RunLogEntry) => void entries.push(entry),
+  } as unknown as RunDeps;
 }
 
 function result(patch: Partial<RunResult> = {}, how: RequestRunResult['how'] = 'new'): RequestRunResult {
@@ -240,7 +240,7 @@ export default async () => {
     await it('a request runs with the profile, the cwd and the rights, and the answer goes back', async () => {
       const runner = fakeRunner();
       const out: string[] = [];
-      const entries: ServeLogEntry[] = [];
+      const entries: RunLogEntry[] = [];
       const requests = chatRequests({
         settings: { ...ON, preamble: 'Be brief.' },
         deps: runDeps({ value: [] }, { ms: NOW }, entries),
@@ -271,7 +271,7 @@ export default async () => {
     await it('busy: the next one is queued, hears its place, and runs after', async () => {
       const runner = fakeRunner();
       const out: string[] = [];
-      const entries: ServeLogEntry[] = [];
+      const entries: RunLogEntry[] = [];
       const requests = chatRequests({
         settings: ON,
         deps: runDeps({ value: [] }, { ms: NOW }, entries),
@@ -373,7 +373,7 @@ export default async () => {
     await it('a failed or thrown run is said in the chat; the reason goes to the log only', async () => {
       const runner = fakeRunner();
       const out: string[] = [];
-      const entries: ServeLogEntry[] = [];
+      const entries: RunLogEntry[] = [];
       const requests = chatRequests({
         settings: ON,
         deps: runDeps({ value: [] }, { ms: NOW }, entries),

@@ -3,7 +3,7 @@
 Moved from `AGENTS.md` (issue #15, context budget). The command list stays in [AGENTS.md](../AGENTS.md#the-cli); the reasons behind it are here.
 
 **`listen` is [ADR 0003](adr/0003-serve-tasks-questions-channel.md), read it before touching
-`packages/core/src/serve/`**; the person's guide is [docs/listen.md](listen.md). It only receives (chat requests, answers, question notices) and starts no task; tasks run on demand
+`packages/core/src/task/` and `questions/`**; the person's guide is [docs/listen.md](listen.md). It only receives (chat requests, answers, question notices) and starts no task; tasks run on demand
 ([docs/tasks.md](tasks.md)). Users, channels and legacy tasks live in
 `$XDG_CONFIG_HOME/lotse/tasks.json` (never in the repo, `examples/tasks.example.json` is the shape), reloaded in place when it or a prompt file changes (`app/src/frontends/cli/listen-reload.ts`; running tasks
 finish with their old definition, an invalid file keeps the old one). Pure logic in core, GI

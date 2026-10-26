@@ -16,9 +16,9 @@ import {
   runTask,
   type Question,
   type ServeConfig,
-  type ServeDeps,
-  type ServeLogEntry,
-  type ServeMessage,
+  type RunDeps,
+  type RunLogEntry,
+  type QuestionMessage,
 } from '@lotse/core';
 import {
   FixtureAgent,
@@ -61,10 +61,10 @@ function config(
 }
 
 interface Harness {
-  readonly deps: ServeDeps;
+  readonly deps: RunDeps;
   readonly agents: FixtureAgent[];
-  readonly sent: ServeMessage[];
-  readonly log: ServeLogEntry[];
+  readonly sent: QuestionMessage[];
+  readonly log: RunLogEntry[];
   book: Question[];
   /** Runs on every poll of a waiting permission request — where a test plays the person. */
   onSleep: () => Promise<void> | void;
@@ -83,9 +83,9 @@ function harness(serveConfig: ServeConfig, agentOptions: FixtureAgentOptions = {
     book: [],
     onSleep: () => {},
     step: 2_000,
-    deps: undefined as unknown as ServeDeps,
+    deps: undefined as unknown as RunDeps,
   };
-  (h as { deps: ServeDeps }).deps = {
+  (h as { deps: RunDeps }).deps = {
     config: serveConfig,
     open: async (options) => {
       const agent = new FixtureAgent(h.optionsFor?.(h.agents.length) ?? agentOptions);

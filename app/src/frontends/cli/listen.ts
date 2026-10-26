@@ -36,9 +36,9 @@ import {
   type ChannelFailure,
   type ChannelRoute,
   type LotsePaths,
-  type ServeChannel,
+  type QuestionChannel,
   type ServeConfig,
-  type ServeDeps,
+  type RunDeps,
   type MessengerSettings,
 } from '@lotse/core';
 
@@ -76,8 +76,8 @@ const FAILED = new Set(['unknown', 'dropped', 'expired', 'busy', 'invalid']);
  */
 function answerHandlers(
   paths: LotsePaths,
-  deps: () => ServeDeps | null,
-  feedback: () => ServeChannel | null,
+  deps: () => RunDeps | null,
+  feedback: () => QuestionChannel | null,
 ) {
   const windows = new Set<string>();
   const answer = async (questionId: string, text: string) => {
@@ -125,9 +125,9 @@ function answerHandlers(
 
 async function openDesktop(
   paths: LotsePaths,
-  deps: () => ServeDeps | null,
-  feedback: () => ServeChannel | null,
-): Promise<ServeChannel> {
+  deps: () => RunDeps | null,
+  feedback: () => QuestionChannel | null,
+): Promise<QuestionChannel> {
   try {
     const { desktopChannel } = await import('../../core/desktop-channel.ts');
     return desktopChannel({
@@ -144,7 +144,7 @@ async function openDesktop(
 }
 
 interface OpenedChannels {
-  readonly channel: ServeChannel;
+  readonly channel: QuestionChannel;
   /** Present when the messenger is active and complete: the receive loop runs on this link. */
   readonly messenger: {
     readonly link: McpLink;
@@ -161,11 +161,11 @@ async function openChannels(
   paths: LotsePaths,
   stateDir: string,
   config: () => ServeConfig,
-  deps: () => ServeDeps | null,
+  deps: () => RunDeps | null,
 ): Promise<OpenedChannels> {
   const settings = readSettings(paths.settingsFile).settings;
   const active = activeChannels(settings);
-  let desktop: ServeChannel | null = null;
+  let desktop: QuestionChannel | null = null;
   const useDesktop = active.includes('desktop');
   const opened: ChannelRoute[] = [];
   let messenger: OpenedChannels['messenger'] = null;
@@ -227,7 +227,7 @@ const command = (paths: LotsePaths, listen: ListenPaths): CommandModule => ({
     const loaded = readTasks(listen);
     if (!loaded) return;
     for (const note of freeModelNotes(loaded.config)) err(fmt(_('  {note}'), { note }));
-    let ready: ServeDeps | null = null;
+    let ready: RunDeps | null = null;
     let activeConfig = loaded.config;
     const opened = await openChannels(
       paths,

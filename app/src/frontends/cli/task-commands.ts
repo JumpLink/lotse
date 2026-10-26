@@ -13,7 +13,7 @@ import {
   runTask,
   TaskUsageError,
   type ServeConfig,
-  type ServeDeps,
+  type RunDeps,
   type TaskRun,
 } from '@lotse/core';
 
@@ -32,7 +32,7 @@ export type RunReport =
 export async function runReport(
   id: string,
   params: Readonly<Record<string, string>>,
-  deps: ServeDeps,
+  deps: RunDeps,
 ): Promise<RunReport> {
   try {
     const result = await runTask(id, params, deps);
@@ -45,7 +45,7 @@ export async function runReport(
 }
 
 /** The words after `/run`, run like `lotse run`. */
-export async function runReportFromText(args: string, deps: ServeDeps): Promise<RunReport> {
+export async function runReportFromText(args: string, deps: RunDeps): Promise<RunReport> {
   try {
     const { id, params } = parseRunArgs(args);
     return await runReport(id, params, deps);

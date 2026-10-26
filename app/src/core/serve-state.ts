@@ -28,7 +28,7 @@ import {
   type Question,
   type QuestionBook,
   type RunResult,
-  type ServeLogEntry,
+  type RunLogEntry,
 } from '@lotse/core';
 
 import { writePrivateFile } from './private-file.ts';
@@ -114,7 +114,7 @@ export function runState(stateDir: string): RunState {
 }
 
 /** The action log, `listen.log`: one JSON line per entry, with a timestamp. */
-export function actionLog(stateDir: string, now: () => Date): (entry: ServeLogEntry) => void {
+export function actionLog(stateDir: string, now: () => Date): (entry: RunLogEntry) => void {
   const file = join(stateDir, 'listen.log');
   return (entry) => {
     ensureDir(stateDir);

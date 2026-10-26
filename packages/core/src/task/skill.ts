@@ -23,7 +23,7 @@ import {
   type PersonNeededConfig,
   type ServeConfig,
   type ServeTask,
-} from '../serve/config.ts';
+} from './config.ts';
 
 /** The metadata keys lotse reads. Any other `lotse-*` key is reported as a typo. */
 export const TASK_METADATA = {

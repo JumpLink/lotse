@@ -5,7 +5,7 @@ import type { RequestPermissionRequest } from '@lotse/acp/types';
 import {
   callDigest,
   describeCall,
-  serveGate,
+  taskGate,
   stripAlways,
   type AskOutcome,
   type GateDecision,
@@ -29,7 +29,7 @@ function request(rawInput: Record<string, unknown> = { path: 'a.txt', text: 'x' 
 function harness(rights: 'read' | 'confirm' | 'released', answers: AskOutcome[]) {
   const asked: string[] = [];
   const decisions: GateDecision[] = [];
-  const gate = serveGate({
+  const gate = taskGate({
     rights,
     released: rights === 'released' ? [{ tool: 'read', kind: null }] : [],
     now: () => 0,
@@ -58,7 +58,7 @@ export default async () => {
     });
   });
 
-  await describe('serveGate', async () => {
+  await describe('taskGate', async () => {
     await it('read rights decline without asking', async () => {
       const { gate, asked, decisions } = harness('read', []);
       expect(await gate(request())).toBe('reject_once');

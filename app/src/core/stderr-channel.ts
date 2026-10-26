@@ -1,11 +1,11 @@
 /**
- * The fallback `ServeChannel`: the message on stderr, which `journalctl --user -u lotse-listen` shows.
+ * The fallback `QuestionChannel`: the message on stderr, which `journalctl --user -u lotse-listen` shows.
  * Its own file, without GI, so `lotse answer` and a session without a notification daemon can use it.
  */
 
-import type { ServeChannel } from '@lotse/core';
+import type { QuestionChannel } from '@lotse/core';
 
-export function stderrChannel(): ServeChannel {
+export function stderrChannel(): QuestionChannel {
   return {
     name: 'stderr',
     send: (_user, message) => {

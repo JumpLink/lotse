@@ -4,7 +4,7 @@
  * parser's key lists come from here, and what a schema cannot say (a duplicate id) stays in `profile.ts`.
  */
 
-import { ID_PATTERN, MCP_SERVER, type SchemaNode } from '../serve/schema.ts';
+import { ID_PATTERN, MCP_SERVER, type SchemaNode } from '../schema.ts';
 
 export const PROFILES_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',

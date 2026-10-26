@@ -13,9 +13,9 @@ import {
   type AgentCommand,
   type AgentHandle,
   type LotsePaths,
-  type ServeChannel,
+  type QuestionChannel,
   requestSettings,
-  type ServeDeps,
+  type RunDeps,
 } from '@lotse/core';
 import { messengerSettings, readSettings } from '../../core/settings.ts';
 
@@ -96,7 +96,7 @@ function agentsFor(paths: LotsePaths, loaded: LoadedTasks): Map<string, AgentCom
 
 /** Agents still open, so a stopping `listen` can end them instead of leaving them behind. */
 export interface OpenAgents {
-  readonly open: ServeDeps['open'];
+  readonly open: RunDeps['open'];
   closeAll(): Promise<void>;
 }
 
@@ -127,8 +127,8 @@ export interface DepsOptions {
   readonly paths: LotsePaths;
   readonly listen: ListenPaths;
   readonly loaded: LoadedTasks;
-  readonly channel: ServeChannel;
-  readonly open: ServeDeps['open'];
+  readonly channel: QuestionChannel;
+  readonly open: RunDeps['open'];
   readonly quiet: boolean;
 }
 
@@ -137,7 +137,7 @@ function personDefaultMin(paths: LotsePaths): number {
   return read.problem ? 30 : requestSettings(messengerSettings(read.settings)).personNeededMinutes;
 }
 
-export function runDeps(options: DepsOptions): ServeDeps | null {
+export function runDeps(options: DepsOptions): RunDeps | null {
   const commands = agentsFor(options.paths, options.loaded);
   if (!commands) return null;
   const now = () => new Date();

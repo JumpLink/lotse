@@ -14,9 +14,9 @@ import {
   type PersonOutcome,
   type Question,
   type ServeConfig,
-  type ServeDeps,
-  type ServeLogEntry,
-  type ServeMessage,
+  type RunDeps,
+  type RunLogEntry,
+  type QuestionMessage,
 } from '@lotse/core';
 import { FixtureAgent } from '../../support/fixture-agent.ts';
 import { runConfigured } from '../../support/run-task.ts';
@@ -52,9 +52,9 @@ function config(profile: Record<string, unknown> = {}, task: Record<string, unkn
 }
 
 interface Harness {
-  readonly deps: ServeDeps;
-  readonly sent: ServeMessage[];
-  readonly log: ServeLogEntry[];
+  readonly deps: RunDeps;
+  readonly sent: QuestionMessage[];
+  readonly log: RunLogEntry[];
   readonly returns: string[];
   book: Question[];
   onSleep: () => Promise<void> | void;
@@ -76,7 +76,7 @@ function harness(serveConfig: ServeConfig, calls: (call: PersonHandler) => Promi
     onSleep: () => {},
     step: 60_000,
   } as unknown as Harness;
-  (h as { deps: ServeDeps }).deps = {
+  (h as { deps: RunDeps }).deps = {
     config: serveConfig,
     open: async (options) => {
       const agent = new FixtureAgent();

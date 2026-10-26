@@ -26,9 +26,9 @@ import {
   type NextOptions,
   type RefStore,
   type Question,
-  type ServeChannel,
-  type ServeDeps,
-  type ServeMessage,
+  type QuestionChannel,
+  type RunDeps,
+  type QuestionMessage,
 } from '@lotse/core';
 import { fileCursorStore } from '../../../src/core/messenger-state.ts';
 import { parseSettings, withMessenger } from '../../../src/core/settings.ts';
@@ -98,7 +98,7 @@ const ROUTED = parseServeConfig(
   }),
 );
 
-function runDeps(book: { value: Question[] }): ServeDeps {
+function runDeps(book: { value: Question[] }): RunDeps {
   return {
     config: ROUTED,
     questions: {
@@ -107,7 +107,7 @@ function runDeps(book: { value: Question[] }): ServeDeps {
     },
     now: () => new Date(NOW),
     sleep: async () => {},
-  } as unknown as ServeDeps;
+  } as unknown as RunDeps;
 }
 
 function memoryCursor(initial: string | null): CursorStore & { value: Cursor | null } {
@@ -136,7 +136,7 @@ async function looping(
   fake: FakeMcp,
   book: { value: Question[] },
   cursor: CursorStore,
-  body: (link: McpLink, deps: ServeDeps) => Promise<void>,
+  body: (link: McpLink, deps: RunDeps) => Promise<void>,
   refs?: RefStore,
 ): Promise<void> {
   const link = linkTo(fake);
@@ -253,7 +253,7 @@ export default async () => {
   });
 
   await describe('messenger channel', async () => {
-    const asks: ServeMessage = {
+    const asks: QuestionMessage = {
       title: 'lotse · t · #A3',
       body: 'Allow it?\n\nAnswer: lotse answer A3 yes|no — expires x',
       text: 'Allow it?',
@@ -316,13 +316,13 @@ export default async () => {
   });
 
   await describe('combineChannels', async () => {
-    const message: ServeMessage = { title: 't', body: 'b', questionId: null };
+    const message: QuestionMessage = { title: 't', body: 'b', questionId: null };
     const user = { id: 'me', addresses: [] };
-    const ok = (log: string[], name: string): ServeChannel => ({
+    const ok = (log: string[], name: string): QuestionChannel => ({
       name,
       send: () => void log.push(name),
     });
-    const broken: ServeChannel = {
+    const broken: QuestionChannel = {
       name: 'broken',
       send: () => {
         throw new Error('down');
@@ -363,7 +363,7 @@ export default async () => {
   await describe('routeChannels', async () => {
     const user = { id: 'me', addresses: [] };
     const secret = 'Archive invoice 4711 from Example Corp?';
-    const asking = (task: string): ServeMessage => ({
+    const asking = (task: string): QuestionMessage => ({
       title: `lotse · ${task} · #A5`,
       body: `${secret}\n\nAnswer: lotse answer A5 <text>`,
       text: secret,
@@ -372,7 +372,7 @@ export default async () => {
       asks: 'reply',
       expiresAt: '2026-10-11T00:00:00.000Z',
     });
-    const recorder = (into: ServeMessage[]): ServeChannel => ({
+    const recorder = (into: QuestionMessage[]): QuestionChannel => ({
       name: 'desktop',
       send: (_user, message) => void into.push(message),
     });
@@ -380,7 +380,7 @@ export default async () => {
     await it('a task restricted to the desktop never reaches the messenger send tool', async () => {
       await withFakeMcp({}, async (fake) => {
         const link = linkTo(fake);
-        const desktop: ServeMessage[] = [];
+        const desktop: QuestionMessage[] = [];
         try {
           const channel = routeChannels(
             [
@@ -403,7 +403,7 @@ export default async () => {
     await it('notice mode sends the chat no question text; the desktop keeps it', async () => {
       await withFakeMcp({}, async (fake) => {
         const link = linkTo(fake);
-        const desktop: ServeMessage[] = [];
+        const desktop: QuestionMessage[] = [];
         try {
           const channel = routeChannels(
             [
@@ -458,8 +458,8 @@ export default async () => {
     });
 
     await it('an unrestricted task and listen news go to every channel in full', async () => {
-      const desktop: ServeMessage[] = [];
-      const chat: ServeMessage[] = [];
+      const desktop: QuestionMessage[] = [];
+      const chat: QuestionMessage[] = [];
       const channel = routeChannels(
         [
           { name: 'desktop', channel: recorder(desktop) },
@@ -476,7 +476,7 @@ export default async () => {
 
   await describe('messenger retry', async () => {
     const user = { id: 'me', addresses: [] };
-    const asks: ServeMessage = {
+    const asks: QuestionMessage = {
       title: 'lotse · t · #A4',
       body: 'Allow it?',
       text: 'Allow it?',
@@ -591,7 +591,7 @@ export default async () => {
         const refs = memoryRefs();
         const link = linkTo(fake);
         const user = { id: 'me', addresses: [] };
-        const asks: ServeMessage = {
+        const asks: QuestionMessage = {
           title: 't',
           body: 'b',
           text: 'Allow it?',

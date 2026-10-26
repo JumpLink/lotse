@@ -10,7 +10,7 @@
 import type { McpServer } from '@lotse/acp';
 
 import type { AgentCommand } from '../agents/stdio.ts';
-import type { RightsLevel, ServeProfile } from '../serve/config.ts';
+import type { RightsLevel, ServeProfile } from '../task/config.ts';
 import type { ConfigOptionValue, Profile } from './profile.ts';
 
 export interface ProfileResolvers {

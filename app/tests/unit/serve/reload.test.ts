@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@gjsify/unit';
 
-import { parseServeConfig, type ServeConfig, type ServeDeps } from '@lotse/core';
+import { parseServeConfig, type ServeConfig, type RunDeps } from '@lotse/core';
 
 import { createReloader, liveDeps } from '../../../src/frontends/cli/listen-reload.ts';
 import type { LoadedTasks } from '../../../src/core/serve-config.ts';
@@ -31,11 +31,11 @@ function loaded(tasks: Record<string, unknown>[], hash: string): LoadedTasks {
 function fixture(initial: Record<string, unknown>[]) {
   const file = { hash: 'h1', tasks: initial as Record<string, unknown>[] | 'invalid' };
   const logged: string[] = [];
-  const build = (next: LoadedTasks): ServeDeps =>
+  const build = (next: LoadedTasks): RunDeps =>
     ({
       config: next.config,
       log: (entry: { event: string }) => logged.push(entry.event),
-    }) as unknown as ServeDeps;
+    }) as unknown as RunDeps;
   const first = loaded(initial, 'h1');
   const reloader = createReloader(
     {
@@ -118,7 +118,7 @@ export default async () => {
 
     await it('keeps the previous tasks when the deps cannot be built', async () => {
       const first = loaded([EVERY], 'h1');
-      const deps = { config: first.config } as unknown as ServeDeps;
+      const deps = { config: first.config } as unknown as RunDeps;
       const reloader = createReloader(
         {
           tasksFile: '/fixture/tasks.json',

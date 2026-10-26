@@ -66,7 +66,7 @@ import answerView from './unit/core/answer-view.test.ts';
 
 import serveConfig from './unit/serve/config.test.ts';
 import serveQuestions from './unit/serve/questions.test.ts';
-import serveGate from './unit/serve/gate.test.ts';
+import taskGate from './unit/serve/gate.test.ts';
 import serveState from './unit/serve/serve-state.test.ts';
 import serveRunner from './unit/serve/runner.test.ts';
 import servePerson from './unit/serve/person.test.ts';
@@ -146,7 +146,7 @@ run({
   answerView,
   serveConfig,
   serveQuestions,
-  serveGate,
+  taskGate,
   serveState,
   serveRunner,
   servePerson,

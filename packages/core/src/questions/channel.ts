@@ -2,7 +2,7 @@
  * How `listen` reaches its person — the seam ADR 0002 §9 asks for.
  *
  * A task names a profile, the profile a user, and `listen` hands every message for that user to the
- * `ServeChannel` it was started with — one, or several combined (`combineChannels`). A task or profile
+ * `QuestionChannel` it was started with — one, or several combined (`combineChannels`). A task or profile
  * may narrow that to some channels and keep the question text off the messenger (`channels`,
  * `messengerDetail`); `routeChannels` applies it, by the `task` a message carries. The first channel is a desktop notification (the app's `desktop-notifier.ts`);
  * the messenger channel (`messenger/`) is a second implementation and changes no task.
@@ -12,10 +12,10 @@
  * of them ends in the same `answerQuestion`, so the first answer wins and the others hear "answered".
  */
 
-import type { ServeUser } from './config.ts';
-import type { QuestionKind } from './questions.ts';
+import type { ServeUser } from '../task/config.ts';
+import type { QuestionKind } from './question.ts';
 
-export interface ServeMessage {
+export interface QuestionMessage {
   readonly title: string;
   readonly body: string;
   /** The question this message asks, so a channel with replies can thread the answer to it. */
@@ -36,8 +36,8 @@ export interface ServeMessage {
   readonly expiresAt?: string;
 }
 
-export interface ServeChannel {
+export interface QuestionChannel {
   /** For the log: `desktop`, `stderr`, later `curlew`. */
   readonly name: string;
-  send(user: ServeUser, message: ServeMessage): Promise<void> | void;
+  send(user: ServeUser, message: QuestionMessage): Promise<void> | void;
 }

@@ -26,7 +26,7 @@ import {
   type MessengerSettings,
   type Question,
   type ServeConfig,
-  type ServeDeps,
+  type RunDeps,
 } from '@lotse/core';
 
 import { listTasks, loadTasks, migrateTasks, readSkill } from '../../../src/core/serve-config.ts';
@@ -84,7 +84,7 @@ function deps(cfg: ServeConfig, skills: Record<string, string>, agentOptions: Fi
     prompts: [] as string[],
     locked: false,
   };
-  const value: ServeDeps = {
+  const value: RunDeps = {
     config: cfg,
     open: async (options) => {
       const agent = new FixtureAgent(agentOptions);

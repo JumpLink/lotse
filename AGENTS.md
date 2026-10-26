@@ -104,7 +104,7 @@ lotse tasks | status [--json]             # runnable tasks (docs/tasks.md) | run
 
 **Read before touching the CLI** — full prose in [docs/cli-behaviour.md](docs/cli-behaviour.md):
 
-- `listen` is [ADR 0003](docs/adr/0003-serve-tasks-questions-channel.md); read it before touching `packages/core/src/serve/`. A new task field goes into `serve/schema.ts` (`SERVE_CONFIG_SCHEMA`) first. Pure logic in core, GI only in `app/src/core/desktop-channel.ts` (imported lazily so `answer` stays GI-free). Guide: [docs/listen.md](docs/listen.md).
+- `listen` is [ADR 0003](docs/adr/0003-serve-tasks-questions-channel.md); read it before touching `packages/core/src/task/` and `questions/`. A new task field goes into `task/skill.ts` first. Pure logic in core, GI only in `app/src/core/desktop-channel.ts` (imported lazily so `answer` stays GI-free). Guide: [docs/listen.md](docs/listen.md).
 - **Bundled before host, and the bundled copy is off PATH** (`/app/extra/agents`, never `/app/bin`: it would shadow the person's own opencode and its login). Precedence `--agent` / `LOTSE_APP_AGENT` > setting > bundled > host; a setting that cannot be honoured is reported, never skipped silently; a recorded `agentSource` is resumed on that copy or fails, never falls to the other. A bundled copy runs in the sandbox with its own `HOME`/`XDG_*`.
 - **One turn, not a REPL** — a decision, not a missing feature. **stdout is the answer, stderr is everything about it.** Ctrl-C is `session/cancel`, not a kill. A piped stdin cannot ask, so it declines. Read every option with `pickArgv` (yargs exposes `--deny-all` under two spellings; a gate that silently stopped firing is the worst failure).
 

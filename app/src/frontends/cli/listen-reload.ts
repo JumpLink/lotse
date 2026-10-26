@@ -2,12 +2,12 @@
  * Applying an edited task file to a running `listen` (docs/listen.md, "Editing the task file").
  *
  * The file is looked at once per pass. A change that parses becomes the new configuration for every
- * run that STARTS afterwards; a run already going keeps the `ServeDeps` it was handed, which is what
+ * run that STARTS afterwards; a run already going keeps the `RunDeps` it was handed, which is what
  * lets it finish with the definition it started with. A change that does not parse is reported and
  * ignored, and the previous configuration stays in force until the file is valid again.
  */
 
-import type { ServeConfig, ServeDeps } from '@lotse/core';
+import type { ServeConfig, RunDeps } from '@lotse/core';
 
 import type { LoadedTasks } from '../../core/serve-config.ts';
 
@@ -28,12 +28,12 @@ export interface ReloaderOptions {
   /** The hash as the file is now, for `config`'s prompt files; `null` when something cannot be read. */
   readonly hashNow: (tasksFile: string, config: ServeConfig) => string | null;
   /** The deps for a loaded configuration; `null` when they cannot be built (an agent is missing). */
-  readonly build: (loaded: LoadedTasks) => ServeDeps | null;
+  readonly build: (loaded: LoadedTasks) => RunDeps | null;
 }
 
 export interface Reloader {
   /** The configuration new runs start with. A run keeps the object it was started with. */
-  current(): { readonly loaded: LoadedTasks; readonly deps: ServeDeps };
+  current(): { readonly loaded: LoadedTasks; readonly deps: RunDeps };
   check(): ReloadResult;
 }
 
@@ -50,7 +50,7 @@ function diffTasks(before: ServeConfig, after: ServeConfig) {
 
 export function createReloader(
   options: ReloaderOptions,
-  initial: { readonly loaded: LoadedTasks; readonly deps: ServeDeps },
+  initial: { readonly loaded: LoadedTasks; readonly deps: RunDeps },
 ): Reloader {
   let state = initial;
   // The state of the file we already refused, so one bad save is reported once, not once per pass.
@@ -81,6 +81,6 @@ export function createReloader(
 }
 
 /** An object that always reads through to the current deps, for the parts that outlive a reload. */
-export function liveDeps(current: () => ServeDeps): ServeDeps {
-  return new Proxy({} as ServeDeps, { get: (_target, key) => Reflect.get(current(), key) });
+export function liveDeps(current: () => RunDeps): RunDeps {
+  return new Proxy({} as RunDeps, { get: (_target, key) => Reflect.get(current(), key) });
 }

@@ -525,9 +525,9 @@ export {
   type PersonNeededInput,
   type PersonOutcome,
   type PersonReply,
-} from './serve/person.ts';
-export { PERSON_TOOL, createPersonHost } from './serve/person-server.ts';
-export { parseDuration } from './serve/duration.ts';
+} from './questions/person.ts';
+export { PERSON_TOOL, createPersonHost } from './questions/person-server.ts';
+export { parseDuration } from './questions/duration.ts';
 export {
   DEFAULT_QUESTION_LIMITS,
   PERSON_NEEDED_OFF,
@@ -551,7 +551,7 @@ export {
   type ServeTask,
   type ServeUser,
   type TaskDelivery,
-} from './serve/config.ts';
+} from './task/config.ts';
 export {
   createdSince,
   findQuestions,
@@ -571,18 +571,18 @@ export {
   type QuestionAction,
   type QuestionKind,
   type QuestionStatus,
-} from './serve/questions.ts';
+} from './questions/question.ts';
 export {
   callDigest,
   describeCall,
-  serveGate,
+  taskGate,
   stripAlways,
   type AskOutcome,
   type GateDecision,
   type ServeGateOptions,
-  type ServeToken,
-} from './serve/gate.ts';
-export type { ServeChannel, ServeMessage } from './serve/channel.ts';
+  type GateToken,
+} from './task/gate.ts';
+export type { QuestionChannel, QuestionMessage } from './questions/channel.ts';
 export {
   CHANNEL_NAMES,
   MESSENGER_DEFAULTS,
@@ -656,7 +656,7 @@ export {
   type ReceiveOptions,
 } from './messenger/receive.ts';
 export { isId } from './parse.ts';
-export { SERVE_CONFIG_SCHEMA, schemaKeys, type SchemaNode } from './serve/schema.ts';
+export { SERVE_CONFIG_SCHEMA, schemaKeys, type SchemaNode } from './schema.ts';
 export { ProfileOptionError, applyConfigOptions } from './profile/apply.ts';
 export { profilesFromTasks } from './profile/migrate.ts';
 export { ProfilesError, parseProfiles, type ConfigOptionValue, type Profile } from './profile/profile.ts';
@@ -670,29 +670,21 @@ export {
   type ProfileSession,
 } from './profile/resolve.ts';
 export { PROFILES_SCHEMA } from './profile/schema.ts';
+export { answerQuestion, type AnswerMode, type AnswerResult } from './questions/answer.ts';
+export { cancelOrphanedPermissions } from './questions/ask.ts';
 export {
   ModelUnavailableError,
-  answerQuestion,
-  cancelOrphanedPermissions,
-  parseVerdict,
-  LOCKED,
-  precheckText,
   REQUEST_TASK,
-  runRequest,
-  runTask,
-  type AnswerMode,
-  type AnswerResult,
   type PrecheckVerdict,
   type QuestionBook,
-  type RequestMode,
-  type RequestRun,
-  type RequestRunResult,
+  type RunDeps,
+  type RunLogEntry,
   type RunOutcome,
   type RunResult,
-  type ServeDeps,
-  type TaskRun,
-  type ServeLogEntry,
-} from './serve/runner.ts';
+} from './task/deps.ts';
+export { parseVerdict, precheckText } from './task/precheck.ts';
+export { LOCKED, runTask, type TaskRun } from './task/run.ts';
+export { runRequest, type RequestMode, type RequestRun, type RequestRunResult } from './task/request.ts';
 export {
   TASK_METADATA,
   TaskFileError,

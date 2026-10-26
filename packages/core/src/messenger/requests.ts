@@ -16,13 +16,8 @@
 
 import type { McpServer } from '@lotse/acp';
 
-import {
-  REQUEST_TASK,
-  runRequest,
-  type RequestRun,
-  type RequestRunResult,
-  type ServeDeps,
-} from '../serve/runner.ts';
+import { REQUEST_TASK, type RunDeps } from '../task/deps.ts';
+import { runRequest, type RequestRun, type RequestRunResult } from '../task/request.ts';
 import type { RequestSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
 
@@ -76,7 +71,7 @@ export interface ChatRequestsOptions {
   readonly pending?: PendingStore;
   readonly settings: RequestSettings;
   /** Read per run, so a reloaded tasks.json is seen. */
-  readonly deps: ServeDeps;
+  readonly deps: RunDeps;
   /** The working directory when `settings.cwd` is empty. */
   readonly defaultCwd: string;
   /** Send one message to the peer. A failure is logged here, never thrown at the caller. */
@@ -84,7 +79,7 @@ export interface ChatRequestsOptions {
   /** A line for the person running listen. */
   readonly log?: (line: string) => void;
   /** The run itself; tests put a fake here. Default `runRequest`. */
-  readonly run?: (request: RequestRun, deps: ServeDeps) => Promise<RequestRunResult>;
+  readonly run?: (request: RequestRun, deps: RunDeps) => Promise<RequestRunResult>;
 }
 
 export interface ChatRequests {

@@ -23,10 +23,10 @@ import { rejectOnce, type PermissionGate } from '@lotse/acp';
 import type { PermissionOption, RequestPermissionRequest } from '@lotse/acp';
 
 import type { ReleasedArea, RightsLevel } from './config.ts';
-import type { QuestionAction } from './questions.ts';
+import type { QuestionAction } from '../questions/question.ts';
 
 /** A yes the person gave, waiting for the one call it allows. */
-export interface ServeToken {
+export interface GateToken {
   readonly sessionId: string;
   readonly tool: string;
   readonly digest: string;
@@ -119,8 +119,8 @@ export function isReleased(released: readonly ReleasedArea[], request: RequestPe
  * Build the gate for one run. The tokens live in this closure and nowhere else: they die with the
  * run, which is the strongest form of "never in a session record" there is.
  */
-export function serveGate(options: ServeGateOptions): PermissionGate & { readonly tokens: ServeToken[] } {
-  const tokens: ServeToken[] = [];
+export function taskGate(options: ServeGateOptions): PermissionGate & { readonly tokens: GateToken[] } {
+  const tokens: GateToken[] = [];
 
   const decide = (
     request: RequestPermissionRequest,

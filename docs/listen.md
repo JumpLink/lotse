@@ -183,7 +183,7 @@ running service; `systemctl --user restart lotse-listen` is only needed for a ch
 
 ## Channels
 
-Messages go through one `ServeChannel` (`packages/core/src/serve/channel.ts`): a desktop
+Messages go through one `QuestionChannel` (`packages/core/src/questions/channel.ts`): a desktop
 notification over `org.freedesktop.Notifications` (stderr when there is no session bus), and the
 messenger channel below. `channel.active` in the settings file picks which ones ask, and with both
 active a question goes to both, unless the task narrows it

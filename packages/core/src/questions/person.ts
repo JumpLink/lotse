@@ -23,8 +23,8 @@ import type { McpServer } from '@lotse/acp';
 
 import { isFreeModel } from '../free-models.ts';
 import { STRINGS, msg } from '../messenger/strings.ts';
-import type { ServeProfile, ServeTask } from './config.ts';
-import { parseAnswer } from './questions.ts';
+import type { ServeProfile, ServeTask } from '../task/config.ts';
+import { parseAnswer } from './question.ts';
 
 export const PERSON_KINDS = ['login', 'code', 'approval', 'device'] as const;
 export type PersonKind = (typeof PERSON_KINDS)[number];

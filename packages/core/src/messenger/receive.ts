@@ -26,9 +26,10 @@
 
 import { createHash } from 'node:crypto';
 
-import { deliveryOf } from '../serve/config.ts';
-import { answerQuestion, type AnswerResult, type ServeDeps } from '../serve/runner.ts';
-import { formatQuestionId, openQuestions, parseAnswer } from '../serve/questions.ts';
+import { deliveryOf } from '../task/config.ts';
+import { answerQuestion, type AnswerResult } from '../questions/answer.ts';
+import type { RunDeps } from '../task/deps.ts';
+import { formatQuestionId, openQuestions, parseAnswer } from '../questions/question.ts';
 import { localDeadline, sendToPeer, type MessengerChannel } from './channel.ts';
 import type { McpLink } from './link.ts';
 import { listIds, openIds, parseReply } from './reply.ts';
@@ -96,7 +97,7 @@ export interface ReceiveOptions {
   readonly settings: MessengerSettings;
   /** Where messages come from. Default: the wait tool's long-poll on `link`. */
   readonly source?: MessageSource;
-  readonly deps: ServeDeps;
+  readonly deps: RunDeps;
   readonly cursor: CursorStore;
   readonly signal: AbortSignal;
   /** When given, its unsent questions are retried before each poll while they are still open. */

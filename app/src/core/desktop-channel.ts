@@ -1,5 +1,5 @@
 /**
- * The first `ServeChannel`: a desktop notification over `org.freedesktop.Notifications`.
+ * The first `QuestionChannel`: a desktop notification over `org.freedesktop.Notifications`.
  *
  * Gio D-Bus rather than GNotification, because `listen` is not a `GApplication` and has no desktop
  * file to attach one to. Imported lazily by `listen` (`await import`), so nothing that merely lists
@@ -15,7 +15,7 @@
 import Gio from '@girs/gio-2.0';
 import GLib from '@girs/glib-2.0';
 
-import type { ServeChannel, ServeMessage, ServeUser } from '@lotse/core';
+import type { QuestionChannel, QuestionMessage, ServeUser } from '@lotse/core';
 
 import {
   deliveryFor,
@@ -60,7 +60,7 @@ function capabilitiesOf(bus: Gio.DBusConnection): string[] {
   }
 }
 
-export function desktopChannel(options: DesktopChannelOptions): ServeChannel {
+export function desktopChannel(options: DesktopChannelOptions): QuestionChannel {
   const bus = Gio.bus_get_sync(Gio.BusType.SESSION, null);
   const capabilities = capabilitiesOf(bus);
   const registry = new NotificationRegistry();
@@ -78,7 +78,7 @@ export function desktopChannel(options: DesktopChannelOptions): ServeChannel {
 
   return {
     name: 'desktop',
-    send: (user: ServeUser, message: ServeMessage) => {
+    send: (user: ServeUser, message: QuestionMessage) => {
       const { questionId, asks } = message;
       if (questionId && deliveryFor(options.mode(), asks, options.dialog) === 'dialog') {
         options.onDialog(questionId);

@@ -13,8 +13,8 @@
 import type { McpServer } from '@lotse/acp';
 
 import { duplicates, id, isRecord, list, object, optionalString } from '../parse.ts';
-import type { RightsLevel } from '../serve/config.ts';
-import { schemaKeys } from '../serve/schema.ts';
+import type { RightsLevel } from '../task/config.ts';
+import { schemaKeys } from '../schema.ts';
 import { PROFILES_SCHEMA } from './schema.ts';
 
 /** A configuration option's value: a select's value id, or a switch's on/off. */
