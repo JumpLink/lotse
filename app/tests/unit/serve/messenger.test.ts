@@ -11,7 +11,6 @@ import {
   findRef,
   memoryRefs,
   recordRefs,
-  stripQuote,
   messengerChannel,
   messengerText,
   noticeOf,
@@ -21,7 +20,10 @@ import {
   runReceiveLoop,
   type Cursor,
   type CursorStore,
+  type McpTools,
+  type MessageSource,
   type MessengerSettings,
+  type NextOptions,
   type RefStore,
   type Question,
   type ServeChannel,
@@ -584,13 +586,6 @@ export default async () => {
   });
 
   await describe('replies to a question message', async () => {
-    await it('stripQuote drops the leading quote and nothing else', async () => {
-      expect(stripQuote('> Allow it?\n\nyes')).toBe('yes');
-      expect(stripQuote('> a\n> b\nyes, but not > this')).toBe('yes, but not > this');
-      expect(stripQuote('yes')).toBe('yes');
-      expect(stripQuote('> only a quote')).toBe('> only a quote');
-    });
-
     await it('the channel remembers the id of the message that carried the question', async () => {
       await withFakeMcp({}, async (fake) => {
         const refs = memoryRefs();
@@ -615,7 +610,7 @@ export default async () => {
     });
 
     await it('binds the answer to the replied-to question even with several open', async () => {
-      await withFakeMcp({}, async (fake) => {
+      await withFakeMcp({ contract: true }, async (fake) => {
         const refs = memoryRefs();
         recordRefs(refs, 'me', 'A1', ['o-1']);
         recordRefs(refs, 'me', 'A2', ['o-2']);
@@ -962,6 +957,76 @@ export default async () => {
     await it('a save round-trips through the parser', async () => {
       const saved = withMessenger({ version: 1, agent: null }, ['messenger'], SETTINGS);
       expect(parseSettings(JSON.stringify(saved))).toStrictEqual({ settings: saved });
+    });
+  });
+
+  await describe('the receive seam', async () => {
+    await it('reads through any MessageSource, resets it after a failure and needs no wait tool', async () => {
+      const sends: string[] = [];
+      const tools: McpTools = {
+        closed: new Promise(() => {}),
+        async call(_tool, args) {
+          sends.push(String(args['text']));
+          return {};
+        },
+        async describeTools() {
+          return [];
+        },
+        async close() {},
+      };
+      const asked: { after: string; waitS: number }[] = [];
+      let resets = 0;
+      const source: MessageSource = {
+        async next(after: string, { waitS, signal }: NextOptions) {
+          asked.push({ after, waitS });
+          if (asked.length === 1) throw new Error('boom');
+          if (asked.length === 2)
+            return {
+              messages: [
+                {
+                  id: 'x1',
+                  bodyText: 'yes',
+                  sentAt: '2026-10-10T11:30:00.000Z',
+                  fromSelf: false,
+                  replyToId: null,
+                },
+              ],
+              cursor: null,
+            };
+          await abortableSleep(20, signal);
+          return { messages: [], cursor: null };
+        },
+        async reset() {
+          resets += 1;
+        },
+      };
+      const book = { value: [question('A1')] };
+      const abort = new AbortController();
+      const link = new McpLink(async () => tools);
+      const loop = runReceiveLoop({
+        link,
+        settings: SETTINGS,
+        source,
+        serve: serveDeps(book),
+        cursor: memoryCursor(BEFORE),
+        signal: abort.signal,
+        timeoutS: 1,
+        minCycleMs: 0,
+        backoff: { initialMs: 10, maxMs: 40 },
+        sleep: (_ms, signal) => abortableSleep(10, signal),
+      });
+      try {
+        await until(() => sends.length === 1, 'the acknowledgement');
+      } finally {
+        abort.abort();
+        await loop;
+        await link.close();
+      }
+      expect(book.value[0]!.status).toBe('answered');
+      expect(sends[0]).toBe('Got it, #A1.');
+      expect(resets).toBe(1);
+      expect(asked[0]).toStrictEqual({ after: BEFORE, waitS: 1 });
+      expect(asked[1]!.after).toBe(BEFORE);
     });
   });
 };

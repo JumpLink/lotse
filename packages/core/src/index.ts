@@ -613,9 +613,25 @@ export {
   type PendingStore,
   type ChatRequestsOptions,
 } from './messenger/requests.ts';
-export { McpToolError, connectMcp, type McpTools } from './messenger/mcp-client.ts';
+export { McpToolError, connectMcp, type McpToolInfo, type McpTools } from './messenger/mcp-client.ts';
 export { McpLink } from './messenger/link.ts';
-export { MAX_IMAGES, renderForXmpp, type Segment } from './messenger/xmpp-style.ts';
+export {
+  DEFAULT_CAPABILITIES_TOOL,
+  FALLBACK_WAIT_S,
+  negotiateContract,
+  parseCapabilities,
+  waitSeconds,
+  type MessengerContract,
+  type ProtocolCapabilities,
+} from './messenger/contract.ts';
+export {
+  longPollSource,
+  parseWaitResult,
+  type IncomingMessage,
+  type MessagePage,
+  type MessageSource,
+  type NextOptions,
+} from './messenger/source.ts';
 export {
   RETRY_DELAYS_MS,
   combineChannels,
@@ -625,18 +641,18 @@ export {
   localDeadline,
   routeChannels,
   sendToPeer,
+  sendToPeerWithIds,
   type ChannelFailure,
   type ChannelRoute,
   type MessengerChannel,
   type MessengerChannelOptions,
 } from './messenger/channel.ts';
-export { openIds, parseReply, stripQuote, type ReplyIntent } from './messenger/reply.ts';
+export { openIds, parseReply, type ReplyIntent } from './messenger/reply.ts';
 export { findRef, memoryRefs, recordRefs, REF_LIMIT, type RefStore, type SentRef } from './messenger/refs.ts';
 export {
   abortableSleep,
   chatSays,
   messageKey,
-  parseWaitResult,
   runReceiveLoop,
   type Cursor,
   type CursorStore,

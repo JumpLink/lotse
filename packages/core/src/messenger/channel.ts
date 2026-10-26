@@ -11,10 +11,8 @@ import { deliveryOf, type ServeConfig, type ServeUser } from '../serve/config.ts
 import { formatQuestionId } from '../serve/questions.ts';
 import type { McpLink } from './link.ts';
 import { memoryRefs, recordRefs, type RefStore } from './refs.ts';
-import { McpToolError } from './mcp-client.ts';
 import type { ChannelName, MessengerSettings } from './settings.ts';
 import { STRINGS, msg } from './strings.ts';
-import { renderForXmpp } from './xmpp-style.ts';
 
 /** A deadline as the person's clock shows it ("Tue, 10/13, 18:14"); an unreadable one stays as it came. */
 /** `locale` is for tests; people get the host's. */
@@ -51,40 +49,34 @@ export function messengerText(message: ServeMessage): string {
   return parts.join('\n\n');
 }
 
+/** The ids a send result names: `originIds` when the server split the text, else `originId`. */
+function originIdsOf(result: unknown): string[] {
+  const record = (result ?? {}) as { originIds?: unknown; originId?: unknown };
+  const ids = Array.isArray(record.originIds) ? record.originIds : [record.originId];
+  return ids.filter((id): id is string => typeof id === 'string' && id !== '');
+}
+
 /**
- * Send `text` (Markdown) to the configured peer, styled for XMPP (`renderForXmpp`). An image line
- * goes out as its own message through the server's `image_url`; a server without it (the call is
- * refused) gets that image and the rest as a plain link in the text, so nothing is lost.
+ * Send `text` (Markdown) to the configured peer in one call. A server that meets the contract renders it
+ * for its protocol, splits it and turns image lines into image messages (`format: "markdown"`); an older
+ * one gets the same text as it is, unrendered (`contract.ts`). Lotse cuts and styles nothing itself.
+ * The result is every message id the server reports, for replies to any part of the text.
  */
 export async function sendToPeerWithIds(
   link: McpLink,
   settings: MessengerSettings,
   text: string,
 ): Promise<string[]> {
-  const target = { account: settings.account, to: settings.peer };
-  const ids: string[] = [];
-  const remember = (result: unknown) => {
-    const id = (result as { originId?: unknown } | null)?.originId;
-    if (typeof id === 'string' && id !== '') ids.push(id);
-  };
-  let imagesWork = true;
-  for (const segment of renderForXmpp(text)) {
-    if (segment.kind === 'image' && imagesWork) {
-      try {
-        remember(
-          await link.use((tools) => tools.call(settings.sendTool, { ...target, image_url: segment.url })),
-        );
-        continue;
-      } catch (error) {
-        if (!(error instanceof McpToolError)) throw error;
-        imagesWork = false;
-      }
-    }
-    const body =
-      segment.kind === 'text' ? segment.text : segment.alt ? `${segment.alt}: ${segment.url}` : segment.url;
-    remember(await link.use((tools) => tools.call(settings.sendTool, { ...target, text: body })));
-  }
-  return ids;
+  return link.use(async (tools) => {
+    const contract = await link.contractOf(tools, settings);
+    const result = await tools.call(settings.sendTool, {
+      account: settings.account,
+      to: settings.peer,
+      text,
+      ...(contract.format === 'markdown' ? { format: 'markdown' } : {}),
+    });
+    return originIdsOf(result);
+  });
 }
 
 export async function sendToPeer(link: McpLink, settings: MessengerSettings, text: string): Promise<void> {

@@ -173,10 +173,12 @@ async function openChannels(
     const problem = messengerProblem(config);
     if (problem) err(fmt(_('  messenger channel not started: {problem}'), { problem }));
     else {
-      const link = new McpLink(() =>
-        connectMcp(messengerCommand(config), {
-          onStderr: (line) => err(fmt(_('  messenger: {line}'), { line })),
-        }),
+      const link = new McpLink(
+        () =>
+          connectMcp(messengerCommand(config), {
+            onStderr: (line) => err(fmt(_('  messenger: {line}'), { line })),
+          }),
+        (line) => err(fmt(_('  {line}'), { line })),
       );
       const channel = messengerChannel(link, config, { refs: fileRefStore(messengerRefsFile(stateDir)) });
       messenger = { link, settings: config, channel };
