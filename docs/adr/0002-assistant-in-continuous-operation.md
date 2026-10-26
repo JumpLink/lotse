@@ -1,6 +1,6 @@
 # 2. The assistant in continuous operation
 
-- Status: **Accepted**
+- Status: **Accepted**, partly superseded by [ADR 0007](0007-profiles-tasks-triggers.md) (scheduling, task format)
 - Date: 2026-10-10
 - Deciders: Pascal Garber
 - Related: [ADR 0001](0001-lotse-as-an-embeddable-widget.md),

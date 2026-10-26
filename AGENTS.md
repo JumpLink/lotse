@@ -17,6 +17,8 @@ standard protocol instead of lotse's own invention. `session/request_permission`
 layer, `fs/read_text_file`/`fs/write_text_file` can be refused outright, and `session/new` with
 `mcpServers` lets the agent reach lotse's own MCP servers without a line of suite-specific code.
 
+Direction (profiles, tasks, triggers; messenger as an MCP contract): [docs/vision.md](docs/vision.md), ADR 0007 and 0008.
+
 ## Package layout — and the one rule that holds it together
 
 | Package | Contains | May import |
