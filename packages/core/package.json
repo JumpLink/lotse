@@ -39,6 +39,6 @@
   "dependencies": {
     "@lotse/acp": "^0.5.0",
     "@lotse/session": "^0.5.0",
-    "@modelcontextprotocol/sdk": "^1.30.0"
+    "@modelcontextprotocol/sdk": "^1.32.2"
   }
 }

@@ -6,6 +6,17 @@ and also records changes that are not a release of their own.
 
 ## Unreleased
 
+### Changed
+
+- **Toolchain:** gjsify 0.54.0 → 0.64.11 (also the committed `build-aux/gjsify.gjs.mjs` and the offline
+  Flatpak sources), `@girs/*` 5.5.0, oxlint 1.89, oxfmt 0.74, `@modelcontextprotocol/sdk` 1.32.2.
+- **Bundled opencode 2.0.22 → 2.1.4.**
+
+### Fixed
+
+- The Flatpak manifest's source tag is `v0.5.0` in `package.json` too, so regenerating it no longer
+  builds the 0.4.0 sources.
+
 ## 0.5.0 — 2026-10-22
 
 ### Added

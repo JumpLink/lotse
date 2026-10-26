@@ -391,7 +391,7 @@ looked like two bugs: [docs/toolchain-traps.md](docs/toolchain-traps.md#nodechil
 ## Conventions
 
 - `gjsify install` — never `npm install`, it prunes gjsify deps.
-- All `@gjsify/*` packages pinned to the **same exact version** (0.54.0 here). gjsify ships as one
+- All `@gjsify/*` packages pinned to the **same exact version** (0.64.11 here). gjsify ships as one
   release train; a CLI ↔ libs skew produces silently broken bundles. `@gjsify/napi` is absent on
   purpose: [docs/toolchain-traps.md](docs/toolchain-traps.md#why-gjsifynapi-is-not-pinned).
 - `gjsify foreach -A check` (the `-A` includes `private: true` workspaces), `gjsify workspace

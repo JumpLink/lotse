@@ -152,7 +152,7 @@ succeeds.
 ### The bundled agent (opencode, as `extra-data`)
 
 The first module in `package.json#gjsify.flatpak.modules` ships opencode, pinned in
-`packages/core/data/bundled-agents.json` (2.0.22, one url/sha256/size per arch). It is `extra-data`,
+`packages/core/data/bundled-agents.json` (2.1.4, one url/sha256/size per arch). It is `extra-data`,
 not a build source: flatpak-builder only *records* the url, and the client downloads and
 verifies the archive when the app is **installed**. `/app/bin/apply_extra` then runs in a
 sandbox with no network whose only writable path is `/app/extra` — the rest of `/app` is

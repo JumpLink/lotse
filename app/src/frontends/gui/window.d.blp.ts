@@ -21,24 +21,24 @@ export declare const GTypeName: 'LotseMainWindow';
  * upstream half.
  */
 export declare const InternalChildren: [
-    'split',
-    'sidebarPage',
-    'sidebarHost',
-    'sidebarTitle',
-    'contentPage',
-    'chatHost',
-    'contentHeader',
-    'noticeBanner',
+  'split',
+  'sidebarPage',
+  'sidebarHost',
+  'sidebarTitle',
+  'contentPage',
+  'chatHost',
+  'contentHeader',
+  'noticeBanner',
 ];
 
 /** The `_`-prefixed members GJS installs for them. Merge it into the class interface. */
 export interface Children {
-    _split: Adw.NavigationSplitView;
-    _sidebarPage: Adw.NavigationPage;
-    _sidebarHost: Adw.Bin;
-    _sidebarTitle: Adw.WindowTitle;
-    _contentPage: Adw.NavigationPage;
-    _chatHost: Adw.Bin;
-    _contentHeader: Adw.HeaderBar;
-    _noticeBanner: Adw.Banner;
+  _split: Adw.NavigationSplitView;
+  _sidebarPage: Adw.NavigationPage;
+  _sidebarHost: Adw.Bin;
+  _sidebarTitle: Adw.WindowTitle;
+  _contentPage: Adw.NavigationPage;
+  _chatHost: Adw.Bin;
+  _contentHeader: Adw.HeaderBar;
+  _noticeBanner: Adw.Banner;
 }

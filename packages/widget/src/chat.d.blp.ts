@@ -22,26 +22,26 @@ export declare const GTypeName: 'LotseChat';
  * upstream half.
  */
 export declare const InternalChildren: [
-    'stack',
-    'closedHost',
-    'noAgentHost',
-    'transcriptHost',
-    'freeModelNotice',
-    'freeModelLabel',
-    'freeModelDismiss',
-    'composerHost',
-    'cwdCaption',
+  'stack',
+  'closedHost',
+  'noAgentHost',
+  'transcriptHost',
+  'freeModelNotice',
+  'freeModelLabel',
+  'freeModelDismiss',
+  'composerHost',
+  'cwdCaption',
 ];
 
 /** The `_`-prefixed members GJS installs for them. Merge it into the class interface. */
 export interface Children {
-    _stack: Gtk.Stack;
-    _closedHost: Adw.Bin;
-    _noAgentHost: Adw.Bin;
-    _transcriptHost: Adw.Bin;
-    _freeModelNotice: Gtk.Box;
-    _freeModelLabel: Gtk.Label;
-    _freeModelDismiss: Gtk.Button;
-    _composerHost: Adw.Bin;
-    _cwdCaption: Gtk.Label;
+  _stack: Gtk.Stack;
+  _closedHost: Adw.Bin;
+  _noAgentHost: Adw.Bin;
+  _transcriptHost: Adw.Bin;
+  _freeModelNotice: Gtk.Box;
+  _freeModelLabel: Gtk.Label;
+  _freeModelDismiss: Gtk.Button;
+  _composerHost: Adw.Bin;
+  _cwdCaption: Gtk.Label;
 }

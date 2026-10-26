@@ -13,7 +13,9 @@ Two things ship from one tag `vX.Y.Z`, both from [release.yml](../.github/workfl
 1. Bump `version` in `packages/{acp,session,core,widget}/package.json` **and** `app/package.json`
    plus the `@lotse/*` ranges (`^X.Y.Z`) in the three packages that depend on each other and in
    `app/package.json`. Add the release to `CHANGELOG.md` and to `gjsify.flatpak.releases` in
-   `package.json`.
+   `package.json`, and set the `lotse` module's `tag` there to `vX.Y.Z` — then regenerate the
+   manifest ([data/README.md](../data/README.md)); 0.5.0 bumped only the manifest, and the next
+   `flatpak init --force` turned it back to `v0.4.0`.
 2. `gjsify install` (refreshes `gjsify-lock.json`), then the checks from `AGENTS.md`.
 3. Merge, then `git tag vX.Y.Z && git push --tags`.
 

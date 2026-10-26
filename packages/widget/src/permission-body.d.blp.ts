@@ -21,20 +21,20 @@ export declare const GTypeName: 'LotsePermissionBody';
  * upstream half.
  */
 export declare const InternalChildren: [
-    'kindIcon',
-    'titleLabel',
-    'kindLabel',
-    'locationsLabel',
-    'namesLabel',
-    'rawInput',
+  'kindIcon',
+  'titleLabel',
+  'kindLabel',
+  'locationsLabel',
+  'namesLabel',
+  'rawInput',
 ];
 
 /** The `_`-prefixed members GJS installs for them. Merge it into the class interface. */
 export interface Children {
-    _kindIcon: Gtk.Image;
-    _titleLabel: Gtk.Label;
-    _kindLabel: Gtk.Label;
-    _locationsLabel: Gtk.Label;
-    _namesLabel: Gtk.Label;
-    _rawInput: Gtk.TextView;
+  _kindIcon: Gtk.Image;
+  _titleLabel: Gtk.Label;
+  _kindLabel: Gtk.Label;
+  _locationsLabel: Gtk.Label;
+  _namesLabel: Gtk.Label;
+  _rawInput: Gtk.TextView;
 }
