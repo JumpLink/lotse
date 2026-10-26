@@ -11,6 +11,7 @@ import type { McpServer } from '@lotse/acp';
 
 import type { AgentCommand } from '../agents/stdio.ts';
 import type { RightsLevel, Task } from '../task/task.ts';
+import type { VoicePolicy } from '../voice-policy.ts';
 import type { ConfigOptionValue, Profile } from './profile.ts';
 
 export interface ProfileResolvers {
@@ -28,6 +29,7 @@ export interface ProfileSession {
   /** Trimmed; `null` when there is none. */
   readonly preamble: string | null;
   readonly rights: RightsLevel | null;
+  readonly voice: VoicePolicy | null;
   readonly data: 'private' | 'public';
 }
 
@@ -40,6 +42,7 @@ export function resolveProfile(profile: Profile, resolvers: ProfileResolvers): P
     mcpServers: profile.mcpServers,
     preamble: profile.preamble?.trim() || null,
     rights: profile.rights,
+    voice: profile.voice,
     data: profile.data,
   };
 }

@@ -104,6 +104,13 @@ export const PROFILES_SCHEMA = {
           description:
             'full: the question itself goes to the chat. notice: only that a question waits, and where to read it.',
         },
+        voice: {
+          type: 'string',
+          enum: ['any', 'local-only', 'off'],
+          title: 'Voice',
+          description:
+            'Which speech engines a session on this profile may use. any: local and cloud. local-only: engines on this machine only. off: no speech. A host policy can only narrow it. Empty: no limit.',
+        },
         data: {
           type: 'string',
           enum: ['private', 'public'],

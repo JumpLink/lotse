@@ -20,6 +20,7 @@ in `@lotse/core`; every property has a title and a description.
 | `mcpServers` | `[]` | Passed to `session/new` as is. |
 | `preamble` | none | Put in front of the first message of a new session. Not added when a session is continued. |
 | `rights` | no limit | `read`, `confirm` or `released`: the most a session may do, whatever a task or request asks for. |
+| `voice` | no limit | `any`, `local-only` or `off`: which speech engines a session may use ([ADR 0009](adr/0009-voice-as-a-surface.md)). A host's policy can only narrow it: the narrower of the two wins. |
 | `data` | — (required) | `private` or `public`. A label for the person; it never blocks a run. |
 
 ## Serve keeps the binding
