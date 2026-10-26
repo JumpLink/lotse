@@ -667,6 +667,9 @@ export {
   type ProfileSession,
 } from './profile/resolve.ts';
 export { PROFILES_SCHEMA } from './profile/schema.ts';
+export { isVoicePolicy, narrowVoice, type VoicePolicy } from './voice-policy.ts';
+export { speakableText, type SpeakableOptions } from './speakable.ts';
+export { sentenceChunker, type SentenceChunker, type SentenceChunkerOptions } from './sentence-chunker.ts';
 export { answerQuestion, type AnswerMode, type AnswerResult } from './questions/answer.ts';
 export { cancelOrphanedPermissions } from './questions/ask.ts';
 export {

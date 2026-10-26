@@ -6,6 +6,10 @@ and also records changes that are not a release of their own.
 
 ## Unreleased
 
+### Added
+
+- **Voice text preparation in `@lotse/core`** ([ADR 0009](docs/adr/0009-voice-as-a-surface.md)): `speakableText` (Markdown to plain text for a TTS), `sentenceChunker` (streamed deltas to whole sentences) and the `voice` policy (`any`, `local-only`, `off`) on profiles, narrowed with `narrowVoice`.
+
 ### Changed
 
 - **`lotse serve` is now `lotse listen`.** Breaking, no alias: update the `ExecStart` of a systemd unit (the example is

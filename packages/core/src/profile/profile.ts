@@ -13,6 +13,7 @@ import { CHANNEL_NAMES, type ChannelName } from '../messenger/settings.ts';
 import { duplicates, id, isRecord, list, object, optionalString } from '../parse.ts';
 import { schemaKeys } from '../schema.ts';
 import type { RightsLevel } from '../task/task.ts';
+import { isVoicePolicy, type VoicePolicy } from '../voice-policy.ts';
 import type { MessengerDetail } from './delivery.ts';
 import { PROFILES_SCHEMA } from './schema.ts';
 
@@ -35,6 +36,8 @@ export interface Profile {
   readonly rights: RightsLevel | null;
   /** A label for the person. It never blocks a run (ADR 0002, amendment of 2026-10-11). */
   readonly data: 'private' | 'public';
+  /** The most speech this profile allows (ADR 0009). `null`: no limit. */
+  readonly voice: VoicePolicy | null;
   /** The user it belongs to (`users.json`). `null`: the only user there is. */
   readonly user: string | null;
   /** The channels its messages may use. `null`: every active one. */
@@ -96,6 +99,11 @@ function parseProfile(value: unknown, where: string, problems: string[]): Profil
     problems.push(`${label}.rights must be "read", "confirm" or "released"`);
   }
 
+  const voice = record['voice'];
+  if (voice !== undefined && !isVoicePolicy(voice)) {
+    problems.push(`${label}.voice must be "any", "local-only" or "off"`);
+  }
+
   const servers = record['mcpServers'] === undefined ? [] : record['mcpServers'];
   const serversValid =
     Array.isArray(servers) &&
@@ -109,6 +117,7 @@ function parseProfile(value: unknown, where: string, problems: string[]): Profil
     configOptions: parseConfigOptions(record['configOptions'], label, problems),
     mcpServers: serversValid ? (servers as McpServer[]) : [],
     preamble: optionalString(record['preamble'], `${label}.preamble`, problems),
+    voice: isVoicePolicy(voice) ? voice : null,
     rights: rights === 'read' || rights === 'confirm' || rights === 'released' ? rights : null,
     data: data === 'public' ? 'public' : 'private',
     user: optionalString(record['user'], `${label}.user`, problems),
