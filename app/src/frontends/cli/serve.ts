@@ -208,9 +208,7 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
   command: 'serve',
   describe: _('answer chat requests and ask the person when an agent has a question'),
   builder: (yargs) =>
-    yargs
-      .option('quiet', { type: 'boolean', describe: _("do not echo the agents' log lines") })
-      .strict(),
+    yargs.option('quiet', { type: 'boolean', describe: _("do not echo the agents' log lines") }).strict(),
   handler: async (argv) => {
     const raw = argv as Record<string, unknown>;
     const quiet = pickArgv<boolean>(raw, 'quiet') === true;

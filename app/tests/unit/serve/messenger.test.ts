@@ -81,14 +81,14 @@ const ROUTED = parseServeConfig(
       {
         id: 'tui',
         profile: 'p',
-                prompt: 'x',
+        prompt: 'x',
         cwd: '/fixture',
         channels: ['desktop'],
       },
       {
         id: 'quiet',
         profile: 'p',
-                prompt: 'x',
+        prompt: 'x',
         cwd: '/fixture',
         messengerDetail: 'notice',
       },

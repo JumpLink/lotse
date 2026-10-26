@@ -47,7 +47,7 @@ function config(
         {
           id: 't',
           profile: 'p',
-                    prompt: 'Do the thing.',
+          prompt: 'Do the thing.',
           cwd: '/fixture',
           ...patch.task,
         },

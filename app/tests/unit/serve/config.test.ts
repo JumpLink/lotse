@@ -20,9 +20,7 @@ const VALID = {
   version: 1,
   users: [{ id: 'me' }],
   profiles: [{ id: 'work', user: 'me', data: 'private', model: 'provider/paid-model' }],
-  tasks: [
-    { id: 'inbox', profile: 'work', prompt: 'Look at the inbox.', cwd: '/tmp' },
-  ],
+  tasks: [{ id: 'inbox', profile: 'work', prompt: 'Look at the inbox.', cwd: '/tmp' }],
 };
 
 function problems(value: unknown): readonly string[] {
@@ -66,7 +64,13 @@ export default async () => {
     });
 
     await it('ignores a removed schedule and names the tasks that still carry one', async () => {
-      const old = { ...VALID, tasks: [{ ...VALID.tasks[0], schedule: { every: '1h' } }, { ...VALID.tasks[0], id: 'other' }] };
+      const old = {
+        ...VALID,
+        tasks: [
+          { ...VALID.tasks[0], schedule: { every: '1h' } },
+          { ...VALID.tasks[0], id: 'other' },
+        ],
+      };
       expect(problems(old).length).toBe(0);
       expect(tasksWithRemovedSchedule(JSON.stringify(old))).toStrictEqual(['inbox']);
       expect(tasksWithRemovedSchedule('not json')).toStrictEqual([]);
