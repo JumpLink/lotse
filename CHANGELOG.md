@@ -14,6 +14,12 @@ and also records changes that are not a release of their own.
   An existing tasks.json with `profiles` is migrated to profiles.json once, with one notice; tasks.json is
   never changed and keeps working. See [docs/profiles.md](docs/profiles.md).
 
+- **MCP server toggles in the widget.** One toggle per MCP server in the composer config row; a change
+  applies from the next turn via ACP `session/resume` and is disabled when the agent lacks that
+  capability. The widget accepts a resolved `profile` besides `mcpServers`. Boolean agent config
+  options now show as switches, and Lotse advertises the `boolean` config-option capability. See
+  [docs/profiles.md](docs/profiles.md).
+
 ### Removed
 
 - **Time-based scheduling in `lotse serve`.** The `schedule` task key, the scheduler loop, `serve --once`

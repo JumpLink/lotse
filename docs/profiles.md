@@ -39,6 +39,25 @@ because they need a user.
 - **Rights.** The lower of the task's (or request's) and the profile's. Narrowed below `released`,
   the released areas are dropped.
 
+## MCP server toggles
+
+The widget's config row shows one toggle per MCP server of the session (by name, all on by default),
+so a person can switch a server off for one conversation. A change applies from the NEXT turn: Lotse
+calls ACP `session/resume` with the new server list before delivering that prompt. It never starts a
+new session silently.
+
+- **Requirement.** The agent must advertise `agentCapabilities.sessionCapabilities.resume`. Without
+  it the toggles are disabled with a tooltip that says why.
+- **Before the first turn.** Choices made before a conversation exists are kept and applied when it
+  is created.
+- **Hosts.** Pass either `profile` (a `ProfileSession`) or the older `mcpServers` option to the
+  widget; `mcpServers` wins when both are set.
+- **Agent-side leak.** opencode keeps the previously started MCP server running after a resume with
+  a shorter list. That is the agent's behaviour, not Lotse's, and there is no workaround here: the
+  toggle stops the agent from being offered the tools, not the process from running.
+
+Boolean agent config options are shown the same way, as switches in the config row.
+
 ## Migration
 
 With no profiles.json and a tasks.json that has `profiles`, `serve` writes profiles.json once from
