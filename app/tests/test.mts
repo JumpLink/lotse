@@ -38,6 +38,7 @@ import resolve from './unit/core/resolve.test.ts';
 import devAgent from './unit/core/dev-agent.test.ts';
 import paths from './unit/core/paths.test.ts';
 import migrate from './unit/core/migrate.test.ts';
+import main from './unit/core/main.test.ts';
 import settings from './unit/core/settings.test.ts';
 import settingsView from './unit/core/settings-view.test.ts';
 import scroll from './unit/core/scroll.test.ts';
@@ -117,6 +118,7 @@ run({
   devAgent,
   paths,
   migrate,
+  main,
   settings,
   settingsView,
   scroll,
