@@ -1,13 +1,14 @@
 /**
- * `lotse serve` — the long-running service: it answers the person's chat requests and carries their
- * answers to the agents' questions (ADR 0003). It starts no task on its own; there is no schedule.
+ * `lotse serve` — the long-running receiver: it answers the person's chat requests (`/ask`, `/run`,
+ * `/tasks`, `/status`) and carries their answers to the agents' questions (ADR 0003). It starts no
+ * task on its own; a task starts with `lotse run` or `/run`.
  *
  * One process, one pass per minute: reload what changed, look at the request settings, sleep.
  * The messenger receive loop and the notification buttons do the actual work between passes.
  *
  * Before every pass the configuration hash is checked. A changed file is reloaded in place
  * (`serve-reload.ts`): runs that are going finish with the definition they started with, later runs use
- * the new one, and a file that no longer parses leaves the previous tasks in force.
+ * the new one, and a file that no longer parses leaves the previous one in force.
  */
 
 import { _, fmt } from '../../i18n.ts';
@@ -262,7 +263,13 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
     if (dropped > 0)
       err(fmt(_('  {dropped} permission question(s) from an earlier serve cancelled'), { dropped }));
     err(
-      `lotse serve — ${loaded.config.tasks.length} task(s), questions via ${channel.name}, state in ${serve.stateDir}`,
+      fmt(
+        _('lotse serve — listening for chat requests and answers, questions via {channel}, state in {dir}'),
+        {
+          channel: channel.name,
+          dir: serve.stateDir,
+        },
+      ),
     );
 
     let stopping = false;
@@ -351,23 +358,17 @@ const command = (paths: LotsePaths, serve: ServePaths): CommandModule => ({
           activeConfig = fresh.config;
           if (fresh.warning) err(fmt(_('  {warning}'), { warning: fresh.warning }));
           reportRemovedSchedules(fresh);
-          const parts = [
-            change.added.length > 0 ? `added ${change.added.join(', ')}` : '',
-            change.removed.length > 0
-              ? `removed ${change.removed.join(', ')} (a run in progress finishes)`
-              : '',
-            change.changed.length > 0 ? `changed ${change.changed.join(', ')} (from its next run)` : '',
-          ].filter(Boolean);
-          err(
-            `  ${serve.tasksFile} reloaded — ${fresh.config.tasks.length} task(s)${parts.length > 0 ? `: ${parts.join('; ')}` : ''}`,
-          );
+          err(fmt(_('  {file} reloaded'), { file: serve.tasksFile }));
           freshDeps.log?.({
             event: 'reload',
             task: '-',
             detail: { tasks: String(fresh.config.tasks.length) },
           });
         } else if (change.kind === 'rejected') {
-          const message = `${serve.tasksFile} not reloaded, keeping the previous tasks: ${change.message}`;
+          const message = fmt(_('{file} not reloaded, keeping the previous one: {problem}'), {
+            file: serve.tasksFile,
+            problem: change.message,
+          });
           err(fmt(_('  {message}'), { message }));
           reloader.current().deps.log?.({
             event: 'error',
