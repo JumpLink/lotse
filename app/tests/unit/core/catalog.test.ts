@@ -14,8 +14,12 @@ import pkg from '../../../../package.json' with { type: 'json' };
 
 const SHA = 'a'.repeat(64);
 
+/** Loose on purpose: each case breaks the shape the validator checks. */
+type Entry = { [field: string]: unknown; dist: Array<Record<string, unknown>>; env: Record<string, unknown> };
+type Catalog = { [field: string]: unknown; agents: Entry[] };
+
 /** A fresh valid catalog each call, so a case can mutate it freely. */
-function valid(): Record<string, any> {
+function valid(): Catalog {
   return {
     checked: '2026-01-01',
     agents: [
@@ -35,7 +39,7 @@ function valid(): Record<string, any> {
   };
 }
 
-function rejects(mutate: (catalog: Record<string, any>) => void, pattern: RegExp): void {
+function rejects(mutate: (catalog: Catalog) => void, pattern: RegExp): void {
   const catalog = valid();
   mutate(catalog);
   expect(() => parseBundledCatalog(catalog)).toThrow(pattern);
@@ -53,8 +57,8 @@ export default async () => {
 
     await it('accepts an empty env and an aarch64 dist', async () => {
       const catalog = valid();
-      catalog['agents'][0].env = {};
-      catalog['agents'][0].dist[0].arch = 'aarch64';
+      catalog.agents[0]!.env = {};
+      catalog.agents[0]!.dist[0]!.arch = 'aarch64';
       expect(parseBundledCatalog(catalog).agents[0]!.dist[0]!.arch).toBe('aarch64');
     });
 
@@ -68,62 +72,62 @@ export default async () => {
     });
 
     await it('rejects an unknown entry field', async () => {
-      rejects((c) => (c['agents'][0].extra = 1), /unknown field "extra"/);
+      rejects((c) => (c.agents[0]!.extra = 1), /unknown field "extra"/);
     });
 
     await it('rejects a missing entry field', async () => {
-      rejects((c) => delete c['agents'][0].license, /license/);
+      rejects((c) => delete c.agents[0]!.license, /license/);
     });
 
     await it('rejects an uppercase sha256', async () => {
-      rejects((c) => (c['agents'][0].dist[0].sha256 = 'A'.repeat(64)), /sha256/);
+      rejects((c) => (c.agents[0]!.dist[0]!.sha256 = 'A'.repeat(64)), /sha256/);
     });
 
     await it('rejects a sha256 of the wrong length', async () => {
-      rejects((c) => (c['agents'][0].dist[0].sha256 = 'a'.repeat(63)), /sha256/);
+      rejects((c) => (c.agents[0]!.dist[0]!.sha256 = 'a'.repeat(63)), /sha256/);
     });
 
     await it('rejects an unsupported arch', async () => {
-      rejects((c) => (c['agents'][0].dist[0].arch = 'riscv64'), /arch/);
+      rejects((c) => (c.agents[0]!.dist[0]!.arch = 'riscv64'), /arch/);
     });
 
     await it('rejects a zero, negative, fractional or non-number size', async () => {
       for (const size of [0, -1, 1.5, '10']) {
-        rejects((c) => (c['agents'][0].dist[0].size = size), /size/);
+        rejects((c) => (c.agents[0]!.dist[0]!.size = size), /size/);
       }
     });
 
     await it('rejects a url that is not https', async () => {
-      rejects((c) => (c['agents'][0].dist[0].url = 'http://example.invalid/a.tar.gz'), /https/);
-      rejects((c) => (c['agents'][0].dist[0].url = 'not a url'), /https/);
+      rejects((c) => (c.agents[0]!.dist[0]!.url = 'http://example.invalid/a.tar.gz'), /https/);
+      rejects((c) => (c.agents[0]!.dist[0]!.url = 'not a url'), /https/);
     });
 
     await it('rejects an empty command and an empty command word', async () => {
-      rejects((c) => (c['agents'][0].command = []), /command/);
-      rejects((c) => (c['agents'][0].command = ['']), /command/);
+      rejects((c) => (c.agents[0]!.command = []), /command/);
+      rejects((c) => (c.agents[0]!.command = ['']), /command/);
     });
 
     await it('rejects a non-string env value', async () => {
-      rejects((c) => (c['agents'][0].env['DEMO_FLAG'] = true), /DEMO_FLAG/);
+      rejects((c) => (c.agents[0]!.env['DEMO_FLAG'] = true), /DEMO_FLAG/);
     });
 
     await it('rejects an empty dist and a repeated arch', async () => {
-      rejects((c) => (c['agents'][0].dist = []), /dist/);
-      rejects((c) => c['agents'][0].dist.push({ ...c['agents'][0].dist[0] }), /twice/);
+      rejects((c) => (c.agents[0]!.dist = []), /dist/);
+      rejects((c) => c.agents[0]!.dist.push({ ...c.agents[0]!.dist[0] }), /twice/);
     });
 
     await it('rejects a repeated agent id', async () => {
-      rejects((c) => c['agents'].push({ ...c['agents'][0] }), /twice/);
+      rejects((c) => c.agents.push({ ...c['agents'][0] }), /twice/);
     });
 
     await it('rejects an installPath outside the prefix or not named by the id', async () => {
-      rejects((c) => (c['agents'][0].installPath = '/usr/bin/demo'), /installPath/);
-      rejects((c) => (c['agents'][0].installPath = `${BUNDLED_PREFIX}/other`), /installPath/);
+      rejects((c) => (c.agents[0]!.installPath = '/usr/bin/demo'), /installPath/);
+      rejects((c) => (c.agents[0]!.installPath = `${BUNDLED_PREFIX}/other`), /installPath/);
     });
 
     await it('rejects a binary that is absolute, empty, or climbs out of the archive', async () => {
       for (const binary of ['/usr/bin/demo', '', '../demo', 'bin/../../demo', 'bin//demo', './demo']) {
-        rejects((c) => (c['agents'][0].binary = binary), /binary/);
+        rejects((c) => (c.agents[0]!.binary = binary), /binary/);
       }
     });
   });
@@ -146,9 +150,12 @@ export default async () => {
     // by `gjsify flatpak init --force`, and the catalog is the pin. A refresh that updates one and not the
     // others would ship a hash the archive no longer has, or unpack where `bundledProgram` does not look —
     // and a forgotten `init --force` leaves the manifest stale while `package.json` is right.
-    const lists: Array<[string, Array<Record<string, any>>]> = [
-      ['package.json', (pkg as any).gjsify.flatpak.modules],
-      ['eu.jumplink.Lotse.json', (manifest as any).modules],
+    const lists: Array<[string, Array<Record<string, unknown>>]> = [
+      [
+        'package.json',
+        (pkg as { gjsify: { flatpak: { modules: Array<Record<string, unknown>> } } }).gjsify.flatpak.modules,
+      ],
+      ['eu.jumplink.Lotse.json', (manifest as { modules: Array<Record<string, unknown>> }).modules],
     ];
 
     for (const [file, modules] of lists) {
@@ -170,12 +177,14 @@ export default async () => {
         await it(`${file} carries ${agent.id}'s pins as extra-data, one per arch`, async () => {
           const module = modules.find((entry) => entry['name'] === agent.id);
           expect(module !== undefined).toBe(true);
-          const extra = (module!['sources'] as Array<Record<string, any>>).filter(
+          const extra = (module!['sources'] as Array<Record<string, unknown>>).filter(
             (s) => s['type'] === 'extra-data',
           );
           expect(extra.length).toBe(agent.dist.length);
           for (const dist of agent.dist) {
-            const source = extra.find((s) => s['only-arches']?.join(',') === dist.arch);
+            const source = extra.find(
+              (s) => (s['only-arches'] as string[] | undefined)?.join(',') === dist.arch,
+            );
             expect(source !== undefined).toBe(true);
             expect(source!['url']).toBe(dist.url);
             expect(source!['sha256']).toBe(dist.sha256);
@@ -187,7 +196,7 @@ export default async () => {
           const index = modules.findIndex((entry) => entry['name'] === agent.id);
           expect(index >= 0).toBe(true);
           expect(index < modules.findIndex((entry) => entry['name'] === 'lotse')).toBe(true);
-          const sources = modules[index]!['sources'] as Array<Record<string, any>>;
+          const sources = modules[index]!['sources'] as Array<Record<string, unknown>>;
           const filenames = new Set(
             sources.filter((s) => s['type'] === 'extra-data').map((s) => s['filename'] as string),
           );
