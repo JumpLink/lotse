@@ -1,7 +1,7 @@
 /**
  * The gate `lotse listen` answers `session/request_permission` with — ADR 0002 §7.
  *
- * It answers from the person's decisions only: an area the task configuration released, or a
+ * It answers from the person's decisions only: an area a gate was given as released, or a
  * question the person answered yes. Everything else is a new question, or a decline. Three rules
  * hold on every path:
  *
@@ -22,7 +22,7 @@ import { createHash } from 'node:crypto';
 import { rejectOnce, type PermissionGate } from '@lotse/acp';
 import type { PermissionOption, RequestPermissionRequest } from '@lotse/acp';
 
-import type { ReleasedArea, RightsLevel } from './config.ts';
+import type { ReleasedArea, RightsLevel } from './task.ts';
 import type { QuestionAction } from '../questions/question.ts';
 
 /** A yes the person gave, waiting for the one call it allows. */
@@ -36,7 +36,7 @@ export interface GateToken {
 /** What the gate asks the runner when neither a token nor a released area answers. */
 export type AskOutcome = 'yes' | 'no' | 'expired' | 'refused';
 
-export interface ServeGateOptions {
+export interface TaskGateOptions {
   readonly rights: RightsLevel;
   readonly released: readonly ReleasedArea[];
   /**
@@ -119,7 +119,7 @@ export function isReleased(released: readonly ReleasedArea[], request: RequestPe
  * Build the gate for one run. The tokens live in this closure and nowhere else: they die with the
  * run, which is the strongest form of "never in a session record" there is.
  */
-export function taskGate(options: ServeGateOptions): PermissionGate & { readonly tokens: GateToken[] } {
+export function taskGate(options: TaskGateOptions): PermissionGate & { readonly tokens: GateToken[] } {
   const tokens: GateToken[] = [];
 
   const decide = (

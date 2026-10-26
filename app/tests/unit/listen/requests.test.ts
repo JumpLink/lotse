@@ -8,7 +8,6 @@ import {
   chatRequests,
   connectMcp,
   matchPrefix,
-  parseServeConfig,
   recoverPending,
   runReceiveLoop,
   sendToPeer,
@@ -36,6 +35,7 @@ import {
 } from '../../../src/core/settings.ts';
 import { applyRequestFlags } from '../../../src/frontends/cli/messenger.ts';
 import { createRequestsHolder } from '../../../src/frontends/cli/chat-requests.ts';
+import { fixture } from '../../support/config.ts';
 import { withFakeMcp, type FakeMcp } from '../../support/fake-mcp.ts';
 
 const SETTINGS: MessengerSettings = {
@@ -52,14 +52,7 @@ const ON: RequestSettings = { ...REQUEST_DEFAULTS, enabled: true, profile: 'p' }
 const NOW = Date.parse('2026-10-10T12:00:00.000Z');
 const BEFORE = '2026-10-10T11:00:00.000Z';
 
-const CONFIG = parseServeConfig(
-  JSON.stringify({
-    version: 1,
-    users: [{ id: 'me' }],
-    profiles: [{ id: 'p', user: 'me', data: 'public' }],
-    tasks: [{ id: 't', profile: 'p', prompt: 'x', cwd: '/fixture' }],
-  }),
-);
+const CONFIG = fixture();
 
 function question(id: string): Question {
   return {
@@ -89,7 +82,7 @@ function runDeps(
   entries: RunLogEntry[] = [],
 ): RunDeps {
   return {
-    config: CONFIG,
+    ...CONFIG,
     questions: {
       read: () => book.value.map((q) => ({ ...q })),
       write: (next: Question[]) => void (book.value = [...next]),

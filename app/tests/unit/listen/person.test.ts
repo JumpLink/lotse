@@ -7,18 +7,19 @@ import {
   REDACTED,
   answerQuestion,
   parsePersonReply,
-  parseServeConfig,
   personRefusal,
+  taskOf,
   type PersonHandler,
   type PersonNeededInput,
   type PersonOutcome,
   type Question,
-  type ServeConfig,
   type RunDeps,
   type RunLogEntry,
+  type SkillTask,
   type QuestionMessage,
 } from '@lotse/core';
 import { FixtureAgent } from '../../support/fixture-agent.ts';
+import { fixture, type Fixture } from '../../support/config.ts';
 import { runConfigured } from '../../support/run-task.ts';
 
 const START = Date.parse('2026-10-10T12:00:00.000Z');
@@ -31,25 +32,14 @@ const INPUT: PersonNeededInput = {
   acceptsCode: true,
 };
 
-function config(profile: Record<string, unknown> = {}, task: Record<string, unknown> = {}): ServeConfig {
-  return parseServeConfig(
-    JSON.stringify({
-      version: 1,
-      users: [{ id: 'me' }],
-      profiles: [{ id: 'p', user: 'me', data: 'public', model: 'github-copilot/gpt-5.5-codex', ...profile }],
-      tasks: [
-        {
-          id: 't',
-          profile: 'p',
-          prompt: 'Do the thing.',
-          cwd: '/fixture',
-          personNeeded: { enabled: true },
-          ...task,
-        },
-      ],
-    }),
-  );
+function config(profile: Record<string, unknown> = {}, task: Partial<SkillTask> = {}): Fixture {
+  return fixture({
+    profile: { model: 'github-copilot/gpt-5.5-codex', ...profile },
+    task: { personNeeded: { enabled: true, timeoutMin: null }, ...task },
+  });
 }
+
+const taskIn = (c: Fixture) => taskOf(c.skill('t')!, c.profiles);
 
 interface Harness {
   readonly deps: RunDeps;
@@ -66,7 +56,7 @@ interface Harness {
  * answers. The fixture agent calls no tools, so the harness makes the call through the handler the
  * fake host was given.
  */
-function harness(serveConfig: ServeConfig, calls: (call: PersonHandler) => Promise<unknown>): Harness {
+function harness(config: Fixture, calls: (call: PersonHandler) => Promise<unknown>): Harness {
   let at = START;
   const h: Harness = {
     sent: [],
@@ -77,7 +67,7 @@ function harness(serveConfig: ServeConfig, calls: (call: PersonHandler) => Promi
     step: 60_000,
   } as unknown as Harness;
   (h as { deps: RunDeps }).deps = {
-    config: serveConfig,
+    ...config,
     open: async (options) => {
       const agent = new FixtureAgent();
       const client = new AcpClient({ transport: agent.transport, gate: options.gate });
@@ -90,7 +80,6 @@ function harness(serveConfig: ServeConfig, calls: (call: PersonHandler) => Promi
       return { client, logLines: [], agentInfo: 'FixtureAgent 0.1.0', close: () => client.close() };
     },
     commandFor: () => OPENCODE_COMMAND,
-    promptFor: (task) => task.prompt ?? '',
     channel: { name: 'fake', send: (_user, message) => void h.sent.push(message) },
     questions: {
       read: () => h.book.map((question) => ({ ...question })),
@@ -133,7 +122,7 @@ export default async () => {
       h.onSleep = async () => {
         if (h.book[0]?.status === 'open') await answerQuestion('#A1', 'fertig', h.deps);
       };
-      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps);
       expect(run.outcome).toBe('done');
       expect(outcome!.outcome).toBe('done');
       expect(h.book[0]!.kind).toBe('person');
@@ -148,13 +137,13 @@ export default async () => {
       h.onSleep = async () => {
         if (h.book[0]?.status === 'open') await answerQuestion('#A1', CODE, h.deps);
       };
-      await runConfigured(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps);
       expect(h.sent[0]!.text).toContain(LINK);
       expect(JSON.stringify([h.book, h.log]).includes('challenge=zz81')).toBe(false);
     });
 
     await it('a link is refused on a free model and on an unknown one', async () => {
-      const task = config().tasks[0]!;
+      const task = taskIn(config());
       const input = { ...INPUT, acceptsCode: false, link: 'https://example.test/qr' };
       expect(
         personRefusal(task, config({ model: 'opencode/some-model-free' }).profiles[0]!, input),
@@ -172,7 +161,7 @@ export default async () => {
       h.onSleep = async () => {
         if (h.book[0]?.status === 'open') said = (await answerQuestion('#A1', CODE, h.deps)).message;
       };
-      await runConfigured(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps);
       expect(outcome).toStrictEqual({ outcome: 'code', code: CODE });
       expect(h.book[0]!.answer).toBe('text');
       expect(h.book[0]!.resolution).toBe('code received');
@@ -193,7 +182,7 @@ export default async () => {
         refused = first.mode;
         await answerQuestion('#A1', 'done', h.deps);
       };
-      await runConfigured(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps);
       expect(refused).toBe('invalid');
       expect(outcome!.outcome).toBe('done');
     });
@@ -201,7 +190,7 @@ export default async () => {
     await it('no reply in time returns timeout and leaves a deferred open item', async () => {
       let outcome: PersonOutcome | null = null;
       const h = harness(config(), async (call) => void (outcome = await call(INPUT)));
-      const run = await runConfigured(h.deps.config.tasks[0]!, h.deps);
+      const run = await runConfigured(h.deps);
       expect(run.outcome).toBe('done');
       expect(outcome!.outcome).toBe('timeout');
       expect(h.book[0]!.status).toBe('open');
@@ -217,13 +206,13 @@ export default async () => {
       );
       h.step = 60_000;
       h.onSleep = () => void (polls += 1);
-      await runConfigured(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps);
       expect(polls).toBe(3);
     });
 
     await it('a deferred item answered with "done" continues the session; a code is refused', async () => {
       const h = harness(config(), async (call) => void (await call(INPUT)));
-      await runConfigured(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps);
       const late = await answerQuestion('#A1', CODE, h.deps);
       expect(late.mode).toBe('invalid');
       expect(JSON.stringify([late, h.book, h.log]).includes(CODE)).toBe(false);
@@ -239,7 +228,7 @@ export default async () => {
       h.onSleep = async () => {
         if (h.book[0]?.status === 'open') await answerQuestion('#A1', 'no', h.deps);
       };
-      await runConfigured(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps);
       expect(outcome!.outcome).toBe('declined');
     });
 
@@ -253,14 +242,14 @@ export default async () => {
       h.onSleep = async () => {
         if (h.book[0]?.status === 'open') await answerQuestion('#A1', 'done', h.deps);
       };
-      await runConfigured(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps);
       expect(second).toContain('already waiting');
       expect(h.book.length).toBe(1);
     });
 
     await it('a task without person_needed is refused', async () => {
       const refusal = personRefusal(
-        config({}, { personNeeded: { enabled: false } }).tasks[0]!,
+        taskIn(config({}, { personNeeded: { enabled: false, timeoutMin: null } })),
         config().profiles[0]!,
         INPUT,
       );
@@ -268,7 +257,7 @@ export default async () => {
     });
 
     await it('a code is refused on a free model and on an unknown one', async () => {
-      const task = config().tasks[0]!;
+      const task = taskIn(config());
       const free = personRefusal(task, config({ model: 'opencode/some-model-free' }).profiles[0]!, INPUT);
       expect(free).toContain('free model');
       const unknown = config();
@@ -289,7 +278,7 @@ export default async () => {
       const h = harness(config({ model: null }), async (call) => {
         await call(INPUT).catch((error: Error) => void (message = error.message));
       });
-      await runConfigured(h.deps.config.tasks[0]!, h.deps);
+      await runConfigured(h.deps);
       expect(message).toContain('names its model');
       expect(h.book.length).toBe(0);
     });

@@ -1,67 +1,15 @@
 /**
- * The files `lotse listen` keeps under its state directory (ADR 0003 §7): the question store, the run
- * state, the action log and one lock per task.
- *
- * **Two processes write here.** `listen` and `lotse answer` both read the question store fresh and
- * write it whole; `writePrivateFile` renames atomically, so a reader sees the old list or the new one,
- * never half of one. The per-task lock keeps a run and an answer from driving the same task at once.
- *
- * Nothing here holds a prompt, an agent's message or call arguments: the questions hold what the
- * person was shown, the run state holds ids and outcomes, the log holds ids and kinds.
+ * What `lotse listen` keeps about runs under its state directory (ADR 0003 §7): `runs.json` — ids and
+ * outcomes, never a message — and one lock per task, which keeps a run and an answer from driving the
+ * same task at once.
  */
 
-import {
-  appendFileSync,
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  parseQuestions,
-  pruneQuestions,
-  type Question,
-  type QuestionBook,
-  type RunResult,
-  type RunLogEntry,
-} from '@lotse/core';
+import type { RunResult } from '@lotse/core';
 
-import { writePrivateFile } from './private-file.ts';
-
-/** Closed questions stay this long, so `lotse questions --all` can still say what happened. */
-export const KEEP_CLOSED_MS = 7 * 86_400_000;
-
-function ensureDir(dir: string): void {
-  if (existsSync(dir)) return;
-  mkdirSync(dir, { recursive: true, mode: 0o700 });
-  chmodSync(dir, 0o700);
-}
-
-/** The question store, `questions.json`. A corrupt file is reported once and read as empty. */
-export function questionBook(
-  stateDir: string,
-  now: () => Date,
-  onProblem?: (problem: string) => void,
-): QuestionBook {
-  const file = join(stateDir, 'questions.json');
-  return {
-    read: () => {
-      if (!existsSync(file)) return [];
-      const { questions, problem } = parseQuestions(readFileSync(file, 'utf8'));
-      if (problem) onProblem?.(problem);
-      return questions;
-    },
-    write: (questions: Question[]) => {
-      const kept = pruneQuestions(questions, now(), KEEP_CLOSED_MS);
-      writePrivateFile(file, `${JSON.stringify(kept, null, 2)}\n`, 'questions');
-    },
-  };
-}
+import { ensureDir, writePrivateFile } from './private-file.ts';
 
 /** What `runs.json` keeps per task: when, how it ended, which session. No message text. */
 export interface RunRecord {
@@ -110,17 +58,6 @@ export function runState(stateDir: string): RunState {
       writePrivateFile(file, `${JSON.stringify(runs, null, 2)}\n`, 'runs');
     },
     all: read,
-  };
-}
-
-/** The action log, `listen.log`: one JSON line per entry, with a timestamp. */
-export function actionLog(stateDir: string, now: () => Date): (entry: RunLogEntry) => void {
-  const file = join(stateDir, 'listen.log');
-  return (entry) => {
-    ensureDir(stateDir);
-    const fresh = !existsSync(file);
-    appendFileSync(file, `${JSON.stringify({ at: now().toISOString(), ...entry })}\n`, { mode: 0o600 });
-    if (fresh) chmodSync(file, 0o600);
   };
 }
 

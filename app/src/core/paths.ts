@@ -76,21 +76,24 @@ export function xdgStateHome(env: NodeJS.ProcessEnv = process.env): string {
 /** Where `lotse listen` keeps its question store, run state, action log and locks (ADR 0003 §7). */
 export interface ListenPaths {
   readonly stateDir: string;
-  /** The task configuration: private, outside the repository, read once at start. */
-  readonly tasksFile: string;
-  /** The profiles every host shares (ADR 0007). Optional: without it the profiles of tasks.json apply. */
+  /** The people `listen` works for: private, outside the repository, read once at start. */
+  readonly usersFile: string;
+  /** The profiles every host shares (ADR 0007), read once at start. */
   readonly profilesFile: string;
+  /** The legacy file users, profiles and tasks used to share. Only the one-shot migration reads it. */
+  readonly tasksFile: string;
   /** One directory per task, each with a SKILL.md (ADR 0007 §6). */
   readonly tasksDir: string;
 }
 
-/** `LOTSE_STATE_DIR`, `LOTSE_TASKS_FILE`, `LOTSE_PROFILES_FILE` and `LOTSE_TASKS_DIR` override the XDG defaults. */
+/** `LOTSE_STATE_DIR`, `LOTSE_USERS_FILE`, `LOTSE_PROFILES_FILE`, `LOTSE_TASKS_DIR` and `LOTSE_TASKS_FILE` (the legacy file) override the XDG defaults. */
 export function listenPaths(env: NodeJS.ProcessEnv = process.env): ListenPaths {
   return {
     stateDir: envKnob(env, 'STATE_DIR') || join(xdgStateHome(env), 'lotse'),
-    tasksFile: envKnob(env, 'TASKS_FILE') || join(configDir(env), 'tasks.json'),
+    usersFile: envKnob(env, 'USERS_FILE') || join(configDir(env), 'users.json'),
     profilesFile: envKnob(env, 'PROFILES_FILE') || join(configDir(env), 'profiles.json'),
     tasksDir: envKnob(env, 'TASKS_DIR') || join(configDir(env), 'tasks'),
+    tasksFile: envKnob(env, 'TASKS_FILE') || join(configDir(env), 'tasks.json'),
   };
 }
 

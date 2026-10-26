@@ -17,12 +17,16 @@ import {
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 
+/** Create `dir` `0700` when it is not there; an existing one is left alone. */
+export function ensureDir(dir: string): void {
+  if (existsSync(dir)) return;
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  chmodSync(dir, 0o700);
+}
+
 export function writePrivateFile(path: string, text: string, tempPrefix: string): void {
   const dir = dirname(path);
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true, mode: 0o700 });
-    chmodSync(dir, 0o700);
-  }
+  ensureDir(dir);
   const temp = join(dir, `.${tempPrefix}-${process.pid}-${Date.now()}.tmp`);
   try {
     writeFileSync(temp, text, { mode: 0o600 });

@@ -14,22 +14,19 @@ import {
   connectMcp,
   parseParamPairs,
   parseRunArgs,
-  parseServeConfig,
-  parseProfiles,
   parseSkillTask as parseSkill,
   renderTask,
   runReceiveLoop,
   runTask,
-  serveTaskOf,
+  taskOf,
   type Cursor,
   type CursorStore,
   type MessengerSettings,
   type Question,
-  type ServeConfig,
   type RunDeps,
 } from '@lotse/core';
 
-import { listTasks, loadTasks, migrateTasks, readSkill } from '../../../src/core/serve-config.ts';
+import { listTasks } from '../../../src/core/skills.ts';
 import {
   EXIT,
   reportText,
@@ -37,9 +34,9 @@ import {
   runReportFromText,
   statusReport,
   statusText,
-  tasksOf,
   tasksText,
 } from '../../../src/frontends/cli/task-commands.ts';
+import { fixture, type Fixture } from '../../support/config.ts';
 import { FixtureAgent, type FixtureAgentOptions } from '../../support/fixture-agent.ts';
 import { withFakeMcp } from '../../support/fake-mcp.ts';
 
@@ -47,21 +44,9 @@ const START = Date.parse('2026-10-10T12:00:00.000Z');
 const server = (name: string) => ({ name, command: 'x', args: [], env: [] });
 const parseSkillTask = (id: string, text: string, options: { cwd?: string } = { cwd: '/fixture' }) =>
   parseSkill(id, text, options);
-const SHARED = JSON.stringify({
-  version: 1,
-  profiles: [{ id: 'p', data: 'public', mcpServers: [server('a'), server('b')] }],
-});
 
-function config(task: Record<string, unknown> = {}): ServeConfig {
-  return parseServeConfig(
-    JSON.stringify({
-      version: 1,
-      users: [{ id: 'me' }],
-      profiles: [{ id: 'p', user: 'me' }],
-      tasks: [{ id: 'legacy', profile: 'p', prompt: 'Do the thing.', cwd: '/fixture', ...task }],
-    }),
-    { profiles: parseProfiles(SHARED) },
-  );
+function config(): Fixture {
+  return fixture({ profile: { mcpServers: [server('a'), server('b')] } });
 }
 
 const SKILL = `---
@@ -75,7 +60,7 @@ metadata:
 Report on {{topic}} for {{day}}.
 `;
 
-function deps(cfg: ServeConfig, skills: Record<string, string>, agentOptions: FixtureAgentOptions = {}) {
+function deps(cfg: Fixture, skills: Record<string, string>, agentOptions: FixtureAgentOptions = {}) {
   let at = START;
   const state = {
     agents: [] as FixtureAgent[],
@@ -85,7 +70,7 @@ function deps(cfg: ServeConfig, skills: Record<string, string>, agentOptions: Fi
     locked: false,
   };
   const value: RunDeps = {
-    config: cfg,
+    ...cfg,
     open: async (options) => {
       const agent = new FixtureAgent(agentOptions);
       state.agents.push(agent);
@@ -94,7 +79,6 @@ function deps(cfg: ServeConfig, skills: Record<string, string>, agentOptions: Fi
       return { client, logLines: [], agentInfo: 'FixtureAgent 0.1.0', close: () => client.close() };
     },
     commandFor: () => OPENCODE_COMMAND,
-    promptFor: (task) => task.prompt ?? '',
     skill: (id) => (id in skills ? parseSkillTask(id, skills[id]!, { cwd: '/fixture' }) : null),
     record: (run) => void state.records.push(run.outcome),
     channel: { name: 'fake', send: () => {} },
@@ -175,10 +159,10 @@ export default async () => {
 
     await it('a task narrows its profile and never widens it', async () => {
       const cfg = config();
-      const narrowed = serveTaskOf(parseSkillTask('demo', SKILL), cfg);
+      const narrowed = taskOf(parseSkillTask('demo', SKILL), cfg.profiles);
       expect(narrowed.mcpServers.map((s) => s.name)).toStrictEqual(['a']);
       const wider = parseSkillTask('demo', SKILL.replace('allowed-tools: a', 'allowed-tools: a c'));
-      expect(throwsA(TaskFileError, () => serveTaskOf(wider, cfg))).toBe(true);
+      expect(throwsA(TaskFileError, () => taskOf(wider, cfg.profiles))).toBe(true);
     });
   });
 
@@ -196,7 +180,7 @@ export default async () => {
       expect(result).toStrictEqual({ status: 'needs-person', questionId: 'A1' });
     });
 
-    await it('failed: a profile the file names but tasks.json lacks', async () => {
+    await it('failed: a profile the SKILL.md names but profiles.json lacks', async () => {
       const { deps: d } = deps(config(), { demo: SKILL.replace('lotse-profile: p', 'lotse-profile: zz') });
       const result = await runTask('demo', { topic: 'x' }, d);
       expect(result.status).toBe('failed');
@@ -211,12 +195,11 @@ export default async () => {
       expect(state.records.length).toBe(0);
     });
 
-    await it('a task of tasks.json runs as a task; it takes no params; unknown ids are usage errors', async () => {
-      const { deps: d } = deps(config(), {});
-      expect((await runTask('legacy', {}, d)).status).toBe('done');
+    await it('a task takes only its own params; an unknown id is a usage error', async () => {
+      const { deps: d } = deps(config(), { demo: SKILL });
       let usage = 0;
       for (const [id, params] of [
-        ['legacy', { a: 'b' }],
+        ['demo', { topic: 'x', nope: 'y' }],
         ['missing', {}],
       ] as const)
         await runTask(id, params, d).catch((error: unknown) => {
@@ -244,60 +227,24 @@ export default async () => {
     });
   });
 
-  await describe('migrateTasks', async () => {
-    const write = (dir: string) => {
-      const file = join(dir, 'tasks.json');
-      writeFileSync(file, JSON.stringify(rawConfig()));
-      writeFileSync(join(dir, 'profiles.json'), SHARED);
-      return file;
-    };
-    const rawConfig = () => ({
-      version: 1,
-      users: [{ id: 'me' }],
-      profiles: [{ id: 'p', user: 'me' }],
-      tasks: [{ id: 'legacy', profile: 'p', prompt: 'Do the thing.', cwd: '/fixture' }],
-    });
-
-    await it('writes one SKILL.md per task, once, and leaves tasks.json alone', async () => {
-      withDir((dir) => {
-        const file = write(dir);
-        const before = readFileSync(file, 'utf8');
-        const loaded = loadTasks(file, join(dir, 'profiles.json'));
-        const tasksDir = join(dir, 'tasks');
-        expect(migrateTasks(loaded, tasksDir)).toStrictEqual(['legacy']);
-        expect(readSkill(tasksDir, 'legacy')!.body).toBe('Do the thing.');
-        expect(migrateTasks(loaded, tasksDir)).toStrictEqual([]);
-        expect(readFileSync(file, 'utf8')).toBe(before);
-      });
-    });
-
-    await it('never overwrites a directory that exists', async () => {
-      withDir((dir) => {
-        const loaded = loadTasks(write(dir), join(dir, 'profiles.json'));
-        const tasksDir = join(dir, 'tasks');
-        mkdirSync(join(tasksDir, 'legacy'), { recursive: true });
-        writeFileSync(join(tasksDir, 'legacy', 'mine'), 'mine');
-        expect(migrateTasks(loaded, tasksDir)).toStrictEqual([]);
-        expect(existsSync(join(tasksDir, 'legacy', 'SKILL.md'))).toBe(false);
-      });
-    });
-
-    await it('lists SKILL.md tasks first, a broken one with its problem, then tasks.json', async () => {
+  await describe('listTasks', async () => {
+    await it('lists the SKILL.md tasks, a broken one with its problem', async () => {
       withDir((dir) => {
         const tasksDir = join(dir, 'tasks');
         mkdirSync(join(tasksDir, 'demo'), { recursive: true });
         writeFileSync(join(tasksDir, 'demo', 'SKILL.md'), SKILL);
         mkdirSync(join(tasksDir, 'broken'), { recursive: true });
         writeFileSync(join(tasksDir, 'broken', 'SKILL.md'), 'no frontmatter');
-        const entries = listTasks(tasksDir, config());
-        expect(entries.map((entry) => `${entry.id}:${entry.source}`)).toStrictEqual([
-          'broken:skill',
-          'demo:skill',
-          'legacy:tasks.json',
-        ]);
+        mkdirSync(join(tasksDir, 'no-skill'), { recursive: true });
+        const entries = listTasks(tasksDir);
+        expect(entries.map((entry) => entry.id)).toStrictEqual(['broken', 'demo']);
         expect(entries[0]!.problem).not.toBe(null);
         expect(tasksText(entries)).toContain('demo (topic, day=today)');
       });
+    });
+
+    await it('lists nothing for a missing directory', async () => {
+      expect(listTasks('/nonexistent-lotse-tasks')).toStrictEqual([]);
     });
   });
 
@@ -305,7 +252,9 @@ export default async () => {
     await it('/tasks, /status and a bad /run reply without a model call', async () => {
       await withFakeMcp({}, async (fake) => {
         const { deps: d, state } = deps(config(), { demo: SKILL });
-        withDir(() => {});
+        const tasksDir = mkdtempSync(join(tmpdir(), 'lotse-chat-tasks-'));
+        mkdirSync(join(tasksDir, 'demo'));
+        writeFileSync(join(tasksDir, 'demo', 'SKILL.md'), SKILL);
         const link = new McpLink(() => connectMcp(fake.command));
         const abort = new AbortController();
         const cursor: CursorStore & { value: Cursor | null } = {
@@ -313,7 +262,7 @@ export default async () => {
           read: () => cursor.value,
           write: (next) => void (cursor.value = next),
         };
-        const paths = { stateDir: '/nonexistent-lotse-state', tasksDir: '/nonexistent-lotse-tasks' } as never;
+        const paths = { stateDir: '/nonexistent-lotse-state', tasksDir } as never;
         const loop = runReceiveLoop({
           link,
           settings: SETTINGS,
@@ -326,7 +275,7 @@ export default async () => {
           sleep: (_ms, signal) => abortableSleep(10, signal),
           commands: {
             run: async (args) => reportText(await runReportFromText(args, d)),
-            tasks: () => tasksText(tasksOf(paths, d.config)),
+            tasks: () => tasksText(listTasks(tasksDir)),
             status: () => statusText(statusReport(paths)),
           },
         });
@@ -340,7 +289,7 @@ export default async () => {
               .filter((call) => call.tool === 'send_message')
               .map((call) => String(call.args['text']));
           await until(() => sent().length === 3, 'three replies');
-          expect(sent()[0]).toContain('legacy');
+          expect(sent()[0]).toContain('demo');
           expect(sent()[1]).toContain('Nothing is running.');
           expect(sent()[2]).toContain('Not started');
           expect(state.agents.length).toBe(0);
@@ -348,6 +297,7 @@ export default async () => {
           abort.abort();
           await loop;
           await link.close();
+          rmSync(tasksDir, { recursive: true, force: true });
         }
       });
     });

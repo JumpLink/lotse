@@ -14,9 +14,10 @@ import {
 
 import { projectConfigOptions } from '../config.ts';
 import { applyConfigOptions } from '../profile/apply.ts';
-import { profileFromServe, resolveProfile, type ProfileSession } from '../profile/resolve.ts';
+import type { Profile } from '../profile/profile.ts';
+import { resolveProfile, type ProfileSession } from '../profile/resolve.ts';
 import { withAuthHint, type AgentHandle } from '../run.ts';
-import type { ServeProfile, ServeTask } from './config.ts';
+import type { Task } from './task.ts';
 import { ModelUnavailableError, type RunDeps } from './deps.ts';
 
 const DEFAULT_MODEL_RETRY_MS = 15_000;
@@ -64,7 +65,7 @@ export function isUnsupported(error: unknown): boolean {
  * still no fallback (ADR 0002 §5).
  */
 export async function retryAfterUnavailable(
-  task: ServeTask,
+  task: Task,
   deps: RunDeps,
   handle: AgentHandle,
   phase: 'run' | 'precheck',
@@ -75,22 +76,16 @@ export async function retryAfterUnavailable(
 }
 
 /** The profile resolved for this run; the launcher is the app's, found by `commandFor`. */
-export function sessionOf(deps: RunDeps, profile: ServeProfile): ProfileSession {
-  return resolveProfile(profileFromServe(profile), { agent: () => deps.commandFor(profile) });
+export function sessionOf(deps: RunDeps, profile: Profile): ProfileSession {
+  return resolveProfile(profile, { agent: () => deps.commandFor(profile) });
 }
 
 /**
  * The servers a turn's new or continued session gets. The task's own list replaces the profile's —
- * a task that names servers has decided which tools it gets — and the answer turn of a reply question
- * may narrow or widen that again.
+ * a task that names servers has decided which tools it gets.
  */
-export function serversFor(
-  task: ServeTask,
-  profile: ProfileSession,
-  turn: 'first' | 'answer' = 'first',
-): McpServer[] {
-  const first = task.mcpServers.length > 0 ? task.mcpServers : profile.mcpServers;
-  return [...(turn === 'answer' ? (task.answerMcpServers ?? first) : first)];
+export function serversFor(task: Task, profile: ProfileSession): McpServer[] {
+  return [...(task.mcpServers.length > 0 ? task.mcpServers : profile.mcpServers)];
 }
 
 /** The profile's model, then its other options, on a session that just started. */

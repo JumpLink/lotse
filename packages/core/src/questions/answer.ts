@@ -3,11 +3,11 @@
 import { withPreamble } from '../profile/resolve.ts';
 import { msg, STRINGS } from '../messenger/strings.ts';
 import { withAuthHint } from '../run.ts';
-import type { ServeTask } from '../task/config.ts';
 import type { RunDeps, RunResult } from '../task/deps.ts';
 import { runSession } from '../task/run.ts';
 import { continueSession, serversFor } from '../task/session.ts';
-import { serveTaskOf } from '../task/skill.ts';
+import { taskOf } from '../task/skill.ts';
+import type { Task } from '../task/task.ts';
 import { update } from './ask.ts';
 import {
   findQuestions,
@@ -185,7 +185,7 @@ export async function answerQuestion(idText: string, text: string, deps: RunDeps
         ? parsed.text
         : text.trim();
     const run = await runSession(task, deps, now, async (client, extra, profile) => {
-      const servers = serversFor(task, profile, 'answer');
+      const servers = serversFor(task, profile);
       const continued = await continueSession(client, task.cwd, question.sessionId, servers, extra);
       if (continued) {
         how = continued.how;
@@ -222,7 +222,7 @@ export async function answerQuestion(idText: string, text: string, deps: RunDeps
 }
 
 /** The context a fresh session needs to make sense of an answer it never saw the question for. */
-export function followUpPrompt(task: ServeTask, question: Question, answer: string): string {
+export function followUpPrompt(task: Task, question: Question, answer: string): string {
   return [
     `This continues an earlier run of the task "${task.id}". That session cannot be reopened.`,
     '',
@@ -234,13 +234,12 @@ export function followUpPrompt(task: ServeTask, question: Question, answer: stri
   ].join('\n');
 }
 
-/** A task of SKILL.md, else of tasks.json; `undefined` when neither names it (any more). */
-function taskById(deps: RunDeps, id: string): ServeTask | undefined {
+/** A task of SKILL.md; `undefined` when none names it (any more). */
+function taskById(deps: RunDeps, id: string): Task | undefined {
   try {
-    const skill = deps.skill?.(id);
-    if (skill) return serveTaskOf(skill, deps.config);
+    const skill = deps.skill(id);
+    return skill ? taskOf(skill, deps.profiles) : undefined;
   } catch {
     return undefined;
   }
-  return deps.config.tasks.find((candidate) => candidate.id === id);
 }

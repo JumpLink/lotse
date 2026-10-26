@@ -18,7 +18,7 @@
  *   several open ones — but not an id the text names itself. A question that is no longer open is said
  *   so, never replaced by another one. The quote the client put before the text is already gone: the
  *   wait tool is asked for that (`strip_quotes`), Lotse strips nothing itself.
- * - **Only the questions the chat may see.** A task whose `channels` leave out the messenger never sent
+ * - **Only the questions the chat may see.** A profile whose `channels` leave out the messenger never sent
  *   its question here, so a reply cannot answer it — not by plain text, not by its id.
  * - **Every answer is `answerQuestion`** — the same path as `lotse answer` and the dialog — so the
  *   first channel to answer wins and the other hears what the runner says: already answered.
@@ -26,7 +26,7 @@
 
 import { createHash } from 'node:crypto';
 
-import { deliveryOf } from '../task/config.ts';
+import { deliveryOfTask } from '../profile/delivery.ts';
 import { answerQuestion, type AnswerResult } from '../questions/answer.ts';
 import type { RunDeps } from '../task/deps.ts';
 import { formatQuestionId, openQuestions, parseAnswer } from '../questions/question.ts';
@@ -192,7 +192,7 @@ export async function runReceiveLoop(options: ReceiveOptions): Promise<void> {
   };
 
   const inChat = (task: string) => {
-    const { channels } = deliveryOf(deps.config, task);
+    const { channels } = deliveryOfTask(deps, task);
     return !channels || channels.includes('messenger');
   };
 

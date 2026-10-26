@@ -531,27 +531,23 @@ export { parseDuration } from './questions/duration.ts';
 export {
   DEFAULT_QUESTION_LIMITS,
   PERSON_NEEDED_OFF,
-  ServeConfigError,
-  configHash,
-  deliveryOf,
-  freeModelNotes,
-  parseServeConfig,
-  profileOf,
-  tasksWithRemovedSchedule,
-  unreachableTaskNotes,
-  type MessengerDetail,
-  type ParseServeOptions,
   type PersonNeededConfig,
   type QuestionLimits,
   type ReleasedArea,
   type RightsLevel,
-  type ServeConfig,
-  type ServePrecheck,
-  type ServeProfile,
-  type ServeTask,
-  type ServeUser,
-  type TaskDelivery,
-} from './task/config.ts';
+  type Precheck,
+  type Task,
+} from './task/task.ts';
+export { UsersError, parseUsers, userOf, userProblems, type User } from './users/users.ts';
+export { USERS_SCHEMA } from './users/schema.ts';
+export {
+  deliveryOf,
+  deliveryOfTask,
+  freeModelNotes,
+  unreachableProfileNotes,
+  type Delivery,
+  type MessengerDetail,
+} from './profile/delivery.ts';
 export {
   createdSince,
   findQuestions,
@@ -579,7 +575,7 @@ export {
   stripAlways,
   type AskOutcome,
   type GateDecision,
-  type ServeGateOptions,
+  type TaskGateOptions,
   type GateToken,
 } from './task/gate.ts';
 export type { QuestionChannel, QuestionMessage } from './questions/channel.ts';
@@ -656,14 +652,14 @@ export {
   type ReceiveOptions,
 } from './messenger/receive.ts';
 export { isId } from './parse.ts';
-export { SERVE_CONFIG_SCHEMA, schemaKeys, type SchemaNode } from './schema.ts';
+export { schemaKeys, type SchemaNode } from './schema.ts';
 export { ProfileOptionError, applyConfigOptions } from './profile/apply.ts';
-export { profilesFromTasks } from './profile/migrate.ts';
+export { migrateLegacy, type LegacyMigration } from './profile/legacy.ts';
 export { ProfilesError, parseProfiles, type ConfigOptionValue, type Profile } from './profile/profile.ts';
 export {
   jobOptionsOf,
   narrowRights,
-  profileFromServe,
+  profileOf,
   resolveProfile,
   withPreamble,
   type ProfileResolvers,
@@ -694,8 +690,7 @@ export {
   parseRunArgs,
   parseSkillTask,
   renderTask,
-  serveTaskOf,
-  skillFromTask,
+  taskOf,
   splitWords,
   type SkillTask,
   type TaskParam,

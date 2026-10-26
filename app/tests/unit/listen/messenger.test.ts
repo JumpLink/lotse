@@ -15,7 +15,7 @@ import {
   messengerText,
   noticeOf,
   parseReply,
-  parseServeConfig,
+  deliveryOfTask,
   routeChannels,
   runReceiveLoop,
   type Cursor,
@@ -35,6 +35,7 @@ import { parseSettings, withMessenger } from '../../../src/core/settings.ts';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fixture } from '../../support/config.ts';
 import { withFakeMcp, type FakeMcp } from '../../support/fake-mcp.ts';
 
 const SETTINGS: MessengerSettings = {
@@ -73,34 +74,21 @@ function question(
 }
 
 /** Task `t` with no restriction, `tui` kept off the messenger, `quiet` sending the chat a notice only. */
-const ROUTED = parseServeConfig(
-  JSON.stringify({
-    version: 1,
-    users: [{ id: 'me' }],
-    profiles: [{ id: 'p', user: 'me', data: 'public' }],
-    tasks: [
-      { id: 't', profile: 'p', prompt: 'x', cwd: '/fixture' },
-      {
-        id: 'tui',
-        profile: 'p',
-        prompt: 'x',
-        cwd: '/fixture',
-        channels: ['desktop'],
-      },
-      {
-        id: 'quiet',
-        profile: 'p',
-        prompt: 'x',
-        cwd: '/fixture',
-        messengerDetail: 'notice',
-      },
-    ],
-  }),
-);
+const ROUTED_CONFIG = fixture({
+  extraProfiles: [
+    { id: 'pd', user: 'me', data: 'public', channels: ['desktop'] },
+    { id: 'pq', user: 'me', data: 'public', messengerDetail: 'notice' },
+  ],
+  tasks: [
+    { id: 'tui', profile: 'pd' },
+    { id: 'quiet', profile: 'pq' },
+  ],
+});
+const ROUTED = (task: string) => deliveryOfTask(ROUTED_CONFIG, task);
 
 function runDeps(book: { value: Question[] }): RunDeps {
   return {
-    config: ROUTED,
+    ...ROUTED_CONFIG,
     questions: {
       read: () => book.value.map((q) => ({ ...q })),
       write: (next: Question[]) => void (book.value = [...next]),

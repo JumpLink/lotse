@@ -13,7 +13,7 @@ import { parseParamPairs, TaskUsageError, type LotsePaths } from '@lotse/core';
 import type { ListenPaths } from '../../core/paths.ts';
 import { stderrChannel } from '../../core/stderr-channel.ts';
 import { err, out, pickArgv } from './output.ts';
-import { readTasks, runDeps, trackedAgents } from './listen-deps.ts';
+import { readConfig, runDeps, trackedAgents } from './listen-deps.ts';
 import { reportText, runReport } from './task-commands.ts';
 
 const command = (paths: LotsePaths, listen: ListenPaths): CommandModule => ({
@@ -40,7 +40,7 @@ const command = (paths: LotsePaths, listen: ListenPaths): CommandModule => ({
       process.exitCode = 2;
       return;
     }
-    const loaded = readTasks(listen);
+    const loaded = readConfig(listen);
     if (!loaded) return;
     const agents = trackedAgents();
     const deps = runDeps({ paths, listen, loaded, channel: stderrChannel(), open: agents.open, quiet });

@@ -3,9 +3,11 @@
  * live in. A question is created, announced on the channel, and polled until it is answered or expires.
  */
 
-import type { ServeConfig, ServeProfile, ServeTask, ServeUser } from '../task/config.ts';
+import type { Profile } from '../profile/profile.ts';
 import type { RunDeps } from '../task/deps.ts';
 import type { AskOutcome } from '../task/gate.ts';
+import { DEFAULT_QUESTION_LIMITS, type Task } from '../task/task.ts';
+import type { User } from '../users/users.ts';
 import {
   createdSince,
   findQuestions,
@@ -30,18 +32,12 @@ import {
 const DEFAULT_POLL_MS = 2_000;
 const HOUR_MS = 3_600_000;
 
-export function userOf(config: ServeConfig, profile: ServeProfile): ServeUser {
-  const user = config.users.find((candidate) => candidate.id === profile.user);
-  if (!user) throw new Error(`profile "${profile.id}" has no user "${profile.user}"`);
-  return user;
-}
-
 /** The ceiling that stops a task before any model call, or `null` (ADR 0002 §2). */
-export function ceilingReached(task: ServeTask, questions: readonly Question[], now: Date): string | null {
+export function ceilingReached(task: Task, questions: readonly Question[], now: Date): string | null {
   const open = openQuestions(questions, now).filter((question) => question.task === task.id).length;
-  if (open >= task.questions.maxOpen) return `${open} open question(s), the most this task may have`;
+  if (open >= DEFAULT_QUESTION_LIMITS.maxOpen) return `${open} open question(s), the most this task may have`;
   const lastHour = createdSince(questions, task.id, new Date(now.getTime() - HOUR_MS));
-  if (lastHour >= task.questions.maxPerHour)
+  if (lastHour >= DEFAULT_QUESTION_LIMITS.maxPerHour)
     return `${lastHour} question(s) in the last hour, the most this task may ask`;
   return null;
 }
@@ -71,8 +67,8 @@ export function cancelOrphanedPermissions(deps: Pick<RunDeps, 'questions' | 'now
 
 export function newQuestion(
   book: readonly Question[],
-  task: ServeTask,
-  user: ServeUser,
+  task: Task,
+  user: User,
   kind: QuestionKind,
   sessionId: string,
   action: QuestionAction | null,
@@ -88,7 +84,7 @@ export function newQuestion(
     action,
     text,
     createdAt: now.toISOString(),
-    expiresAt: new Date(now.getTime() + task.questions.expiresMs).toISOString(),
+    expiresAt: new Date(now.getTime() + DEFAULT_QUESTION_LIMITS.expiresMs).toISOString(),
     status: 'open',
     answer: null,
     answeredAt: null,
@@ -105,7 +101,7 @@ export function howToAnswer(question: Question): string {
 
 export async function notify(
   question: Question,
-  user: ServeUser,
+  user: User,
   deps: RunDeps,
   shown: string = question.text,
 ): Promise<void> {
@@ -130,8 +126,8 @@ export async function notify(
 }
 
 export function createReplyQuestion(
-  task: ServeTask,
-  user: ServeUser,
+  task: Task,
+  user: User,
   sessionId: string,
   text: string,
   deps: RunDeps,
@@ -154,8 +150,8 @@ export function createReplyQuestion(
 }
 
 export async function ask(
-  task: ServeTask,
-  user: ServeUser,
+  task: Task,
+  user: User,
   sessionId: string,
   action: QuestionAction,
   text: string,
@@ -204,9 +200,9 @@ export async function ask(
  * returns `timeout`.
  */
 export async function personNeeded(
-  task: ServeTask,
-  profile: ServeProfile,
-  user: ServeUser,
+  task: Task,
+  profile: Profile,
+  user: User,
   sessionOf: () => string | null,
   input: PersonNeededInput,
   deps: RunDeps,
@@ -235,7 +231,7 @@ export async function personNeeded(
   const question: Question = {
     ...created,
     acceptsCode: input.acceptsCode,
-    expiresAt: new Date(deadline + task.questions.expiresMs).toISOString(),
+    expiresAt: new Date(deadline + DEFAULT_QUESTION_LIMITS.expiresMs).toISOString(),
   };
   deps.questions.write([...book, question]);
   holdPerson(user.id, question.id, input.acceptsCode);

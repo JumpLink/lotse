@@ -23,7 +23,8 @@ import type { McpServer } from '@lotse/acp';
 
 import { isFreeModel } from '../free-models.ts';
 import { STRINGS, msg } from '../messenger/strings.ts';
-import type { ServeProfile, ServeTask } from '../task/config.ts';
+import type { Profile } from '../profile/profile.ts';
+import type { Task } from '../task/task.ts';
 import { parseAnswer } from './question.ts';
 
 export const PERSON_KINDS = ['login', 'code', 'approval', 'device'] as const;
@@ -110,11 +111,7 @@ export function parsePersonReply(text: string, acceptsCode: boolean): PersonRepl
 }
 
 /** Why this call is refused, or `null`. An unset model is unknown, so a code is refused there too. */
-export function personRefusal(
-  task: ServeTask,
-  profile: ServeProfile,
-  input: PersonNeededInput,
-): string | null {
+export function personRefusal(task: Task, profile: Profile, input: PersonNeededInput): string | null {
   if (!task.personNeeded.enabled) return `task "${task.id}" does not have person_needed enabled`;
   if (!input.acceptsCode && !input.link) return null;
   if (!profile.model)

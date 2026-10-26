@@ -4,12 +4,12 @@
  * nothing to return, the same contract as `choose.ts`, so a handler only has to stop.
  */
 
+import { dirname } from 'node:path';
+
 import { _, fmt } from '../../i18n.ts';
 import {
   createPersonHost,
   openAgent,
-  ProfilesError,
-  ServeConfigError,
   type AgentCommand,
   type AgentHandle,
   type LotsePaths,
@@ -20,73 +20,55 @@ import {
 import { messengerSettings, readSettings } from '../../core/settings.ts';
 
 import type { ListenPaths } from '../../core/paths.ts';
-import { actionLog, questionBook, runState, taskLock } from '../../core/serve-state.ts';
+import { actionLog } from '../../core/action-log.ts';
 import {
-  loadTasks,
-  migrateProfiles,
-  migrateTasks,
-  readSkill,
-  TasksFileMissingError,
-  type LoadedTasks,
-} from '../../core/serve-config.ts';
+  ConfigFileError,
+  ConfigMissingError,
+  loadConfig,
+  type LoadedConfig,
+} from '../../core/config-files.ts';
+import { migrateLegacyFiles } from '../../core/legacy-migration.ts';
+import { questionBook } from '../../core/question-state.ts';
+import { runState, taskLock } from '../../core/run-state.ts';
+import { readSkill } from '../../core/skills.ts';
 import { agentForNew } from './choose.ts';
 import { err } from './output.ts';
 
-/** One line per task whose file still has the removed `schedule`. It is ignored; nothing fails. */
-export function reportRemovedSchedules(loaded: LoadedTasks): void {
-  for (const id of loaded.removedSchedules)
-    err(fmt(_("tasks.json: 'schedule' is no longer supported and is ignored (task {id})"), { id }));
+/**
+ * Bring users.json, profiles.json and the tasks directory up to date from a legacy tasks.json —
+ * with one notice when it wrote anything. Every command that reads them calls it first.
+ */
+export function migrateConfig(listen: ListenPaths): void {
+  if (migrateLegacyFiles(listen))
+    err(
+      fmt(
+        _(
+          'The users, profiles and tasks of tasks.json were copied to {dir}, one file or directory each. tasks.json is not read any more and not changed; edit the new files.',
+        ),
+        { dir: dirname(listen.usersFile) },
+      ),
+    );
 }
 
-export function readTasks(listen: ListenPaths): LoadedTasks | null {
+/** Migrate, then read users.json and profiles.json. Prints why and sets the exit code when it cannot. */
+export function readConfig(listen: ListenPaths): LoadedConfig | null {
   try {
-    if (migrateProfiles(listen.tasksFile, listen.profilesFile))
-      err(
-        fmt(
-          _(
-            'The profiles in tasks.json were copied to {file}, which every lotse host now shares. tasks.json keeps working; edit the profiles there.',
-          ),
-          { file: listen.profilesFile },
-        ),
-      );
-    const loaded = loadTasks(listen.tasksFile, listen.profilesFile);
-    if (migrateTasks(loaded, listen.tasksDir).length > 0)
-      err(
-        fmt(
-          _(
-            'The tasks in tasks.json were copied to {dir}, one SKILL.md each. tasks.json keeps working and is not changed; edit the tasks there.',
-          ),
-          { dir: listen.tasksDir },
-        ),
-      );
+    migrateConfig(listen);
+    const loaded = loadConfig(listen);
     if (loaded.warning) err(fmt(_('  {warning}'), { warning: loaded.warning }));
-    reportRemovedSchedules(loaded);
     return loaded;
   } catch (error) {
-    if (
-      !(
-        error instanceof ServeConfigError ||
-        error instanceof ProfilesError ||
-        error instanceof TasksFileMissingError
-      )
-    )
-      throw error;
-    err(
-      error instanceof ServeConfigError
-        ? `${listen.tasksFile}: ${error.message}`
-        : error instanceof ProfilesError
-          ? `${listen.profilesFile}: ${error.message}`
-          : error.message,
-    );
+    if (!(error instanceof ConfigMissingError || error instanceof ConfigFileError)) throw error;
+    err(error instanceof ConfigFileError ? `${error.file}: ${error.message}` : error.message);
     process.exitCode = 1;
     return null;
   }
 }
 
 /** Every profile's agent, resolved once at start: a launcher that is missing stops `listen` before any run. */
-function agentsFor(paths: LotsePaths, loaded: LoadedTasks): Map<string, AgentCommand> | null {
+function agentsFor(paths: LotsePaths, loaded: LoadedConfig): Map<string, AgentCommand> | null {
   const commands = new Map<string, AgentCommand>();
-  for (const profile of loaded.config.profiles) {
+  for (const profile of loaded.profiles) {
     const resolved = agentForNew(paths, profile.agent ?? undefined);
     if (!resolved) return null;
     commands.set(profile.id, resolved.command);
@@ -126,7 +108,7 @@ export function trackedAgents(): OpenAgents {
 export interface DepsOptions {
   readonly paths: LotsePaths;
   readonly listen: ListenPaths;
-  readonly loaded: LoadedTasks;
+  readonly loaded: LoadedConfig;
   readonly channel: QuestionChannel;
   readonly open: RunDeps['open'];
   readonly quiet: boolean;
@@ -143,15 +125,14 @@ export function runDeps(options: DepsOptions): RunDeps | null {
   const now = () => new Date();
   const { stateDir } = options.listen;
   return {
-    config: options.loaded.config,
+    users: options.loaded.users,
+    profiles: options.loaded.profiles,
     open: options.open,
     commandFor: (profile) => {
       const command = commands.get(profile.id);
       if (!command) throw new Error(`profile "${profile.id}" has no resolved agent`);
       return command;
     },
-    promptFor: (task) => options.loaded.promptFor(task),
-    precheckPromptFor: (task) => options.loaded.precheckPromptFor(task),
     previousRun: (task) => runState(stateDir).all()[task] ?? null,
     skill: (id) => readSkill(options.listen.tasksDir, id),
     record: (result) => runState(stateDir).record(result),

@@ -10,7 +10,7 @@
 import type { McpServer } from '@lotse/acp';
 
 import type { AgentCommand } from '../agents/stdio.ts';
-import type { RightsLevel, ServeProfile } from '../task/config.ts';
+import type { RightsLevel, Task } from '../task/task.ts';
 import type { ConfigOptionValue, Profile } from './profile.ts';
 
 export interface ProfileResolvers {
@@ -52,25 +52,11 @@ export function narrowRights(requested: RightsLevel, limit: RightsLevel | null):
   return RIGHTS_ORDER.indexOf(limit) < RIGHTS_ORDER.indexOf(requested) ? limit : requested;
 }
 
-const NO_OPTIONS = {} as const;
-
-/**
- * The profile a listen profile stands for: the shared one it was bound to, with the agent, model and
- * data it ended up with (the precheck overrides the model, so those must win over `base`). A listen
- * profile with no shared one is the legacy case: agent, model and data only.
- */
-export function profileFromServe(listen: ServeProfile): Profile {
-  return {
-    configOptions: NO_OPTIONS,
-    mcpServers: [],
-    preamble: null,
-    rights: null,
-    ...listen.base,
-    id: listen.id,
-    agent: listen.agent,
-    model: listen.model,
-    data: listen.data,
-  };
+/** The profile a task runs as. Throws when there is none of that id. */
+export function profileOf(profiles: readonly Profile[], task: Pick<Task, 'id' | 'profile'>): Profile {
+  const profile = profiles.find((candidate) => candidate.id === task.profile);
+  if (!profile) throw new Error(`task "${task.id}" has no profile "${task.profile}"`);
+  return profile;
 }
 
 /** `text` with the preamble in front of it, or `text` when there is no preamble. */

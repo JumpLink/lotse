@@ -19,7 +19,7 @@ import { currentDialogCommand, openAnswerDialog } from '../../core/answer-dialog
 import type { ListenPaths } from '../../core/paths.ts';
 import { stderrChannel } from '../../core/stderr-channel.ts';
 import { err, out, pickArgv } from './output.ts';
-import { readTasks, runDeps, trackedAgents } from './listen-deps.ts';
+import { readConfig, runDeps, trackedAgents } from './listen-deps.ts';
 
 const FAILED = new Set(['unknown', 'dropped', 'expired', 'busy', 'invalid']);
 
@@ -48,7 +48,7 @@ async function answerWith(
   paths: LotsePaths,
   listen: ListenPaths,
 ): Promise<void> {
-  const loaded = readTasks(listen);
+  const loaded = readConfig(listen);
   if (!loaded) return;
   const agents = trackedAgents();
   // The agent's reply is printed here; a question it asks back reaches the person through `listen`'s

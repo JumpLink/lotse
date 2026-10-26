@@ -10,12 +10,14 @@
 import type { StopReason } from '@lotse/acp';
 
 import type { AgentCommand } from '../agents/stdio.ts';
+import type { Profile } from '../profile/profile.ts';
 import type { QuestionChannel } from '../questions/channel.ts';
 import type { PersonHost } from '../questions/person.ts';
 import type { Question } from '../questions/question.ts';
+import type { User } from '../users/users.ts';
 import type { OpenAgentOptions, AgentHandle } from '../run.ts';
 import type { SkillTask } from './skill.ts';
-import type { ServeConfig, ServeProfile, ServeTask } from './config.ts';
+import type { Task } from './task.ts';
 
 /** The question list, wherever it lives. Read fresh on every look: another process writes it too. */
 export interface QuestionBook {
@@ -34,7 +36,6 @@ export interface RunLogEntry {
     | 'gate'
     | 'expired'
     | 'dropped'
-    | 'reload'
     | 'request'
     | 'run-summary'
     | 'retry'
@@ -44,14 +45,11 @@ export interface RunLogEntry {
 }
 
 export interface RunDeps {
-  readonly config: ServeConfig;
+  readonly users: readonly User[];
+  readonly profiles: readonly Profile[];
   readonly open: (options: OpenAgentOptions) => Promise<AgentHandle>;
   /** The agent a profile runs on, resolved by the app at start. */
-  readonly commandFor: (profile: ServeProfile) => AgentCommand;
-  /** The task's prompt, read by the app at start (and covered by the config hash). */
-  readonly promptFor: (task: ServeTask) => string;
-  /** The precheck's prompt, read by the app at start. Absent: the inline `precheck.prompt`. */
-  readonly precheckPromptFor?: (task: ServeTask) => string;
+  readonly commandFor: (profile: Profile) => AgentCommand;
   /** The task's last recorded run, which the precheck is told about. Absent: it hears "never". */
   readonly previousRun?: (task: string) => { readonly startedAt: string; readonly outcome: string } | null;
   readonly channel: QuestionChannel;
@@ -67,7 +65,7 @@ export interface RunDeps {
   /** How long to wait before the one retry after the agent did not offer the model. Default 15 s. */
   readonly modelRetryMs?: number;
   /** A SKILL.md task by id, or `null` when there is none. Throws `TaskFileError` for one that does not parse. */
-  readonly skill?: (id: string) => SkillTask | null;
+  readonly skill: (id: string) => SkillTask | null;
   /** Keeps the run for `lotse status` and the precheck's "last run". Absent: not kept. */
   readonly record?: (result: RunResult) => void;
   /** Take the task's run lock; `null` when another run of it holds it. Absent: no cross-process lock. */
@@ -109,12 +107,12 @@ export class ModelUnavailableError extends Error {
 
 /**
  * The task id an ad-hoc run from the chat appears under — in the log, on its questions. The `@` is
- * outside what a task id of tasks.json may hold, so it never collides with one.
+ * outside what a task id may hold, so it never collides with one.
  */
 export const REQUEST_TASK = '@chat';
 
 export function result(
-  task: ServeTask,
+  task: Task,
   outcome: RunOutcome,
   startedAt: Date,
   endedAt: Date,

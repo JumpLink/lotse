@@ -4,14 +4,15 @@ import type { McpServer } from '@lotse/acp';
 
 import { withPreamble } from '../profile/resolve.ts';
 import { withAuthHint } from '../run.ts';
-import { DEFAULT_QUESTION_LIMITS, PERSON_NEEDED_OFF, profileOf, type ServeTask } from './config.ts';
+import { profileOf } from '../profile/resolve.ts';
+import { PERSON_NEEDED_OFF, type Task } from './task.ts';
 import { REQUEST_TASK, type RunDeps, type RunResult } from './deps.ts';
 import { runSession } from './run.ts';
 import { continueSession, serversFor } from './session.ts';
 
 /** One request from the chat, as `runRequest` takes it. */
 export interface RequestRun {
-  /** A profile id of tasks.json: agent, model and user. */
+  /** A profile id of profiles.json: agent, model and user. */
   readonly profile: string;
   readonly cwd: string;
   readonly mcpServers: readonly McpServer[];
@@ -35,23 +36,16 @@ export interface RequestRunResult {
 }
 
 /** The task an ad-hoc run is: no reply questions, its permission questions to every channel. */
-export function requestTask(request: Omit<RequestRun, 'text' | 'sessionId' | 'preamble'>): ServeTask {
+export function requestTask(request: Omit<RequestRun, 'text' | 'sessionId' | 'preamble'>): Task {
   return {
     id: REQUEST_TASK,
     profile: request.profile,
-    prompt: null,
-    promptFile: null,
+    prompt: '',
     cwd: request.cwd,
     mcpServers: request.mcpServers,
-    answerMcpServers: null,
     precheck: null,
     rights: request.rights,
-    released: [],
-    questions: DEFAULT_QUESTION_LIMITS,
-    notify: 'questions',
     personNeeded: PERSON_NEEDED_OFF,
-    channels: null,
-    messengerDetail: null,
   };
 }
 
@@ -63,7 +57,7 @@ export function requestTask(request: Omit<RequestRun, 'text' | 'sessionId' | 'pr
  */
 export async function runRequest(request: RequestRun, deps: RunDeps): Promise<RequestRunResult> {
   const task = requestTask(request);
-  profileOf(deps.config, task);
+  profileOf(deps.profiles, task);
   let how: RequestMode = 'new';
   const run = await runSession(
     task,

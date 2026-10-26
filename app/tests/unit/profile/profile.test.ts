@@ -7,9 +7,6 @@ import {
   jobOptionsOf,
   narrowRights,
   parseProfiles,
-  parseServeConfig,
-  profileFromServe,
-  profilesFromTasks,
   resolveProfile,
   withPreamble,
   type SchemaNode,
@@ -102,36 +99,6 @@ export default async () => {
     });
   });
 
-  await describe('profilesFromTasks', async () => {
-    const tasks = {
-      version: 1,
-      users: [{ id: 'me' }],
-      profiles: [
-        { id: 'work', user: 'me', agent: 'opencode', model: 'provider/model', data: 'private', channels: [] },
-        { id: 'work', user: 'me', data: 'public' },
-        { id: 'broken', user: 'me' },
-        { id: 'open', user: 'me', data: 'public' },
-      ],
-      tasks: [],
-    };
-
-    await it('carries over agent, model and data of the valid, first entries only', async () => {
-      const text = profilesFromTasks(JSON.stringify(tasks))!;
-      const profiles = parseProfiles(text);
-      expect(profiles.map((profile) => profile.id)).toStrictEqual(['work', 'open']);
-      expect(profiles[0]!.agent).toBe('opencode');
-      expect(profiles[0]!.model).toBe('provider/model');
-      expect(profiles[0]!.data).toBe('private');
-      expect(text.includes('"user"')).toBe(false);
-    });
-
-    await it('returns null when there is nothing to carry over', async () => {
-      expect(profilesFromTasks('{')).toBeNull();
-      expect(profilesFromTasks('{"version":1}')).toBeNull();
-      expect(profilesFromTasks(JSON.stringify({ profiles: [{ id: 'x' }] }))).toBeNull();
-    });
-  });
-
   await describe('resolveProfile', async () => {
     const [work, plain] = parseProfiles(JSON.stringify(FILE));
 
@@ -180,34 +147,6 @@ export default async () => {
       expect(narrowRights('released', 'confirm')).toBe('confirm');
       expect(narrowRights('read', 'released')).toBe('read');
       expect(narrowRights('confirm', null)).toBe('confirm');
-    });
-  });
-
-  await describe('parseServeConfig with shared profiles', async () => {
-    const tasks = {
-      version: 1,
-      users: [{ id: 'me' }],
-      profiles: [
-        { id: 'work', user: 'me', model: 'ignored/model' },
-        { id: 'legacy', user: 'me', data: 'private' },
-      ],
-      tasks: [{ id: 'inbox', profile: 'work', prompt: 'Look.', cwd: '/tmp' }],
-    };
-
-    await it('lets the shared profile win and makes data optional', async () => {
-      const config = parseServeConfig(JSON.stringify(tasks), {
-        profiles: parseProfiles(JSON.stringify(FILE)),
-      });
-      const work = config.profiles.find((profile) => profile.id === 'work')!;
-      expect(work.model).toBe('provider/model');
-      expect(work.agent).toBe('opencode');
-      expect(work.base?.id).toBe('work');
-      expect(profileFromServe(work).mcpServers.length).toBe(1);
-      expect(config.profiles.find((profile) => profile.id === 'legacy')!.base).toBeUndefined();
-    });
-
-    await it('still demands data without a shared profile', async () => {
-      expect(() => parseServeConfig(JSON.stringify(tasks))).toThrow();
     });
   });
 };

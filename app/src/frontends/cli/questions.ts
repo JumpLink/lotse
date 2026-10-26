@@ -11,7 +11,7 @@ import type { CommandModule } from 'yargs';
 import { formatQuestionId, isOpen, type LotsePaths } from '@lotse/core';
 
 import type { ListenPaths } from '../../core/paths.ts';
-import { questionBook } from '../../core/serve-state.ts';
+import { questionBook } from '../../core/question-state.ts';
 import { err, out, pickArgv } from './output.ts';
 
 const command = (_paths: LotsePaths, listen: ListenPaths): CommandModule => ({

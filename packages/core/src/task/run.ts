@@ -12,18 +12,18 @@ import type { AcpClient, McpServer, SessionConfigOption, StopReason } from '@lot
 
 import { chunkToText } from '../policy.ts';
 import { ProfileOptionError } from '../profile/apply.ts';
-import { narrowRights, withPreamble, type ProfileSession } from '../profile/resolve.ts';
+import { narrowRights, profileOf, withPreamble, type ProfileSession } from '../profile/resolve.ts';
 import {
   ask,
   cancelHeldQuestions,
   ceilingReached,
   createReplyQuestion,
   personNeeded,
-  userOf,
 } from '../questions/ask.ts';
 import { isQuestionText } from '../questions/question.ts';
 import { runTurn, withAuthHint, type AgentHandle } from '../run.ts';
-import { profileOf, type ServeTask } from './config.ts';
+import { userOf } from '../users/users.ts';
+import type { Task } from './task.ts';
 import {
   ModelUnavailableError,
   REQUEST_TASK,
@@ -35,7 +35,7 @@ import {
 import { taskGate, type GateDecision } from './gate.ts';
 import { runPrecheck } from './precheck.ts';
 import { pinSession, retryAfterUnavailable, serversFor, sessionOf } from './session.ts';
-import { TaskFileError, TaskUsageError, renderTask, serveTaskOf } from './skill.ts';
+import { TaskFileError, TaskUsageError, renderTask, taskOf } from './skill.ts';
 
 /** How a task run ended, for the caller to route (ADR 0007 §4). `runTask` sends nothing to a channel. */
 export type TaskRun =
@@ -67,7 +67,7 @@ function taskRunOf(run: RunResult): TaskRun {
 }
 
 /**
- * Run a task on demand: its SKILL.md (else the task of tasks.json of that id) with `params` filled in.
+ * Run a task on demand: its SKILL.md with `params` filled in.
  * Profile, gate, questions, `person_needed`, precheck, the task's lock and the run record are the same
  * as for every run. Throws `TaskUsageError` for an unknown task or bad parameters.
  */
@@ -76,31 +76,22 @@ export async function runTask(
   params: Readonly<Record<string, string>>,
   deps: RunDeps,
 ): Promise<TaskRun> {
-  let task: ServeTask;
-  let scoped: RunDeps = deps;
+  let task: Task;
   try {
-    const skill = deps.skill?.(id) ?? null;
-    if (skill) {
-      const text = renderTask(skill, params);
-      task = serveTaskOf(skill, deps.config);
-      scoped = { ...deps, promptFor: () => text.prompt, precheckPromptFor: () => text.precheck ?? '' };
-    } else {
-      const legacy = deps.config.tasks.find((candidate) => candidate.id === id);
-      if (!legacy) throw new TaskUsageError(`there is no task "${id}"; \`lotse tasks\` lists them`);
-      if (Object.keys(params).length > 0) throw new TaskUsageError(`task "${id}" takes no parameters`);
-      task = legacy;
-    }
+    const skill = deps.skill(id);
+    if (!skill) throw new TaskUsageError(`there is no task "${id}"; \`lotse tasks\` lists them`);
+    task = taskOf(skill, deps.profiles, renderTask(skill, params));
   } catch (error) {
     if (error instanceof TaskFileError) return { status: 'failed', reason: error.message };
     throw error;
   }
-  const run = await runNewSession(task, scoped);
+  const run = await runNewSession(task, deps);
   if (taskRunOf(run).status !== 'failed' || run.reason !== BUSY_REASON) deps.record?.(run);
   return taskRunOf(run);
 }
 
 /** One run of a task: a new session, the task's prompt, one turn. Only `runTask` starts it. */
-async function runNewSession(task: ServeTask, deps: RunDeps): Promise<RunResult> {
+async function runNewSession(task: Task, deps: RunDeps): Promise<RunResult> {
   const startedAt = deps.now();
   const reason = ceilingReached(task, deps.questions.read(), startedAt);
   if (reason) {
@@ -127,7 +118,7 @@ async function runNewSession(task: ServeTask, deps: RunDeps): Promise<RunResult>
       return {
         sessionId: session.sessionId,
         configOptions: session.configOptions ?? null,
-        text: withPreamble(profile.preamble, deps.promptFor(task)),
+        text: withPreamble(profile.preamble, task.prompt),
       };
     });
     return task.precheck ? { ...run, precheck: 'work' } : run;
@@ -154,23 +145,23 @@ export function summaryOf(message: string): string {
 }
 
 export async function runSession(
-  task: ServeTask,
+  task: Task,
   deps: RunDeps,
   startedAt: Date,
   start: (client: AcpClient, extra: readonly McpServer[], profile: ProfileSession) => Promise<Started>,
   options: { readonly replyQuestions: boolean } = { replyQuestions: true },
 ): Promise<RunResult> {
-  const profile = profileOf(deps.config, task);
+  const profile = profileOf(deps.profiles, task);
   const resolved = sessionOf(deps, profile);
-  const user = userOf(deps.config, profile);
+  const user = userOf(deps.users, profile);
   let handle: AgentHandle | null = null;
   let sessionId: string | null = null;
   let declined = false;
-  // The profile's limit can only lower what the task asked for; the areas of `released` go with it.
+  // The profile's limit can only lower what the task asked for.
   const rights = narrowRights(task.rights, resolved.rights);
   const gate = taskGate({
     rights,
-    released: rights === 'released' ? task.released : [],
+    released: [],
     now: () => deps.now().getTime(),
     ask: (request, action, text) => ask(task, user, request.sessionId, action, text, deps),
     onDecision: (decision: GateDecision) => {
@@ -230,13 +221,6 @@ export async function runSession(
     let questionId: string | null = null;
     if (options.replyQuestions && stopReason === 'end_turn' && isQuestionText(message)) {
       questionId = createReplyQuestion(task, user, started.sessionId, message.trim(), deps);
-    } else if (stopReason === 'end_turn' && task.notify === 'always' && message.trim()) {
-      await deps.channel.send(user, {
-        title: `lotse · ${task.id}`,
-        body: message.trim(),
-        questionId: null,
-        task: task.id,
-      });
     }
     // An agent that hears "no" often still ends its turn normally; the run was declined all the same.
     const outcome: RunOutcome = questionId
@@ -284,7 +268,7 @@ export async function runSession(
   }
 }
 
-export function busy(task: ServeTask, startedAt: Date, deps: RunDeps): RunResult {
+export function busy(task: Task, startedAt: Date, deps: RunDeps): RunResult {
   deps.log?.({ event: 'skip', task: task.id, detail: { why: 'running' } });
   return result(task, 'skipped', startedAt, deps.now(), {
     reason: BUSY_REASON,

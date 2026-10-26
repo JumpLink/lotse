@@ -12,14 +12,14 @@ import {
   parseRunArgs,
   runTask,
   TaskUsageError,
-  type ServeConfig,
   type RunDeps,
   type TaskRun,
 } from '@lotse/core';
 
 import type { ListenPaths } from '../../core/paths.ts';
-import { listTasks, type TaskEntry } from '../../core/serve-config.ts';
-import { questionBook, runningTasks, runState, type RunRecord } from '../../core/serve-state.ts';
+import { questionBook } from '../../core/question-state.ts';
+import { runningTasks, runState, type RunRecord } from '../../core/run-state.ts';
+import type { TaskEntry } from '../../core/skills.ts';
 
 /** `lotse run`'s exit codes: done, failed, usage error, needs a person. */
 export const EXIT = { done: 0, failed: 1, usage: 2, 'needs-person': 3 } as const;
@@ -125,6 +125,3 @@ export function statusText(report: StatusReport): string {
     );
   return lines.join('\n');
 }
-
-export const tasksOf = (listen: ListenPaths, config: ServeConfig): TaskEntry[] =>
-  listTasks(listen.tasksDir, config);

@@ -25,7 +25,7 @@ import { findQuestions, normalizeQuestionId, type Question } from '@lotse/core';
 import { answerFrame } from '../../core/answer-dialog.ts';
 import { answerView, type AnswerView } from '../../core/answer-view.ts';
 import { listenPaths } from '../../core/paths.ts';
-import { questionBook } from '../../core/serve-state.ts';
+import { questionBook } from '../../core/question-state.ts';
 import { APP_ID } from './constants.ts';
 
 function readQuestion(idText: string): Question | null {

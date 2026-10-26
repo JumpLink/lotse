@@ -3,9 +3,11 @@
 import type { AcpClient } from '@lotse/acp';
 
 import { chunkToText } from '../policy.ts';
-import { userOf } from '../questions/ask.ts';
+import { userOf } from '../users/users.ts';
 import { runTurn, withAuthHint, type AgentHandle } from '../run.ts';
-import { profileOf, type ServeProfile, type ServeTask } from './config.ts';
+import type { Profile } from '../profile/profile.ts';
+import { profileOf } from '../profile/resolve.ts';
+import type { Task } from './task.ts';
 import { ModelUnavailableError, type PrecheckVerdict, type RunDeps } from './deps.ts';
 import { taskGate, type GateDecision } from './gate.ts';
 import { pinSession, retryAfterUnavailable, sessionOf } from './session.ts';
@@ -42,20 +44,17 @@ export function precheckText(
 /**
  * One turn that decides whether the task has anything to do. It sees the task's `mcpServers` and a
  * gate with `read` rights, so every permission request is declined without a question, and it never
- * creates a question of its own. Its model is its own profile's, or none (the agent's default).
+ * creates a question of its own. It sends no model: the agent's own default is the cheaper turn.
  */
 export async function runPrecheck(
-  task: ServeTask,
+  task: Task,
   deps: RunDeps,
 ): Promise<{ verdict: PrecheckVerdict | null; sessionId: string | null; reason: string | null }> {
   const check = task.precheck!;
-  const taskProfile = profileOf(deps.config, task);
-  const named = check.profile
-    ? deps.config.profiles.find((candidate) => candidate.id === check.profile)
-    : null;
-  const profile: ServeProfile = named ?? { ...taskProfile, model: null };
+  const taskProfile = profileOf(deps.profiles, task);
+  const profile: Profile = { ...taskProfile, model: null };
   const resolved = sessionOf(deps, profile);
-  const user = userOf(deps.config, taskProfile);
+  const user = userOf(deps.users, taskProfile);
   let handle: AgentHandle | null = null;
   let sessionId: string | null = null;
   const gate = taskGate({
@@ -103,10 +102,7 @@ export async function runPrecheck(
     let message = '';
     const { stopReason } = await runTurn(agentClient, {
       sessionId: session.sessionId,
-      text: precheckText(
-        deps.precheckPromptFor ? deps.precheckPromptFor(task) : (check.prompt ?? ''),
-        deps.previousRun?.(task.id) ?? null,
-      ),
+      text: precheckText(check.prompt, deps.previousRun?.(task.id) ?? null),
       onUpdate: (notification) => {
         if (notification.update.sessionUpdate === 'agent_message_chunk')
           message += chunkToText(notification.update.content);

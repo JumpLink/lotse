@@ -7,7 +7,8 @@
  */
 
 import type { QuestionChannel, QuestionMessage } from '../questions/channel.ts';
-import { deliveryOf, type ServeConfig, type ServeUser } from '../task/config.ts';
+import type { Delivery } from '../profile/delivery.ts';
+import type { User } from '../users/users.ts';
 import { formatQuestionId } from '../questions/question.ts';
 import type { McpLink } from './link.ts';
 import { memoryRefs, recordRefs, type RefStore } from './refs.ts';
@@ -85,7 +86,7 @@ export async function sendToPeer(link: McpLink, settings: MessengerSettings, tex
 
 /** A question message that did not reach the chat, kept in memory until it does or stops being open. */
 interface Unsent {
-  readonly user: ServeUser;
+  readonly user: User;
   readonly message: QuestionMessage;
   attempts: number;
   due: number;
@@ -122,7 +123,7 @@ export function messengerChannel(
   const now = options.now ?? Date.now;
   const delays = options.retryDelaysMs ?? RETRY_DELAYS_MS;
   const refs = options.refs ?? memoryRefs();
-  const sendQuestion = async (user: ServeUser, message: QuestionMessage) => {
+  const sendQuestion = async (user: User, message: QuestionMessage) => {
     const ids = await sendToPeerWithIds(link, settings, messengerText(message));
     if (message.asks && message.questionId) recordRefs(refs, user.id, message.questionId, ids);
   };
@@ -130,7 +131,7 @@ export function messengerChannel(
   const keyOf = (user: string, questionId: string) => `${user}/${questionId}`;
   return {
     name: 'messenger',
-    async send(user: ServeUser, message: QuestionMessage) {
+    async send(user: User, message: QuestionMessage) {
       try {
         await sendQuestion(user, message);
       } catch (error) {
@@ -207,7 +208,7 @@ export function combineChannels(
 
 /**
  * `message` with no question text and no run output: the title (task and id) stays, the body says a
- * message waits and where to read it. What the messenger gets for a task with `messengerDetail: "notice"`.
+ * message waits and where to read it. What the messenger gets for a profile with `messengerDetail: "notice"`.
  */
 export function noticeOf(message: QuestionMessage): QuestionMessage {
   const task = message.task ?? 'lotse';
@@ -229,25 +230,23 @@ export interface ChannelRoute {
 }
 
 /**
- * The opened channels, each message sent only to those its task allows (`deliveryOf`), and to the
- * messenger as a notice when the task asks for one. A message without a task — listen's own news — goes
- * to all of them. A task none of whose channels is open sends nothing: its question waits in the store.
- * `config` may be a function, read per message, so a reloaded task file routes by its new tasks.
+ * The opened channels, each message sent only to those its task's profile allows (`delivery`), and
+ * to the messenger as a notice when the profile asks for one. A message without a task — listen's own
+ * news — goes to all of them. A task none of whose channels is open sends nothing: its question waits
+ * in the store.
  */
 export function routeChannels(
   routes: readonly ChannelRoute[],
-  config: ServeConfig | (() => ServeConfig),
+  delivery: (task: string) => Delivery,
   onFailure?: ChannelFailure,
 ): QuestionChannel {
   return {
     name: routes.map((route) => route.channel.name).join(' + '),
     async send(user, message) {
-      const delivery = message.task
-        ? deliveryOf(typeof config === 'function' ? config() : config, message.task)
-        : null;
-      const allowed = routes.filter((route) => !delivery?.channels || delivery.channels.includes(route.name));
+      const where = message.task ? delivery(message.task) : null;
+      const allowed = routes.filter((route) => !where?.channels || where.channels.includes(route.name));
       if (allowed.length === 0) return;
-      const notice = delivery?.messengerDetail === 'notice' ? noticeOf(message) : null;
+      const notice = where?.messengerDetail === 'notice' ? noticeOf(message) : null;
       const channels = allowed.map((route): QuestionChannel => {
         if (route.name !== 'messenger' || !notice) return route.channel;
         return { name: route.channel.name, send: (to) => route.channel.send(to, notice) };

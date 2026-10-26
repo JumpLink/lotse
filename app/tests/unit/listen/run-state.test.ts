@@ -6,7 +6,9 @@ import { join } from 'node:path';
 
 import type { Question, RunResult } from '@lotse/core';
 
-import { actionLog, questionBook, runState, taskLock } from '../../../src/core/serve-state.ts';
+import { actionLog } from '../../../src/core/action-log.ts';
+import { questionBook } from '../../../src/core/question-state.ts';
+import { runState, taskLock } from '../../../src/core/run-state.ts';
 
 const NOW = new Date('2026-10-10T12:00:00.000Z');
 

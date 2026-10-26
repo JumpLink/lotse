@@ -15,7 +15,7 @@
 import Gio from '@girs/gio-2.0';
 import GLib from '@girs/glib-2.0';
 
-import type { QuestionChannel, QuestionMessage, ServeUser } from '@lotse/core';
+import type { QuestionChannel, QuestionMessage, User } from '@lotse/core';
 
 import {
   deliveryFor,
@@ -78,7 +78,7 @@ export function desktopChannel(options: DesktopChannelOptions): QuestionChannel 
 
   return {
     name: 'desktop',
-    send: (user: ServeUser, message: QuestionMessage) => {
+    send: (user: User, message: QuestionMessage) => {
       const { questionId, asks } = message;
       if (questionId && deliveryFor(options.mode(), asks, options.dialog) === 'dialog') {
         options.onDialog(questionId);
