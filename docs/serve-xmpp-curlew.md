@@ -154,8 +154,8 @@ Buttons for answering in the chat are planned
    }
    ```
 
-   A running `serve` picks up the saved task file within a minute, with no restart. Nothing runs the task by itself;
-   start it with `lotse run messenger-test`.
+   A running `serve` picks up the saved file within a minute, with no restart. `serve` starts no task;
+   start this one with `lotse run messenger-test` (or `/run messenger-test` in the chat).
 3. The question arrives in your XMPP client as `lotse · messenger-test · #A1`. Reply `#A1 hello`.
 4. Within about a minute lotse answers in the chat with a short "Got it, #A1.", and
    `lotse questions --all` shows the question as answered.

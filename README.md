@@ -81,7 +81,7 @@ lotse auth [--agent opencode]              # the interactive-login escape hatch
 lotse login [provider]                     # log in through the agent's OAuth flow, no terminal (opencode v2)
 lotse provider list|add|remove [id]        # local models / OpenAI-compatible endpoints for the bundled opencode
 lotse agents                               # the launchers that are registered, and whether the binary is on PATH
-lotse serve                                # answer chat requests; notify when an agent has a question
+lotse serve                                # receive chat requests and answers; notify on a question
 lotse messenger [--requests on|off …]      # show or set the requests serve takes from the chat
 lotse questions [--all] [--json]           # the questions agents are waiting on
 lotse answer <id> [text…] [--dialog]       # yes/no, a reply, or the answer window
