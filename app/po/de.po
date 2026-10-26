@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: eu.jumplink.Lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-26 14:40+0100\n"
+"POT-Creation-Date: 2026-10-26 15:02+0100\n"
 "Language-Team: German\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -321,7 +321,7 @@ msgstr ""
 "versuche es erneut"
 
 #: app/src/frontends/cli/auth.ts:70 app/src/frontends/cli/cancel.ts:64
-#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:125
+#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:148
 #: app/src/frontends/cli/start.ts:90
 msgid "  [agent] {line}"
 msgstr "  [agent] {line}"
@@ -386,19 +386,19 @@ msgstr "Sitzung {id} gehört zum Agenten „{agent}“, nicht zu „{agentId}“
 msgid "session/cancel sent for {id}"
 msgstr "session/cancel für {id} gesendet"
 
-#: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/serve.ts:286
-#: app/src/frontends/cli/serve.ts:293 app/src/frontends/cli/serve.ts:305
-#: app/src/frontends/cli/serve.ts:323
+#: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/serve.ts:284
+#: app/src/frontends/cli/serve.ts:291 app/src/frontends/cli/serve.ts:303
+#: app/src/frontends/cli/serve.ts:321
 msgid "  {line}"
 msgstr "  {line}"
 
 #: app/src/frontends/cli/choose.ts:38 app/src/frontends/cli/questions.ts:33
-#: app/src/frontends/cli/serve-deps.ts:118 app/src/frontends/cli/serve.ts:125
+#: app/src/frontends/cli/serve-deps.ts:141 app/src/frontends/cli/serve.ts:125
 msgid "  {problem}"
 msgstr "  {problem}"
 
 #: app/src/frontends/cli/choose.ts:43 app/src/frontends/cli/provider.ts:205
-#: app/src/frontends/cli/serve.ts:186 app/src/frontends/cli/serve.ts:220
+#: app/src/frontends/cli/serve.ts:186 app/src/frontends/cli/serve.ts:218
 msgid "  {note}"
 msgstr "  {note}"
 
@@ -705,14 +705,23 @@ msgstr ""
 msgid "— {stopReason} —"
 msgstr "— {stopReason} —"
 
-#: app/src/frontends/cli/serve-deps.ts:30
+#: app/src/frontends/cli/serve-deps.ts:31
 msgid ""
 "tasks.json: 'schedule' is no longer supported and is ignored (task {id})"
 msgstr ""
 "tasks.json: „schedule“ wird nicht mehr unterstützt und ignoriert (Aufgabe "
 "{id})"
 
-#: app/src/frontends/cli/serve-deps.ts:36 app/src/frontends/cli/serve.ts:339
+#: app/src/frontends/cli/serve-deps.ts:40
+msgid ""
+"The profiles in tasks.json were copied to {file}, which every lotse host now "
+"shares. tasks.json keeps working; edit the profiles there."
+msgstr ""
+"Die Profile aus tasks.json wurden nach {file} kopiert, das jetzt alle lotse-"
+"Programme gemeinsam nutzen. tasks.json funktioniert weiter; ändere die "
+"Profile künftig dort."
+
+#: app/src/frontends/cli/serve-deps.ts:46 app/src/frontends/cli/serve.ts:337
 msgid "  {warning}"
 msgstr "  {warning}"
 
@@ -742,19 +751,19 @@ msgstr ""
 "Chat-Anfragen beantworten und die Person fragen, wenn ein Agent eine Frage "
 "hat"
 
-#: app/src/frontends/cli/serve.ts:212
+#: app/src/frontends/cli/serve.ts:211
 msgid "do not echo the agents' log lines"
 msgstr "die Logzeilen der Agenten nicht ausgeben"
 
-#: app/src/frontends/cli/serve.ts:255
+#: app/src/frontends/cli/serve.ts:253
 msgid "  {dropped} permission question(s) from an earlier serve cancelled"
 msgstr "  {dropped} Berechtigungsfrage(n) aus einem früheren serve abgebrochen"
 
-#: app/src/frontends/cli/serve.ts:266
+#: app/src/frontends/cli/serve.ts:264
 msgid "  stopping: {why}"
 msgstr "  wird beendet: {why}"
 
-#: app/src/frontends/cli/serve.ts:309
+#: app/src/frontends/cli/serve.ts:307
 msgid ""
 "  {left} chat request(s) from an earlier serve were not completed; the chat "
 "was told"
@@ -762,7 +771,7 @@ msgstr ""
 "  {left} Chat-Anfrage(n) aus einem früheren serve wurden nicht "
 "abgeschlossen; der Chat wurde informiert"
 
-#: app/src/frontends/cli/serve.ts:358
+#: app/src/frontends/cli/serve.ts:356
 msgid "  {message}"
 msgstr "  {message}"
 

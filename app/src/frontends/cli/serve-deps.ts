@@ -8,6 +8,7 @@ import { _, fmt } from '../../i18n.ts';
 import {
   createPersonHost,
   openAgent,
+  ProfilesError,
   ServeConfigError,
   type AgentCommand,
   type AgentHandle,
@@ -20,7 +21,12 @@ import { messengerSettings, readSettings } from '../../core/settings.ts';
 
 import type { ServePaths } from '../../core/paths.ts';
 import { actionLog, questionBook, runState, taskLock } from '../../core/serve-state.ts';
-import { loadTasks, TasksFileMissingError, type LoadedTasks } from '../../core/serve-config.ts';
+import {
+  loadTasks,
+  migrateProfiles,
+  TasksFileMissingError,
+  type LoadedTasks,
+} from '../../core/serve-config.ts';
 import { agentForNew } from './choose.ts';
 import { err } from './output.ts';
 
@@ -32,13 +38,35 @@ export function reportRemovedSchedules(loaded: LoadedTasks): void {
 
 export function readTasks(serve: ServePaths): LoadedTasks | null {
   try {
-    const loaded = loadTasks(serve.tasksFile);
+    if (migrateProfiles(serve.tasksFile, serve.profilesFile))
+      err(
+        fmt(
+          _(
+            'The profiles in tasks.json were copied to {file}, which every lotse host now shares. tasks.json keeps working; edit the profiles there.',
+          ),
+          { file: serve.profilesFile },
+        ),
+      );
+    const loaded = loadTasks(serve.tasksFile, serve.profilesFile);
     if (loaded.warning) err(fmt(_('  {warning}'), { warning: loaded.warning }));
     reportRemovedSchedules(loaded);
     return loaded;
   } catch (error) {
-    if (!(error instanceof ServeConfigError || error instanceof TasksFileMissingError)) throw error;
-    err(error instanceof ServeConfigError ? `${serve.tasksFile}: ${error.message}` : error.message);
+    if (
+      !(
+        error instanceof ServeConfigError ||
+        error instanceof ProfilesError ||
+        error instanceof TasksFileMissingError
+      )
+    )
+      throw error;
+    err(
+      error instanceof ServeConfigError
+        ? `${serve.tasksFile}: ${error.message}`
+        : error instanceof ProfilesError
+          ? `${serve.profilesFile}: ${error.message}`
+          : error.message,
+    );
     process.exitCode = 1;
     return null;
   }

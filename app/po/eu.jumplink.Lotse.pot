@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: eu.jumplink.Lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-26 14:40+0100\n"
+"POT-Creation-Date: 2026-10-26 15:02+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -304,7 +304,7 @@ msgid ""
 msgstr ""
 
 #: app/src/frontends/cli/auth.ts:70 app/src/frontends/cli/cancel.ts:64
-#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:125
+#: app/src/frontends/cli/resume.ts:96 app/src/frontends/cli/serve-deps.ts:148
 #: app/src/frontends/cli/start.ts:90
 msgid "  [agent] {line}"
 msgstr ""
@@ -361,19 +361,19 @@ msgstr ""
 msgid "session/cancel sent for {id}"
 msgstr ""
 
-#: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/serve.ts:286
-#: app/src/frontends/cli/serve.ts:293 app/src/frontends/cli/serve.ts:305
-#: app/src/frontends/cli/serve.ts:323
+#: app/src/frontends/cli/choose.ts:28 app/src/frontends/cli/serve.ts:284
+#: app/src/frontends/cli/serve.ts:291 app/src/frontends/cli/serve.ts:303
+#: app/src/frontends/cli/serve.ts:321
 msgid "  {line}"
 msgstr ""
 
 #: app/src/frontends/cli/choose.ts:38 app/src/frontends/cli/questions.ts:33
-#: app/src/frontends/cli/serve-deps.ts:118 app/src/frontends/cli/serve.ts:125
+#: app/src/frontends/cli/serve-deps.ts:141 app/src/frontends/cli/serve.ts:125
 msgid "  {problem}"
 msgstr ""
 
 #: app/src/frontends/cli/choose.ts:43 app/src/frontends/cli/provider.ts:205
-#: app/src/frontends/cli/serve.ts:186 app/src/frontends/cli/serve.ts:220
+#: app/src/frontends/cli/serve.ts:186 app/src/frontends/cli/serve.ts:218
 msgid "  {note}"
 msgstr ""
 
@@ -650,12 +650,18 @@ msgstr ""
 msgid "— {stopReason} —"
 msgstr ""
 
-#: app/src/frontends/cli/serve-deps.ts:30
+#: app/src/frontends/cli/serve-deps.ts:31
 msgid ""
 "tasks.json: 'schedule' is no longer supported and is ignored (task {id})"
 msgstr ""
 
-#: app/src/frontends/cli/serve-deps.ts:36 app/src/frontends/cli/serve.ts:339
+#: app/src/frontends/cli/serve-deps.ts:40
+msgid ""
+"The profiles in tasks.json were copied to {file}, which every lotse host now "
+"shares. tasks.json keeps working; edit the profiles there."
+msgstr ""
+
+#: app/src/frontends/cli/serve-deps.ts:46 app/src/frontends/cli/serve.ts:337
 msgid "  {warning}"
 msgstr ""
 
@@ -683,25 +689,25 @@ msgstr ""
 msgid "answer chat requests and ask the person when an agent has a question"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:212
+#: app/src/frontends/cli/serve.ts:211
 msgid "do not echo the agents' log lines"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:255
+#: app/src/frontends/cli/serve.ts:253
 msgid "  {dropped} permission question(s) from an earlier serve cancelled"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:266
+#: app/src/frontends/cli/serve.ts:264
 msgid "  stopping: {why}"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:309
+#: app/src/frontends/cli/serve.ts:307
 msgid ""
 "  {left} chat request(s) from an earlier serve were not completed; the chat "
 "was told"
 msgstr ""
 
-#: app/src/frontends/cli/serve.ts:358
+#: app/src/frontends/cli/serve.ts:356
 msgid "  {message}"
 msgstr ""
 
