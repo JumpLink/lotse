@@ -70,25 +70,28 @@ Measurements on 2026-10-26:
     and no tool call. Lotse speaks each sentence as soon as the agent has streamed it and
     announces tool calls briefly instead of going silent. Code, diffs and tables are shown, not
     read.
+12. **Spiel is the standard for local voices.** Lotse installs no TTS engine of its own: a local
+    voice is a Spiel speech provider with its voices, installed through Spiel's Flatpaks or the
+    distribution. A local engine Spiel lacks, such as Pocket, is added as a Spiel provider, which
+    every Spiel app (Orca too) then gets. The `spiel` provider lives in Lotse's app first, so it
+    can change without waiting for a gjsify release. Once its shape has settled it may move into
+    gjsify, for example as the Web Speech API's `speechSynthesis` backed by Spiel.
 
 ## Consequences
 
 - Voice works with any ACP agent today, at the cost of a cascade's latency (sprechstunde measured
   ~1.8–2 s to first sound; a coding agent with tools is slower).
 - Lotse gains a keyring dependency and a secret it must never log or put in `--json` output.
-- Pocket is the first local engine and runs on this machine, not on a server. It is too large to
-  ship in the base package (Python + PyTorch, ~1.5 GB with weights), so it is **installed on
-  request**: an optional Flatpak extension, and outside Flatpak a per-user install the way
-  [ADR 0006](0006-per-user-agent-install.md) installs the pinned agent. The alternative to weigh
-  first: Pocket as a **Spiel speech provider** (`libspeechprovider`). No such provider exists
-  (checked 2026-10-26: Spiel ships Piper, eSpeak and Mimic 3), but one would serve every Spiel app
-  (Orca too), and Lotse would need no Pocket-specific install path. Spiel's Flatpak repo is its own,
-  not Flathub, and last moved in 2025-12; that maintenance risk is part of the choice. Lotse starts it as a
-  subprocess on a local port and stops it with the session. The `pocket` provider also accepts a
-  server URL, so a weaker device can use a Pocket server elsewhere or pick a cloud voice.
-- Whether Pocket is the best local voice is not measured yet: sprechstunde has a speed and memory
-  measurement, but no German quality comparison. A listening comparison (sprechstunde's settings
-  UI has an A/B view) decides the default before the extension is built.
+- Local voices work on this machine without anything Lotse-specific to install. A weaker device
+  picks a smaller Spiel voice (eSpeak, a small Piper voice), a Pocket server elsewhere through the
+  `pocket` URL, or a cloud voice.
+- Spiel ships providers for Piper, eSpeak and Mimic 3 (checked 2026-10-26), not on Flathub but
+  from its own Flatpak repo, whose providers last moved in 2025-12. Lotse depends on that
+  small project; a Spiel provider for Pocket would be a contribution to it as well.
+- Pocket is large (Python + PyTorch, ~1.5 GB with weights) and is ported only if the listening
+  comparison shows it is worth it: the existing Spiel voices (Piper's German ones first) against
+  Pocket, Mistral and Kugel. sprechstunde has measured Pocket's speed and memory, but nobody has
+  compared German quality yet.
 - When an agent starts to advertise audio, Lotse uses it without a code change. For opencode an
   `Upstream (opencode, file by hand)` issue in this repo records the request.
 - Hands-free conversation needs voice activity detection, barge-in and echo cancellation
@@ -98,9 +101,11 @@ Measurements on 2026-10-26:
 
 1. Architecture doc `docs/architecture/voice.md`: components, settings schema, provider contract,
    keyring entries.
-2. **Read aloud:** `TextToSpeech`, providers `pocket`, `mistral`, `kugel`, sentence streaming,
-   playback, play agent audio blocks.
-3. **Dictation:** a microphone button, `SpeechToText` with `mistral`, ACP audio when advertised.
-4. **Hands-free:** VAD, barge-in, echo cancellation.
-5. **Local engines installed on request:** Pocket first (Flatpak extension or per-user install),
-   then whisper.cpp.
+2. **Listening comparison** of German voices: Spiel providers that exist (Piper first), Pocket
+   through sprechstunde's server, Mistral, Kugel. It sets the default voice.
+3. **Read aloud:** `TextToSpeech`, providers `spiel` first, then `mistral`, `kugel` and `pocket`
+   (URL); sentence streaming, playback, play agent audio blocks.
+4. **Dictation:** a microphone button, `SpeechToText` with `mistral`, ACP audio when advertised.
+5. **Hands-free:** VAD, barge-in, echo cancellation.
+6. **Pocket as a Spiel provider** if step 2 says so; whisper.cpp for local dictation.
+7. **Spiel support in gjsify** once the `spiel` provider has settled.
