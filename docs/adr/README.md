@@ -20,3 +20,4 @@ parts stays **Accepted** and names the record and the parts.
 | [0006](0006-per-user-agent-install.md) | A per-user install of the pinned agent, on request | Accepted |
 | [0007](0007-profiles-tasks-triggers.md) | Profiles, tasks and triggers | Accepted |
 | [0008](0008-messenger-channel-as-mcp-contract.md) | The messenger channel as an MCP contract | Accepted |
+| [0009](0009-voice-as-a-surface.md) | Voice as a surface | Proposed |
