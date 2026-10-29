@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lotse\n"
 "Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
-"POT-Creation-Date: 2026-10-26 18:00+0100\n"
+"POT-Creation-Date: 2026-10-29 12:53+0100\n"
 "PO-Revision-Date: 2026-10-26 16:35+0100\n"
 "Last-Translator: Pascal Garber\n"
 "Language-Team: German\n"
@@ -201,8 +201,12 @@ msgid "No question is waiting for an answer."
 msgstr "Keine Frage wartet auf eine Antwort."
 
 #: packages/core/src/messenger/strings.ts:18
-msgid "Several questions are open: {ids}. Start your reply with the id, for example \"{example}\"."
-msgstr "Mehrere Fragen sind offen: {ids}. Beginne deine Antwort mit der Nummer, zum Beispiel „{example}“."
+msgid ""
+"Several questions are open: {ids}. Start your reply with the id, for example "
+"\"{example}\"."
+msgstr ""
+"Mehrere Fragen sind offen: {ids}. Beginne deine Antwort mit der Nummer, zum "
+"Beispiel „{example}“."
 
 #: packages/core/src/messenger/strings.ts:20
 msgid "Say what to answer after {id}, for example \"{example}\"."
@@ -237,8 +241,12 @@ msgid "Got it, {id}."
 msgstr "Verstanden, {id}."
 
 #: packages/core/src/messenger/strings.ts:29
-msgid "Got it, {id}, but the run failed. `lotse questions` and the listen log have the details."
-msgstr "Verstanden, {id}, aber der Lauf ist fehlgeschlagen. `lotse questions` und das listen-Log haben die Einzelheiten."
+msgid ""
+"Got it, {id}, but the run failed. `lotse questions` and the listen log have "
+"the details."
+msgstr ""
+"Verstanden, {id}, aber der Lauf ist fehlgeschlagen. `lotse questions` und "
+"das listen-Log haben die Einzelheiten."
 
 #: packages/core/src/messenger/strings.ts:31
 msgid "{id} is already {status}."
@@ -261,32 +269,49 @@ msgid "{id} still not delivered ({reason}); will try again."
 msgstr "{id} ist noch nicht zugestellt ({reason}); ich versuche es erneut."
 
 #: packages/core/src/messenger/strings.ts:36
-msgid "{id} not delivered ({reason}); giving up. `lotse questions` still lists it."
-msgstr "{id} nicht zugestellt ({reason}); ich gebe auf. `lotse questions` listet es weiterhin."
+msgid ""
+"{id} not delivered ({reason}); giving up. `lotse questions` still lists it."
+msgstr ""
+"{id} nicht zugestellt ({reason}); ich gebe auf. `lotse questions` listet es "
+"weiterhin."
 
 #: packages/core/src/messenger/strings.ts:38
-msgid "A question is waiting in {task}. Its text is not sent to this chat: read it with `lotse questions` or on the desktop."
-msgstr "In {task} wartet eine Frage. Ihr Text geht nicht an diesen Chat: lies ihn mit `lotse questions` oder auf dem Desktop."
+msgid ""
+"A question is waiting in {task}. Its text is not sent to this chat: read it "
+"with `lotse questions` or on the desktop."
+msgstr ""
+"In {task} wartet eine Frage. Ihr Text geht nicht an diesen Chat: lies ihn "
+"mit `lotse questions` oder auf dem Desktop."
 
 #: packages/core/src/messenger/strings.ts:40
 msgid "{task} has a message for you. Its text is not sent to this chat."
-msgstr "{task} hat eine Nachricht für dich. Ihr Text geht nicht an diesen Chat."
+msgstr ""
+"{task} hat eine Nachricht für dich. Ihr Text geht nicht an diesen Chat."
 
 #: packages/core/src/messenger/strings.ts:41
 msgid "{id} is not answered in this chat. Use `lotse answer` or the desktop."
-msgstr "{id} wird nicht in diesem Chat beantwortet. Nimm `lotse answer` oder den Desktop."
+msgstr ""
+"{id} wird nicht in diesem Chat beantwortet. Nimm `lotse answer` oder den "
+"Desktop."
 
 #: packages/core/src/messenger/strings.ts:42
 msgid "The messenger connection is down; retrying in {seconds} s."
-msgstr "Die Messenger-Verbindung ist unterbrochen; neuer Versuch in {seconds} s."
+msgstr ""
+"Die Messenger-Verbindung ist unterbrochen; neuer Versuch in {seconds} s."
 
 #: packages/core/src/messenger/strings.ts:44
-msgid "What should I do? Write it after {prefix}, for example \"{prefix} what is on my calendar today\"."
-msgstr "Was soll ich tun? Schreib es nach {prefix}, zum Beispiel „{prefix} was steht heute in meinem Kalender“."
+msgid ""
+"What should I do? Write it after {prefix}, for example \"{prefix} what is on "
+"my calendar today\"."
+msgstr ""
+"Was soll ich tun? Schreib es nach {prefix}, zum Beispiel „{prefix} was steht "
+"heute in meinem Kalender“."
 
 #: packages/core/src/messenger/strings.ts:46
 msgid "Busy with another request; yours is queued (position {position})."
-msgstr "Ich bearbeite gerade eine andere Anfrage; deine steht in der Warteschlange (Platz {position})."
+msgstr ""
+"Ich bearbeite gerade eine andere Anfrage; deine steht in der Warteschlange "
+"(Platz {position})."
 
 #: packages/core/src/messenger/strings.ts:47
 msgid "The request failed. The listen log has the details."
@@ -301,16 +326,26 @@ msgid "That conversation could not be continued; this is a new one."
 msgstr "Dieses Gespräch ließ sich nicht fortsetzen; dies ist ein neues."
 
 #: packages/core/src/messenger/strings.ts:50
-msgid "More than {minutes} min since the last answer, so this is a new conversation."
-msgstr "Seit der letzten Antwort sind mehr als {minutes} min vergangen, daher ist dies ein neues Gespräch."
+msgid ""
+"More than {minutes} min since the last answer, so this is a new conversation."
+msgstr ""
+"Seit der letzten Antwort sind mehr als {minutes} min vergangen, daher ist "
+"dies ein neues Gespräch."
 
 #: packages/core/src/messenger/strings.ts:51
-msgid "Your last request was not completed (listen restarted). Please send it again."
-msgstr "Deine letzte Anfrage wurde nicht abgeschlossen (listen wurde neu gestartet). Bitte sende sie noch einmal."
+msgid ""
+"Your last request was not completed (listen restarted). Please send it again."
+msgstr ""
+"Deine letzte Anfrage wurde nicht abgeschlossen (listen wurde neu gestartet). "
+"Bitte sende sie noch einmal."
 
 #: packages/core/src/messenger/strings.ts:52
-msgid "{count} requests were not completed (listen restarted). Please send them again."
-msgstr "{count} Anfragen wurden nicht abgeschlossen (listen wurde neu gestartet). Bitte sende sie noch einmal."
+msgid ""
+"{count} requests were not completed (listen restarted). Please send them "
+"again."
+msgstr ""
+"{count} Anfragen wurden nicht abgeschlossen (listen wurde neu gestartet). "
+"Bitte sende sie noch einmal."
 
 #: packages/core/src/messenger/strings.ts:53
 msgid "[shortened, {count} more characters]"
@@ -329,16 +364,24 @@ msgid "Open or scan this: {link}"
 msgstr "Öffne oder scanne das: {link}"
 
 #: packages/core/src/messenger/strings.ts:58
-msgid "Reply \"done\" when you have done it yourself, or reply with the code and I will enter it."
-msgstr "Antworte „erledigt“, wenn du es selbst gemacht hast, oder mit dem Code, dann gebe ich ihn ein."
+msgid ""
+"Reply \"done\" when you have done it yourself, or reply with the code and I "
+"will enter it."
+msgstr ""
+"Antworte „erledigt“, wenn du es selbst gemacht hast, oder mit dem Code, dann "
+"gebe ich ihn ein."
 
 #: packages/core/src/messenger/strings.ts:60
 msgid "Reply \"done\" when you are through."
 msgstr "Antworte „erledigt“, wenn du fertig bist."
 
 #: packages/core/src/messenger/strings.ts:61
-msgid "{id} is no longer waiting for a code; reply \"done\" once you have done it yourself."
-msgstr "{id} wartet nicht mehr auf einen Code; antworte „erledigt“, sobald du es selbst gemacht hast."
+msgid ""
+"{id} is no longer waiting for a code; reply \"done\" once you have done it "
+"yourself."
+msgstr ""
+"{id} wartet nicht mehr auf einen Code; antworte „erledigt“, sobald du es "
+"selbst gemacht hast."
 
 #: packages/core/src/messenger/strings.ts:62
 msgid "{id} needs \"done\"{orCode}."
@@ -497,32 +540,40 @@ msgstr "Schließen"
 msgid "Dismiss warning"
 msgstr "Warnung schließen"
 
-#: packages/widget/src/chat.ts:556
+#: packages/widget/src/chat.ts:615
 msgid "Working in {path}"
 msgstr "Arbeitet in {path}"
 
-#: packages/widget/src/chat.ts:861 packages/widget/src/provider-settings.ts:200
+#: packages/widget/src/chat.ts:957 packages/widget/src/provider-settings.ts:200
 #: packages/widget/src/provider-settings.ts:203
 msgid "Providers"
 msgstr "Anbieter"
 
-#: packages/widget/src/composer.ts:101
+#: packages/widget/src/composer.ts:110
 msgid "Send"
 msgstr "Senden"
 
-#: packages/widget/src/composer.ts:102
+#: packages/widget/src/composer.ts:111
 msgid "Stop"
 msgstr "Stopp"
 
-#: packages/widget/src/composer.ts:110
+#: packages/widget/src/composer.ts:112
+msgid "Conversation"
+msgstr "Gespräch"
+
+#: packages/widget/src/composer.ts:120
 msgid "Send this message to the agent."
 msgstr "Diese Nachricht an den Agenten senden."
 
-#: packages/widget/src/composer.ts:111
+#: packages/widget/src/composer.ts:121
 msgid "Stop the running turn."
 msgstr "Den laufenden Zug stoppen."
 
-#: packages/widget/src/composer.ts:114
+#: packages/widget/src/composer.ts:122
+msgid "Read the agent's answers aloud."
+msgstr "Die Antworten des Agenten vorlesen."
+
+#: packages/widget/src/composer.ts:125
 msgid "Ask the agent…"
 msgstr "Den Agenten fragen…"
 
