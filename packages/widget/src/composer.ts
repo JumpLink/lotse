@@ -1,5 +1,5 @@
 /**
- * The composer: the message entry and the one button under the conversation.
+ * The composer: the message entry and the buttons under the conversation.
  *
  * **It is a bottom bar, not a child of the transcript.** Plan §3 draws the composer under the
  * conversation and §7 step 4 puts it in "the bottom bar of the per-session view's own
@@ -97,9 +97,19 @@ import { CSS } from './css.ts';
 const SEND_ICON = 'go-up-symbolic';
 /** The Stop icon. A filled square, which is what stopping a running turn looks like. */
 const STOP_ICON = 'process-stop-symbolic';
+/**
+ * The read-aloud toggle's icon. **`speaker-symbolic` does not exist** — checked with
+ * `Gtk.IconTheme.has_icon` like the two above and recorded in `scripts/probes/icon-names.mjs`
+ * alongside the names that do: `audio-speakers-symbolic` (used here) and the `audio-volume-*` family.
+ *
+ * The speakers rather than a volume glyph, because the toggle is not a volume control: a
+ * `audio-volume-high-symbolic` next to a mute-looking inactive state invites a person to drag it.
+ */
+const READ_ALOUD_ICON = 'audio-speakers-symbolic';
 /** Button labels. Functions, not constants: a lookup at module load would run before a translator registers. */
 const sendLabel = () => _('Send');
 const stopLabel = () => _('Stop');
+const readAloudLabel = () => _('Conversation');
 /**
  * Tooltips for the two buttons while they are **working**.
  *
@@ -109,6 +119,7 @@ const stopLabel = () => _('Stop');
  */
 const sendTooltip = () => _('Send this message to the agent.');
 const stopTooltip = () => _('Stop the running turn.');
+const readAloudTooltip = () => _("Read the agent's answers aloud.");
 
 /** What the empty entry says. Translated at use, never at load. */
 const placeholder = () => _('Ask the agent…');
@@ -129,6 +140,15 @@ export interface ComposerOptions {
   readonly onSend?: (text: string) => void;
   /** Called when Stop is pressed. Reachable only while a turn runs, so it needs no guard. */
   readonly onStop?: () => void;
+  /**
+   * Called when the read-aloud toggle is flipped by a person.
+   *
+   * **Absent means the toggle is not built at all**, and that is the whole gate: `readAloudOffered`
+   * says whether the host gave a speech engine and whether the `voice` policy allows one, and a
+   * control for a feature that cannot run is worse than no control. Not built rather than built and
+   * disabled, because a disabled toggle is a promise with no way to keep it.
+   */
+  readonly onReadAloud?: (on: boolean) => void;
   /**
    * The render inputs, read once. See `core/composer-state.ts`: every one of them is somebody else's
    * answer (the turn machine, the agent's life, which session is open), which is what makes the composer
@@ -154,16 +174,22 @@ export class Composer {
   /** The hint drawn over an empty entry. See the file header on why it is not a property. */
   readonly #placeholder: Gtk.Label;
   readonly #button: Gtk.Button;
+  /** The read-aloud toggle, or `null` when the host offered no speech engine. */
+  readonly #readAloud: Gtk.ToggleButton | null;
   /** The one line under the entry: the reason, or the status, never both. See the file header. */
   readonly #status: Gtk.Label;
   readonly #onSend: ((text: string) => void) | undefined;
   readonly #onStop: (() => void) | undefined;
+  readonly #onReadAloud: ((on: boolean) => void) | undefined;
+  /** True while `setReadAloud` moves the toggle, so the host is not told about its own change. */
+  #syncingReadAloud = false;
   #input: ComposerInput;
 
   constructor(options: ComposerOptions) {
     this.#input = options.input;
     this.#onSend = options.onSend;
     this.#onStop = options.onStop;
+    this.#onReadAloud = options.onReadAloud;
 
     this.#entry = new Gtk.TextView({
       // Word *or* character: a long path or a shell command has no spaces to break on, and an
@@ -269,6 +295,13 @@ export class Composer {
 
     const controls = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, spacing: 6 });
     controls.append(settings);
+    // **The read-aloud toggle sits beside Send, and only when there is something to toggle.** Next to
+    // Send rather than in the header bar, because it belongs to this conversation the way the model
+    // picker on the same line does — and because the header bar is the one place a 360 px window has
+    // no room left. `flat` and not `suggested-action`: Adwaita draws a checked flat button as filled
+    // on its own, so the on state reads without competing with the Send disc for the accent colour.
+    this.#readAloud = this.#onReadAloud ? this.#buildReadAloud() : null;
+    if (this.#readAloud) controls.append(this.#readAloud);
     controls.append(this.#button);
 
     // **One inset for the whole card, and the two lines inside it.** Even on all four sides: the card
@@ -318,6 +351,47 @@ export class Composer {
   setInput(input: ComposerInput): void {
     this.#input = input;
     this.#render();
+  }
+
+  /** Whether reading aloud is on. `false` when the toggle was never built. */
+  get readAloudOn(): boolean {
+    return this.#readAloud?.active ?? false;
+  }
+
+  /**
+   * Move the toggle without telling the host about it.
+   *
+   * For the other direction: the host turns the feature on, the control has to show it. Without the
+   * guard the `toggled` signal would come straight back as a person's decision, and a host that
+   * mirrored it would have a loop.
+   */
+  setReadAloud(on: boolean): void {
+    if (!this.#readAloud || this.#readAloud.active === on) return;
+    this.#syncingReadAloud = true;
+    this.#readAloud.active = on;
+    this.#syncingReadAloud = false;
+  }
+
+  /**
+   * The toggle, named in the tooltip and the accessible label like the Send disc.
+   *
+   * Icon-only in the same circle, so the word it dropped has to survive in both places — see the file
+   * header on why an icon-only button with neither is announced as nothing at all. Neither string is
+   * ever empty here, so the `composerView` fallback dance does not apply.
+   */
+  #buildReadAloud(): Gtk.ToggleButton {
+    const toggle = new Gtk.ToggleButton({
+      iconName: READ_ALOUD_ICON,
+      valign: Gtk.Align.END,
+      tooltipText: readAloudTooltip(),
+      cssClasses: ['circular', 'flat'],
+    });
+    toggle.update_property([Gtk.AccessibleProperty.LABEL], [readAloudLabel()]);
+    toggle.connect('toggled', () => {
+      if (this.#syncingReadAloud) return;
+      this.#onReadAloud?.(toggle.active);
+    });
+    return toggle;
   }
 
   /**

@@ -35,6 +35,10 @@ export type { ToolPresentation, ToolPresenter } from './tool-line.ts';
 export type { HostItem, McpCall, ToolCallView } from '@lotse/core';
 // The policy-side helpers a host may want next to `modelPolicy` and `allowCustomProviders`.
 export { providerOffered, type ModelPolicy } from '@lotse/core';
+// The shape of the speech engine `LotseChatOptions.speech` takes. Types only, and deliberately so:
+// a host passes its own engine — a browser's `speechSynthesis`, `@gjsify/speech-synthesis`, a fake in
+// a test — and neither this package nor core imports any of them.
+export type { SpeechEngine, SpeechSynthesisLike, SpeechUtteranceLike } from '@lotse/core';
 // What a host is handed when it confirms a tool itself, and what it may say about tools up front.
 export type {
   AlwaysAllowScope,
