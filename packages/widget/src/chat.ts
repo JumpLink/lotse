@@ -31,10 +31,14 @@
 
 import Adw from '@girs/adw-1';
 import GObject from '@girs/gobject-2.0';
-// Type-only: the stack, the caption and the two host slots are all this file names, and the widgets
-// that build something are in their own files. `composer.ts` and the rest import the namespace for
-// real, so the typelib is loaded either way.
-import type Gtk from '@girs/gtk-4.0';
+// `Gdk` and `Gtk` for real, and only for one thing: the Esc controller that silences reading aloud
+// (`#escapeToStop`). Everything else this file names of the two — the stack, the caption, the host
+// slots — is a type, and the widgets that *build* something are in their own files. The namespaces
+// were type-only imports until the key controller needed `new Gtk.EventControllerKey` and
+// `Gdk.KEY_Escape` at runtime; the typelib was loaded either way, because `composer.ts` and the rest
+// import them for real.
+import Gdk from '@girs/gdk-4.0';
+import Gtk from '@girs/gtk-4.0';
 
 import type { AgentSource, SessionRecord, TranscriptEntry } from '@lotse/session';
 
@@ -55,6 +59,8 @@ import {
   openLoginSession,
   probeConnections,
   providerOffered,
+  readAloud,
+  readAloudOffered,
   staleDialog,
   type AgentAttachment,
   type AgentCommand,
@@ -70,7 +76,9 @@ import {
   type NotAnsweredReason,
   type OnboardingInput,
   type PermissionQuestion,
+  type ReadAloud,
   type RecordedResolution,
+  type SpeechEngine,
 } from '@lotse/core';
 
 import { Composer } from './composer.ts';
@@ -233,6 +241,30 @@ export interface LotseChatOptions {
    */
   readonly toolPresenter?: ToolPresenter;
   /**
+   * The host's speech engine, which is what lets the chat read the agent's answers aloud.
+   *
+   * **A structural type shaped like the W3C `speechSynthesis`, and the widget imports no engine at
+   * all.** A browser passes `window.speechSynthesis`, a GNOME app passes `@gjsify/speech-synthesis`,
+   * and a test passes a fake that records the texts it was told to say — which is the only reason
+   * this feature has unit tests at all (`core/read-aloud.ts`, ADR 0009 point 12). The utterance
+   * factory is the second half because `SpeechSynthesisUtterance` is a class and a class cannot be
+   * called without `new`:
+   *
+   * ```ts
+   * speech: { synthesis: speechSynthesis, utterance: (text) => new SpeechSynthesisUtterance(text) }
+   * ```
+   *
+   * **Absent means no toggle**, not a toggle that does nothing — the same for a `profile` whose
+   * `voice` policy is `off`. `readAloudOffered` in core is the whole gate.
+   *
+   * **`local-only` is the host's promise, not a check made here.** Whether a given engine speaks on
+   * this machine or ships the text to a cloud service cannot be read off a `speechSynthesis`-shaped
+   * object, so a host carrying data the person has not agreed to hand around is the party that has
+   * to pass a local engine — the same division as `modelPolicy`, where the host knows where its data
+   * may travel and lotse enforces what it can see.
+   */
+  readonly speech?: SpeechEngine;
+  /**
    * A new conversation has its session and its record — the host's chance to list it.
    *
    * **Called before the widget updates its own view**, so a host that adds the row and names the
@@ -268,6 +300,14 @@ export class LotseChat extends Adw.Bin {
   /** One transcript view for the whole widget, refilled per session. See the constructor. */
   readonly #transcript: TranscriptView;
   readonly #composer: Composer;
+  /**
+   * Reading the agent's answers aloud, or `null` when the host offered no engine (or forbade one).
+   *
+   * **The decisions are core's, as ever.** What counts as a sentence, when one is complete enough to
+   * speak, what is dropped as code: all `read-aloud.ts`. This file contributes the four moments —
+   * text arrived, the turn ended, the person stopped it, the toggle moved — and nothing else.
+   */
+  readonly #readAloud: ReadAloud | null;
   /**
    * The agent's own configuration, on the composer card's bottom line.
    *
@@ -439,6 +479,11 @@ export class LotseChat extends Adw.Bin {
         },
       },
     });
+    // **Before the composer, because the composer's toggle exists only if this does.** The gate is
+    // core's one function: an engine from the host, and a `voice` policy that does not say `off`.
+    this.#readAloud = readAloudOffered(options.speech, options.profile?.voice ?? null)
+      ? readAloud({ engine: options.speech, onNotice: (message) => this.#onNotice(message) })
+      : null;
     this.#composer = new Composer({
       // **From the controller's own `snapshot`, not from a hand-written initial value.** A literal
       // `idle / none / null` here would be a second source of truth for the composer's inputs that
@@ -458,8 +503,16 @@ export class LotseChat extends Adw.Bin {
         this.#agent.dismissPermission('turn-cancelled');
         this.#permissions.close();
         this.#agent.stop();
+        // Silence with it: the answer being read is the answer the person just ended.
+        this.#readAloud?.stop();
       },
+      // **Only when there is something to toggle.** `Composer` reads an absent callback as "do not
+      // build the control", which is why the gate is checked once, above, rather than in two files.
+      ...(this.#readAloud ? { onReadAloud: (on: boolean) => this.#readAloud?.setEnabled(on) } : {}),
     });
+    // Esc silences it. On `this` rather than on the composer, so it works wherever the focus is in
+    // the conversation — see `#escapeToStop`.
+    if (this.#readAloud) this.add_controller(this.#escapeToStop());
     // The two TypeScript-built widgets into the template's hosts, and the host's two pages into its
     // slots. Each `Adw.Bin` is a placeholder with exactly one child, so this is a substitution
     // rather than a nesting — the tree that renders is the tree `chat.blp` draws.
@@ -506,6 +559,9 @@ export class LotseChat extends Adw.Bin {
   open(record: SessionRecord): void {
     // A login dialog is about the agent as it was; leaving for another session closes it.
     this.#login.close();
+    // And the voice stops with it: an answer read on over the conversation that replaced it is the
+    // same lie the stale failure dialog below is closed for, with no way to see where it came from.
+    this.#readAloud?.stop();
     this.#openRecord = record;
     this._cwdCaption.visible = false;
     this.#freeModelDismissed = null;
@@ -545,6 +601,7 @@ export class LotseChat extends Adw.Bin {
     const chat = this.#newChat;
     if (!chat) return;
     this.#failures.close();
+    this.#readAloud?.stop();
     this.#openRecord = null;
     this.#freeModelDismissed = null;
     // The agent stops a running turn itself (`startConversation`), settling any open question
@@ -587,6 +644,10 @@ export class LotseChat extends Adw.Bin {
   #onSend(text: string): void {
     if (text.trim() === '' || this.#unavailable) return;
     this.#composer.clearDraft();
+    // **A new prompt silences the last answer.** A person who has started typing the next thing has
+    // stopped listening to the previous one, and an answer still being read over a question already
+    // sent is the surface talking past them.
+    this.#readAloud?.stop();
     void this.#agent.prompt(text);
   }
 
@@ -607,8 +668,35 @@ export class LotseChat extends Adw.Bin {
     // go nowhere — so `gone` is the one state that discards it.
     if (!keepsDraft(snapshot.state)) this.#composer.clearDraft();
     if (snapshot.attachment.status === 'gone') this.#permissions.close();
+    this.#endOrStopReading(snapshot.state);
     this.#showFailure(snapshot);
     this.#renderFreeModelNotice();
+  }
+
+  /**
+   * What the turn state means for a voice: an ended turn has a tail to speak, an ended *agent* does
+   * not.
+   *
+   * `idle` is the reply being over, and the chunker holds whatever had no sentence end of its own —
+   * flushing it is the difference between the last sentence being read and being swallowed.
+   * `stopped` and `gone` are the two endings nobody listened through to the end, so the queue goes
+   * rather than plays on over a conversation that has moved. `thinking` and `waiting-for-you` are
+   * the middle of a turn and change nothing — in particular a question does not interrupt the
+   * sentence that led to it.
+   */
+  #endOrStopReading(state: AgentSnapshot['state']): void {
+    switch (state) {
+      case 'idle':
+        this.#readAloud?.end();
+        return;
+      case 'stopped':
+      case 'gone':
+        this.#readAloud?.stop();
+        return;
+      case 'thinking':
+      case 'waiting-for-you':
+        return;
+    }
   }
 
   /**
@@ -665,6 +753,12 @@ export class LotseChat extends Adw.Bin {
    */
   #onEntries(entries: TranscriptEntry[]): void {
     this.#transcript.appendEntries(entries);
+    // **Only `'agent'`, and that is a decision about what reading aloud *is*.** A thought card, a
+    // tool line and a system notice are all things to look at — ADR 0009 point 11 — and a voice that
+    // narrated them would read a tool's arguments out over the answer they were for. Each chunk is
+    // its own entry and entries are appended rather than mutated (`core/transcript.ts`), so the
+    // texts of a batch, in order, are exactly the deltas as they arrived.
+    for (const entry of entries) if (entry.kind === 'agent') this.#readAloud?.feed(entry.text);
     // Neither the person's own lines nor the host's: `streamed` counts what the *agent* said.
     this.#streamed += entries.filter((entry) => entry.kind !== 'user' && entry.kind !== 'host').length;
     // A session that was showing `'empty'` has just said something. Left as it is, the pane keeps
@@ -893,6 +987,7 @@ export class LotseChat extends Adw.Bin {
    */
   prompt(text: string): void {
     this.#composer.clearDraft();
+    this.#readAloud?.stop();
     void this.#agent.prompt(text);
   }
 
@@ -922,6 +1017,55 @@ export class LotseChat extends Adw.Bin {
   /** Empty the entry. */
   clearDraft(): void {
     this.#composer.clearDraft();
+  }
+
+  /**
+   * Whether the chat offers reading aloud at all: a host gave an engine and the `voice` policy allows
+   * it. A host with its own menu item asks this before drawing one.
+   */
+  get readAloudOffered(): boolean {
+    return this.#readAloud !== null;
+  }
+
+  /** Whether it is on right now. `false` when it is not offered. */
+  get readAloudOn(): boolean {
+    return this.#readAloud?.enabled ?? false;
+  }
+
+  /**
+   * Turn reading aloud on or off from the host's side — a restored preference, a control of its own.
+   * Moves the composer's toggle with it, so the two can never disagree. Does nothing when the feature
+   * is not offered: a host cannot switch on an engine it did not pass.
+   */
+  setReadAloud(on: boolean): void {
+    if (!this.#readAloud) return;
+    this.#readAloud.setEnabled(on);
+    this.#composer.setReadAloud(on);
+  }
+
+  /**
+   * Esc silences the voice.
+   *
+   * **On `LotseChat` itself and in the CAPTURE phase**, because the key has to work wherever the
+   * focus is in the conversation — in the entry, on a tool card, on the Send disc — and a controller
+   * on the composer would only answer for one of them. Capture is what gets it before a child, which
+   * at the bubble phase would already have been the entry.
+   *
+   * **`EVENT_PROPAGATE`, never `EVENT_STOP`.** Esc is the toolkit's own key for closing a dialog, and
+   * this widget raises three of them (approval, failure, login). Swallowing it would make a modal
+   * un-dismissable by keyboard whenever a voice happened to be on — a trap that no screenshot shows.
+   * So this is a *side effect* on the way past, not a handler.
+   *
+   * Guarded on `enabled` rather than on "is something playing": `ReadAloud.stop` is the one that
+   * knows whether there is a queue, and `speaking` is false for an utterance that is merely pending.
+   */
+  #escapeToStop(): Gtk.EventControllerKey {
+    const controller = new Gtk.EventControllerKey({ propagationPhase: Gtk.PropagationPhase.CAPTURE });
+    controller.connect('key-pressed', (_controller, keyval) => {
+      if (keyval === Gdk.KEY_Escape && this.#readAloud?.enabled) this.#readAloud.stop();
+      return Gdk.EVENT_PROPAGATE;
+    });
+    return controller;
   }
 
   /** Press Stop, through the composer's own handler — so the ordering the widget contributes holds. */
@@ -1024,6 +1168,9 @@ export class LotseChat extends Adw.Bin {
    * `StdioChannel.terminate` are both idempotent, so a second call costs nothing.
    */
   async shutdown(): Promise<void> {
+    // First, and not awaited: a voice outlives the widget that started it — the engine is the
+    // host's — so a chat torn down mid-sentence would otherwise keep talking with nothing on screen.
+    this.#readAloud?.stop();
     this.#probeAbort.abort();
     await this.#probe;
     await this.#agent.shutdown();

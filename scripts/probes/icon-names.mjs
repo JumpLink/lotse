@@ -24,7 +24,7 @@ import Gtk from 'gi://Gtk?version=4.0';
  * **Names in use, and only those** — so a `MISSING` here is a broken-image placeholder somewhere on
  * screen rather than an expected line. The absent names the comments record as findings
  * (`send-symbolic`, `arrow-up-symbolic`, `chat-symbolic`, `lightbulb-symbolic`,
- * `dialog-question-symbolic`) are re-checked by passing them as arguments; keeping them in this list
+ * `dialog-question-symbolic`, `speaker-symbolic`) are re-checked by passing them as arguments; keeping them in this list
  * would make every run report a miss and there would be nothing left for a real one to say.
  */
 const NAMES = [
@@ -37,9 +37,10 @@ const NAMES = [
   'dialog-warning-symbolic',
   // transcript-view.ts — the thought card's closed line.
   'dialog-information-symbolic',
-  // composer.ts — the one button, in both of its shapes.
+  // composer.ts — the send button in both of its shapes, and the read-aloud toggle.
   'go-up-symbolic',
   'process-stop-symbolic',
+  'audio-speakers-symbolic',
   // login-dialog.ts — the method rows.
   'go-next-symbolic',
   // tool-line.ts — the icon a tool card and the approval dialog's header pick from the tool's kind,

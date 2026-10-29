@@ -277,6 +277,16 @@ export interface LotseHooks extends FrameworkHooks {
    * becomes an inert stdio entry (the stand-in agent never starts it).
    */
   mcp?: string[];
+
+  /**
+   * `LOTSE_APP_SPEECH` — stand in for the host's `LotseChatOptions.speech`, so the Conversation
+   * toggle is offered and what it would read can be looked at. A flag.
+   *
+   * **A hook because lotse's own window passes no engine.** The stand-in it builds is silent and
+   * prints each sentence instead (`speech-hook.ts`) — the only engine a test or screenshot run may
+   * use, since a real one would talk out loud on the workstation.
+   */
+  speech?: boolean;
 }
 
 /**
@@ -334,6 +344,7 @@ export function readHooks(env: Record<string, string | undefined> = process.env)
     // predicate; this file only says what the variable's text is.
     modelPolicy: hookList(env, 'MODEL_POLICY'),
     mcp: hookList(env, 'MCP'),
+    speech: hookFlag(env, 'SPEECH'),
     thinking: hookFlag(env, 'THINKING'),
     prompt: hookValue(env, 'PROMPT'),
   };

@@ -70,9 +70,12 @@ packages/core/src/questions/duration.ts
 packages/core/src/questions/person-server.ts
 packages/core/src/questions/person.ts
 packages/core/src/questions/question.ts
+packages/core/src/read-aloud.ts
 packages/core/src/run.ts
 packages/core/src/schema.ts
 packages/core/src/scroll.ts
+packages/core/src/sentence-chunker.ts
+packages/core/src/speakable.ts
 packages/core/src/task/deps.ts
 packages/core/src/task/gate.ts
 packages/core/src/task/precheck.ts
@@ -87,6 +90,7 @@ packages/core/src/turn.ts
 packages/core/src/usage.ts
 packages/core/src/users/schema.ts
 packages/core/src/users/users.ts
+packages/core/src/voice-policy.ts
 packages/widget/src/chat.blp
 packages/widget/src/chat.ts
 packages/widget/src/composer.ts

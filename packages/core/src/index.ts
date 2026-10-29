@@ -670,6 +670,15 @@ export { PROFILES_SCHEMA } from './profile/schema.ts';
 export { isVoicePolicy, narrowVoice, type VoicePolicy } from './voice-policy.ts';
 export { speakableText, type SpeakableOptions } from './speakable.ts';
 export { sentenceChunker, type SentenceChunker, type SentenceChunkerOptions } from './sentence-chunker.ts';
+export {
+  readAloud,
+  readAloudOffered,
+  type ReadAloud,
+  type ReadAloudOptions,
+  type SpeechEngine,
+  type SpeechSynthesisLike,
+  type SpeechUtteranceLike,
+} from './read-aloud.ts';
 export { answerQuestion, type AnswerMode, type AnswerResult } from './questions/answer.ts';
 export { cancelOrphanedPermissions } from './questions/ask.ts';
 export {

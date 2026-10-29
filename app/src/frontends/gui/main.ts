@@ -63,6 +63,7 @@ import { runAnswerWindow } from './answer-window.ts';
 import { APP_CSS } from './css.ts';
 import { readHooks } from './hooks.ts';
 import { modelPolicyFromHook } from './model-policy-hook.ts';
+import { speechFromHook } from './speech-hook.ts';
 import { MainWindow } from './window.ts';
 import { APP_ID, APP_NAME, APP_VERSION } from './constants.ts';
 
@@ -169,6 +170,13 @@ const cwd = resolveCwd({ ...process.env, ...(hooks.cwd ? { LOTSE_CWD: hooks.cwd 
  */
 const modelPolicy = modelPolicyFromHook(hooks.modelPolicy ?? []);
 
+/**
+ * The host's speech engine — **and this app ships none**, so the honest value is `undefined` and no
+ * Conversation toggle appears. `LOTSE_APP_SPEECH` stands in for one for the same reason
+ * `LOTSE_APP_MODEL_POLICY` stands in for a policy, and what it builds is silent: `speech-hook.ts`.
+ */
+const speech = speechFromHook(hooks.speech ?? false);
+
 // Dev hook only: inert stdio entries, named after `LOTSE_APP_MCP`, to show the per-conversation toggles.
 const mcpServers = (hooks.mcp ?? []).map((name) => ({ name, command: 'true', args: [], env: [] }));
 
@@ -212,6 +220,7 @@ const status = await runAdwaitaApp({
         : {}),
       newChat: cwd ? { cwd, home: facts.home } : null,
       ...(modelPolicy ? { modelPolicy } : {}),
+      ...(speech ? { speech } : {}),
       ...(mcpServers.length > 0 ? { mcpServers } : {}),
       // **Only when no agent is pinned.** `LOTSE_APP_AGENT` means "this agent, for everything in this window"
       // — a fixture record naming `opencode` must be answered by the stand-in, not start a real one.

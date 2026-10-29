@@ -80,9 +80,11 @@ import profileMigrate from './unit/profile/migrate.test.ts';
 
 import hookValue from './unit/gui/hook-value.test.ts';
 import modelPolicyHook from './unit/gui/model-policy-hook.test.ts';
+import speechHook from './unit/gui/speech-hook.test.ts';
 import toolLine from './unit/gui/tool-line.test.ts';
 
 import speakable from './unit/core/speakable.test.ts';
+import readAloud from './unit/core/read-aloud.test.ts';
 
 import i18n from './unit/i18n.test.ts';
 import smoke from './unit/smoke.test.ts';
@@ -161,8 +163,10 @@ run({
   profileMigrate,
   hookValue,
   modelPolicyHook,
+  speechHook,
   toolLine,
   speakable,
+  readAloud,
   i18n,
   smoke,
 });

@@ -372,6 +372,46 @@ Two things `modelPolicy` does not do, and you still have to:
 The full option, the two gates behind it and what counts as free:
 [`@lotse/widget`](../packages/widget/README.md#modelpolicy-blocks-the-send-it-never-switches-the-model).
 
+## Read the answers aloud: `speech`
+
+Lotse speaks nothing by itself and bundles no speech engine. Pass `speech` and the composer grows a
+**Conversation** toggle; with it on, each finished sentence of a streamed answer is spoken as soon as
+it is complete, rather than at the end of the turn — points 11 and 12 of
+[ADR 0009](adr/0009-voice-as-a-surface.md).
+
+The option is shaped like the W3C `speechSynthesis` and nothing more, so lotse imports neither a
+browser API nor a GNOME one:
+
+```ts
+import { SpeechSynthesisUtterance, speechSynthesis } from '@gjsify/speech-synthesis';
+
+speech: { synthesis: speechSynthesis, utterance: (text) => new SpeechSynthesisUtterance(text) },
+```
+
+`synthesis` needs `speak(utterance)`, `cancel()` and `speaking`; `utterance(text)` builds whatever
+your `speak` accepts, as a **function** so a class constructor can be wrapped rather than called. A
+browser host passes `window.speechSynthesis` and `(text) => new SpeechSynthesisUtterance(text)`; a
+test passes a fake that records what it was told to say. The driver behind the toggle is
+`readAloud` in `@lotse/core` — pure, no `gi://`, so a headless host can use it on its own.
+
+What the widget does with it:
+
+- **Only whole sentences.** The text goes through `sentenceChunker`, which also drops code blocks,
+  diffs and tables: those are shown, not read.
+- **Stop means stop.** <kbd>Esc</kbd> in the chat, sending the next prompt, cancelling the turn or
+  switching the toggle off all call `cancel()` and throw away the half-built sentence. Esc still
+  reaches your dialogs.
+- **No toggle at all** when you pass no `speech`, or when the effective profile `voice` policy is
+  `off` — ask `chat.readAloudOffered` before you build UI around it. `chat.setReadAloud(on)` and
+  `chat.readAloudOn` are the toggle from your side.
+- **A `speak` that throws** switches the feature off and reports through `onNotice`; the turn
+  continues.
+
+**`voice: 'local-only'` is your promise, not a check.** Whether an engine runs on the machine or
+sends the text to a cloud service cannot be read off a `speechSynthesis`-shaped object, so lotse
+enforces `off` and trusts you for the rest. If the conversation can contain client data, pick a local
+engine.
+
 ## Headless jobs: no widget
 
 Some work has nobody watching it: read a receipt, classify a mail, extract fields from a PDF's text.
