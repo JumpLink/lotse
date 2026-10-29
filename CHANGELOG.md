@@ -9,6 +9,15 @@ and also records changes that are not a release of their own.
 ### Added
 
 - **Voice text preparation in `@lotse/core`** ([ADR 0009](docs/adr/0009-voice-as-a-surface.md)): `speakableText` (Markdown to plain text for a TTS), `sentenceChunker` (streamed deltas to whole sentences) and the `voice` policy (`any`, `local-only`, `off`) on profiles, narrowed with `narrowVoice`.
+- **The chat reads the agent's answers aloud** (ADR 0009, points 11 and 12). `LotseChat` takes an
+  optional `speech` engine — `{ synthesis, utterance }`, shaped like the W3C `speechSynthesis`, so a
+  browser passes `window.speechSynthesis` and a GNOME app `@gjsify/speech-synthesis`; lotse imports
+  neither and bundles no engine. With it, the composer offers a **Conversation** toggle, and each
+  finished sentence of a streamed answer is spoken as soon as it is complete, code and tables
+  dropped. <kbd>Esc</kbd>, the next prompt, a cancelled turn and switching off all stop it at once.
+  No `speech`, or a profile `voice` of `off`: no toggle (`chat.readAloudOffered`). The driver is
+  `readAloud` in `@lotse/core`, pure and tested on both runtimes against a fake.
+  See [docs/embedding.md](docs/embedding.md#read-the-answers-aloud-speech).
 
 ### Changed
 

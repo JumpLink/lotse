@@ -242,6 +242,42 @@ first *allowed* model as though it were in use, and choosing that model would em
 end whenever one allowed model is left. `ConfigRowControl.placeholder` (`'Choose…'`, set exactly when
 `selected < 0`) is prepended as row 0 and `configSelection` subtracts the offset, answering `null` for it.
 
+## `LOTSE_APP_SPEECH` — the Conversation toggle, silently
+
+A hook for `LOTSE_APP_MODEL_POLICY`'s reason: `LotseChat` takes an optional `speech` engine from its
+host (ADR 0009, point 12) and **lotse's own window passes none** — the app bundles no TTS, so there is
+no Conversation toggle in it and nothing of the read-aloud path is reachable from a run.
+
+`LOTSE_APP_SPEECH=1` (a flag) installs a stand-in engine and switches the toggle on through
+`LotseChat.setReadAloud`, the call the button itself makes, before `LOTSE_APP_THINKING` sends its
+prompt — so the sentences the chunker finds appear as the answer streams, not at the end.
+
+**The stand-in is silent, and it is the only engine a test or screenshot run may use.** It records
+what it was asked to say and prints one line per sentence instead:
+
+```
+lotse: would speak — The first sentence.
+lotse: would stop speaking
+```
+
+A real engine here would talk out loud on the machine running the suite. What the stand-in is lives in
+`frontends/gui/speech-hook.ts`, with `app/tests/unit/gui/speech-hook.test.ts` holding the off case —
+the flag unset must build **no engine at all**, because an engine that merely exists and says nothing
+would show the toggle in a window that cannot speak.
+
+```sh
+# a streamed answer, read sentence by sentence into the log — synthetic store, pinned cwd
+mkdir -p /tmp/x/project
+LOTSE_SESSIONS_FILE=/tmp/x/sessions.json LOTSE_SETTINGS_FILE=/tmp/x/settings.json \
+  LOTSE_APP_AGENT=stand-in LOTSE_APP_CWD=/tmp/x/project \
+  LOTSE_APP_SPEECH=1 LOTSE_APP_THINKING=1 LOTSE_STANDIN_CHUNKS=4 \
+  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+```
+
+The bundle is `build:app`'s, not the one `npm run build` makes (that is the CLI's `lotse.gjs.mjs`),
+and the store files have to be pinned: `LOTSE_APP_THINKING` sends into the **pending** chat an empty
+`LOTSE_SESSIONS_FILE` opens, and without them the run reads the person's own sessions.
+
 ## The five pointer-only controls
 
 Five states are unreachable from outside the process, and each has one hook. They are read at startup by
