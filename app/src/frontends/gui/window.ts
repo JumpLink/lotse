@@ -88,7 +88,7 @@ import {
   type NoticeView,
   type RecordedResolution,
 } from '@lotse/core';
-import { LotseChat } from '@lotse/widget';
+import { LotseChat, type SpeechEngine } from '@lotse/widget';
 import {
   APP_NAME,
   COLLAPSE_WIDTH_PX,
@@ -205,6 +205,13 @@ export interface MainWindowOptions {
    * and the one place that decides whether there is a rule at all is the composition root.
    */
   readonly modelPolicy?: ModelPolicy;
+  /**
+   * The host's speech engine, handed to the widget unchanged. Absent: no Conversation toggle.
+   *
+   * Travels the way `modelPolicy` does, and absent in lotse's own window for the same reason — the
+   * app ships no engine, and `main.ts` owns the choice. `LOTSE_APP_SPEECH` passes a silent one.
+   */
+  readonly speech?: SpeechEngine;
   /** The clock, injected so a screenshot run is the only place a real one is used. */
   readonly now?: () => string;
 }
@@ -348,6 +355,7 @@ export class MainWindow extends Adw.ApplicationWindow {
       ...(options.resolveAgent ? { resolveAgent: options.resolveAgent } : {}),
       ...(options.mcpServers ? { mcpServers: options.mcpServers } : {}),
       ...(options.modelPolicy ? { modelPolicy: options.modelPolicy } : {}),
+      ...(options.speech ? { speech: options.speech } : {}),
       // lotse's own window: the person's own servers are theirs to add (#17).
       allowCustomProviders: true,
       ...(options.noAgent ? { noAgent: options.noAgent } : {}),
@@ -735,6 +743,19 @@ export class MainWindow extends Adw.ApplicationWindow {
       }
     }
     if (hooks.debug) console.log('lotse: verbose dev logging on');
+    // `LOTSE_APP_SPEECH` presses the Conversation toggle, the way `LOTSE_APP_STOP` presses Stop —
+    // through the widget's own `setReadAloud`, so the button moves with it. **Before `THINKING`**:
+    // the point is to see the streamed answer go through the chunker, and a toggle flipped after the
+    // turn started would read nothing until the next one. The engine is the silent stand-in
+    // `main.ts` built, so this logs the sentences rather than saying them.
+    if (hooks.speech === true) {
+      if (this.#chat.readAloudOffered) {
+        console.log('lotse: LOTSE_APP_SPEECH — switching the Conversation toggle on');
+        this.#chat.setReadAloud(true);
+      } else {
+        console.log('lotse: LOTSE_APP_SPEECH — not offered here, so there is no toggle to press');
+      }
+    }
     // `LOTSE_APP_THINKING` sends a prompt, because this is the step that has a turn to send. It is a real
     // turn against whatever agent was selected — no staged fake stream — because a fake one would test
     // the staging code instead of the window. The prompt defaults to a fixture sentence rather than to
