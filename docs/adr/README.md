@@ -21,3 +21,4 @@ parts stays **Accepted** and names the record and the parts.
 | [0007](0007-profiles-tasks-triggers.md) | Profiles, tasks and triggers | Accepted |
 | [0008](0008-messenger-channel-as-mcp-contract.md) | The messenger channel as an MCP contract | Accepted |
 | [0009](0009-voice-as-a-surface.md) | Voice as a surface | Proposed |
+| [0010](0010-conversation-mode.md) | Conversation mode | Proposed |
