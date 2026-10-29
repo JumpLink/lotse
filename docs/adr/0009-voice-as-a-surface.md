@@ -1,6 +1,7 @@
 # 9. Voice as a surface
 
-- Status: **Proposed**
+- Status: **Proposed**; points 3 (local STT), 8 and steps 5–7 amended by
+  [ADR 0010](0010-conversation-mode.md)
 - Date: 2026-10-26
 - Deciders: Pascal Garber
 - Related: [vision](../vision.md), [ADR 0007](0007-profiles-tasks-triggers.md) (profiles),
