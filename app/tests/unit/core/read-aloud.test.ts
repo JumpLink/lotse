@@ -1,5 +1,6 @@
 /**
- * The read-aloud driver against a **fake** speech engine (ADR 0010, stage 1).
+ * The read-aloud driver against a **fake** speech engine — which is the order ADR 0009 chose: "core
+ * and widget do not [wait for a gjsify release]: they are built and merged against a fake first".
  *
  * Nothing here may make a sound: the fake records the texts it was told to speak and the times it was
  * cancelled, which is the whole of what the driver decides. A real engine in a test would be audible

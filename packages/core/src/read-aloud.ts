@@ -1,5 +1,6 @@
 /**
- * Reading a streamed agent reply aloud, sentence by sentence (ADR 0010, stage 1).
+ * Reading a streamed agent reply aloud, sentence by sentence — ADR 0009 points 11 and 12, the first
+ * half of conversation mode: lotse speaks, nobody listens yet.
  *
  * The engine is the host's: a minimal structural type shaped like the W3C `speechSynthesis`, so a
  * browser passes `window.speechSynthesis`, a GNOME app passes `@gjsify/speech-synthesis`, and a test
