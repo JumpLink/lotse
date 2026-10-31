@@ -490,6 +490,27 @@ jobs:
           done
           [ "$missing" -eq 0 ]
 
+      # The release body is the same `gjsify.flatpak.releases` entry the metainfo is generated
+      # from: `release-notes` fails loudly when the tag has no entry, so a release cannot publish
+      # an empty body. It needs the checkout for `package.json`, and the pinned CLI only — the
+      # bootstrap is the same one the `npm` job uses, no project dependencies.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node 24 for the release notes
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Generate the release notes
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -eu
+          VERSION=$(node -p "require('./app/package.json').devDependencies['@gjsify/cli']")
+          npm install -g "@gjsify/cli@$VERSION"
+          gjsify release-notes "$TAG" --compare > "$RUNNER_TEMP/notes.md"
+          cat "$RUNNER_TEMP/notes.md"
+
       # A tag push creates no release on its own, and `gh release upload` against a tag with none
       # fails with "release not found" after every artifact has already been built. Create it
       # first when missing — as a draft, so the notes can be read before anyone is notified —
@@ -507,7 +528,7 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --title "$TAG" \
               --draft \
-              --generate-notes \
+              --notes-file "$RUNNER_TEMP/notes.md" \
               --verify-tag
           fi
           gh release upload "$TAG" ship/* --clobber --repo "$GITHUB_REPOSITORY"
