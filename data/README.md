@@ -159,7 +159,7 @@ sandbox with no network whose only writable path is `/app/extra` — the rest of
 the read-only build result — so the archive unpacks to `/app/extra/agents/opencode/`
 (`BUNDLED_PREFIX` in `packages/core/src/agents/catalog.ts`). That is off PATH on purpose: in
 `/app/bin` it would shadow the person's own opencode. `apply_extra` uses the runtime's
-`tar` and `gzip` (both present in `org.gnome.Platform//50`).
+`tar` and `gzip` (both present in `org.gnome.Platform//51`).
 
 **The archive is an npm tarball, not a GitHub release.** opencode v2 is published as
 `@opencode/cli`, one binary package per platform in the wrapper's `optionalDependencies`
@@ -188,7 +188,7 @@ manifest above carries it.
 
 **`--share=network` is load-bearing for the bundled agent.** It runs *inside* the sandbox, and a
 sandbox with this app's other grants has no DNS and no route out — measured with `flatpak run
---filesystem=host --command=sh org.freedesktop.Platform//25.08`: `curl https://registry.npmjs.org`
+--filesystem=host --command=sh org.freedesktop.Platform//26.08`: `curl https://registry.npmjs.org`
 fails, and with `--share=network` it answers 200. Without it the bundled agent could not reach one
 model provider, and no login could finish. A host agent is unaffected: it runs on the other side of
 `flatpak-spawn --host`.
