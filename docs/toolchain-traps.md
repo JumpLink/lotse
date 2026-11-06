@@ -1,6 +1,6 @@
 # Toolchain traps
 
-The incidents behind the toolchain rules in [AGENTS.md](../AGENTS.md#conventions). The rules stay
+The incidents behind the toolchain rules in [conventions.md](conventions.md). The rules stay
 there; the measurements that produced them live here, so a rule is never "simplified" back into
 the bug.
 

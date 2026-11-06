@@ -54,3 +54,7 @@ there. `lotse start` with no prompt opens a session and stops, which is how you 
 - Every option is read with `pickArgv`, which asks for both spellings. yargs exposes `--deny-all`
   as `denyAll` or `deny-all` depending on version, and a gate that silently stopped firing is the
   worst failure a flag whose whole job is stopping things can have.
+
+## `listen` and the task code
+
+`listen` is [ADR 0003](docs/adr/0003-serve-tasks-questions-channel.md); read it before touching `packages/core/src/task/` and `questions/`. A new task field goes into `task/skill.ts` first. Pure logic in core, GI only in `app/src/core/desktop-channel.ts` (imported lazily so `answer` stays GI-free). Guide: [docs/listen.md](docs/listen.md).
