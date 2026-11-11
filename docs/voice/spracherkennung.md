@@ -79,15 +79,17 @@ was idle (two passes for the Vulkan engines).
 
 Twelve recordings of one real voice from the sentence list (ten without noise, two with), on a
 USB dynamic microphone (Shure MV7) in a quiet room. The same files again through a simulated
-phone line: band-passed to 300–3400 Hz, G.711 µ-law at 8 kHz, back to 16 kHz. GPU idle,
-`nice -n 10`, four threads on the CPU engines.
+phone line: band-passed to 300–3400 Hz, G.711 µ-law at 8 kHz, back to 16 kHz. Then the same
+sentences recorded anew on a phone and sent as Telegram voice messages (Opus in Ogg), fetched
+through curlew and decoded to 16 kHz. GPU idle, `nice -n 10`, four threads on the CPU engines.
+WER counts the ten recordings without noise; latency is the microphone pass.
 
-| Engine, device | WER microphone | WER phone line | median / p90 |
-|---|---|---|---|
-| whisper.cpp `large-v3-turbo`, Vulkan | 12.9 % | 11.8 % | 428 / 507 ms |
-| streaming zipformer, CPU | 21.5 % | 26.9 % | 37 / 73 ms |
-| whisper.cpp `small`, Vulkan | 21.5 % | 35.5 % | 186 / 205 ms |
-| parakeet, CPU | 31.2 % | 49.5 % | 434 / 592 ms |
+| Engine, device | WER microphone | WER phone line | WER Telegram | median / p90 |
+|---|---|---|---|---|
+| whisper.cpp `large-v3-turbo`, Vulkan | 12.9 % | 11.8 % | 14.0 % | 428 / 507 ms |
+| streaming zipformer, CPU | 21.5 % | 26.9 % | 24.7 % | 37 / 73 ms |
+| whisper.cpp `small`, Vulkan | 21.5 % | 35.5 % | 25.8 % | 186 / 205 ms |
+| parakeet, CPU | 31.2 % | 49.5 % | 23.7 % | 434 / 592 ms |
 
 - **A real voice roughly doubles the error rate**, and the order changes: `large-v3-turbo` stays
   first, parakeet falls from second to last. It hears "Pool Request" for "Pull-Request" and
@@ -99,13 +101,17 @@ phone line: band-passed to 300–3400 Hz, G.711 µ-law at 8 kHz, back to 16 kHz.
 - Part of the zipformer's WER is the scoring: it writes numbers as words ("zwei, drei, neun,
   vier" for "2394") and times as speech ("halb vier" for "15 Uhr 30"), each counted as several
   errors.
+- **A messenger voice message is closer to the microphone than to the phone line.** Opus keeps
+  the full speech band, so `large-v3-turbo` loses about one point, and it stays the choice for a
+  messenger surface too. Parakeet recovers on Telegram, but ties the zipformer within noise and
+  still fails the phone line.
 - Two noisy recordings are too few for a noisy WER, so the table leaves it out.
 
 ## Caveats
 
 - Synthetic speech has no accent, hesitation, microphone or room, so the WER is optimistic. The
-  real-voice section above is one speaker and twelve sentences, a check rather than a benchmark;
-  recordings from a phone microphone through a messenger codec are still to come.
+  real-voice section above is one speaker and twelve sentences, a check rather than a benchmark.
+  The phone-line column is simulated; a real call through Asterisk is not measured yet.
 - 25 sentences: differences under two points are noise.
 
 ## Reproduce
