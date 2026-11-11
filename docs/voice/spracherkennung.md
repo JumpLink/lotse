@@ -75,10 +75,37 @@ was idle (two passes for the Vulkan engines).
 - **Consequence for ADR 0010:** free video memory alone does not show that the GPU is usable. The
   probe at mode start, which measures time, is what catches a computing GPU.
 
+## Real voice (2026-11-11)
+
+Twelve recordings of one real voice from the sentence list (ten without noise, two with), on a
+USB dynamic microphone (Shure MV7) in a quiet room. The same files again through a simulated
+phone line: band-passed to 300–3400 Hz, G.711 µ-law at 8 kHz, back to 16 kHz. GPU idle,
+`nice -n 10`, four threads on the CPU engines.
+
+| Engine, device | WER microphone | WER phone line | median / p90 |
+|---|---|---|---|
+| whisper.cpp `large-v3-turbo`, Vulkan | 12.9 % | 11.8 % | 428 / 507 ms |
+| streaming zipformer, CPU | 21.5 % | 26.9 % | 37 / 73 ms |
+| whisper.cpp `small`, Vulkan | 21.5 % | 35.5 % | 186 / 205 ms |
+| parakeet, CPU | 31.2 % | 49.5 % | 434 / 592 ms |
+
+- **A real voice roughly doubles the error rate**, and the order changes: `large-v3-turbo` stays
+  first, parakeet falls from second to last. It hears "Pool Request" for "Pull-Request" and
+  collapses on the phone line, so it is no longer a candidate.
+- **`large-v3-turbo` does not lose accuracy on the phone line.** It stays the push-to-talk
+  choice, and the same model can serve a phone surface.
+- **The zipformer beats parakeet on a real voice** at a tenth of the latency and a sixth of the
+  memory, which supports building gjsify's first `SpeechRecognition` backend on it.
+- Part of the zipformer's WER is the scoring: it writes numbers as words ("zwei, drei, neun,
+  vier" for "2394") and times as speech ("halb vier" for "15 Uhr 30"), each counted as several
+  errors.
+- Two noisy recordings are too few for a noisy WER, so the table leaves it out.
+
 ## Caveats
 
-- Synthetic speech has no accent, hesitation, microphone or room, so the WER is optimistic. Ten
-  recordings of a real voice, read from the same sentence list, are the check.
+- Synthetic speech has no accent, hesitation, microphone or room, so the WER is optimistic. The
+  real-voice section above is one speaker and twelve sentences, a check rather than a benchmark;
+  recordings from a phone microphone through a messenger codec are still to come.
 - 25 sentences: differences under two points are noise.
 
 ## Reproduce
@@ -88,4 +115,4 @@ The scripts live outside the repository (`~/.cache/spike/stt/` on the measuring 
 <threads>`, `bench_vosk.py <model>`, run with `nice -n 10`. Models: whisper.cpp ggml from
 `huggingface.co/ggerganov/whisper.cpp`; `sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8` and
 `sherpa-onnx-streaming-zipformer-de-kroko-2025-08-06` from the sherpa-onnx releases; Vosk from
-`alphacephei.com/vosk/models`.
+`alphacephei.com/vosk/models`. The real-voice pass sets `STT_D` to the recording directory (`run_eigene.sh`).
