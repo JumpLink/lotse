@@ -255,13 +255,16 @@ export class StdioChannel implements RawChannel {
   }
 
   /**
-   * Signal the agent's whole process group, not just the agent.
+   * Signal the agent's whole process tree, not just the agent.
    *
    * A signal to the direct child leaves any process it started holding stdout and stderr, and the
    * end gate waits for both pipes — so `terminate` never ended the channel (measured `NEVER-ENDED`
-   * on gjs and node). `detached: true` makes the agent a session and group leader, so `-pid` reaches
-   * everything it spawned. Without `setsid` (GJS needs the binary) there is no such group and the
-   * kill throws `ESRCH`; then the direct child is all that can be reached.
+   * on gjs and node). `detached: true` makes the agent a session and group leader on Node/Linux,
+   * so `-pid` reaches everything it spawned. On GJS (and some other runtimes) `detached` does not
+   * create a process group, `process.kill(-pid)` throws `ESRCH`, and the direct child alone is not
+   * enough: a grandchild inherited the pipes and outlives it. In that case we walk the process tree
+   * and signal every descendant individually, deepest first, so nothing is reparented before it is
+   * told to exit.
    *
    * Its own session also means the terminal's signals stop reaching the agent. For Ctrl-C that is
    * the point: `interrupt.ts` decides between `session/cancel` and a close, and a SIGINT that also
@@ -276,10 +279,58 @@ export class StdioChannel implements RawChannel {
         process.kill(-pid, signal);
         return;
       } catch {
-        // No group of its own — fall through to the child alone.
+        // No group of its own — reach every descendant directly.
+        this.#killDescendants(pid, signal);
       }
     }
     this.#child.kill(signal);
+  }
+
+  /**
+   * Signal every descendant of `rootPid`, deepest first.
+   *
+   * Used when the runtime did not give the child its own process group, so `process.kill(-pid)`
+   * cannot reach grandchildren. `ps -e -o pid,ppid` is available on both Linux and Darwin; on
+   * Windows the caller has already returned because the test suite skips these paths.
+   */
+  #killDescendants(rootPid: number, signal: NodeJS.Signals): void {
+    let rows: string[];
+    try {
+      rows = spawnSync('ps', ['-e', '-o', 'pid=,ppid='], { encoding: 'utf8' }).stdout
+        .trim()
+        .split(/\r?\n/);
+    } catch {
+      return;
+    }
+    const byPpid = new Map<number, number[]>();
+    const allPids = new Set<number>();
+    for (const row of rows) {
+      const parts = row.trim().split(/\s+/);
+      if (parts.length < 2) continue;
+      const pid = Number(parts[0]);
+      const ppid = Number(parts[1]);
+      if (!Number.isFinite(pid) || !Number.isFinite(ppid)) continue;
+      allPids.add(pid);
+      const siblings = byPpid.get(ppid) ?? [];
+      siblings.push(pid);
+      byPpid.set(ppid, siblings);
+    }
+    if (!allPids.has(rootPid)) return;
+    const descendants: number[] = [];
+    const walk = (ppid: number): void => {
+      for (const child of byPpid.get(ppid) ?? []) {
+        descendants.push(child);
+        walk(child);
+      }
+    };
+    walk(rootPid);
+    for (let i = descendants.length - 1; i >= 0; i--) {
+      try {
+        process.kill(descendants[i], signal);
+      } catch {
+        // Already gone — ignore.
+      }
+    }
   }
 
   /**
