@@ -4,7 +4,7 @@ Notable changes to lotsman. The per-release notes that ship in the AppStream met
 from the `gjsify.flatpak.releases` block in `package.json`; this file is the developer-facing view
 and also records changes that are not a release of their own.
 
-## Unreleased
+## 0.6.0 — 2026-11-12
 
 ### Added
 

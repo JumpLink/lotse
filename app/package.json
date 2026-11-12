@@ -1,6 +1,6 @@
 {
   "name": "lotsman-cli",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "license": "AGPL-3.0-or-later",
   "private": true,
   "type": "module",
@@ -96,10 +96,10 @@
     }
   },
   "dependencies": {
-    "@lotsman/acp": "^0.5.0",
-    "@lotsman/core": "^0.5.0",
-    "@lotsman/session": "^0.5.0",
-    "@lotsman/widget": "^0.5.0",
+    "@lotsman/acp": "^0.6.0",
+    "@lotsman/core": "^0.6.0",
+    "@lotsman/session": "^0.6.0",
+    "@lotsman/widget": "^0.6.0",
     "yargs": "^18.1.0"
   },
   "devDependencies": {
