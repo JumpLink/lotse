@@ -1,20 +1,20 @@
 /**
- * `lotse provider` — custom providers (a local Ollama, LM Studio, llama.cpp, vLLM, any OpenAI-compatible
+ * `lotsman provider` — custom providers (a local Ollama, LM Studio, llama.cpp, vLLM, any OpenAI-compatible
  * endpoint) for the bundled opencode.
  *
  * ```
- * lotse provider list
- * lotse provider add --preset local-ollama --model qwen3:4b=8192
- * lotse provider add gpu-box --url http://192.168.1.20:8000/v1 --allow-lan
- * echo "$KEY" | lotse provider add my-api --url https://llm.example/v1 --key
- * lotse provider remove local-ollama
+ * lotsman provider list
+ * lotsman provider add --preset local-ollama --model qwen3:4b=8192
+ * lotsman provider add gpu-box --url http://192.168.1.20:8000/v1 --allow-lan
+ * echo "$KEY" | lotsman provider add my-api --url https://llm.example/v1 --key
+ * lotsman provider remove local-ollama
  * ```
  *
  * One action positional rather than three yargs subcommands: a nested `demandCommand` fails on GJS in a
- * way that hides the hint (`index.ts`). The decisions are `@lotse/core`'s (`custom/*`): where a URL may
+ * way that hides the hint (`index.ts`). The decisions are `@lotsman/core`'s (`custom/*`): where a URL may
  * point, which id may be used, what is written. This file gathers the facts over a private `opencode
  * serve`, asks, and writes. **Only the bundled copy is written to** — the person's own opencode config is
- * theirs; `list` reads either. A key is read from stdin like `lotse login`'s, handed to opencode through
+ * theirs; `list` reads either. A key is read from stdin like `lotsman login`'s, handed to opencode through
  * `connect/key`, and never written or printed.
  */
 
@@ -41,9 +41,9 @@ import {
   withProvider,
   withoutProvider,
   type ConfiguredProvider,
-  type LotsePaths,
+  type LotsmanPaths,
   type OpencodeServer,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 import { agentForNew } from './choose.ts';
 import { readSecret } from './login.ts';
@@ -61,12 +61,12 @@ function fail(message: string): void {
 }
 
 function describe(provider: ConfiguredProvider): string {
-  const where = provider.ours ? 'lotse' : provider.source || 'opencode config';
+  const where = provider.ours ? 'lotsman' : provider.source || 'opencode config';
   const key = provider.connected ? 'key stored' : provider.reach === 'remote' ? 'no key' : 'no key needed';
   return `${provider.id} — ${provider.name}  ${provider.baseUrl ?? '(no URL)'}  [${where}; ${key}]`;
 }
 
-const command = (paths: LotsePaths): CommandModule => ({
+const command = (paths: LotsmanPaths): CommandModule => ({
   command: 'provider <action> [id]',
   describe: _('custom providers (local models, any OpenAI-compatible endpoint) for the bundled opencode'),
   builder: (yargs) =>
@@ -98,19 +98,19 @@ const command = (paths: LotsePaths): CommandModule => ({
     if (!resolved) return;
     const agent = resolved.command;
     if (agent.id !== 'opencode')
-      return fail(fmt(_('{title} has no custom providers lotse can manage'), { title: agent.title }));
+      return fail(fmt(_('{title} has no custom providers lotsman can manage'), { title: agent.title }));
     const reason = whyNoLoginServer(agent, currentSandboxFacts());
     if (reason) return fail(reason.replace('its login server', 'its config'));
     if (!which(agent.program))
       return fail(
         fmt(_('{program} is not on PATH — install it, then try again'), { program: agent.program }),
       );
-    // Only the bundled copy has a config directory that is lotse's to write.
+    // Only the bundled copy has a config directory that is lotsman's to write.
     const file = resolved.isolation ? customProvidersFile(resolved.isolation) : null;
     if (action !== 'list' && !file) {
       return fail(
         'custom providers are written only for the bundled opencode — your own opencode keeps them in its ' +
-          'own config (~/.config/opencode), which lotse does not edit. `lotse agents --use opencode:bundled` switches.',
+          'own config (~/.config/opencode), which lotsman does not edit. `lotsman agents --use opencode:bundled` switches.',
       );
     }
 
@@ -119,7 +119,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       key = await readSecret('API key: ');
       if (!key)
         return fail(
-          'no key given — pipe it in (`… | lotse provider add … --key`) or run this in a terminal.',
+          'no key given — pipe it in (`… | lotsman provider add … --key`) or run this in a terminal.',
         );
     }
 
@@ -137,7 +137,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       fail(key ? message.split(key).join('[key]') : message);
     } finally {
       await server.close();
-      // Same as `lotse login`: on GJS a child `startServer` launched keeps the main loop alive.
+      // Same as `lotsman login`: on GJS a child `startServer` launched keeps the main loop alive.
       setTimeout(() => process.exit(process.exitCode ?? 0), 50);
     }
   },
@@ -146,7 +146,7 @@ const command = (paths: LotsePaths): CommandModule => ({
 async function list(server: OpencodeServer, file: string | null): Promise<void> {
   const providers = await createProviderApi(server.send).configured(file ?? '');
   if (providers.length === 0) {
-    err('no custom providers. `lotse provider add --preset local-ollama` adds a local Ollama.');
+    err('no custom providers. `lotsman provider add --preset local-ollama` adds a local Ollama.');
     return;
   }
   for (const provider of providers) {
@@ -224,7 +224,7 @@ async function add(
 }
 
 async function remove(server: OpencodeServer, file: string, id: string | undefined): Promise<void> {
-  if (!id) return fail('which provider? `lotse provider list` names them');
+  if (!id) return fail('which provider? `lotsman provider list` names them');
   const document = readProvidersDocument(file);
   if (!document.ok)
     return fail(
@@ -238,7 +238,7 @@ async function remove(server: OpencodeServer, file: string, id: string | undefin
     const elsewhere = (await api.configured(file)).find((provider) => provider.id === id);
     return fail(
       elsewhere
-        ? `${id} is in ${elsewhere.source}, which lotse does not edit — remove it there`
+        ? `${id} is in ${elsewhere.source}, which lotsman does not edit — remove it there`
         : `there is no custom provider "${id}"`,
     );
   }

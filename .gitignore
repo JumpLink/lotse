@@ -21,11 +21,11 @@ package-lock.json
 
 # ─── Local state — NEVER commit ───────────────────────────────────────────
 # Defence in depth only. The real guarantee is that no session data is ever WRITTEN here:
-# lotse's store lives at $XDG_DATA_HOME/lotse/sessions.json, outside the repo, by
+# lotsman's store lives at $XDG_DATA_HOME/lotsman/sessions.json, outside the repo, by
 # construction (see app/src/core/store.ts). This repository is PUBLIC.
-lotse-data/
+lotsman-data/
 *.sessions.json
-# `lotse listen` users — they live in $XDG_CONFIG_HOME/lotse/; examples/users.example.json is the shape.
+# `lotsman listen` users — they live in $XDG_CONFIG_HOME/lotsman/; examples/users.example.json is the shape.
 users.json
 tasks.json
 sessions.json

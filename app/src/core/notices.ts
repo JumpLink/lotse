@@ -6,13 +6,13 @@
  * **A bad file never stops startup**: `readNotices` returns "nothing seen" plus a `problem`, so the notice
  * is shown again rather than the window failing.
  *
- * The ids and `noticeDue` are in `@lotse/core`, next to the empty state that asks; what is here is the
+ * The ids and `noticeDue` are in `@lotsman/core`, next to the empty state that asks; what is here is the
  * file around them.
  */
 
 import { readFileSync } from 'node:fs';
 
-import { NOTICE_IDS, type NoticeId } from '@lotse/core';
+import { NOTICE_IDS, type NoticeId } from '@lotsman/core';
 
 import { writePrivateFile } from './private-file.ts';
 

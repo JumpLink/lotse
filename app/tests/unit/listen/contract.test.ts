@@ -9,7 +9,7 @@ import {
   sendToPeerWithIds,
   waitSeconds,
   type MessengerSettings,
-} from '@lotse/core';
+} from '@lotsman/core';
 import { withFakeMcp, type FakeMcp } from '../../support/fake-mcp.ts';
 
 const SETTINGS: MessengerSettings = {

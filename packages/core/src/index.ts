@@ -1,15 +1,15 @@
 /**
- * `@lotse/core` — lotse without a surface.
+ * `@lotsman/core` — lotsman without a surface.
  *
- * Layer 2, between the protocol (`@lotse/acp`) and whatever is rendering: which agent to start
+ * Layer 2, between the protocol (`@lotsman/acp`) and whatever is rendering: which agent to start
  * and how to start it, the session a prompt turn runs in, the view models a chat is drawn from,
  * and the provider login. The CLI, the Adwaita window and an embedded widget are three consumers
  * of the same code, which is the whole reason this package exists — see
- * [ADR 0001](../../../docs/adr/0001-lotse-as-an-embeddable-widget.md).
+ * [ADR 0001](../../../docs/adr/0001-lotsman-as-an-embeddable-widget.md).
  *
  * **Nothing here knows a toolkit.** No `gi://`, no yargs, no widget: the pieces that need a
- * decision take it as an argument. Paths arrive as a `LotsePaths`, the agent choice as an
- * `AgentChoice`, the permission answer as a `ClientGate`. That is what lets a host put lotse's
+ * decision take it as an argument. Paths arrive as a `LotsmanPaths`, the agent choice as an
+ * `AgentChoice`, the permission answer as a `ClientGate`. That is what lets a host put lotsman's
  * conversation in its own data directory, and what keeps every file in here testable on Node as
  * well as on GJS.
  *
@@ -20,10 +20,10 @@
 
 // ── Translation ─────────────────────────────────────────────────────────────────────────────────
 // The library's own gettext domain and the four call sites every string in here goes through. The
-// translator is registered by `@lotse/widget` (or by lotse's app), because core must stay importable
+// translator is registered by `@lotsman/widget` (or by lotsman's app), because core must stay importable
 // on Node where GJS's `gettext` module does not exist — ADR 0005.
 export {
-  LOTSE_TEXT_DOMAIN,
+  LOTSMAN_TEXT_DOMAIN,
   _,
   _n,
   _p,
@@ -35,11 +35,11 @@ export {
   type LibraryTranslator,
 } from './i18n.ts';
 
-// ── Where lotse keeps things ────────────────────────────────────────────────────────────────────
-// The shape, and the layout a host gets. The app's own XDG/`LOTSE_*` resolver stays in the app,
+// ── Where lotsman keeps things ────────────────────────────────────────────────────────────────────
+// The shape, and the layout a host gets. The app's own XDG/`LOTSMAN_*` resolver stays in the app,
 // and `envKnob` is how both sides read a knob under its new name and its old one.
 export { envKnob } from './env.ts';
-export { lotsePathsUnder, type LotsePaths } from './paths.ts';
+export { lotsmanPathsUnder, type LotsmanPaths } from './paths.ts';
 
 // ── Which agent, and where its private HOME goes ─────────────────────────────────────────────────
 export { describeChoice, type AgentChoice, type AgentChoiceSource } from './agents/choice.ts';
@@ -140,7 +140,7 @@ export {
   type OpenAgentOptions,
   type TurnOptions,
 } from './run.ts';
-export type { McpServer } from '@lotse/acp';
+export type { McpServer } from '@lotsman/acp';
 
 // ── Headless jobs: input in, a typed value out (ADR 0004) ───────────────────────────────────────
 export {
@@ -175,7 +175,7 @@ export {
   type ConversationInput,
 } from './conversation.ts';
 
-// ── The login an agent asks for, and the login lotse can arrange ────────────────────────────────
+// ── The login an agent asks for, and the login lotsman can arrange ────────────────────────────────
 export {
   arrangeAuth,
   authPlan,
@@ -248,7 +248,7 @@ export {
   type OnboardingView,
 } from './onboarding.ts';
 
-// ── Custom providers: lotse's own opencode config file, read back over the login server ──────────
+// ── Custom providers: lotsman's own opencode config file, read back over the login server ──────────
 export {
   CUSTOM_PRESETS,
   LOCAL_MODEL_HINT,
@@ -309,7 +309,7 @@ export {
   FREE_MODELS_DENIED_NOTE,
   FREE_MODELS_PRIVACY_NOTE,
   HOST_READ_ONLY_REASON,
-  NOT_LOTSE_COPY_REASON,
+  NOT_LOTSMAN_COPY_REASON,
   PROVIDER_PRIVACY_NOTE,
   ProviderSettingsController,
   type AddOutcome,
@@ -373,7 +373,7 @@ export {
 } from './permission.ts';
 export { chunkToText, describe, terminalGate, type Terminal, type TerminalGateOptions } from './policy.ts';
 // The host's two rules about a tool call: one it confirms itself, and an always-allow that lives one
-// session. Absent `hostTools` is lotse's own behaviour unchanged.
+// session. Absent `hostTools` is lotsman's own behaviour unchanged.
 export {
   HOST_CONFIRM_NO_ONCE_NOTE,
   SessionGrants,
@@ -451,7 +451,7 @@ export {
   freeModelWarningDue,
   isFreeModel,
 } from './free-models.ts';
-// What a host will let a prompt reach. Absent `modelPolicy` is lotse's own behaviour unchanged.
+// What a host will let a prompt reach. Absent `modelPolicy` is lotsman's own behaviour unchanged.
 export {
   allowedModelValues,
   allowOnlyProviders,
@@ -468,7 +468,7 @@ export {
   type ModelPolicy,
 } from './model-policy.ts';
 export { fitsInputCap, mcpCallsOf, toTranscript } from './transcript.ts';
-export type { HostRecord, McpCall, ToolCallRecord } from '@lotse/session';
+export type { HostRecord, McpCall, ToolCallRecord } from '@lotsman/session';
 export {
   toTranscriptItems,
   type AgentItem,
@@ -506,7 +506,7 @@ export {
 } from './empty-state.ts';
 export { noticeDue, NOTICE_IDS, type NoticeId } from './notices.ts';
 
-// ── `lotse listen`: tasks, questions to a person, the channel seam (ADR 0003) ─────────────
+// ── `lotsman listen`: tasks, questions to a person, the channel seam (ADR 0003) ─────────────
 export {
   DEFAULT_PERSON_TIMEOUT_MIN,
   PERSON_KINDS,

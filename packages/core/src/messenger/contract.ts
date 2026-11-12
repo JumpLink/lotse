@@ -2,8 +2,8 @@
  * What a messenger MCP server can do, learned once per connection from `tools/list` and, when the
  * server offers it, its capability tool. The contract is `docs/messenger-contract.md`.
  *
- * Lotse sends Markdown and lets the server render it for its protocol, split it and strip quotes from
- * replies. A server that cannot (older Curlew, another messenger) is not refused: Lotse sends the same
+ * Lotsman sends Markdown and lets the server render it for its protocol, split it and strip quotes from
+ * replies. A server that cannot (older Curlew, another messenger) is not refused: Lotsman sends the same
  * text as `plain`, keeps a fixed wait timeout and strips nothing, and says so once.
  */
 
@@ -16,7 +16,7 @@ export const DEFAULT_CAPABILITIES_TOOL = 'messaging_capabilities';
 /** Long-poll length when the server states no limit. */
 export const FALLBACK_WAIT_S = 60;
 
-/** What Lotse does against one server. */
+/** What Lotsman does against one server. */
 export interface MessengerContract {
   /** `markdown`: the send tool renders and splits. `plain`: the text goes out as written, unrendered. */
   readonly format: 'markdown' | 'plain';
@@ -26,11 +26,11 @@ export interface MessengerContract {
   readonly maxWaitS: number | null;
   /** The server's own answer to the capability tool, `null` when it has none. */
   readonly capabilities: ProtocolCapabilities | null;
-  /** Why Lotse falls back, or `null` when the server meets the whole contract. */
+  /** Why Lotsman falls back, or `null` when the server meets the whole contract. */
   readonly notice: string | null;
 }
 
-/** One entry of the capability tool's `protocols` list, as far as Lotse reads it. */
+/** One entry of the capability tool's `protocols` list, as far as Lotsman reads it. */
 export interface ProtocolCapabilities {
   readonly protocol: string;
   readonly maxMessageChars: number | null;

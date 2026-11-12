@@ -1,5 +1,5 @@
 /**
- * The profile — lotse's own idea of "who a session runs as" (ADR 0007) — and the file it lives in.
+ * The profile — lotsman's own idea of "who a session runs as" (ADR 0007) — and the file it lives in.
  *
  * A profile is a concept of its own: listen's runner, a messenger request, the widget and a headless
  * job all start a session, and each needs the same answer to "which agent, which model, which tools,
@@ -7,7 +7,7 @@
  * handed to every host as text — core does not read files.
  */
 
-import type { McpServer } from '@lotse/acp';
+import type { McpServer } from '@lotsman/acp';
 
 import { CHANNEL_NAMES, type ChannelName } from '../messenger/settings.ts';
 import { duplicates, id, isRecord, list, object, optionalString } from '../parse.ts';
@@ -22,7 +22,7 @@ export type ConfigOptionValue = string | boolean;
 
 export interface Profile {
   readonly id: string;
-  /** A launcher id (`opencode`). `null`: the same resolution `lotse start` uses. */
+  /** A launcher id (`opencode`). `null`: the same resolution `lotsman start` uses. */
   readonly agent: string | null;
   /** A value of the agent's `model` config option. `null`: the agent's own default. */
   readonly model: string | null;

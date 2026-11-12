@@ -1,4 +1,4 @@
-# 3. `lotse serve`: tasks, questions and the channel seam
+# 3. `lotsman serve`: tasks, questions and the channel seam
 
 - Status: **Accepted**, partly superseded by [ADR 0007](0007-profiles-tasks-triggers.md) (scheduling, task format)
 - Date: 2026-10-10
@@ -17,8 +17,8 @@ channel can be added without changing a task.
 
 ## Decision
 
-1. **One configuration file, version 1**, at `$XDG_CONFIG_HOME/lotse/tasks.json`
-   (`LOTSE_TASKS_FILE` overrides it). The shape:
+1. **One configuration file, version 1**, at `$XDG_CONFIG_HOME/lotsman/tasks.json`
+   (`LOTSMAN_TASKS_FILE` overrides it). The shape:
    `{version: 1, users: [{id, addresses}], profiles: [{id, user, agent?, model?, data}],
    tasks: [{id, profile, schedule, prompt | promptFile, cwd, mcpServers, answerMcpServers?, rights, released,
    questions: {expiresIn, maxOpen, maxPerHour}, notify}]}`. Unknown keys are errors. Every
@@ -30,7 +30,7 @@ channel can be added without changing a task.
    progress finishes with the definition it started with, a file that does not parse leaves the
    previous tasks in force and logs an `error`. docs/listen.md describes the behaviour.
 
-   *Amended 2026-10-11:* `model` is optional on every profile; when it is unset, lotse sends no
+   *Amended 2026-10-11:* `model` is optional on every profile; when it is unset, lotsman sends no
    model and the agent's default applies. A private profile on a free model prints a note at
    start and is no longer an error, because which models to trust is the person's decision (ADR
    0002 §5). A task can also have `precheck: {profile?, prompt | promptFile}`: a cheap read-only
@@ -42,14 +42,14 @@ channel can be added without changing a task.
 2. **Two schedule shapes and nothing else**: `{"every": "30m"}` (units `m`, `h`, `d`; at least
    `1m`) and `{"at": "07:30", "days": ["mon", …]}` in local time. A missed `at` run fires once
    on start; with no last run it waits for the next occurrence. Runs of one task never overlap: a
-   lock file per task, held by `serve` and by `lotse answer`.
+   lock file per task, held by `serve` and by `lotsman answer`.
 3. **Two kinds of question.** A `permission` question holds a `session/request_permission` that
    neither a released area nor a token answers; the run polls the question store until it is
    answered or expires. A `reply` question is created when a turn ends with `end_turn` and the
    last line of the agent's message ends with `?` — deterministic, no model call. Ids are `A1`,
    `A2`, … per user, shown as `#A1`. The ceilings of ADR 0002 §2 (`maxOpen`, `maxPerHour`) are
    checked before a run starts and before each question is created.
-4. **Answers come in through `lotse answer <id> <text>`** for now. A permission question takes
+4. **Answers come in through `lotsman answer <id> <text>`** for now. A permission question takes
    only yes or no (`yes y ja j ok okay` / `no n nein`); the waiting run reads it from the store.
    A reply question continues the session with the text: `session/load`, else `session/resume`,
    else a new session that carries the question and the answer as context. The command says
@@ -66,7 +66,7 @@ channel can be added without changing a task.
    started with. The first implementation is a desktop notification over
    `org.freedesktop.Notifications` (Gio D-Bus), with stderr when no session bus answers. The
    Curlew/XMPP channel is a second implementation and adds reading answers off the channel.
-7. **State lives under `$XDG_STATE_HOME/lotse`** (`LOTSE_STATE_DIR` overrides it):
+7. **State lives under `$XDG_STATE_HOME/lotsman`** (`LOTSMAN_STATE_DIR` overrides it):
    `questions.json` and `runs.json` (last run, outcome, session per task) are `state`; the
    action log `serve.log` (JSON lines, ids and kinds only — no prompt, message or argument; the one exception is `run-summary`, a truncated final message of a scheduled run) is
    `state`; `locks/` is transient. Files are mode 0600 in a 0700 directory and declared in

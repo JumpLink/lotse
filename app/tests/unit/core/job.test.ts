@@ -13,8 +13,8 @@
 
 import { describe, expect, it } from '@gjsify/unit';
 
-import { AcpClient } from '@lotse/acp/client';
-import type { PermissionOption } from '@lotse/acp/types';
+import { AcpClient } from '@lotsman/acp/client';
+import type { PermissionOption } from '@lotsman/acp/types';
 
 import {
   JobError,
@@ -24,7 +24,7 @@ import {
   type JobLogEntry,
   type JobOptions,
   type ModelDecision,
-} from '@lotse/core';
+} from '@lotsman/core';
 import { FixtureAgent, type FixtureAgentOptions } from '../../support/fixture-agent.ts';
 
 /** A prompt nobody else would write, so "it never reached a log" is a substring check. */

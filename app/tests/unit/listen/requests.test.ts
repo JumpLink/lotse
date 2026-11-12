@@ -24,7 +24,7 @@ import {
   type RunResult,
   type RunDeps,
   type RunLogEntry,
-} from '@lotse/core';
+} from '@lotsman/core';
 import {
   formatEnvSpecs,
   formatServerSpecs,

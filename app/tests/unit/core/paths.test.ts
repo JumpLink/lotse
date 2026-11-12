@@ -4,20 +4,20 @@ import { mkdtempSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 
-import { createSessionStore, newSession } from '@lotse/session';
+import { createSessionStore, newSession } from '@lotsman/session';
 
 import {
   gatherResolveContext,
   isolationDirs,
   isolationEnv,
-  lotsePathsUnder,
+  lotsmanPathsUnder,
   prepareIsolation,
-} from '@lotse/core';
+} from '@lotsman/core';
 import { DEFAULT_NOTICES, writeNotices } from '../../../src/core/notices.ts';
 import { saveSettings } from '../../../src/core/settings.ts';
 import {
   dataDir,
-  lotsePaths,
+  lotsmanPaths,
   noticesFile,
   sessionsFile,
   settingsFile,
@@ -43,39 +43,39 @@ export default async () => {
   });
 
   await describe('dataDir', async () => {
-    await it('honors LOTSE_DATA_DIR', async () => {
-      expect(dataDir({ LOTSE_DATA_DIR: '/opt/lotse-data' })).toBe('/opt/lotse-data');
+    await it('honors LOTSMAN_DATA_DIR', async () => {
+      expect(dataDir({ LOTSMAN_DATA_DIR: '/opt/lotsman-data' })).toBe('/opt/lotsman-data');
     });
 
-    await it('defaults to <xdgDataHome>/lotse', async () => {
-      expect(dataDir({})).toBe(join(XDG_DEFAULT, 'lotse'));
+    await it('defaults to <xdgDataHome>/lotsman', async () => {
+      expect(dataDir({})).toBe(join(XDG_DEFAULT, 'lotsman'));
     });
   });
 
   await describe('sessionsFile', async () => {
-    await it('honors LOTSE_SESSIONS_FILE', async () => {
-      expect(sessionsFile({ LOTSE_SESSIONS_FILE: '/tmp/my-sessions.json' })).toBe('/tmp/my-sessions.json');
+    await it('honors LOTSMAN_SESSIONS_FILE', async () => {
+      expect(sessionsFile({ LOTSMAN_SESSIONS_FILE: '/tmp/my-sessions.json' })).toBe('/tmp/my-sessions.json');
     });
 
-    await it('the default path ends in lotse/sessions.json', async () => {
-      expect(sessionsFile({})).toBe(join(XDG_DEFAULT, 'lotse', 'sessions.json'));
-      expect(sessionsFile({}).endsWith(join('lotse', 'sessions.json'))).toBe(true);
+    await it('the default path ends in lotsman/sessions.json', async () => {
+      expect(sessionsFile({})).toBe(join(XDG_DEFAULT, 'lotsman', 'sessions.json'));
+      expect(sessionsFile({}).endsWith(join('lotsman', 'sessions.json'))).toBe(true);
     });
   });
 
   await describe('settingsFile', async () => {
-    await it('honors LOTSE_SETTINGS_FILE', async () => {
-      expect(settingsFile({ LOTSE_SETTINGS_FILE: '/tmp/my-settings.json' })).toBe('/tmp/my-settings.json');
+    await it('honors LOTSMAN_SETTINGS_FILE', async () => {
+      expect(settingsFile({ LOTSMAN_SETTINGS_FILE: '/tmp/my-settings.json' })).toBe('/tmp/my-settings.json');
     });
 
     await it('lives under the config home, not the data home', async () => {
       expect(settingsFile({ XDG_CONFIG_HOME: '/custom/config', XDG_DATA_HOME: '/custom/data' })).toBe(
-        '/custom/config/lotse/settings.json',
+        '/custom/config/lotsman/settings.json',
       );
     });
 
-    await it('defaults to ~/.config/lotse/settings.json', async () => {
-      expect(settingsFile({})).toBe(join(homedir(), '.config', 'lotse', 'settings.json'));
+    await it('defaults to ~/.config/lotsman/settings.json', async () => {
+      expect(settingsFile({})).toBe(join(homedir(), '.config', 'lotsman', 'settings.json'));
     });
 
     await it('ignores a relative XDG_CONFIG_HOME', async () => {
@@ -84,23 +84,23 @@ export default async () => {
   });
 
   await describe('noticesFile', async () => {
-    await it('honors LOTSE_NOTICES_FILE', async () => {
-      expect(noticesFile({ LOTSE_NOTICES_FILE: '/tmp/x/n.json' })).toBe('/tmp/x/n.json');
+    await it('honors LOTSMAN_NOTICES_FILE', async () => {
+      expect(noticesFile({ LOTSMAN_NOTICES_FILE: '/tmp/x/n.json' })).toBe('/tmp/x/n.json');
     });
 
     await it('defaults to notices.json in the data directory', async () => {
-      expect(noticesFile({ LOTSE_DATA_DIR: '/opt/kd' })).toBe('/opt/kd/notices.json');
+      expect(noticesFile({ LOTSMAN_DATA_DIR: '/opt/kd' })).toBe('/opt/kd/notices.json');
     });
   });
 
-  await describe('lotsePaths — the defaults', async () => {
+  await describe('lotsmanPaths — the defaults', async () => {
     await it("reproduces today's paths", async () => {
-      expect(lotsePaths({})).toStrictEqual({
-        dataDir: join(XDG_DEFAULT, 'lotse'),
-        configDir: join(homedir(), '.config', 'lotse'),
-        sessionsFile: join(XDG_DEFAULT, 'lotse', 'sessions.json'),
-        settingsFile: join(homedir(), '.config', 'lotse', 'settings.json'),
-        noticesFile: join(XDG_DEFAULT, 'lotse', 'notices.json'),
+      expect(lotsmanPaths({})).toStrictEqual({
+        dataDir: join(XDG_DEFAULT, 'lotsman'),
+        configDir: join(homedir(), '.config', 'lotsman'),
+        sessionsFile: join(XDG_DEFAULT, 'lotsman', 'sessions.json'),
+        settingsFile: join(homedir(), '.config', 'lotsman', 'settings.json'),
+        noticesFile: join(XDG_DEFAULT, 'lotsman', 'notices.json'),
       });
     });
 
@@ -108,16 +108,16 @@ export default async () => {
       const env = {
         XDG_DATA_HOME: '/x/data',
         XDG_CONFIG_HOME: '/x/config',
-        LOTSE_SESSIONS_FILE: '/y/s.json',
-        LOTSE_NOTICES_FILE: '/y/n.json',
+        LOTSMAN_SESSIONS_FILE: '/y/s.json',
+        LOTSMAN_NOTICES_FILE: '/y/n.json',
       };
-      const paths = lotsePaths(env);
-      expect(paths.dataDir).toBe('/x/data/lotse');
-      expect(paths.configDir).toBe('/x/config/lotse');
-      expect(paths.settingsFile).toBe('/x/config/lotse/settings.json');
+      const paths = lotsmanPaths(env);
+      expect(paths.dataDir).toBe('/x/data/lotsman');
+      expect(paths.configDir).toBe('/x/config/lotsman');
+      expect(paths.settingsFile).toBe('/x/config/lotsman/settings.json');
       expect(paths.sessionsFile).toBe('/y/s.json');
       expect(paths.noticesFile).toBe('/y/n.json');
-      expect(lotsePaths({ LOTSE_DATA_DIR: '/d' }).noticesFile).toBe('/d/notices.json');
+      expect(lotsmanPaths({ LOTSMAN_DATA_DIR: '/d' }).noticesFile).toBe('/d/notices.json');
     });
   });
 
@@ -131,37 +131,37 @@ export default async () => {
       expect(noticesFile({ KURIER_NOTICES_FILE: '/old/n.json' })).toBe('/old/n.json');
     });
 
-    await it('loses to the LOTSE_* name when both are set', async () => {
-      expect(dataDir({ KURIER_DATA_DIR: '/old/data', LOTSE_DATA_DIR: '/new/data' })).toBe('/new/data');
-      expect(sessionsFile({ KURIER_SESSIONS_FILE: '/old/s.json', LOTSE_SESSIONS_FILE: '/new/s.json' })).toBe(
-        '/new/s.json',
-      );
-      expect(settingsFile({ KURIER_SETTINGS_FILE: '/old/t.json', LOTSE_SETTINGS_FILE: '/new/t.json' })).toBe(
-        '/new/t.json',
-      );
-      expect(noticesFile({ KURIER_NOTICES_FILE: '/old/n.json', LOTSE_NOTICES_FILE: '/new/n.json' })).toBe(
+    await it('loses to the LOTSMAN_* name when both are set', async () => {
+      expect(dataDir({ KURIER_DATA_DIR: '/old/data', LOTSMAN_DATA_DIR: '/new/data' })).toBe('/new/data');
+      expect(
+        sessionsFile({ KURIER_SESSIONS_FILE: '/old/s.json', LOTSMAN_SESSIONS_FILE: '/new/s.json' }),
+      ).toBe('/new/s.json');
+      expect(
+        settingsFile({ KURIER_SETTINGS_FILE: '/old/t.json', LOTSMAN_SETTINGS_FILE: '/new/t.json' }),
+      ).toBe('/new/t.json');
+      expect(noticesFile({ KURIER_NOTICES_FILE: '/old/n.json', LOTSMAN_NOTICES_FILE: '/new/n.json' })).toBe(
         '/new/n.json',
       );
     });
 
     // An empty or whitespace value is how a launcher unsets a knob it does not want; it must not
     // beat the old name, and it must not win over the XDG default either.
-    await it('treats a blank LOTSE_* value as unset', async () => {
-      expect(dataDir({ KURIER_DATA_DIR: '/old/data', LOTSE_DATA_DIR: '  ' })).toBe('/old/data');
-      expect(dataDir({ KURIER_DATA_DIR: ' ', XDG_DATA_HOME: '/x' })).toBe('/x/lotse');
+    await it('treats a blank LOTSMAN_* value as unset', async () => {
+      expect(dataDir({ KURIER_DATA_DIR: '/old/data', LOTSMAN_DATA_DIR: '  ' })).toBe('/old/data');
+      expect(dataDir({ KURIER_DATA_DIR: ' ', XDG_DATA_HOME: '/x' })).toBe('/x/lotsman');
     });
   });
 
-  await describe('lotsePathsUnder — an injected root', async () => {
+  await describe('lotsmanPathsUnder — an injected root', async () => {
     await it('puts every file under the root', async () => {
-      const paths = lotsePathsUnder('/host/app/lotse');
-      for (const path of Object.values(paths)) expect(path.startsWith('/host/app/lotse/')).toBe(true);
+      const paths = lotsmanPathsUnder('/host/app/lotsman');
+      for (const path of Object.values(paths)) expect(path.startsWith('/host/app/lotsman/')).toBe(true);
     });
 
     await it('redirects what core writes: sessions, settings, notices, agent HOME and XDG', async () => {
-      const root = mkdtempSync(join(tmpdir(), 'lotse-paths-'));
+      const root = mkdtempSync(join(tmpdir(), 'lotsman-paths-'));
       try {
-        const paths = lotsePathsUnder(root);
+        const paths = lotsmanPathsUnder(root);
         createSessionStore(paths.sessionsFile).create(
           newSession({ id: 'a', agent: 'opencode', cwd: '/tmp', at: '2026-09-30T10:00:00.000Z' }),
         );

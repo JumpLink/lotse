@@ -4,8 +4,8 @@ import { ID_PATTERN, type SchemaNode } from '../schema.ts';
 
 export const USERS_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
-  title: 'lotse users',
-  description: 'The people `lotse listen` works for. Read once at start.',
+  title: 'lotsman users',
+  description: 'The people `lotsman listen` works for. Read once at start.',
   type: 'object',
   additionalProperties: false,
   required: ['version', 'users'],

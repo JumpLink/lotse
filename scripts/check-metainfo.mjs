@@ -2,7 +2,7 @@
 /**
  * Does the metainfo still carry the app id and the rename?
  *
- * `data/eu.jumplink.Lotse.metainfo.xml` is **generated** from `package.json#gjsify.flatpak`, and
+ * `data/eu.jumplink.Lotsman.metainfo.xml` is **generated** from `package.json#gjsify.flatpak`, and
  * `gjsify flatpak init --force` overwrites it. Two of its elements have no field in that config and
  * are hand-written into the output: `<provides><id>` and `<replaces><id>`, which say that this
  * component is the one that used to be `eu.jumplink.Kurier`. Without them a regeneration quietly
@@ -21,7 +21,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const APP_ID = 'eu.jumplink.Lotse';
+const APP_ID = 'eu.jumplink.Lotsman';
 const OLD_APP_ID = 'eu.jumplink.Kurier';
 const FILE = join('data', `${APP_ID}.metainfo.xml`);
 
@@ -43,7 +43,7 @@ if (!new RegExp(`<replaces>\\s*<id>${OLD_APP_ID}</id>\\s*</replaces>`).test(xml)
 }
 
 // The binaries come from the config, so a stale one here means the generated file is stale.
-for (const binary of ['lotse', 'lotse-app']) {
+for (const binary of ['lotsman', 'lotsman-app']) {
   if (!xml.includes(`<binary>${binary}</binary>`))
     problems.push(`<provides> is missing <binary>${binary}</binary>`);
 }

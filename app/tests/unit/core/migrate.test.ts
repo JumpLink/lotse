@@ -17,7 +17,7 @@ import { adoptLegacyDir, migratedPaths } from '../../../src/core/migrate.ts';
 
 /** A temp root with `data/` and `config/` under it, used as `XDG_DATA_HOME`/`XDG_CONFIG_HOME`. */
 function withRoot(body: (root: string, env: NodeJS.ProcessEnv) => void): void {
-  const root = mkdtempSync(join(tmpdir(), 'lotse-migrate-'));
+  const root = mkdtempSync(join(tmpdir(), 'lotsman-migrate-'));
   try {
     const env = { XDG_DATA_HOME: join(root, 'data'), XDG_CONFIG_HOME: join(root, 'config') };
     mkdirSync(env.XDG_DATA_HOME, { recursive: true });
@@ -39,8 +39,8 @@ export default async () => {
   await describe('adoptLegacyDir', async () => {
     await it('does nothing when there is no legacy directory', async () => {
       withRoot((root) => {
-        const move = adoptLegacyDir(join(root, 'data', 'lotse'), join(root, 'data', 'kurier'));
-        expect(move).toStrictEqual({ dir: join(root, 'data', 'lotse'), moved: false, note: null });
+        const move = adoptLegacyDir(join(root, 'data', 'lotsman'), join(root, 'data', 'kurier'));
+        expect(move).toStrictEqual({ dir: join(root, 'data', 'lotsman'), moved: false, note: null });
         expect(existsSync(move.dir)).toBe(false);
       });
     });
@@ -48,7 +48,7 @@ export default async () => {
     await it('moves the legacy directory and keeps its contents and its 0700', async () => {
       withRoot((root) => {
         const legacy = join(root, 'data', 'kurier');
-        const current = join(root, 'data', 'lotse');
+        const current = join(root, 'data', 'lotsman');
         seedLegacy(legacy, '{"sessions":["one"]}');
 
         const move = adoptLegacyDir(current, legacy);
@@ -67,7 +67,7 @@ export default async () => {
     await it('never overwrites an existing directory, and leaves the old one alone', async () => {
       withRoot((root) => {
         const legacy = join(root, 'data', 'kurier');
-        const current = join(root, 'data', 'lotse');
+        const current = join(root, 'data', 'lotsman');
         seedLegacy(legacy, '{"sessions":["old"]}');
         seedLegacy(current, '{"sessions":["new"]}');
 
@@ -87,7 +87,7 @@ export default async () => {
         seedLegacy(legacy, '{"sessions":["one"]}');
         // A regular file as the parent fails the rename (ENOTDIR) for root and non-root alike.
         writeFileSync(parent, '');
-        const move = adoptLegacyDir(join(parent, 'lotse'), legacy);
+        const move = adoptLegacyDir(join(parent, 'lotsman'), legacy);
 
         expect(move.moved).toBe(false);
         expect(move.dir).toBe(legacy);
@@ -98,13 +98,13 @@ export default async () => {
   });
 
   await describe('migratedPaths', async () => {
-    await it('leaves a fresh install at the lotse paths, with nothing to report', async () => {
+    await it('leaves a fresh install at the lotsman paths, with nothing to report', async () => {
       withRoot((root, env) => {
         const { paths, notes } = migratedPaths(env);
         expect(notes).toStrictEqual([]);
-        expect(paths.dataDir).toBe(join(root, 'data', 'lotse'));
-        expect(paths.configDir).toBe(join(root, 'config', 'lotse'));
-        expect(paths.sessionsFile).toBe(join(root, 'data', 'lotse', 'sessions.json'));
+        expect(paths.dataDir).toBe(join(root, 'data', 'lotsman'));
+        expect(paths.configDir).toBe(join(root, 'config', 'lotsman'));
+        expect(paths.sessionsFile).toBe(join(root, 'data', 'lotsman', 'sessions.json'));
       });
     });
 
@@ -116,11 +116,11 @@ export default async () => {
         const { paths, notes } = migratedPaths(env);
 
         expect(notes.length).toBe(2);
-        expect(paths.dataDir).toBe(join(root, 'data', 'lotse'));
-        expect(paths.configDir).toBe(join(root, 'config', 'lotse'));
+        expect(paths.dataDir).toBe(join(root, 'data', 'lotsman'));
+        expect(paths.configDir).toBe(join(root, 'config', 'lotsman'));
         expect(readFileSync(paths.sessionsFile, 'utf8')).toBe('{"sessions":["one"]}');
         expect(readFileSync(paths.settingsFile, 'utf8')).toBe('{"version":1}');
-        expect(paths.noticesFile).toBe(join(root, 'data', 'lotse', 'notices.json'));
+        expect(paths.noticesFile).toBe(join(root, 'data', 'lotsman', 'notices.json'));
       });
     });
 
@@ -135,7 +135,7 @@ export default async () => {
         expect(notes.length).toBe(1);
         expect(existsSync(paths.dataDir)).toBe(true);
         expect(existsSync(paths.configDir)).toBe(false);
-        expect(paths.settingsFile).toBe(join(root, 'config', 'lotse', 'settings.json'));
+        expect(paths.settingsFile).toBe(join(root, 'config', 'lotsman', 'settings.json'));
       });
     });
 
@@ -146,7 +146,7 @@ export default async () => {
         const legacy = join(root, 'data', 'kurier');
         seedLegacy(legacy, '{"sessions":["one"]}');
 
-        const pinned = migratedPaths({ ...env, LOTSE_SESSIONS_FILE: join(root, 's.json') });
+        const pinned = migratedPaths({ ...env, LOTSMAN_SESSIONS_FILE: join(root, 's.json') });
         expect(pinned.notes).toStrictEqual([]);
         expect(existsSync(legacy)).toBe(true);
 

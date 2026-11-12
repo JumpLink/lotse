@@ -1,23 +1,23 @@
 /**
  * Which models a host lets a prompt reach, and every decision that follows from a denial.
  *
- * **Why a host needs this at all.** `LotseChat` is embeddable (ADR 0001), and a host that embeds it
+ * **Why a host needs this at all.** `LotsmanChat` is embeddable (ADR 0001), and a host that embeds it
  * may be carrying data the person has not agreed to hand to anybody — an app around a document
  * store, a window over somebody's accounts. The agent decides which models *exist*; the host is the
  * only party that knows which of them its own data may travel to. Without a seam for that, a host
  * has exactly two options: ship no chat, or ship one whose model list is a list of places its data
  * could go.
  *
- * **It is a predicate the host passes, not a table lotse keeps.** `free-models.ts` already says why
- * lotse does not hold a model policy of its own: a hardcoded list rots, and a client that chooses a
+ * **It is a predicate the host passes, not a table lotsman keeps.** `free-models.ts` already says why
+ * lotsman does not hold a model policy of its own: a hardcoded list rots, and a client that chooses a
  * model holds configuration authority over the agent. The same argument makes *this* a parameter —
- * `LotseChatOptions.modelPolicy`, defaulting to absent — so lotse's own window behaves exactly as
+ * `LotsmanChatOptions.modelPolicy`, defaulting to absent — so lotsman's own window behaves exactly as
  * it did and a host's rule is the host's.
  *
  * **Fail closed, in the shape `gate.ts` already uses for permissions.** A policy that throws is a
  * deny (`modelAllowed`), and so is any return value that is not the literal `'allow'`: a host whose
  * policy code broke has not approved anything. There is deliberately no third answer that *selects*
- * a model — lotse never picks one (`free-models.ts`), and a host that could pick would be choosing
+ * a model — lotsman never picks one (`free-models.ts`), and a host that could pick would be choosing
  * for the person through a seam they cannot see.
  *
  * ## The two gates, and why one is not enough
@@ -36,7 +36,7 @@
  * - **`AgentSession.#deliver`** refuses on **both**, by throwing `ModelDeniedError` before
  *   `session/prompt` goes out. That call happens *after* the handshake and after `session/new`, so
  *   by then `'unknown'` means something real: the agent reported options and none of them is a model
- *   control, so lotse cannot verify where this prompt would go. A prompt is not sent to a model
+ *   control, so lotsman cannot verify where this prompt would go. A prompt is not sent to a model
  *   nobody has named.
  *
  * **Nothing here switches a model.** A denied current value is reported and refused; it is never
@@ -46,7 +46,7 @@
  */
 
 import { _, N_ } from './i18n.ts';
-import type { SessionConfigOption } from '@lotse/acp/types';
+import type { SessionConfigOption } from '@lotsman/acp/types';
 
 import { MODEL_CATEGORY, projectConfigOptions } from './config.ts';
 import { isFreeModel } from './free-models.ts';
@@ -57,7 +57,7 @@ export type ModelDecision = 'allow' | 'deny';
 /**
  * A host's rule, over one model id as the **agent** spells it.
  *
- * The id and not a richer object, because the id is the only thing lotse actually knows: the agent
+ * The id and not a richer object, because the id is the only thing lotsman actually knows: the agent
  * sends a value id and a display name, and a name is a label an agent may reword. A policy that has
  * to match on something is given the part that is stable.
  *
@@ -73,7 +73,7 @@ export type ModelPolicy = ((model: string) => ModelDecision) & {
  * Ask the policy, and treat everything that is not an explicit `'allow'` as a deny.
  *
  * **The `try` is the policy, not defensive coding.** A host's predicate is host code running inside
- * lotse's render path: it can throw on a model id it did not expect, and the honest reading of "my
+ * lotsman's render path: it can throw on a model id it did not expect, and the honest reading of "my
  * policy crashed" is "I have not approved this". The alternative — letting the throw propagate — would
  * take the config row down and leave the denied model selected, which is the failure this file exists
  * to prevent, arrived at through a stack trace.
@@ -112,7 +112,7 @@ export function allowedModelValues<T extends { readonly value: string }>(
  * The ready-made policy: **no free hosted model may be prompted.**
  *
  * **What counts as free is `isFreeModel`'s answer, not a second list.** That is any id ending in
- * `-free` plus the few free ids without the suffix, and `lotse listen` has been reading it for the same
+ * `-free` plus the few free ids without the suffix, and `lotsman listen` has been reading it for the same
  * purpose since ADR 0003: a free model may be trained on, and a host carrying somebody's private data
  * has no business deciding that for them. One criterion, one place it is maintained.
  *
@@ -191,11 +191,11 @@ export function providerOffered(
 export interface ModelBlock {
   /**
    * `'denied'` — the agent named the model it would use and the policy said no.
-   * `'unknown'` — lotse cannot name it: the agent has not answered yet, or it reported no model
+   * `'unknown'` — lotsman cannot name it: the agent has not answered yet, or it reported no model
    * control at all. Only `#deliver` acts on this one.
    */
   readonly cause: 'denied' | 'unknown';
-  /** What a person is told. Fixed English, lotse's own words, no agent text and no model id. */
+  /** What a person is told. Fixed English, lotsman's own words, no agent text and no model id. */
   readonly reason: string;
 }
 
@@ -211,16 +211,16 @@ export const MODEL_DENIED_REASON = N_(
   'This model is not allowed here. Pick another one from the model list, then send.',
 );
 
-/** The sentence for a model lotse cannot name. It says what happened and does not blame the agent. */
+/** The sentence for a model lotsman cannot name. It says what happened and does not blame the agent. */
 export const MODEL_UNKNOWN_REASON = N_(
-  'lotse cannot tell which model this agent would use, so nothing was sent.',
+  'lotsman cannot tell which model this agent would use, so nothing was sent.',
 );
 
 /**
  * Whether a prompt may go out, as data.
  *
  * `null` means yes — including for every caller that set no policy, which is what makes this a
- * no-op for lotse's own window.
+ * no-op for lotsman's own window.
  *
  * **Read from the agent's raw options and never from the drawn row.** The row has the denied values
  * filtered out of it (`config-row.ts`), so asking the row what is in use would answer "nothing" for

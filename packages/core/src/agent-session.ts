@@ -16,7 +16,7 @@
  *
  * **The gate asks a person, and it fails closed.** Every `session/request_permission` is put to the
  * surface through `onPermission`, which shows the modal dialog of plan §7 step 6 and resolves with the
- * id of the button that was pressed — one of the agent's own options, never an id lotse invented. The
+ * id of the button that was pressed — one of the agent's own options, never an id lotsman invented. The
  * decision logic is `core/permission.ts`; this file owns the *timing*: when the turn goes into
  * `waiting-for-you`, when it comes back, and the four paths where nobody chose and the answer has to
  * be `cancelled` — dismissal, Stop, a closing window, an agent that died. There is no surface (the
@@ -29,16 +29,16 @@
  * same rule the CLI's Ctrl-C obeys (`AGENTS.md`).
  */
 
-import type { AcpClient, McpServer, RequestPermissionRequest } from '@lotse/acp';
-import type { ClientGate } from '@lotse/acp/gate';
+import type { AcpClient, McpServer, RequestPermissionRequest } from '@lotsman/acp';
+import type { ClientGate } from '@lotsman/acp/gate';
 import type {
   PermissionOption,
   RequestPermissionResponse,
   SessionConfigOption,
   SessionId,
   SessionUpdate,
-} from '@lotse/acp/types';
-import type { AgentSource, HostRecord, SessionRecord, TranscriptEntry } from '@lotse/session';
+} from '@lotsman/acp/types';
+import type { AgentSource, HostRecord, SessionRecord, TranscriptEntry } from '@lotsman/session';
 
 import { sameCommand, type RecordedResolution } from './agents/resolve.ts';
 import type { AgentCommand } from './agents/stdio.ts';
@@ -152,12 +152,12 @@ export interface AgentSessionEvents {
    * Ask the **host** about a tool the host confirms itself (`hostTools.hostConfirmed`).
    *
    * **It answers yes or no, and a yes is worth one call.** The host shows its own dialog — the PIN,
-   * the signature, whatever lotse's dialog could not have asked for — and resolves `true` only if the
-   * person got through it. lotse then answers the agent's own `allow_once` and nothing wider, so the
+   * the signature, whatever lotsman's dialog could not have asked for — and resolves `true` only if the
+   * person got through it. lotsman then answers the agent's own `allow_once` and nothing wider, so the
    * next call asks again; see `hostConfirmDecision`.
    *
    * **Absent is a decline, and so is a throw**, which is the one direction this may fail in: a host
-   * that marked a tool as its own and then has no way to confirm it has not confirmed it. lotse's own
+   * that marked a tool as its own and then has no way to confirm it has not confirmed it. lotsman's own
    * dialog is never shown for such a tool, and `onPermission` is never reached by one.
    */
   onHostConfirm?(question: PermissionQuestion): boolean | Promise<boolean>;
@@ -237,7 +237,7 @@ interface PendingConversation {
  * **The plan says "cancel, await the turn, then terminate. Never terminate first", and this is the
  * escape hatch that makes that rule survivable.** An agent that has been told to stop and does not stop
  * is a real thing — a stuck provider call, a wedged tool — and a window that cannot be closed because
- * lotse is politely waiting for it is a worse defect than a lost flush. So the wait is bounded: with a
+ * lotsman is politely waiting for it is a worse defect than a lost flush. So the wait is bounded: with a
  * cooperative agent the turn settles in milliseconds and the window closes with its own `cancelled`
  * answer recorded, and only a silent one is terminated — which is what makes the pending
  * `session/prompt` reject, so the turn still settles instead of hanging.
@@ -266,7 +266,7 @@ export interface AgentSessionOptions {
   /**
    * The agent a stored session names, on the copy that held it (`resolveRecorded`). Asked on the first
    * prompt of such a session, never on selecting it. Absent means every session uses `command` — which
-   * is also how a pinned dev agent (`LOTSE_APP_AGENT`) wins over a fixture record naming another agent.
+   * is also how a pinned dev agent (`LOTSMAN_APP_AGENT`) wins over a fixture record naming another agent.
    */
   readonly resolveAgent?: (id: string, source: AgentSource | undefined) => Promise<RecordedResolution>;
   /** ISO clock, injected so a test can pin the transcript's timestamps. */
@@ -282,12 +282,12 @@ export interface AgentSessionOptions {
   /**
    * The host's own MCP servers (ACP `McpServer`), sent unchanged in `session/new` and in the reattach
    * of a stored session. Absent means `session/new` carries `[]` and a reattach adds nothing — what the
-   * app and the CLI send. lotse never edits the agent's global config for this.
+   * app and the CLI send. lotsman never edits the agent's global config for this.
    */
   readonly mcpServers?: readonly McpServer[];
   /**
    * The embedding host's rule about which models a prompt may reach (`model-policy.ts`). Absent means
-   * every model the agent offers is allowed, which is lotse's own window and the CLI.
+   * every model the agent offers is allowed, which is lotsman's own window and the CLI.
    *
    * **Held here rather than in the widget, because the refusal has to be in front of the wire.** The
    * widget can hide a value and disable a button; only this controller sends `session/prompt`, and a
@@ -298,11 +298,11 @@ export interface AgentSessionOptions {
   /**
    * The embedding host's rules about **tool calls** (`host-tools.ts`): the tools it confirms itself,
    * and whether an always-allow is the agent's to remember or lives one session. Absent, and every
-   * field absent, is lotse's own behaviour — every question to the person, every always the agent's.
+   * field absent, is lotsman's own behaviour — every question to the person, every always the agent's.
    *
    * **Here for the same reason `modelPolicy` is here: this is the file that answers the wire.** A
    * surface can decline to draw a button; only `#gate` writes the `optionId` into
-   * `session/request_permission`'s response, so "lotse never approves a host-confirmed tool" is a
+   * `session/request_permission`'s response, so "lotsman never approves a host-confirmed tool" is a
    * sentence only this controller can keep.
    */
   readonly hostTools?: HostToolPolicy;
@@ -339,7 +339,7 @@ export class AgentSession {
    *
    * **In memory, keyed by the ACP session id, and never written anywhere** — see `SessionGrants`.
    * Constructed unconditionally because an empty map answers "no" to everything, so a host with no
-   * policy pays one `Map` and gets lotse's own behaviour.
+   * policy pays one `Map` and gets lotsman's own behaviour.
    */
   readonly #grants = new SessionGrants();
   /** Whether the host's unusable rules have been reported yet — said once, at the first question. */
@@ -402,8 +402,8 @@ export class AgentSession {
    *
    * **Held, never derived and never persisted.** `session/new`, `session/load` / `session/resume`, a
    * `config_option_update` and the answer to a set all carry the **full** list, so the last one wins
-   * and there is never a merge to get wrong. Nothing about it is written to disk: a model lotse
-   * remembered across a restart would be a preference lotse invented, and the agent's `currentValue`
+   * and there is never a merge to get wrong. Nothing about it is written to disk: a model lotsman
+   * remembered across a restart would be a preference lotsman invented, and the agent's `currentValue`
    * is the truth on every reattach. Before the agent has answered this is `null`, not `[]`, because
    * "nothing yet" and "nothing to offer" must not draw the same thing.
    */
@@ -415,7 +415,7 @@ export class AgentSession {
    * starts nothing (plan §6), so the second `bind(B)` must empty the row — but the *agent* is still
    * holding A, so `bind(A)` again has nothing to re-request: `#bindAgent` returns early because the
    * agent's own session never changed. Clearing on the way out and nothing on the way back leaves the
-   * row empty for the rest of the window's life, for a session lotse already knows everything about.
+   * row empty for the rest of the window's life, for a session lotsman already knows everything about.
    *
    * **A cache of what the agent last said, not configuration authority.** Nothing is written down, the
    * values are never merged or reinterpreted, and the agent's `currentValue` still wins on every answer —
@@ -516,7 +516,7 @@ export class AgentSession {
   }
 
   /**
-   * True once the gate has been asked anything this window — a real request, or `LOTSE_APP_PERMISSION`'s
+   * True once the gate has been asked anything this window — a real request, or `LOTSMAN_APP_PERMISSION`'s
    * staged one.
    *
    * **A surface needs this and nothing else can give it to the surface.** Whether a question is on
@@ -1024,7 +1024,7 @@ export class AgentSession {
   async #deliver(handle: AgentClientHandle, body: string, session: BoundSession): Promise<void> {
     // **The last gate in front of the wire, and the only one that catches `'unknown'`.** By here the
     // handshake is done and `session/new`/`session/load` has answered, so `#configOptions` is the
-    // agent's own word on which model this prompt would reach — which makes "lotse cannot tell" a
+    // agent's own word on which model this prompt would reach — which makes "lotsman cannot tell" a
     // real answer rather than "not yet", and a prompt is not sent to a model nobody named. The
     // composer's own block is the *visible* half and deliberately narrower (`model-policy.ts`); this
     // is the half that holds when a dev hook, another surface or a race gets past it.
@@ -1091,8 +1091,8 @@ export class AgentSession {
    * One process per window, started on the first prompt, reused for every turn after it.
    *
    * **A failure here is a sentence, not an exception.** `openAgent` rejects for a binary that is not
-   * on PATH, a handshake that times out, a protocol version lotse does not implement, and — through
-   * `withAuthHint` — for `auth_required`, whose remedy is `lotse auth` in a terminal this window does
+   * on PATH, a handshake that times out, a protocol version lotsman does not implement, and — through
+   * `withAuthHint` — for `auth_required`, whose remedy is `lotsman auth` in a terminal this window does
    * not have (plan §6, trap 1). All four become `AgentAttachment: 'failed'` with the message, which is
    * what the composer puts under the entry, so the person reads what to do instead of watching a
    * spinner that will never resolve.
@@ -1234,7 +1234,7 @@ export class AgentSession {
           policy: this.#hostTools,
           grants: this.#grants,
         });
-        // The host owns this one. lotse's dialog is not shown, `onPermission` is not called, and the
+        // The host owns this one. lotsman's dialog is not shown, `onPermission` is not called, and the
         // widest answer that can come back out is the agent's own `allow_once`.
         if (gate.type === 'host-confirm') {
           return answer(await this.#waitingForYou(() => this.#hostConfirm(view)));
@@ -1254,7 +1254,7 @@ export class AgentSession {
         const decision = await this.#ask(request, gate.options);
         if (decision.type !== 'allowed') return answer(decision);
         // **Under `'session'` scope an "always" leaves here as a "once".** `sessionAnswer` swaps the
-        // id, lotse remembers the always itself, and the agent is told about this call only — so the
+        // id, lotsman remembers the always itself, and the agent is told about this call only — so the
         // promise ends with the session and with this process, because the memory does.
         const chosen = sessionAnswer(view, decision.optionId, this.#hostTools?.alwaysAllow);
         // No turn session means no key to remember it under, which is the fail-closed reading: the
@@ -1284,7 +1284,7 @@ export class AgentSession {
    *
    * **Every path that is not an explicit `true` is a decline**: no callback, a throw, a rejected
    * promise, anything that is not the boolean. A host that marked a tool as needing its own
-   * confirmation and cannot confirm it has not confirmed it, and lotse has no dialog to fall back on
+   * confirmation and cannot confirm it has not confirmed it, and lotsman has no dialog to fall back on
    * for such a tool by construction.
    */
   async #hostConfirm(view: PermissionView): Promise<PermissionDecision> {
@@ -1322,7 +1322,7 @@ export class AgentSession {
   }
 
   /**
-   * The bracket around a wait for a person — lotse's dialog or the host's, because the window is
+   * The bracket around a wait for a person — lotsman's dialog or the host's, because the window is
    * waiting either way.
    *
    * Factored out of `#ask` when the host's own confirmation arrived: a host dialog that left the turn
@@ -1391,7 +1391,7 @@ export class AgentSession {
   }
 
   /**
-   * Ask the gate a fixture question and answer it, for `LOTSE_APP_PERMISSION`.
+   * Ask the gate a fixture question and answer it, for `LOTSMAN_APP_PERMISSION`.
    *
    * **It goes through `#ask` and `answerFor`, not around them** — same desk, same projection, same
    * decision logic — so a screenshot of the staged dialog is a screenshot of the gate's behaviour. It
@@ -1401,9 +1401,9 @@ export class AgentSession {
    * **The option ids are the schema's own kinds with fixture ids**, because the *kinds* are what the
    * projection reads and a fixture with invented kinds would exercise nothing. All four kinds are on
    * the wire here, which is the point: a dialog photographed with only two buttons would not show that
-   * lotse relays the `*_always` kinds, nor the three things that makes them safe — that they are added
+   * lotsman relays the `*_always` kinds, nor the three things that makes them safe — that they are added
    * in `orderOptions`' order (`reject_once` first, so libadwaita's own focus fallback is a decline),
-   * that only `allow_once` carries `SUGGESTED`, and that the labels are lotse's four short sentences
+   * that only `allow_once` carries `SUGGESTED`, and that the labels are lotsman's four short sentences
    * with the agent's own wording demoted to one caption line in the body.
    *
    * Resolves with the answer that was reached, so a caller can log it; nothing in the window waits on
@@ -1453,7 +1453,7 @@ export class AgentSession {
    *
    * **The history an agent replays on load is not recorded, and that is deliberate.** Replaying is what
    * `session/load` is for and it arrives as ordinary `session/update` notifications, but this runs
-   * *before* `runTurn` subscribes — and a conversation lotse already has on disk must not be written to
+   * *before* `runTurn` subscribes — and a conversation lotsman already has on disk must not be written to
    * disk a second time. `tests/unit/core/agent-session.test.ts` pins that with the fixture agent,
    * which replays.
    *
@@ -1546,7 +1546,7 @@ export class AgentSession {
    * Set one option through `session/set_config_option`, and redraw from the answer.
    *
    * **The one door, not two.** The agent can be asked through `session/set_mode` as well, and opencode
-   * keeps the two in step; lotse uses only the option door, because the `mode` option is the one the
+   * keeps the two in step; lotsman uses only the option door, because the `mode` option is the one the
    * row draws and a second path is a second way for the row and the agent to disagree.
    *
    * **Three refusals before anything is sent, and none of them is defensive.**
@@ -1665,20 +1665,20 @@ export class AgentSession {
   }
 
   /**
-   * `LOTSE_APP_CONFIG`: set one option the way a person picking it would, once the agent is bound.
+   * `LOTSMAN_APP_CONFIG`: set one option the way a person picking it would, once the agent is bound.
    *
    * **Through `setConfigOption`, not around it.** The hook exists because the devtools plane cannot
    * operate a dropdown (see `hooks.ts`), so the screenshot has to be of the real path or it proves
    * nothing — same argument as `stagePermissionRequest` and the same gate it goes through.
    *
    * **It sends the prompt first if no turn has run, because there is no agent before one.** The
-   * process starts on the first prompt (plan §6), so `LOTSE_APP_CONFIG` alone would have no agent to ask.
-   * `LOTSE_APP_PROMPT` supplies the prompt, so the hook adds no text of its own.
+   * process starts on the first prompt (plan §6), so `LOTSMAN_APP_CONFIG` alone would have no agent to ask.
+   * `LOTSMAN_APP_PROMPT` supplies the prompt, so the hook adds no text of its own.
    */
   async stageConfigOption(controlId: string, value: string, prompt?: string): Promise<void> {
     if (this.#agentSession === null) {
       if (!this.#session && !this.#pending) {
-        this.#events.onNotice?.('LOTSE_APP_CONFIG: no session is open, so there is no option to set');
+        this.#events.onNotice?.('LOTSMAN_APP_CONFIG: no session is open, so there is no option to set');
         return;
       }
       await this.prompt(prompt ?? 'Answer with one short sentence.');
@@ -1755,7 +1755,7 @@ export class AgentSession {
    * **Everything the `gone` path does is deliberately not done here**, and the list is the design:
    *
    * - **Not `gone`.** The agent handshook, loaded the session and answered; it is a *model* that will
-   *   not answer — or, for `'denied'`, one lotse would not ask. `agentStatus` reads all three kinds as
+   *   not answer — or, for `'denied'`, one lotsman would not ask. `agentStatus` reads all three kinds as
    *   still attached, which is what keeps Send working for the retry this dialog asks for.
    * - **The config row stays, and so does its per-session cache.** `gone` clears both, and rightly:
    *   live dropdowns over a dead process are controls pointing at nothing. Here the process is alive,

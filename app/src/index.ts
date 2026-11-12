@@ -1,5 +1,5 @@
 /**
- * The `lotse` binary.
+ * The `lotsman` binary.
  *
  * The yargs chrome is copied from curlew's entrypoint, including the three comments that explain
  * the non-obvious options — they are not decoration, each one fixes a failure that a plain yargs
@@ -41,12 +41,12 @@ import { migratedPaths } from './core/migrate.ts';
 import { listenPaths } from './core/paths.ts';
 
 // The one place the process environment becomes paths; everything below is handed them. The
-// one-time move from the directories lotse wrote happens here too (`core/migrate.ts`), and its
+// one-time move from the directories lotsman wrote happens here too (`core/migrate.ts`), and its
 // notes go to stderr: a directory that moved — or could not be moved — is something *about* the
 // answer, never the answer a pipe is reading.
 const { paths, notes } = migratedPaths();
 const listen = listenPaths();
-for (const note of notes) console.error(`lotse: ${note}`);
+for (const note of notes) console.error(`lotsman: ${note}`);
 
 function reportError(err: unknown): void {
   console.error(err instanceof Error ? err.message : String(err));
@@ -70,9 +70,9 @@ const parseArgs = () =>
     .command(runCommand(paths, listen))
     .command(tasksCommand(paths, listen))
     .command(statusCommand(paths, listen))
-    .demandCommand(1, 'Please provide a command — `lotse --help` lists them all.')
+    .demandCommand(1, 'Please provide a command — `lotsman --help` lists them all.')
     .strictCommands()
-    .scriptName('lotse')
+    .scriptName('lotsman')
     .locale('en')
     .help()
     .fail(false)

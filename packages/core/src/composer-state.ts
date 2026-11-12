@@ -69,7 +69,7 @@ export interface ComposerInput {
    * The host's model rule standing in the way, from `modelBlock()`. `null`/absent for every window
    * that set no `modelPolicy`, which is what keeps this file's behaviour unchanged by default.
    *
-   * **Only `cause: 'denied'` blocks here.** `'unknown'` means lotse has not been told which model
+   * **Only `cause: 'denied'` blocks here.** `'unknown'` means lotsman has not been told which model
    * would answer, and before the first prompt that is the *normal* state — `session/new` goes out
    * with that prompt (`model-policy.ts`). Blocking on it would make the first message unsendable and
    * the window unusable; the refusal for a genuinely unverifiable model is `AgentSession.#deliver`'s,

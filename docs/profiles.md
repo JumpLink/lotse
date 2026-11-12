@@ -1,20 +1,20 @@
 # Profiles
 
 A profile says who a session runs as: which agent, which model, which tools, how much it may do.
-It is a concept of Lotse's own ([ADR 0007](adr/0007-profiles-tasks-triggers.md)), so every host
-that starts a session reads the same file: `lotse listen`, requests from the chat and, as they pick
+It is a concept of Lotsman's own ([ADR 0007](adr/0007-profiles-tasks-triggers.md)), so every host
+that starts a session reads the same file: `lotsman listen`, requests from the chat and, as they pick
 it up, the widget and headless jobs.
 
 ## The file
 
-`$XDG_CONFIG_HOME/lotse/profiles.json` (`LOTSE_PROFILES_FILE` overrides it). Start from
+`$XDG_CONFIG_HOME/lotsman/profiles.json` (`LOTSMAN_PROFILES_FILE` overrides it). Start from
 [examples/profiles.example.json](../examples/profiles.example.json). The schema is `PROFILES_SCHEMA`
-in `@lotse/core`; every property has a title and a description.
+in `@lotsman/core`; every property has a title and a description.
 
 | Key | Default | Meaning |
 |---|---|---|
 | `id` | — | Letters, digits, `-` and `_`. Unique. |
-| `agent` | the one `lotse start` picks | A launcher id, for example `opencode`. |
+| `agent` | the one `lotsman start` picks | A launcher id, for example `opencode`. |
 | `model` | the agent's default | A value of the agent's `model` option. Not offered: the run stops, no fallback. |
 | `configOptions` | `{}` | Other session options by id (`{"thought_level": "high"}`), set after the model. An option or value the agent does not offer stops the run; there is no fallback. |
 | `mcpServers` | `[]` | Passed to `session/new` as is. |
@@ -41,7 +41,7 @@ profile, because they need a user.
 ## MCP server toggles
 
 The widget's config row shows one toggle per MCP server of the session (by name, all on by default),
-so a person can switch a server off for one conversation. A change applies from the NEXT turn: Lotse
+so a person can switch a server off for one conversation. A change applies from the NEXT turn: Lotsman
 calls ACP `session/resume` with the new server list before delivering that prompt. It never starts a
 new session silently.
 
@@ -52,7 +52,7 @@ new session silently.
 - **Hosts.** Pass either `profile` (a `ProfileSession`) or the older `mcpServers` option to the
   widget; `mcpServers` wins when both are set.
 - **Agent-side leak.** opencode keeps the previously started MCP server running after a resume with
-  a shorter list. That is the agent's behaviour, not Lotse's, and there is no workaround here: the
+  a shorter list. That is the agent's behaviour, not Lotsman's, and there is no workaround here: the
   toggle stops the agent from being offered the tools, not the process from running.
 
 Boolean agent config options are shown the same way, as switches in the config row.

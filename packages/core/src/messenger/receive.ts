@@ -17,10 +17,10 @@
  *   is the id the send tool returned, kept in `refs`). It beats reading the text — a single open question,
  *   several open ones — but not an id the text names itself. A question that is no longer open is said
  *   so, never replaced by another one. The quote the client put before the text is already gone: the
- *   wait tool is asked for that (`strip_quotes`), Lotse strips nothing itself.
+ *   wait tool is asked for that (`strip_quotes`), Lotsman strips nothing itself.
  * - **Only the questions the chat may see.** A profile whose `channels` leave out the messenger never sent
  *   its question here, so a reply cannot answer it — not by plain text, not by its id.
- * - **Every answer is `answerQuestion`** — the same path as `lotse answer` and the dialog — so the
+ * - **Every answer is `answerQuestion`** — the same path as `lotsman answer` and the dialog — so the
  *   first channel to answer wins and the other hears what the runner says: already answered.
  */
 

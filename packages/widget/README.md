@@ -1,24 +1,24 @@
-# @lotse/widget
+# @lotsman/widget
 
-The chat surface, as a widget another GTK4 / libadwaita app embeds. `LotseChat` is an `Adw.Bin` that
+The chat surface, as a widget another GTK4 / libadwaita app embeds. `LotsmanChat` is an `Adw.Bin` that
 shows **one conversation**: the transcript, the composer with its model, effort and mode controls, the
 tool and thought cards, the approval dialog, failure notices and the provider login. It owns one agent
-subprocess and renders what `@lotse/core` reports.
+subprocess and renders what `@lotsman/core` reports.
 
 Licence: **LGPL-3.0-or-later** (`LICENSE`, `COPYING` in this directory).
 
 The widget draws; every decision (may Send be pressed, what does this failure say, which options may a
-permission dialog show) is made in [`@lotse/core`](../core/README.md). The host brings the window, the
+permission dialog show) is made in [`@lotsman/core`](../core/README.md). The host brings the window, the
 session list, the menu and the preferences. The full walkthrough, from data directory to shutdown, is
 the [host guide](../../docs/embedding.md); the design of the split is
-[ADR 0001](../../docs/adr/0001-lotse-as-an-embeddable-widget.md).
+[ADR 0001](../../docs/adr/0001-lotsman-as-an-embeddable-widget.md).
 
 Requires GJS with GTK 4 and libadwaita, and an ACP agent (opencode today) on `PATH` or bundled.
 
 ## Install and import
 
 ```bash
-npm i @lotse/widget @lotse/core @lotse/acp @lotse/session \
+npm i @lotsman/widget @lotsman/core @lotsman/acp @lotsman/session \
   @girs/adw-1 @girs/gdk-4.0 @girs/glib-2.0 @girs/gobject-2.0 @girs/gtk-4.0 @girs/pango-1.0
 ```
 
@@ -28,11 +28,11 @@ builds with gjsify (which compiles Blueprint). A plain `tsc` consumer needs
 `"allowArbitraryExtensions": true` in its tsconfig, for the `.d.blp.ts` declarations next to the templates.
 
 ```ts
-import { LotseChat } from '@lotse/widget';
+import { LotsmanChat } from '@lotsman/widget';
 ```
 
-`.` is the public entry. Two further sub-paths exist for lotse's own tests (`@lotse/widget/tool-line`,
-`@lotse/widget/permission-dialog`); a host does not need them.
+`.` is the public entry. Two further sub-paths exist for lotsman's own tests (`@lotsman/widget/tool-line`,
+`@lotsman/widget/permission-dialog`); a host does not need them.
 
 ## Minimal example
 
@@ -45,17 +45,17 @@ import {
   DEFAULT_AGENT,
   emptyStateView,
   gatherResolveContext,
-  lotsePathsUnder,
+  lotsmanPathsUnder,
   requireLauncher,
   resolveDefault,
   resolveRecorded,
   type McpServer,
-} from '@lotse/core';
-import { createSessionStore } from '@lotse/session';
-import { LotseChat } from '@lotse/widget';
+} from '@lotsman/core';
+import { createSessionStore } from '@lotsman/session';
+import { LotsmanChat } from '@lotsman/widget';
 
-export function embedChat(window: Adw.ApplicationWindow, dataRoot: string, projectDir: string): LotseChat {
-  const paths = lotsePathsUnder(dataRoot);
+export function embedChat(window: Adw.ApplicationWindow, dataRoot: string, projectDir: string): LotsmanChat {
+  const paths = lotsmanPathsUnder(dataRoot);
   const store = createSessionStore(paths.sessionsFile);
 
   const found = resolveDefault(gatherResolveContext(paths, false));
@@ -65,7 +65,7 @@ export function embedChat(window: Adw.ApplicationWindow, dataRoot: string, proje
     { name: 'my-tools', command: '/usr/bin/my-mcp-server', args: [], env: [] },
   ];
 
-  const chat = new LotseChat({
+  const chat = new LotsmanChat({
     agent: found?.command ?? requireLauncher(DEFAULT_AGENT),
     agentSource: found?.source ?? 'host',
     newChat: { cwd: projectDir, home: homedir() },
@@ -93,9 +93,9 @@ export function embedChat(window: Adw.ApplicationWindow, dataRoot: string, proje
 This is `app/tests/examples/embed.ts`, which is type-checked with the app. Each line is explained in the
 [host guide](../../docs/embedding.md).
 
-## `LotseChatOptions`
+## `LotsmanChatOptions`
 
-`new LotseChat(options)`. Only `agent` and `newChat` are required.
+`new LotsmanChat(options)`. Only `agent` and `newChat` are required.
 
 | Option | Type | Meaning |
 |---|---|---|
@@ -105,15 +105,15 @@ This is `app/tests/examples/embed.ts`, which is type-checked with the app. Each 
 | `createSession` | `(record: SessionRecord) => void` | Write a new conversation's record. `SessionStore.create`. |
 | `appendTurns` | `(sessionId, entries) => void` | Persist streamed transcript lines, once per arriving batch, in order. `SessionStore.append`. |
 | `resolveAgent` | `(id, source) => Promise<RecordedResolution>` | The agent a stored session names, on the copy that held it: `resolveRecorded`. Leave out to run every session on `agent`. |
-| `mcpServers` | `readonly McpServer[]` | Your MCP servers, sent unchanged in `session/new` and on reattach. Never read by lotse past `type`. |
+| `mcpServers` | `readonly McpServer[]` | Your MCP servers, sent unchanged in `session/new` and on reattach. Never read by lotsman past `type`. |
 | `noAgent` | `{ kind: 'no-agent', … }` | Nothing was found: Send is off, and `showNoAgent()` shows the `noAgentPage`. Take the value from `emptyStateView`. |
 | `closedPage` | `Gtk.Widget` | Your "nothing is open" page. Absent: that state renders nothing. |
 | `noAgentPage` | `Gtk.Widget` | Your "no agent found" page. Absent: that state renders nothing. |
 | `gate` | `(question) => 'ask' \| 'decline' \| Promise<…>` | Your permission policy, asked **before** the person. See below. |
-| `modelPolicy` | `(model: string) => 'allow' \| 'deny'` | Which models your data may reach. Absent: every model, which is lotse's own window. See below. |
+| `modelPolicy` | `(model: string) => 'allow' \| 'deny'` | Which models your data may reach. Absent: every model, which is lotsman's own window. See below. |
 | `hostTools` | `HostToolPolicy` | The tools you confirm yourself (`hostConfirmed`), and whether an always-allow is the agent's to remember or lives one session (`alwaysAllow`). See below. |
 | `confirmTool` | `(question) => boolean \| Promise<boolean>` | Your own dialog for a `hostConfirmed` tool. `true` approves one call; everything else declines. See below. |
-| `toolPresenter` | `(call: ToolCallView) => ToolPresentation \| null` | Draw your own MCP calls in your words. Absent: every tool row is lotse's. See below. |
+| `toolPresenter` | `(call: ToolCallView) => ToolPresentation \| null` | Draw your own MCP calls in your words. Absent: every tool row is lotsman's. See below. |
 | `providerOnboarding` | `boolean` | Off by default. On: a new chat with no provider connected shows "Connect a provider" first. |
 | `allowCustomProviders` | `boolean` | Off by default. On: `providerSettingsPage()` lets the person add and remove custom providers (local models, any OpenAI-compatible endpoint). Off: the page lists them read-only. |
 | `onConversation` | `(record, current) => void` | A new conversation has its session and record; list it. Runs before the widget updates its own view. |
@@ -141,9 +141,9 @@ Your app's data reaches the model the agent is configured to use. If some of tha
 for some destinations, say so once:
 
 ```ts
-import { denyFreeHostedModels } from '@lotse/core';
+import { denyFreeHostedModels } from '@lotsman/core';
 
-new LotseChat({ …, modelPolicy: denyFreeHostedModels });
+new LotsmanChat({ …, modelPolicy: denyFreeHostedModels });
 ```
 
 A `ModelPolicy` is `(model: string) => 'allow' | 'deny'`, called with the agent's own model id
@@ -152,7 +152,7 @@ A `ModelPolicy` is `(model: string) => 'allow' | 'deny'`, called with the agent'
 1. **Denied models are not offered.** The composer's model dropdown lists only what you allow, and the
    model-refusal dialog's **Choose another model** is withheld when nothing is left to choose.
 2. **A denied model blocks the send.** The composer turns Send off and says why; the prompt does not
-   reach the agent. Lotse **never picks a different model for the person** — a silent switch is a
+   reach the agent. Lotsman **never picks a different model for the person** — a silent switch is a
    different conversation with a different model, made by nobody.
 3. **The check runs again whenever the agent reports a configuration change**, not only at startup.
 
@@ -162,8 +162,8 @@ first prompt nothing is known yet and Send stays on (the first prompt is what st
 the controller checks again once the agent has answered and refuses to send if the model is denied or
 still unnamed.
 
-`denyFreeHostedModels` (from `@lotse/core`) denies what `isFreeModel` calls free, which is the same
-classification `lotse listen` has used since ADR 0003: any id ending in `-free`, plus the few free ids
+`denyFreeHostedModels` (from `@lotsman/core`) denies what `isFreeModel` calls free, which is the same
+classification `lotsman listen` has used since ADR 0003: any id ending in `-free`, plus the few free ids
 without the suffix (`FREE_MODELS_WITHOUT_SUFFIX`), plus an empty or blank id. Every one of them may keep
 what it is sent and train on it. Free also means hosted: the prompt goes to whoever runs it.
 
@@ -176,7 +176,7 @@ refused.
 unknown reads safer and is unusable: the classification knows two exact ids and one suffix, so
 "unknown" is nearly every model an agent reports, *including every paid one*, and a widget with no
 allowed model left asks the person to pick something that does not exist. If your data needs certainty
-rather than a known-bad list, pass an allowlist: `allowOnlyProviders(['anthropic'])` from `@lotse/core`
+rather than a known-bad list, pass an allowlist: `allowOnlyProviders(['anthropic'])` from `@lotsman/core`
 allows only ids whose provider (the part before the first `/`) is listed, exactly, and denies every other
 id, however new — it does not look inside a provider, so pair it with `denyFreeHostedModels` where
 that matters. Or write your own predicate; it is the same one-line option. The genuinely uncertain case, "which model is even in
@@ -184,18 +184,18 @@ use?", is caught by the fail-closed rule above and not by this one.
 
 ### `hostTools`: the tools you confirm, and an always that ends with the session
 
-Two rules about tool calls, both decided in `@lotse/core`'s `host-tools.ts` and both independent:
+Two rules about tool calls, both decided in `@lotsman/core`'s `host-tools.ts` and both independent:
 
 ```ts
-new LotseChat({
+new LotsmanChat({
   …,
   hostTools: { hostConfirmed: [{ name: 'shop.place_order' }, { kind: 'delete' }], alwaysAllow: 'session' },
   confirmTool: async (question) => await myPinDialog(question.view),
 });
 ```
 
-**`hostConfirmed` is the one host hook that is not only a narrowing — and lotse still approves nothing.**
-A listed tool never reaches lotse's dialog and `gate` is not consulted for it; `confirmTool` is asked
+**`hostConfirmed` is the one host hook that is not only a narrowing — and lotsman still approves nothing.**
+A listed tool never reaches lotsman's dialog and `gate` is not consulted for it; `confirmTool` is asked
 instead, with the same `PermissionQuestion` the dialog would have drawn. A `true` is answered with the
 agent's own **`allow_once`** and nothing wider, so the next call asks you again — an approval that
 lasted a session would be the PIN asked once and then never again. An agent that offered no `allow_once`
@@ -207,12 +207,12 @@ A rule matches on `name`, on `kind`, or both ANDed. `name` is compared against t
 against each MCP name the call carries (`server.tool` and `tool`) — exactly, trimmed and case-folded,
 never as a fragment. A rule with neither field matches nothing and is reported once through `onNotice`.
 
-**`alwaysAllow: 'session'`** changes who remembers an always. ACP has no lasting-approval answer: lotse
+**`alwaysAllow: 'session'`** changes who remembers an always. ACP has no lasting-approval answer: lotsman
 sends an option id and the agent decides whether to ask again, which can outlive your window. Under
-`'session'`, **Always allow** goes out as the agent's `allow_once` and lotse keeps the always itself — in
+`'session'`, **Always allow** goes out as the agent's `allow_once` and lotsman keeps the always itself — in
 memory, keyed by the ACP session id plus the tool's kind and MCP name, written nowhere, gone with the
 conversation and with the process. Where the agent offers no `allow_once`, the button is withdrawn
-rather than shown as a promise lotse cannot keep that narrow. A `hostConfirmed` tool is never covered by
+rather than shown as a promise lotsman cannot keep that narrow. A `hostConfirmed` tool is never covered by
 such a grant: the host is asked first, which is the order and the point. Default is `'agent'`.
 
 ### `toolPresenter` renames a row, it never restatuses it
@@ -230,10 +230,10 @@ toolPresenter: (call) => {
 },
 ```
 
-`null` draws lotse's row. **The status stays the agent's**: a host that could restyle a failed call
+`null` draws lotsman's row. **The status stays the agent's**: a host that could restyle a failed call
 could hide that it failed. A presenter that throws, or returns no non-empty `title` or a field of the
-wrong type, falls back to lotse's row and logs one `lotse:` warning — a broken hook must never make a
-tool call vanish. Lines written by older lotse versions carry no record and never reach the presenter.
+wrong type, falls back to lotsman's row and logs one `lotsman:` warning — a broken hook must never make a
+tool call vanish. Lines written by older lotsman versions carry no record and never reach the presenter.
 
 ### Host entries
 
@@ -264,7 +264,7 @@ denies is left out of the login dialog and listed as "not used by this app" here
 
 The page starts a private login server when it is shown and stops it when it is hidden. A change
 restarts the agent, or applies from its next start when a turn is still running. Custom providers are
-written only for a **bundled** opencode (lotse's own `lotse-providers.json`); a host opencode's
+written only for a **bundled** opencode (lotsman's own `lotsman-providers.json`); a host opencode's
 configuration is the person's, so the page shows it read-only. All of the logic is core's
 `ProviderSettingsController`; the page only renders it.
 
@@ -272,8 +272,8 @@ configuration is the person's, so the page shows it read-only. All of the logic 
 
 `createProviderSettingsPage(options)` and `createOnboardingPage(input, handlers)` build the same two
 pages for a host that wants them in its own preferences dialog and its own welcome screen. The factory
-owns the wiring in both directions — `LotseChat` calls it too — so a host's page cannot read the
-provider file, start the login server or apply `modelPolicy` differently from lotse's own.
+owns the wiring in both directions — `LotsmanChat` calls it too — so a host's page cannot read the
+provider file, start the login server or apply `modelPolicy` differently from lotsman's own.
 
 `createProviderSettingsPage({ agent, modelPolicy?, allowCustomProviders?, connect(done), onChanged?() })`
 returns a `ProviderSettingsPage` whose `.page` is the `Adw.PreferencesPage`. `connect` opens your login
@@ -285,7 +285,7 @@ right page, and not a value a host should derive itself. The `OnboardingInput` n
 ConnectionFacts` from `probeConnections(agent)`; that call costs one private login server, briefly, and
 anything that fails, times out or is aborted is `unknown`, which means show the chat.
 
-## `LotseChat` members
+## `LotsmanChat` members
 
 | Member | Use |
 |---|---|
@@ -303,7 +303,7 @@ anything that fails, times out or is aborted is `unknown`, which means show the 
 
 `stageOnboarding`, `stagePermissionRequest`, `stageConfigOption`, `openModelDropdown`,
 `chooseModelInDialog`, `hasModelControl`, `permissionAsked`, `streamed` and `failureShown` exist for
-lotse's own dev fixtures and screenshots ([dev-fixtures](../../docs/dev-fixtures.md)); a host does not
+lotsman's own dev fixtures and screenshots ([dev-fixtures](../../docs/dev-fixtures.md)); a host does not
 need them.
 
 `shutdown()` order matters: it cancels first so the agent can answer `cancelled` and flush, and
@@ -314,16 +314,16 @@ terminates only afterwards. Terminating first would lose the work of the turn in
 | Export | What it is |
 |---|---|
 | `HostGateAnswer` | `'ask' \| 'decline'`. |
-| `LotseChatOptions` | The options above. |
+| `LotsmanChatOptions` | The options above. |
 | `ToolPresenter`, `ToolPresentation`, `ToolCallView`, `McpCall`, `HostItem` | The types `toolPresenter` and host entries use. |
 | `providerOffered(policy, id, models?)`, `ModelPolicy` | Whether a `modelPolicy` lets a chat use any model of a provider; the login dialog and the settings page filter by it. |
 | `HostToolPolicy`, `HostToolMatch`, `AlwaysAllowScope`, `PermissionQuestion`, `PermissionView` | The types `hostTools` and `confirmTool` are written in. |
 | `createProviderSettingsPage`, `ProviderSettingsPage`, `ProviderSettingsPageOptions`, `ProviderSettingsHooks` | The provider settings page, for your own preferences dialog. See above. |
 | `createOnboardingPage`, `OnboardingPage`, `OnboardingHandlers`, `OnboardingView`, `OnboardingInput` | The onboarding page, for your own welcome screen. See above. |
 | `probeConnections`, `ConnectionFacts` | Which providers the agent has connected, read from a private login server that is closed again at once. |
-| `CSS` | The widget's class-name map, for a host that styles its own widgets next to the chat. The stylesheet itself is installed by `LotseChat`; a host needs no CSS of its own. |
+| `CSS` | The widget's class-name map, for a host that styles its own widgets next to the chat. The stylesheet itself is installed by `LotsmanChat`; a host needs no CSS of its own. |
 
 ## Related
 
-[`@lotse/core`](../core/README.md) · [host guide](../../docs/embedding.md) · [design](../../docs/design/README.md)
+[`@lotsman/core`](../core/README.md) · [host guide](../../docs/embedding.md) · [design](../../docs/design/README.md)
 (what the widget looks like, with screenshots) · [login](../../docs/login.md)

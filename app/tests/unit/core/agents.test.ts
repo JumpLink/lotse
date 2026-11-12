@@ -13,14 +13,14 @@ import {
   which,
   type AgentDetection,
   type SandboxFacts,
-} from '@lotse/core';
+} from '@lotsman/core';
 import { agentsReport, settingsReport } from '../../../src/frontends/cli/agents.ts';
 
 const SANDBOXED: SandboxFacts = { flatpakInfoExists: true };
 const NOT_SANDBOXED: SandboxFacts = { flatpakInfoExists: false };
 
 async function withTempDir(run: (dir: string) => Promise<void> | void): Promise<void> {
-  const dir = mkdtempSync(join(tmpdir(), 'lotse-agents-'));
+  const dir = mkdtempSync(join(tmpdir(), 'lotsman-agents-'));
   try {
     await run(dir);
   } finally {
@@ -51,12 +51,12 @@ export default async () => {
     });
 
     await it('honors a Windows-style ; separated PATH', async () => {
-      // LOTSE_TEST_ASSUME_EXECUTABLE decouples PATH-splitting from the executable-bit check, so
+      // LOTSMAN_TEST_ASSUME_EXECUTABLE decouples PATH-splitting from the executable-bit check, so
       // this test exercises the ";" split on every platform, including GJS, without depending on
       // chmod semantics.
       await withTempDir(async (dir) => {
         writeFileSync(join(dir, 'prog'), '');
-        const env = { PATH: `/nonexistent-dir;${dir}`, LOTSE_TEST_ASSUME_EXECUTABLE: '1' };
+        const env = { PATH: `/nonexistent-dir;${dir}`, LOTSMAN_TEST_ASSUME_EXECUTABLE: '1' };
         expect(which('prog', env)).toBe(join(dir, 'prog'));
       });
     });
@@ -132,7 +132,7 @@ export default async () => {
     });
   });
 
-  await describe('lotse agents report', async () => {
+  await describe('lotsman agents report', async () => {
     const launcher = LAUNCHERS[0]!;
     const found = (source: AgentDetection['source']): AgentDetection => ({
       id: launcher.id,
@@ -150,7 +150,7 @@ export default async () => {
       const host = agentsReport(LAUNCHERS, [found('host')], found('host'));
       expect(host[1]!.includes(' host ')).toBe(true);
       expect(host[host.length - 1]).toBe(
-        `lotse would use: ${launcher.id} (host, /synthetic/opencode, 1.2.3)`,
+        `lotsman would use: ${launcher.id} (host, /synthetic/opencode, 1.2.3)`,
       );
 
       const bundled = agentsReport(LAUNCHERS, [found('bundled')], found('bundled'));
@@ -177,20 +177,20 @@ export default async () => {
       expect(lines[1]!.includes('not found')).toBe(true);
       expect(lines[1]!.includes('NOT FOUND')).toBe(true);
       expect(lines[1]!.includes('bundled')).toBe(false);
-      expect(lines[lines.length - 1]!.startsWith('lotse would use: none')).toBe(true);
+      expect(lines[lines.length - 1]!.startsWith('lotsman would use: none')).toBe(true);
     });
   });
 
-  await describe('lotse agents — the setting lines', async () => {
+  await describe('lotsman agents — the setting lines', async () => {
     await it('names the setting and where the file is', async () => {
       const lines = settingsReport(
-        '/synthetic/config/lotse/settings.json',
+        '/synthetic/config/lotsman/settings.json',
         { version: 1, agent: { id: 'opencode', source: 'bundled' } },
         null,
       );
       expect(lines).toStrictEqual([
         'setting: the bundled opencode',
-        'settings file: /synthetic/config/lotse/settings.json',
+        'settings file: /synthetic/config/lotsman/settings.json',
       ]);
     });
 

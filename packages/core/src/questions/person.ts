@@ -8,10 +8,10 @@
  * - **"done"** (`done`, `fertig`, `yes`, …): the person did the step themselves.
  * - **A code**, when the call said `acceptsCode`: a 4–10 character token of `[0-9A-Za-z]`. It goes from
  *   the reply to the waiting call through `waiting`, a map in this process's memory. It is never put in
- *   the question store, the log, a transcript or a message lotse sends: the store keeps the answer kind
+ *   the question store, the log, a transcript or a message lotsman sends: the store keeps the answer kind
  *   (`text`) and every line that must mention it says `REDACTED`.
  * - **No reply in time**: the call returns `timeout`, the run goes on without the person, and the
- *   question stays open as `deferred` — the open item `lotse questions` lists. A later "done" then
+ *   question stays open as `deferred` — the open item `lotsman questions` lists. A later "done" then
  *   continues the session like a reply question does; a code after the wait is refused, because the
  *   session it would be typed into is gone.
  *
@@ -19,7 +19,7 @@
  * hosted for free: `personRefusal`.
  */
 
-import type { McpServer } from '@lotse/acp';
+import type { McpServer } from '@lotsman/acp';
 
 import { isFreeModel } from '../free-models.ts';
 import { STRINGS, msg } from '../messenger/strings.ts';
@@ -115,7 +115,7 @@ export function personRefusal(task: Task, profile: Profile, input: PersonNeededI
   if (!task.personNeeded.enabled) return `task "${task.id}" does not have person_needed enabled`;
   if (!input.acceptsCode && !input.link) return null;
   if (!profile.model)
-    return `person_needed with acceptsCode or link needs a profile that names its model: "${profile.id}" names none, so lotse cannot tell it is not a free hosted one`;
+    return `person_needed with acceptsCode or link needs a profile that names its model: "${profile.id}" names none, so lotsman cannot tell it is not a free hosted one`;
   if (isFreeModel(profile.model))
     return `person_needed with acceptsCode or link is refused on the free model "${profile.model}": a code or link must not reach a free hosted model`;
   return null;

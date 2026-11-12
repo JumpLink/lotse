@@ -33,7 +33,7 @@
  * 720 and 1024, three at 500 and 360, window granted 360) — three side by side at 360 px would leave
  * about 90 px each, an ellipsis with no way to read the model. The row does not raise the window's
  * width floor: `scripts/probes/window-min-width.mjs` measures that the floor is
- * `Adw.NavigationSplitView`'s, not lotse's content's.
+ * `Adw.NavigationSplitView`'s, not lotsman's content's.
  *
  * **What the cap does not do is make a dropdown narrow.** `Adw.Clamp` caps a *natural* width; the
  * minimum passes straight through, so a clamp around a dropdown whose longest value is 32 characters
@@ -70,7 +70,7 @@ import {
   type ConfigRowSwitch,
   type ConfigRowView,
   type McpTogglesView,
-} from '@lotse/core';
+} from '@lotsman/core';
 import { CSS } from './css.ts';
 
 /** Widest a dropdown asks to be; three of them and the Send button fit the content clamp on one line. */
@@ -393,7 +393,7 @@ export class ConfigRow {
    * **This is the only way out of the process for "open the dropdown", and the caller is a failure
    * dialog** (`core/failure.ts`'s `'choose-model'`). It does not pick anything: the person still chooses
    * a value, the row still sends the set through `onSelect`, and `isConfigChange` still decides whether
-   * that is a change. A dialog that picked a model on the person's behalf would be lotse holding
+   * that is a change. A dialog that picked a model on the person's behalf would be lotsman holding
    * configuration authority over the agent, which is the "always allow" mistake in different clothes.
    */
   openModelDropdown(): boolean {

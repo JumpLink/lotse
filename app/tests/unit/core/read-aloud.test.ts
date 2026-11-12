@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from '@gjsify/unit';
 
-import { readAloud, readAloudOffered, type SpeechEngine, type SpeechUtteranceLike } from '@lotse/core';
+import { readAloud, readAloudOffered, type SpeechEngine, type SpeechUtteranceLike } from '@lotsman/core';
 
 /** `toEqual` compares with `==`, which is no use on arrays. */
 function same(actual: unknown, expected: unknown): void {

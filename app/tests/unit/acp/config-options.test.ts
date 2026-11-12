@@ -4,26 +4,26 @@
  * have any reason to send the options in the first place.
  *
  * **Why this is in `packages/acp` and not in the surface.** The values live in the agent, and the
- * agent is the only authority on them. So lotse never keeps a copy: it re-reads them from
+ * agent is the only authority on them. So lotsman never keeps a copy: it re-reads them from
  * `session/new`, `session/load`, `session/resume`, from every `set_config_option` answer and from
  * `config_option_update`. A test that pinned "the client remembers the model" would pin the one
  * behaviour that must never exist.
  *
  * **The measurement that is easy to get backwards** (it was, in this repo's own plan, and cost a
  * product decision): `configOptions` is a **client** capability. It sits under
- * `ClientCapabilities.session`, so whether it appears in `initialize` says what *lotse* can do —
- * not what the agent offers. `opencode acp` 2.0.19 sends 400+ models whether lotse announces
+ * `ClientCapabilities.session`, so whether it appears in `initialize` says what *lotsman* can do —
+ * not what the agent offers. `opencode acp` 2.0.19 sends 400+ models whether lotsman announces
  * anything or not. The announcement is still right, and the tests below pin it in the right
  * direction.
  */
 
 import { describe, expect, it } from '@gjsify/unit';
 
-import { AcpClient } from '@lotse/acp/client';
-import { LOTSE_CLIENT_CAPABILITIES } from '@lotse/acp/gate';
-import { CLIENT_METHODS } from '@lotse/acp/methods';
-import { isAuthRequired } from '@lotse/acp/client';
-import type { SessionConfigOption, SessionNotification, SessionUpdate } from '@lotse/acp/types';
+import { AcpClient } from '@lotsman/acp/client';
+import { LOTSMAN_CLIENT_CAPABILITIES } from '@lotsman/acp/gate';
+import { CLIENT_METHODS } from '@lotsman/acp/methods';
+import { isAuthRequired } from '@lotsman/acp/client';
+import type { SessionConfigOption, SessionNotification, SessionUpdate } from '@lotsman/acp/types';
 
 import { FixtureAgent } from '../../support/fixture-agent.ts';
 
@@ -33,12 +33,12 @@ function currentValueOf(options: SessionConfigOption[] | undefined, id: string):
 
 export default async () => {
   await describe('the capability announcement', async () => {
-    await it('announces session.configOptions, because lotse can act on the options', async () => {
-      expect(LOTSE_CLIENT_CAPABILITIES.session?.configOptions).toStrictEqual({ boolean: {} });
+    await it('announces session.configOptions, because lotsman can act on the options', async () => {
+      expect(LOTSMAN_CLIENT_CAPABILITIES.session?.configOptions).toStrictEqual({ boolean: {} });
     });
 
     await it('announces boolean options, because the config row draws switches', async () => {
-      const capabilities = LOTSE_CLIENT_CAPABILITIES.session?.configOptions as
+      const capabilities = LOTSMAN_CLIENT_CAPABILITIES.session?.configOptions as
         | { boolean?: unknown }
         | undefined;
       expect(capabilities?.boolean).toStrictEqual({});

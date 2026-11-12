@@ -1,9 +1,9 @@
 /**
- * Opening the answer window from a process without GTK: `lotse answer <id>` with no text, and a click on
+ * Opening the answer window from a process without GTK: `lotsman answer <id>` with no text, and a click on
  * a `listen` notification.
  *
- * **The window only collects text.** It runs in the GUI bundle (`lotse-app … --answer <id>`), because a
- * `gi://Gtk` in the CLI bundle would load GTK for every `lotse sessions` over SSH (`gui/main.ts`). It
+ * **The window only collects text.** It runs in the GUI bundle (`lotsman-app … --answer <id>`), because a
+ * `gi://Gtk` in the CLI bundle would load GTK for every `lotsman sessions` over SSH (`gui/main.ts`). It
  * writes one framed line to stdout and exits; the caller hands the text to `answerQuestion`, so the
  * window is never a second way to answer — only a second way to type.
  *
@@ -16,12 +16,12 @@ import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { envKnob } from '@lotse/core';
+import { envKnob } from '@lotsman/core';
 
 /** The argument the GUI bundle reads to open the window instead of the main one. */
 export const ANSWER_FLAG = '--answer';
 
-const FRAME = 'lotse-answer:';
+const FRAME = 'lotsman-answer:';
 
 /** A display the window can open on. */
 export function hasDisplay(env: NodeJS.ProcessEnv): boolean {
@@ -31,9 +31,9 @@ export function hasDisplay(env: NodeJS.ProcessEnv): boolean {
 export type DialogCommand = { readonly command: readonly string[] } | { readonly problem: string };
 
 /**
- * The program that opens the window, from where this bundle is. `LOTSE_ANSWER_DIALOG` names one (a
+ * The program that opens the window, from where this bundle is. `LOTSMAN_ANSWER_DIALOG` names one (a
  * program and its arguments, split on spaces); else the GUI bundle beside this one, run by `gjs`
- * (`app/dist/`), else the `lotse-app` executable beside it (a Flatpak's `/app/bin`).
+ * (`app/dist/`), else the `lotsman-app` executable beside it (a Flatpak's `/app/bin`).
  */
 export function dialogCommand(
   selfFile: string,
@@ -44,12 +44,12 @@ export function dialogCommand(
   const pinned = envKnob(env, 'ANSWER_DIALOG')?.trim();
   if (pinned) return { command: pinned.split(/\s+/) };
   const dir = dirname(selfFile);
-  const bundle = join(dir, 'lotse-app.gjs.mjs');
+  const bundle = join(dir, 'lotsman-app.gjs.mjs');
   if (exists(bundle)) return { command: ['gjs', '-m', bundle] };
-  const program = join(dir, 'lotse-app');
+  const program = join(dir, 'lotsman-app');
   if (exists(program)) return { command: [program] };
   return {
-    problem: `the answer window is not next to ${selfFile} (build it with \`gjsify workspace lotse-cli build:app\`, or set LOTSE_ANSWER_DIALOG)`,
+    problem: `the answer window is not next to ${selfFile} (build it with \`gjsify workspace lotsman-cli build:app\`, or set LOTSMAN_ANSWER_DIALOG)`,
   };
 }
 
@@ -97,7 +97,7 @@ export function dialogResult(status: number | null, stdout: string): DialogResul
   } catch {
     // Falls through: a frame that is not JSON is a broken window, not an answer.
   }
-  return { kind: 'failed', reason: 'the answer window wrote something lotse cannot read' };
+  return { kind: 'failed', reason: 'the answer window wrote something lotsman cannot read' };
 }
 
 /** Open the window for one question and wait until it is closed. Never rejects. */

@@ -1,4 +1,4 @@
-# lotse docs
+# lotsman docs
 
 Agent-facing guidance is in [../AGENTS.md](../AGENTS.md). The files here expand on specific areas.
 
@@ -19,11 +19,11 @@ Agent-facing guidance is in [../AGENTS.md](../AGENTS.md). The files here expand 
 
 - [ADR index](adr/README.md)
 - [Package layout](architecture/package-layout.md) — what lives in each package and why.
-- [Embeddable widget study](architecture/embeddable-widget-study.md) — extracting `@lotse/widget`.
+- [Embeddable widget study](architecture/embeddable-widget-study.md) — extracting `@lotsman/widget`.
 
 ## Product
 
-- [Vision](vision.md) and [roadmap](roadmap.md) — what lotse is and what it is not.
+- [Vision](vision.md) and [roadmap](roadmap.md) — what lotsman is and what it is not.
 - [Tasks](tasks.md), [profiles](profiles.md), [listen](listen.md), [messenger contract](messenger-contract.md).
 - [Custom providers](custom-providers.md), [i18n](i18n.md), [releasing](releasing.md).
 - [Claude Code adapter](claude-code.md) — terms and billing notes.
@@ -31,6 +31,6 @@ Agent-facing guidance is in [../AGENTS.md](../AGENTS.md). The files here expand 
 ## Design and packaging
 
 - [GUI design](design/README.md) — principles and screenshots.
-- [Embedding guide](embedding.md) — for hosts using `@lotse/widget`.
+- [Embedding guide](embedding.md) — for hosts using `@lotsman/widget`.
 - [Packaging and Flatpak details](../data/README.md) — desktop entry, metainfo, finish-args,
   bundled agent.

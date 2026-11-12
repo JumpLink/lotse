@@ -1,13 +1,13 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the lotse package.
+# This file is distributed under the same license as the lotsman package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: lotse\n"
-"Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
+"Project-Id-Version: lotsman\n"
+"Report-Msgid-Bugs-To: https://github.com/JumpLink/lotsman/issues\n"
 "POT-Creation-Date: 2026-10-29 12:53+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
@@ -58,9 +58,9 @@ msgstr ""
 
 #: packages/core/src/empty-state.ts:38
 msgid ""
-"lotse starts a coding agent but found none on this machine. Install opencode "
-"with the command below, or install lotse from Flatpak, which bundles one. "
-"Then start lotse again."
+"lotsman starts a coding agent but found none on this machine. Install opencode "
+"with the command below, or install lotsman from Flatpak, which bundles one. "
+"Then start lotsman again."
 msgstr ""
 
 #: packages/core/src/empty-state.ts:43
@@ -94,7 +94,7 @@ msgstr ""
 #: packages/core/src/failure.ts:317
 msgid ""
 "The provider turned this request down. It may be limited by region or rate, "
-"or it may need a login. Choose another model, or run lotse auth in a "
+"or it may need a login. Choose another model, or run lotsman auth in a "
 "terminal."
 msgstr ""
 
@@ -126,7 +126,7 @@ msgstr ""
 #: packages/core/src/failure.ts:358
 msgid ""
 "It advertises neither session/load nor session/resume, so there is no way "
-"for lotse to attach it to a conversation that already exists. An agent lotse "
+"for lotsman to attach it to a conversation that already exists. An agent lotsman "
 "cannot reattach to is refused, not shown as an empty transcript."
 msgstr ""
 
@@ -205,7 +205,7 @@ msgstr ""
 
 #: packages/core/src/messenger/strings.ts:29
 msgid ""
-"Got it, {id}, but the run failed. `lotse questions` and the listen log have "
+"Got it, {id}, but the run failed. `lotsman questions` and the listen log have "
 "the details."
 msgstr ""
 
@@ -231,13 +231,13 @@ msgstr ""
 
 #: packages/core/src/messenger/strings.ts:36
 msgid ""
-"{id} not delivered ({reason}); giving up. `lotse questions` still lists it."
+"{id} not delivered ({reason}); giving up. `lotsman questions` still lists it."
 msgstr ""
 
 #: packages/core/src/messenger/strings.ts:38
 msgid ""
 "A question is waiting in {task}. Its text is not sent to this chat: read it "
-"with `lotse questions` or on the desktop."
+"with `lotsman questions` or on the desktop."
 msgstr ""
 
 #: packages/core/src/messenger/strings.ts:40
@@ -245,7 +245,7 @@ msgid "{task} has a message for you. Its text is not sent to this chat."
 msgstr ""
 
 #: packages/core/src/messenger/strings.ts:41
-msgid "{id} is not answered in this chat. Use `lotse answer` or the desktop."
+msgid "{id} is not answered in this chat. Use `lotsman answer` or the desktop."
 msgstr ""
 
 #: packages/core/src/messenger/strings.ts:42
@@ -334,7 +334,7 @@ msgstr ""
 
 #: packages/core/src/model-policy.ts:216
 msgid ""
-"lotse cannot tell which model this agent would use, so nothing was sent."
+"lotsman cannot tell which model this agent would use, so nothing was sent."
 msgstr ""
 
 #: packages/core/src/onboarding.ts:80
@@ -412,7 +412,7 @@ msgid "a request was declined"
 msgstr ""
 
 #: packages/core/src/task/run.ts:83
-msgid "there is no task \"{id}\"; `lotse tasks` lists them"
+msgid "there is no task \"{id}\"; `lotsman tasks` lists them"
 msgstr ""
 
 #: packages/core/src/task/skill.ts:265
@@ -634,7 +634,7 @@ msgstr ""
 
 #: packages/widget/src/login-dialog.ts:260
 msgid ""
-"Use your own subscription, account or API key. lotse stores nothing: the "
+"Use your own subscription, account or API key. lotsman stores nothing: the "
 "agent keeps it."
 msgstr ""
 

@@ -1,9 +1,9 @@
 /**
  * A task as a SKILL.md — ADR 0007 §4–§6.
  *
- * `$XDG_CONFIG_HOME/lotse/tasks/<id>/SKILL.md` follows the Agent Skills layout: YAML frontmatter, then
- * the prompt. `name` is the id and must equal the directory; lotse's own settings live under
- * `metadata` as `lotse-*` strings, so the file stays a valid skill for any other reader. Core does
+ * `$XDG_CONFIG_HOME/lotsman/tasks/<id>/SKILL.md` follows the Agent Skills layout: YAML frontmatter, then
+ * the prompt. `name` is the id and must equal the directory; lotsman's own settings live under
+ * `metadata` as `lotsman-*` strings, so the file stays a valid skill for any other reader. Core does
  * not read files: the host passes the text in, like the profiles file.
  *
  * The frontmatter is a deliberate subset of YAML — flat `key: value` lines, one `metadata:` map,
@@ -14,21 +14,21 @@
  * profile does not have is an error, never an addition. Rights narrow in the runner (`narrowRights`).
  */
 
-import type { McpServer } from '@lotse/acp';
+import type { McpServer } from '@lotsman/acp';
 
 import { _, fmt } from '../i18n.ts';
 import { isId } from '../parse.ts';
 import type { Profile } from '../profile/profile.ts';
 import { PERSON_NEEDED_OFF, type PersonNeededConfig, type Task } from './task.ts';
 
-/** The metadata keys lotse reads. Any other `lotse-*` key is reported as a typo. */
+/** The metadata keys lotsman reads. Any other `lotsman-*` key is reported as a typo. */
 export const TASK_METADATA = {
-  profile: 'lotse-profile',
-  rights: 'lotse-rights',
-  params: 'lotse-params',
-  precheck: 'lotse-precheck',
-  personNeeded: 'lotse-person-needed',
-  cwd: 'lotse-cwd',
+  profile: 'lotsman-profile',
+  rights: 'lotsman-rights',
+  params: 'lotsman-params',
+  precheck: 'lotsman-precheck',
+  personNeeded: 'lotsman-person-needed',
+  cwd: 'lotsman-cwd',
 } as const;
 
 export interface TaskParam {
@@ -217,7 +217,7 @@ export function parseSkillTask(id: string, text: string, options: ParseSkillOpti
   }
 
   for (const key of Object.keys(metadata)) {
-    if (key.startsWith('lotse-') && !Object.values<string>(TASK_METADATA).includes(key))
+    if (key.startsWith('lotsman-') && !Object.values<string>(TASK_METADATA).includes(key))
       problems.push(`unknown metadata key "${key}"`);
   }
   const profile = metadata[TASK_METADATA.profile]?.trim() || null;

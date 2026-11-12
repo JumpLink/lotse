@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from '@gjsify/unit';
 
-import { LOGIN_POLICY, parseIntegrations, parseLoginPolicy } from '@lotse/core';
+import { LOGIN_POLICY, parseIntegrations, parseLoginPolicy } from '@lotsman/core';
 
 const oauth = (id: string, label: string, form?: unknown[]) => ({
   type: 'oauth',

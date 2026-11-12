@@ -1,9 +1,9 @@
-/** The action log `lotse listen` appends to under its state directory: ids and kinds, never a message. */
+/** The action log `lotsman listen` appends to under its state directory: ids and kinds, never a message. */
 
 import { appendFileSync, chmodSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { RunLogEntry } from '@lotse/core';
+import type { RunLogEntry } from '@lotsman/core';
 
 import { ensureDir } from './private-file.ts';
 

@@ -10,7 +10,7 @@ import {
   FREE_MODELS_DENIED_NOTE,
   FREE_MODELS_PRIVACY_NOTE,
   LoginController,
-  NOT_LOTSE_COPY_REASON,
+  NOT_LOTSMAN_COPY_REASON,
   PROVIDER_PRIVACY_NOTE,
   ProviderSettingsController,
   allowOnlyProviders,
@@ -30,9 +30,9 @@ import {
   type ModelPolicy,
   type ProviderSettingsDeps,
   type SettingsSession,
-} from '@lotse/core';
+} from '@lotsman/core';
 
-const OUR_FILE = '/synthetic/agents/opencode/config/lotse-providers.json';
+const OUR_FILE = '/synthetic/agents/opencode/config/lotsman-providers.json';
 const KEY = 'sk-synthetic-0123456789';
 
 function provider(id: string, connected: boolean): LoginProvider {
@@ -58,7 +58,7 @@ interface HarnessOptions {
   changedError?: string;
   /** `waitForProvider` waits for this, so a change can be caught in flight. */
   holdWait?: Promise<void>;
-  /** lotse's file and the stored keys before the group opens. */
+  /** lotsman's file and the stored keys before the group opens. */
   seed?: { raw: Record<string, unknown>; keys: string[] };
 }
 
@@ -174,7 +174,7 @@ function harness(options: HarnessOptions = {}) {
 
 const OLLAMA = { preset: 'local-ollama', models: [], confirmedLan: false } as const;
 
-/** lotse's file with the Ollama preset in it, as a seed. */
+/** lotsman's file with the Ollama preset in it, as a seed. */
 function ollamaDocument(): Record<string, unknown> {
   const plan = planCustomProvider(
     { ...OLLAMA, models: [{ id: 'qwen3:4b' }] },
@@ -211,7 +211,7 @@ export default async () => {
         openSession: async () => {
           throw new Error('must not start');
         },
-        unavailableReason: () => 'claude has no login lotse can run',
+        unavailableReason: () => 'claude has no login lotsman can run',
         file: null,
         allowCustomProviders: true,
         listModels: async () => [],
@@ -232,13 +232,13 @@ export default async () => {
       expect(h.files.size).toBe(0);
     });
 
-    await it('is read-only on an opencode that is not lotse’s copy', async () => {
+    await it('is read-only on an opencode that is not lotsman’s copy', async () => {
       const h = harness({ file: null });
       await h.controller.open();
       expect(h.view().custom?.editable).toBe(false);
-      expect(h.view().custom?.readOnlyReason).toBe(NOT_LOTSE_COPY_REASON);
+      expect(h.view().custom?.readOnlyReason).toBe(NOT_LOTSMAN_COPY_REASON);
       const outcome = await h.controller.addCustom(OLLAMA);
-      expect(outcome.kind === 'refused' && outcome.reason).toBe(NOT_LOTSE_COPY_REASON);
+      expect(outcome.kind === 'refused' && outcome.reason).toBe(NOT_LOTSMAN_COPY_REASON);
     });
 
     await it('adds a preset with the models the server lists, restarts the agent and shows it', async () => {
@@ -330,7 +330,7 @@ export default async () => {
       expect(h.files.get(OUR_FILE)?.includes('local-ollama')).toBe(false);
       expect(h.view().message).toBe('Removed local-ollama and its stored key.');
       await h.controller.removeCustom('handmade');
-      expect(h.view().message?.includes('not in lotse')).toBe(true);
+      expect(h.view().message?.includes('not in lotsman')).toBe(true);
     });
 
     await it('logs out of a provider and reports a failed restart without undoing it', async () => {
@@ -458,7 +458,7 @@ export default async () => {
   });
 
   await describe('customProvidersFileOf', async () => {
-    await it('finds lotse’s file on its own copy only', async () => {
+    await it('finds lotsman’s file on its own copy only', async () => {
       expect(customProvidersFileOf({ id: 'opencode', env: { OPENCODE_CONFIG: OUR_FILE } })).toBe(OUR_FILE);
       expect(customProvidersFileOf({ id: 'opencode', env: { OPENCODE_CONFIG: '' } })).toBe(null);
       expect(

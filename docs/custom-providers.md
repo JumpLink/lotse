@@ -1,25 +1,25 @@
 # Custom providers: local models and any OpenAI-compatible endpoint
 
-Status: **the core (`@lotse/core`, `custom/`), `lotse provider` and the widget's settings page
-([#45](https://github.com/JumpLink/lotse/issues/45), `LotseChat.providerSettingsPage()`) exist.** The page
+Status: **the core (`@lotsman/core`, `custom/`), `lotsman provider` and the widget's settings page
+([#45](https://github.com/JumpLink/lotsman/issues/45), `LotsmanChat.providerSettingsPage()`) exist.** The page
 adds and removes only with the host option `allowCustomProviders`, and only for a bundled opencode. Design decided in
-[#17](https://github.com/JumpLink/lotse/issues/17). Measured on opencode 2.0.25, 2026-10-11.
+[#17](https://github.com/JumpLink/lotsman/issues/17). Measured on opencode 2.0.25, 2026-10-11.
 
 ## What it is
 
 A provider opencode does not ship (Ollama, LM Studio, llama.cpp, vLLM, a company gateway) added as an
-`@ai-sdk/openai-compatible` entry in opencode's config. That adapter is the only one lotse writes: every
+`@ai-sdk/openai-compatible` entry in opencode's config. That adapter is the only one lotsman writes: every
 local server speaks it, and one adapter keeps the written shape small enough to validate.
 
 ## Where it is written
 
-Only into the **bundled** opencode, into a file of lotse's own:
-`<dataDir>/agents/opencode/config/lotse-providers.json` (file `0600`, directory `0700`, written atomically).
-A change is read, applied and written under `lotse-providers.json.lock` (`O_EXCL`), after every network
+Only into the **bundled** opencode, into a file of lotsman's own:
+`<dataDir>/agents/opencode/config/lotsman-providers.json` (file `0600`, directory `0700`, written atomically).
+A change is read, applied and written under `lotsman-providers.json.lock` (`O_EXCL`), after every network
 call, so the CLI and the settings group never drop each other's change. The lock is stale after
 `LOCK_STALE_MS` by its age, not its pid: the GUI in a Flatpak and the CLI on the host see different pids.
 `bundledCommand` points `OPENCODE_CONFIG` at it (`customProvidersEnv`). A host's own opencode keeps its
-providers in `~/.config/opencode`, which lotse never edits; `lotse provider list` still shows them, marked
+providers in `~/.config/opencode`, which lotsman never edits; `lotsman provider list` still shows them, marked
 with the file they come from.
 
 The written v2 shape, per provider:
@@ -38,7 +38,7 @@ The written v2 shape, per provider:
 ## Keys
 
 **Never in a file, the state or argv.** A key goes to opencode through
-`POST /api/integration/{id}/connect/key` and lives in opencode's store. `lotse provider add --key` reads
+`POST /api/integration/{id}/connect/key` and lives in opencode's store. `lotsman provider add --key` reads
 it from stdin. `remove` deletes the credentials first (ids from the provider's `connections` in
 `GET /api/integration/{id}`, never from `GET /api/credential`, which answers raw keys), then the entry.
 
@@ -66,15 +66,15 @@ it from stdin. `remove` deletes the credentials first (ids from the provider's `
 ## CLI
 
 ```bash
-lotse provider list                                   # every custom provider, its models and source
-lotse provider add --preset local-ollama              # models from <baseUrl>/models
-lotse provider add my-gw --url https://gw.example/v1 --name "Gateway" --model big=32768 --key < key.txt
-lotse provider add lan-box --url http://192.168.1.20:8080/v1 --allow-lan
-lotse provider remove my-gw
+lotsman provider list                                   # every custom provider, its models and source
+lotsman provider add --preset local-ollama              # models from <baseUrl>/models
+lotsman provider add my-gw --url https://gw.example/v1 --name "Gateway" --model big=32768 --key < key.txt
+lotsman provider add lan-box --url http://192.168.1.20:8080/v1 --allow-lan
+lotsman provider remove my-gw
 ```
 
 `add` and `remove` work only on the bundled copy; with a host opencode they say so and name
-`lotse agents --use opencode:bundled`. A hand-written provider is read-only and shown with its path.
+`lotsman agents --use opencode:bundled`. A hand-written provider is read-only and shown with its path.
 
 The settings page goes one step further: a host opencode is read-only there **as a whole**. It lists
 the logins and providers and offers no log out, add or remove — those are the person's, kept where they

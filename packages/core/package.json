@@ -1,22 +1,22 @@
 {
-  "name": "@lotse/core",
+  "name": "@lotsman/core",
   "version": "0.5.0",
   "license": "LGPL-3.0-or-later",
   "type": "module",
-  "description": "Lotse without a surface: which agent to start and how, the session a turn runs in, the view models a chat renders from, and the provider login. No gi://, no yargs, no widget — a host injects its paths, its agent choice and its gate, so the same logic drives the CLI, the window and an embedded widget.",
+  "description": "Lotsman without a surface: which agent to start and how, the session a turn runs in, the view models a chat renders from, and the provider login. No gi://, no yargs, no widget — a host injects its paths, its agent choice and its gate, so the same logic drives the CLI, the window and an embedded widget.",
   "keywords": [
     "acp",
     "coding-agent",
     "gjs",
     "gjsify"
   ],
-  "homepage": "https://github.com/JumpLink/lotse/tree/main/packages/core#readme",
+  "homepage": "https://github.com/JumpLink/lotsman/tree/main/packages/core#readme",
   "bugs": {
-    "url": "https://github.com/JumpLink/lotse/issues"
+    "url": "https://github.com/JumpLink/lotsman/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JumpLink/lotse.git",
+    "url": "git+https://github.com/JumpLink/lotsman.git",
     "directory": "packages/core"
   },
   "publishConfig": {
@@ -37,8 +37,8 @@
     "README.md"
   ],
   "dependencies": {
-    "@lotse/acp": "^0.5.0",
-    "@lotse/session": "^0.5.0",
+    "@lotsman/acp": "^0.5.0",
+    "@lotsman/session": "^0.5.0",
     "@modelcontextprotocol/sdk": "^1.32.2"
   }
 }

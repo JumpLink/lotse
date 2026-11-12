@@ -1,26 +1,26 @@
 /**
- * `lotse cancel <id>` — ask the agent to stop a turn.
+ * `lotsman cancel <id>` — ask the agent to stop a turn.
  *
  * A cancellation needs a *live* session: `session/cancel` is a notification to an agent process
  * that is mid-turn, and there is no queue to put it in. So this command starts the agent, finds
  * out whether it can even reattach the session, and says so plainly if it cannot — instead of
  * writing a cheerful "cancelled" for a turn that is still running somewhere.
  *
- * Ctrl-C inside `lotse start` and `lotse resume` does the same thing without a second process.
+ * Ctrl-C inside `lotsman start` and `lotsman resume` does the same thing without a second process.
  * This command exists for the case where the first terminal is gone.
  */
 
 import { _, fmt } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
-import { openAgent, type LotsePaths } from '@lotse/core';
-import { createSessionStore } from '@lotse/session';
+import { openAgent, type LotsmanPaths } from '@lotsman/core';
+import { createSessionStore } from '@lotsman/session';
 
 import { agentForRecorded } from './choose.ts';
 import { silentGate } from './gate.ts';
 import { err, out, pickArgv } from './output.ts';
 
-const command = (paths: LotsePaths): CommandModule => ({
+const command = (paths: LotsmanPaths): CommandModule => ({
   command: 'cancel <id>',
   describe: _('send session/cancel for a session (Ctrl-C does the same inside a running turn)'),
   builder: (yargs) =>
@@ -38,7 +38,9 @@ const command = (paths: LotsePaths): CommandModule => ({
     const record = store.get(id);
     const agentId = pickArgv<string>(raw, 'agent') ?? record?.agent;
     if (!agentId) {
-      err(fmt(_('no session with id {id} and no --agent — `lotse sessions` lists what lotse has'), { id }));
+      err(
+        fmt(_('no session with id {id} and no --agent — `lotsman sessions` lists what lotsman has'), { id }),
+      );
       process.exitCode = 1;
       return;
     }

@@ -115,7 +115,7 @@ function readSheet(relative, name) {
  * second copy of the stylesheet is a second thing to keep in step with the first.
  *
  * **Two files since ADR 0001 step 5**, because the sheet is: the chat's rules are
- * `@lotse/widget`'s `WIDGET_CSS` and the app's own three are `APP_CSS`; the widget installs
+ * `@lotsman/widget`'s `WIDGET_CSS` and the app's own three are `APP_CSS`; the widget installs
  * its sheet itself, so both are loaded here. Reading only the app's file would measure a window with no transcript padding at all —
  * which is exactly the kind of quietly-wrong baseline this function exists to avoid.
  */
@@ -156,8 +156,8 @@ function bubble(text, speaker) {
     xalign: 0,
     halign: user ? Gtk.Align.END : Gtk.Align.FILL,
     cssClasses: user
-      ? ['lotse-bubble', 'lotse-bubble-user', 'lotse-transcript-text']
-      : ['lotse-agent-text', 'lotse-transcript-text'],
+      ? ['lotsman-bubble', 'lotsman-bubble-user', 'lotsman-transcript-text']
+      : ['lotsman-agent-text', 'lotsman-transcript-text'],
   });
 }
 
@@ -216,7 +216,7 @@ function configRow() {
       selected: 0,
       tooltipText: name,
       valign: Gtk.Align.CENTER,
-      cssClasses: ['flat', 'lotse-config-control'],
+      cssClasses: ['flat', 'lotsman-config-control'],
     });
     flow.append(
       new Adw.Clamp({ child: dropdown, maximumSize: 160, tighteningThreshold: 160, halign: Gtk.Align.START }),
@@ -251,7 +251,7 @@ function composer() {
     rightMargin: 8,
     topMargin: 8,
     bottomMargin: 8,
-    cssClasses: ['lotse-composer-entry'],
+    cssClasses: ['lotsman-composer-entry'],
   });
   const scroller = new Gtk.ScrolledWindow({
     child: entry,
@@ -308,7 +308,7 @@ function composer() {
     xalign: 0,
     wrap: true,
     label: 'Working — the agent is answering.',
-    cssClasses: ['lotse-composer-status', 'caption'],
+    cssClasses: ['lotsman-composer-status', 'caption'],
   });
 
   const column = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 2 });
@@ -316,10 +316,10 @@ function composer() {
   column.append(status);
 
   // Both classes, as the widget carries them: `card` is where the surface and its 12 px radius come
-  // from, and the margins that lift it off the window's edges are in `.lotse-composer-frame`.
+  // from, and the margins that lift it off the window's edges are in `.lotsman-composer-frame`.
   const frame = new Gtk.Box({
     orientation: Gtk.Orientation.VERTICAL,
-    cssClasses: ['card', 'lotse-composer-frame'],
+    cssClasses: ['card', 'lotsman-composer-frame'],
   });
   frame.append(column);
 
@@ -363,7 +363,7 @@ const window = new Adw.ApplicationWindow({
   application: null,
   defaultWidth: 480,
   defaultHeight: 600,
-  title: `lotse width probe (floor ${FLOOR === null ? 'none' : String(FLOOR)})`,
+  title: `lotsman width probe (floor ${FLOOR === null ? 'none' : String(FLOOR)})`,
   ...(FLOOR === null ? {} : { widthRequest: FLOOR }),
 });
 
@@ -383,11 +383,11 @@ const sidebar = new Gtk.ListBox();
 for (const name of ['Refactor the parser', 'Release notes draft', 'Old experiment']) {
   sidebar.append(new Gtk.Label({ label: name, xalign: 0 }));
 }
-const sidebarPage = new Adw.NavigationPage({ title: 'lotse', child: sidebar });
+const sidebarPage = new Adw.NavigationPage({ title: 'lotsman', child: sidebar });
 
 const split = new Adw.NavigationSplitView({
   sidebar: sidebarPage,
-  content: new Adw.NavigationPage({ title: 'lotse', child: content }),
+  content: new Adw.NavigationPage({ title: 'lotsman', child: content }),
   minSidebarWidth: 260,
   maxSidebarWidth: 340,
 });

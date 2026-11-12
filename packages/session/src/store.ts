@@ -9,7 +9,7 @@
  *   only way to get "either the old file or the new one" out of a filesystem.
  * - **Mode `0600`.** The file holds the text of a person's conversations with an agent. The
  *   directory is `0700`. Set explicitly, not inherited, because the umask of whoever started the
- *   process is not a decision lotse may leave to chance.
+ *   process is not a decision lotsman may leave to chance.
  * - **Location is the caller's.** The store takes a path and never decides one. The app resolves
  *   `$XDG_DATA_HOME`; a test passes a temp dir. That is what keeps the store free of any opinion
  *   about the machine it runs on.
@@ -27,7 +27,7 @@ import {
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { assertScopeIsNotAuthority } from '@lotse/acp/gate';
+import { assertScopeIsNotAuthority } from '@lotsman/acp/gate';
 
 import {
   appendTurns,
@@ -77,7 +77,7 @@ export function createSessionStore(file: string): SessionStore {
     }
     if (parsed?.version !== FILE_VERSION || !Array.isArray(parsed.sessions)) {
       throw new Error(
-        `${file} is not a lotse session file (version ${String(parsed?.version)}, expected ${FILE_VERSION})`,
+        `${file} is not a lotsman session file (version ${String(parsed?.version)}, expected ${FILE_VERSION})`,
       );
     }
     for (const record of parsed.sessions) {
@@ -166,7 +166,7 @@ export function createSessionStore(file: string): SessionStore {
  * line a person reads — so a hand-edited or half-understood `tool` costs the structured view of one
  * line, not access to every conversation in the file. Rejecting the file, as a wrong `version`
  * rightly does, would turn a cosmetic field into a lock-out. An entry without either field is left
- * byte-for-byte alone, so a file older lotse wrote reads back exactly as written.
+ * byte-for-byte alone, so a file older lotsman wrote reads back exactly as written.
  */
 function sanitizeEntry(entry: TranscriptEntry): void {
   if (!entry || typeof entry !== 'object') return;

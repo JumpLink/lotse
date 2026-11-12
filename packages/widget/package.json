@@ -1,9 +1,9 @@
 {
-  "name": "@lotse/widget",
+  "name": "@lotsman/widget",
   "version": "0.5.0",
   "license": "LGPL-3.0-or-later",
   "type": "module",
-  "description": "The chat surface, as a widget a host embeds: LotseChat renders one conversation — transcript, composer, model and mode controls, the tool and thought cards, the permission dialog — over @lotse/core's AgentSession. GTK/Adw, no app shell: the host passes the agent choice, the paths, the cwd, its mcpServers and its own permission gate.",
+  "description": "The chat surface, as a widget a host embeds: LotsmanChat renders one conversation — transcript, composer, model and mode controls, the tool and thought cards, the permission dialog — over @lotsman/core's AgentSession. GTK/Adw, no app shell: the host passes the agent choice, the paths, the cwd, its mcpServers and its own permission gate.",
   "keywords": [
     "acp",
     "gtk4",
@@ -13,13 +13,13 @@
     "widget",
     "coding-agent"
   ],
-  "homepage": "https://github.com/JumpLink/lotse/tree/main/packages/widget#readme",
+  "homepage": "https://github.com/JumpLink/lotsman/tree/main/packages/widget#readme",
   "bugs": {
-    "url": "https://github.com/JumpLink/lotse/issues"
+    "url": "https://github.com/JumpLink/lotsman/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JumpLink/lotse.git",
+    "url": "git+https://github.com/JumpLink/lotsman.git",
     "directory": "packages/widget"
   },
   "publishConfig": {
@@ -42,9 +42,9 @@
     "README.md"
   ],
   "dependencies": {
-    "@lotse/acp": "^0.5.0",
-    "@lotse/core": "^0.5.0",
-    "@lotse/session": "^0.5.0"
+    "@lotsman/acp": "^0.5.0",
+    "@lotsman/core": "^0.5.0",
+    "@lotsman/session": "^0.5.0"
   },
   "peerDependencies": {
     "@girs/adw-1": "^5.5.0",

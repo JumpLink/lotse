@@ -1,5 +1,5 @@
 /**
- * `LotseChat` — one conversation as a widget, with the app around it taken away.
+ * `LotsmanChat` — one conversation as a widget, with the app around it taken away.
  *
  * **What this is.** Everything a chat surface is: the transcript, the composer with its model and
  * mode controls, the tool and thought cards, the approval dialog, the failure notices, the login,
@@ -9,14 +9,14 @@
  * its own permission policy adds.
  *
  * **What this is not.** A window, a session list, a header bar, a menu, a preferences dialog, a
- * notices banner. `docs/adr/0001-lotse-as-an-embeddable-widget.md` draws that line and lotse's own
+ * notices banner. `docs/adr/0001-lotsman-as-an-embeddable-widget.md` draws that line and lotsman's own
  * `app/src/frontends/gui/window.ts` is the first consumer on the other side of it: it keeps the
  * sidebar and the shell, and it is now one of several possible hosts rather than the only place the
  * chat exists.
  *
  * **This file decides nothing.** Every question it answers — may Send be pressed, what does the
  * status line say, is this failure still owed a dialog, what does a response id mean — is answered
- * by `@lotse/core`, and the widget's job is to pass the answer to a child and hand the child's
+ * by `@lotsman/core`, and the widget's job is to pass the answer to a child and hand the child's
  * events back. That is the same rule `window.ts` was written under, and it is what made this split
  * possible at all: a surface with no decisions in it can be moved.
  *
@@ -40,7 +40,7 @@ import GObject from '@girs/gobject-2.0';
 import Gdk from '@girs/gdk-4.0';
 import Gtk from '@girs/gtk-4.0';
 
-import type { AgentSource, SessionRecord, TranscriptEntry } from '@lotse/session';
+import type { AgentSource, SessionRecord, TranscriptEntry } from '@lotsman/session';
 
 import {
   _,
@@ -79,7 +79,7 @@ import {
   type ReadAloud,
   type RecordedResolution,
   type SpeechEngine,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 import { Composer } from './composer.ts';
 import { installWidgetCss } from './css.ts';
@@ -100,21 +100,21 @@ import Template from './chat.blp';
  * person answers it; `'decline'` answers it without asking. There is deliberately no third value
  * that selects an option: a host may add a rule that *narrows* what the agent gets — "never in this
  * directory", "not while unattended" — and may not hand out an approval nobody gave. That is
- * guardrail 2 of `AGENTS.md` one layer up, and `lotse listen`'s own gate
+ * guardrail 2 of `AGENTS.md` one layer up, and `lotsman listen`'s own gate
  * (`docs/adr/0002-assistant-in-continuous-operation.md`) is written to the same shape.
  */
 export type HostGateAnswer = 'ask' | 'decline';
 
 /**
- * What `LotseChat` needs from the host around it.
+ * What `LotsmanChat` needs from the host around it.
  *
  * **`appendTurns` and `createSession` are callbacks rather than a store passed whole**, because the
  * widget's uses of a store have nothing to do with each other: one writes a record once, the other
  * writes a line per streamed chunk, and a `SessionStore` would drag `all`/`update`/`remove` in beside
- * them. A host that reads the same file for a list of its own (lotse's window does) keeps its own
+ * them. A host that reads the same file for a list of its own (lotsman's window does) keeps its own
  * handle on it, and the widget never becomes a second opinion about where sessions live.
  */
-export interface LotseChatOptions {
+export interface LotsmanChatOptions {
   /** Which agent to start on the first prompt, and the one a login is for. */
   readonly agent: AgentCommand;
   /** Which copy `agent` is — what a new conversation's record names. */
@@ -137,7 +137,7 @@ export interface LotseChatOptions {
   /**
    * The host's own MCP servers, forwarded to `session/new` unchanged.
    *
-   * **Passed through, never read.** `@lotse/core` forwards them as opaque objects and never looks
+   * **Passed through, never read.** `@lotsman/core` forwards them as opaque objects and never looks
    * past `type` (`AGENTS.md`: MCP is passed through, not known), so a host wires its own servers in
    * without a line of widget-specific code.
    */
@@ -177,11 +177,11 @@ export interface LotseChatOptions {
    * passes, fail-closed on anything that is not an explicit answer, with no value that could *select*
    * something on the person's behalf. A host carrying data the person has not agreed to hand around
    * — an app over a document store, a window over somebody's accounts — is the only party that knows
-   * where its data may travel; `@lotse/core`'s `denyFreeHostedModels` is the ready-made one for "no
+   * where its data may travel; `@lotsman/core`'s `denyFreeHostedModels` is the ready-made one for "no
    * free hosted model", and a host that needs certainty passes an allowlist of its own.
    *
    * Absent means what it has always meant: every model the agent offers is on the row and may be
-   * prompted, which is lotse's own window.
+   * prompted, which is lotsman's own window.
    *
    * What it does, in the three places it has to agree:
    *
@@ -189,7 +189,7 @@ export interface LotseChatOptions {
    *   another model" either — that button opens the same row;
    * - Send is **blocked**, with the reason under the entry, while the model in use is denied. The
    *   model is never switched for the person: picking one is theirs;
-   * - `@lotse/core`'s `AgentSession` refuses in front of the wire as well, so a prompt cannot reach a
+   * - `@lotsman/core`'s `AgentSession` refuses in front of the wire as well, so a prompt cannot reach a
    *   denied — or an unverifiable — model around this surface.
    */
   readonly modelPolicy?: ModelPolicy;
@@ -198,16 +198,16 @@ export interface LotseChatOptions {
    * is the agent's to remember or lives only as long as the session it was given in.
    *
    * **`hostConfirmed` is the one host hook that is not only a narrowing**, and it is still not an
-   * approval lotse gives: a tool listed here never goes to lotse's dialog and is never covered by an
+   * approval lotsman gives: a tool listed here never goes to lotsman's dialog and is never covered by an
    * always-allow — `confirmTool` is asked instead, and the most that can come back is the agent's own
-   * one-time option. A legal submission behind a PIN, a payment, a signature: lotse's dialog cannot
+   * one-time option. A legal submission behind a PIN, a payment, a signature: lotsman's dialog cannot
    * ask for any of that, so it does not pretend to.
    *
    * **`alwaysAllow: 'session'`** keeps an always-allow in memory here instead of handing it to the
    * agent, so it ends with the conversation and is written nowhere. Where the agent offers nothing
-   * narrower than an always, the button is withdrawn rather than shown as a promise lotse cannot keep.
+   * narrower than an always, the button is withdrawn rather than shown as a promise lotsman cannot keep.
    *
-   * Absent, and every field absent, is lotse's own window: every question to the person, every always
+   * Absent, and every field absent, is lotsman's own window: every question to the person, every always
    * the agent's to remember.
    */
   readonly hostTools?: HostToolPolicy;
@@ -234,10 +234,10 @@ export interface LotseChatOptions {
    * title — and optionally a subtitle and an icon — for a call the host recognises, `null` for one it
    * does not. The status capsule stays the agent's either way.
    *
-   * **Fail-closed toward lotse's own line, never toward hiding**: a presenter that throws or returns
-   * something without a usable title is treated as having returned `null`, with one `lotse:` warning
+   * **Fail-closed toward lotsman's own line, never toward hiding**: a presenter that throws or returns
+   * something without a usable title is treated as having returned `null`, with one `lotsman:` warning
    * on stderr, the way `gate` and `modelPolicy` treat a broken host hook as no answer. Absent: every
-   * tool line is drawn as lotse draws it.
+   * tool line is drawn as lotsman draws it.
    */
   readonly toolPresenter?: ToolPresenter;
   /**
@@ -261,7 +261,7 @@ export interface LotseChatOptions {
    * this machine or ships the text to a cloud service cannot be read off a `speechSynthesis`-shaped
    * object, so a host carrying data the person has not agreed to hand around is the party that has
    * to pass a local engine — the same division as `modelPolicy`, where the host knows where its data
-   * may travel and lotse enforces what it can see.
+   * may travel and lotsman enforces what it can see.
    */
   readonly speech?: SpeechEngine;
   /**
@@ -277,10 +277,10 @@ export interface LotseChatOptions {
   readonly now?: () => string;
 }
 
-export class LotseChat extends Adw.Bin {
-  // The GType name is also the template's `template $LotseChat` — the two must agree, and
+export class LotsmanChat extends Adw.Bin {
+  // The GType name is also the template's `template $LotsmanChat` — the two must agree, and
   // `chat.blp` is where the tree is.
-  static readonly GTypeName = 'LotseChat';
+  static readonly GTypeName = 'LotsmanChat';
 
   /** The five states of a conversation. `chat.blp` names them; this is the only field that switches. */
   declare readonly _stack: Gtk.Stack;
@@ -318,7 +318,7 @@ export class LotseChat extends Adw.Bin {
   readonly #config: ConfigRow;
   /**
    * The approval dialog. One per widget, because one question is ever shown at a time —
-   * `@lotse/core`'s `permission.ts` queues the rest, and `PermissionDialog.show` replaces rather
+   * `@lotsman/core`'s `permission.ts` queues the rest, and `PermissionDialog.show` replaces rather
    * than stacks.
    */
   readonly #permissions: PermissionDialog;
@@ -355,7 +355,7 @@ export class LotseChat extends Adw.Bin {
   readonly #agent: AgentSession;
   /** The session on screen, or `null` while none is. */
   #openRecord: SessionRecord | null = null;
-  readonly #newChat: LotseChatOptions['newChat'];
+  readonly #newChat: LotsmanChatOptions['newChat'];
   /** Lines from the agent (not the person's own) drawn so far; a host's mid-turn hook waits for one. */
   #streamed = 0;
   /**
@@ -369,14 +369,14 @@ export class LotseChat extends Adw.Bin {
   readonly #notices: string[] = [];
   /** Why no prompt can be sent at all (no agent found), or `undefined`. Feeds the composer. */
   readonly #unavailable: string | undefined;
-  readonly #gate: LotseChatOptions['gate'];
-  readonly #hostConversation: LotseChatOptions['onConversation'];
-  readonly #hostNotice: LotseChatOptions['onNotice'];
+  readonly #gate: LotsmanChatOptions['gate'];
+  readonly #hostConversation: LotsmanChatOptions['onConversation'];
+  readonly #hostNotice: LotsmanChatOptions['onNotice'];
   readonly #modelPolicy: ModelPolicy | undefined;
-  readonly #confirmTool: LotseChatOptions['confirmTool'];
+  readonly #confirmTool: LotsmanChatOptions['confirmTool'];
   readonly #allowCustomProviders: boolean;
 
-  constructor(options: LotseChatOptions) {
+  constructor(options: LotsmanChatOptions) {
     super();
     installWidgetCss();
 
@@ -428,7 +428,7 @@ export class LotseChat extends Adw.Bin {
       ...(options.createSession ? { create: options.createSession } : {}),
       ...(options.agentSource ? { source: options.agentSource } : {}),
       ...(options.resolveAgent ? { resolveAgent: options.resolveAgent } : {}),
-      // Forwarded as the host gave them. `@lotse/core` passes them to `session/new` and never reads
+      // Forwarded as the host gave them. `@lotsman/core` passes them to `session/new` and never reads
       // past `type`, so a host wires its own servers in without a line of widget-specific code.
       ...(options.mcpServers || options.profile
         ? { mcpServers: options.mcpServers ?? options.profile?.mcpServers ?? [] }
@@ -542,13 +542,13 @@ export class LotseChat extends Adw.Bin {
   /**
    * Show a session.
    *
-   * **The record is the host's, read as the host wants it read.** lotse's window re-reads its store
+   * **The record is the host's, read as the host wants it read.** lotsman's window re-reads its store
    * first, because its own list was loaded at startup and a session that streamed since is longer on
    * disk; a host with a live store hands over what it already has. Either way this takes the record
    * as given and never looks a session up — the widget has no opinion about where sessions live.
    *
    * **`record.turns` is handed over unchanged.** `TranscriptView.setEntries` takes exactly what the
-   * store holds and projects it through `@lotse/core`; a surface that filtered first would be
+   * store holds and projects it through `@lotsman/core`; a surface that filtered first would be
    * re-deriving history the agent's own `session/load` is the authority on (`AGENTS.md` § Privacy:
    * the transcript is a record of what happened, not a re-derivation of it).
    *
@@ -711,7 +711,7 @@ export class LotseChat extends Adw.Bin {
   /**
    * Put up the dialog a failure has earned — **once per failure, and never a stale one.**
    *
-   * Three decisions, all of them made in `@lotse/core`'s `failure.ts`:
+   * Three decisions, all of them made in `@lotsman/core`'s `failure.ts`:
    *
    * - `failureToShow(attachment, shown)` — is this failure still owed a dialog? It is `null` for a
    *   failure already shown (identity, not "is one open": a dismissal closes the dialog and the
@@ -796,7 +796,7 @@ export class LotseChat extends Adw.Bin {
    */
   #onNotice(message: string): void {
     this.#notices.push(message);
-    console.log(`lotse: ${message}`);
+    console.log(`lotsman: ${message}`);
     this.#hostNotice?.(message);
   }
 
@@ -805,7 +805,7 @@ export class LotseChat extends Adw.Bin {
    *
    * **The gate may only narrow.** `'ask'` is the one answer that lets the question reach a person;
    * everything else — `'decline'`, a throw, a rejected promise, a value from a host that returned
-   * something else entirely — resolves `null`, which `@lotse/core` reads as the dismissal and
+   * something else entirely — resolves `null`, which `@lotsman/core` reads as the dismissal and
    * answers `cancelled`. A host whose policy code broke has not approved anything (guardrail 2).
    */
   async #ask(question: PermissionQuestion): Promise<string | null> {
@@ -825,7 +825,7 @@ export class LotseChat extends Adw.Bin {
   /**
    * One question, to the host's own dialog — for a tool the host confirms itself.
    *
-   * **lotse's `gate` is not consulted and lotse's dialog is not shown.** Both would be lotse putting
+   * **lotsman's `gate` is not consulted and lotsman's dialog is not shown.** Both would be lotsman putting
    * itself between the host and a decision the host said was its own; the host's dialog is the gate
    * for this call. A `true` is the only answer that approves, and it approves one call.
    */
@@ -937,7 +937,7 @@ export class LotseChat extends Adw.Bin {
   providerSettingsPage(): Adw.PreferencesPage {
     const policy = this.#modelPolicy;
     // **Through the same factory a host calls.** `createProviderSettingsPage` owns the controller's
-    // wiring, so lotse's page and an embedding host's page cannot read the provider file differently.
+    // wiring, so lotsman's page and an embedding host's page cannot read the provider file differently.
     return createProviderSettingsPage({
       agent: this.#loginAgent,
       ...(policy ? { modelPolicy: policy } : {}),
@@ -961,7 +961,7 @@ export class LotseChat extends Adw.Bin {
    * Open the model dropdown, for the failure dialog's "Choose another model".
    *
    * **Through the row's own method and nothing else** — no `set_selected`, no request, no value. A
-   * dialog that picked a model on the person's behalf would be lotse deciding configuration for the
+   * dialog that picked a model on the person's behalf would be lotsman deciding configuration for the
    * agent, which is the "always allow" mistake in different clothes; what this does is put the list
    * in front of them.
    *
@@ -972,7 +972,7 @@ export class LotseChat extends Adw.Bin {
    */
   openModelDropdown(): boolean {
     const opened = this.#config.openModelDropdown();
-    console.log(`lotse: the model dropdown is ${opened ? 'open' : 'not on the row — nothing to open'}`);
+    console.log(`lotsman: the model dropdown is ${opened ? 'open' : 'not on the row — nothing to open'}`);
     return opened;
   }
 
@@ -981,7 +981,7 @@ export class LotseChat extends Adw.Bin {
   /**
    * Send a prompt as the composer would, draft cleared first.
    *
-   * For a host control that is not the entry — lotse's `LOTSE_APP_THINKING`, a `lotse listen` task.
+   * For a host control that is not the entry — lotsman's `LOTSMAN_APP_THINKING`, a `lotsman listen` task.
    * The guard `#onSend` applies is the *entry's* (an empty line is not a prompt); a caller that has
    * a sentence in hand has already passed it.
    */
@@ -997,7 +997,7 @@ export class LotseChat extends Adw.Bin {
    * For something the host did that belongs in the transcript beside the agent's lines — an order
    * placed from a tool call, a draft saved. Persisted through `appendTurns` before it is drawn, so it
    * comes back on resume in the order it happened; `type` and `data` are stored for the host and
-   * never read by lotse, `icon` is a themed icon name drawn before `text`.
+   * never read by lotsman, `icon` is a themed icon name drawn before `text`.
    *
    * **Rejects when no session exists yet** — nothing open, or a new chat whose first prompt has not
    * been answered — because there is no record to file the line in, and a line drawn but never
@@ -1046,7 +1046,7 @@ export class LotseChat extends Adw.Bin {
   /**
    * Esc silences the voice.
    *
-   * **On `LotseChat` itself and in the CAPTURE phase**, because the key has to work wherever the
+   * **On `LotsmanChat` itself and in the CAPTURE phase**, because the key has to work wherever the
    * focus is in the conversation — in the entry, on a tool card, on the Send disc — and a controller
    * on the composer would only answer for one of them. Capture is what gets it before a child, which
    * at the bubble phase would already have been the entry.
@@ -1153,7 +1153,7 @@ export class LotseChat extends Adw.Bin {
     return this.#openRecord?.id ?? null;
   }
 
-  /** Why no prompt can be sent at all, or `undefined`. `LotseChatOptions.noAgent`'s own sentence. */
+  /** Why no prompt can be sent at all, or `undefined`. `LotsmanChatOptions.noAgent`'s own sentence. */
   get sendReason(): string | undefined {
     return this.#unavailable;
   }
@@ -1193,14 +1193,14 @@ function composerInput(snapshot: AgentSnapshot, unavailable?: string): ComposerI
     agent: agentStatus(snapshot.attachment),
     sessionId: snapshot.sessionId,
     startsConversation: snapshot.startsConversation,
-    // `null` for every host that set no `modelPolicy`, so this changes nothing for lotse's own window.
+    // `null` for every host that set no `modelPolicy`, so this changes nothing for lotsman's own window.
     modelBlock: snapshot.modelBlock,
   };
 }
 
 GObject.registerClass(
   {
-    GTypeName: LotseChat.GTypeName,
+    GTypeName: LotsmanChat.GTypeName,
     Template,
     // **The six ids `chat.blp` declares, written out.** The generated `chat.d.blp.ts` sidecar names
     // them too, but nothing in this repo imports a `.blp` by name: `tsc` would need
@@ -1221,5 +1221,5 @@ GObject.registerClass(
       'freeModelDismiss',
     ],
   },
-  LotseChat,
+  LotsmanChat,
 );

@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, wri
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { Question, RunResult } from '@lotse/core';
+import type { Question, RunResult } from '@lotsman/core';
 
 import { actionLog } from '../../../src/core/action-log.ts';
 import { questionBook } from '../../../src/core/question-state.ts';
@@ -48,7 +48,7 @@ function result(patch: Partial<RunResult>): RunResult {
 }
 
 export default async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'lotse-listen-state-'));
+  const dir = mkdtempSync(join(tmpdir(), 'lotsman-listen-state-'));
   const stateDir = join(dir, 'state');
 
   try {

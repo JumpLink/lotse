@@ -1,8 +1,8 @@
 /**
- * `lotse auth` — trap 1 of the plan, given a command.
+ * `lotsman auth` — trap 1 of the plan, given a command.
  *
- * Without this command `lotse start` dies on `-32000 auth_required` with a stack trace instead of a
- * sentence. What it does about that is decided in `@lotse/core`'s `auth.ts`: which of the two paths an
+ * Without this command `lotsman start` dies on `-32000 auth_required` with a stack trace instead of a
+ * sentence. What it does about that is decided in `@lotsman/core`'s `auth.ts`: which of the two paths an
  * agent's `authMethods` allow, what the login command is, and the order the two handshakes run in. What
  * is here is the terminal: the flags, the lines, the exit codes, and the one thing a window would have
  * to do differently — running the login with **inherited stdio**, because a login that opens a browser
@@ -21,14 +21,14 @@ import {
   toHostCommand,
   which,
   type AgentCommand,
-  type LotsePaths,
-} from '@lotse/core';
+  type LotsmanPaths,
+} from '@lotsman/core';
 
 import { agentForNew } from './choose.ts';
 import { silentGate } from './gate.ts';
 import { err, out, pickArgv } from './output.ts';
 
-const command = (paths: LotsePaths): CommandModule => ({
+const command = (paths: LotsmanPaths): CommandModule => ({
   command: 'auth',
   describe: _('arrange the login an agent asked for, so a session does not die on -32000'),
   builder: (yargs) =>
@@ -85,7 +85,7 @@ const command = (paths: LotsePaths): CommandModule => ({
         );
         return;
       case 'unusable':
-        err(_('the agent advertised an auth method without an id — nothing lotse can do with it'));
+        err(_('the agent advertised an auth method without an id — nothing lotsman can do with it'));
         process.exitCode = 1;
         return;
       case 'login-missing':
@@ -111,7 +111,7 @@ const command = (paths: LotsePaths): CommandModule => ({
  *
  * Routed through the same host rewrite as the ACP channel (`agents/sandbox.ts`), because a login is a
  * host program for exactly the reason the agent is: it opens a browser and keeps its credentials under
- * the person's own home. A `lotse auth` that only worked on a desktop install would be a second
+ * the person's own home. A `lotsman auth` that only worked on a desktop install would be a second
  * version of the same bug.
  */
 function runInteractively(command: AgentCommand): Promise<number> {

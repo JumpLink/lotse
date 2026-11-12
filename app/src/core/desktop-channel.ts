@@ -15,7 +15,7 @@
 import Gio from '@girs/gio-2.0';
 import GLib from '@girs/glib-2.0';
 
-import type { QuestionChannel, QuestionMessage, User } from '@lotse/core';
+import type { QuestionChannel, QuestionMessage, User } from '@lotsman/core';
 
 import {
   deliveryFor,
@@ -35,7 +35,7 @@ export interface DesktopChannelOptions {
   readonly mode: () => DesktopMode;
   /** Whether the answer window can open here (`dialogCommand`). Without it: no "Answer…", no dialog mode. */
   readonly dialog: boolean;
-  /** A quick reply: answer the question with this text, as `lotse answer` would. */
+  /** A quick reply: answer the question with this text, as `lotsman answer` would. */
   readonly onAnswer: (questionId: string, text: string) => void;
   /** Open the answer window for the question. */
   readonly onDialog: (questionId: string) => void;
@@ -93,7 +93,7 @@ export function desktopChannel(options: DesktopChannelOptions): QuestionChannel 
           NAME,
           'Notify',
           new GLib.Variant('(susssasa{sv}i)', [
-            'Lotse',
+            'Lotsman',
             0,
             // Only used when the shell finds no app for the desktop entry; the symbolic names exist in Adwaita.
             questionId ? 'dialog-question-symbolic' : 'dialog-information-symbolic',

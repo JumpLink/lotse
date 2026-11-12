@@ -1,5 +1,5 @@
 /**
- * `lotse start` — open a session, run one prompt turn, write it down.
+ * `lotsman start` — open a session, run one prompt turn, write it down.
  *
  * The command is one turn, not a REPL, and that is a decision rather than a missing feature. A
  * REPL needs somewhere to put the approval surface, and the plan puts the surface in a later slice
@@ -21,17 +21,17 @@ import {
   runTurn,
   toTranscript,
   withAuthHint,
-  type LotsePaths,
-} from '@lotse/core';
-import { createSessionStore } from '@lotse/session';
-import type { TranscriptEntry } from '@lotse/session';
+  type LotsmanPaths,
+} from '@lotsman/core';
+import { createSessionStore } from '@lotsman/session';
+import type { TranscriptEntry } from '@lotsman/session';
 
 import { agentForNew } from './choose.ts';
 import { commandGate } from './gate.ts';
 import { err, out, pickArgv, showUpdate } from './output.ts';
 import { processTerminal } from './terminal.ts';
 
-const command = (paths: LotsePaths): CommandModule => ({
+const command = (paths: LotsmanPaths): CommandModule => ({
   command: 'start [prompt..]',
   describe: _('open a session with an agent and run one prompt turn'),
   builder: (yargs) =>

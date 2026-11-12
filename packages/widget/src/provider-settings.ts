@@ -9,7 +9,7 @@
  * **The page owns its controller's lifetime by being on screen.** `map` makes a controller (and with it
  * a private server), `unmap` closes it, so a preferences dialog that is never opened starts nothing and
  * one that is closed leaves no process behind. Connecting a provider is not drawn here: "Connect…" hands
- * over to the host's login (`LotseChat.openLogin`), which is the one login dialog, and the page reloads
+ * over to the host's login (`LotsmanChat.openLogin`), which is the one login dialog, and the page reloads
  * once it reports back.
  *
  * Every string from a provider or a config file (a name, an id, a URL, a path, an error) is plain text
@@ -37,7 +37,7 @@ import {
   type ModelPolicy,
   type ProviderSettingsState,
   type ProviderSettingsView,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 const FORM_WIDTH_PX = 460;
 
@@ -53,9 +53,9 @@ export interface ProviderSettingsHooks {
  * login lives.
  *
  * **One options object instead of `ProviderSettingsHooks`, because the controller's wiring is not a
- * decision a host should be making.** Which session to open, which file is lotse's own copy, how the
+ * decision a host should be making.** Which session to open, which file is lotsman's own copy, how the
  * models are listed, what the clock is: all of it follows from the agent, and a host that had to
- * assemble it could assemble it differently from `LotseChat` — a second opinion about where the
+ * assemble it could assemble it differently from `LotsmanChat` — a second opinion about where the
  * person's providers live. `ProviderSettingsHooks` stays exported for a host that really does want to
  * bring its own controller (a test, a fixture).
  */
@@ -67,7 +67,7 @@ export interface ProviderSettingsPageOptions {
    * controller, which is what decides whether a provider is `offered` and which models are listed.
    */
   readonly modelPolicy?: ModelPolicy;
-  /** Whether the person may add and remove custom providers. Off by default, like `LotseChat`'s. */
+  /** Whether the person may add and remove custom providers. Off by default, like `LotsmanChat`'s. */
   readonly allowCustomProviders?: boolean;
   /** "Connect…": open the host's login dialog, and call `done` once a login was stored. */
   connect(done: () => void): void;
@@ -77,10 +77,10 @@ export interface ProviderSettingsPageOptions {
 
 /**
  * The provider settings page, wired — for a host that mounts it in its own preferences dialog rather
- * than through `LotseChat.providerSettingsPage()`.
+ * than through `LotsmanChat.providerSettingsPage()`.
  *
- * **The same wiring both ways round**: `LotseChat` calls this function too, so a host's page and
- * lotse's own page read the same file, start the same private server and honour the same
+ * **The same wiring both ways round**: `LotsmanChat` calls this function too, so a host's page and
+ * lotsman's own page read the same file, start the same private server and honour the same
  * `modelPolicy`. The page starts that server when it is shown and stops it when it is hidden, so one
  * built into a dialog nobody opens starts nothing.
  */

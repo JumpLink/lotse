@@ -1,4 +1,4 @@
-import { runTask, type RunResult, type RunDeps } from '@lotse/core';
+import { runTask, type RunResult, type RunDeps } from '@lotsman/core';
 
 /** Runs the configured task `t` through `runTask` and returns the run it recorded. */
 export async function runConfigured(deps: RunDeps, id = 't'): Promise<RunResult> {

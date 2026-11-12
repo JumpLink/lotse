@@ -1,9 +1,9 @@
 // The example in packages/core/README.md, type-checked with the app and not run. Keep the two in step.
-import { denyAll } from '@lotse/acp';
-import { gatherResolveContext, lotsePathsUnder, openAgent, resolveDefault, runTurn } from '@lotse/core';
+import { denyAll } from '@lotsman/acp';
+import { gatherResolveContext, lotsmanPathsUnder, openAgent, resolveDefault, runTurn } from '@lotsman/core';
 
 export async function sayHello(dataRoot: string): Promise<void> {
-  const paths = lotsePathsUnder(dataRoot);
+  const paths = lotsmanPathsUnder(dataRoot);
   const agent = resolveDefault(gatherResolveContext(paths));
   if (!agent) throw new Error('no agent found');
 

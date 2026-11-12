@@ -1,8 +1,8 @@
 import { describe, expect, it } from '@gjsify/unit';
 
-import type { SessionNotification, SessionUpdate } from '@lotse/acp/types';
+import type { SessionNotification, SessionUpdate } from '@lotsman/acp/types';
 
-import { fitsInputCap, mcpCallsOf, toTranscript } from '@lotse/core';
+import { fitsInputCap, mcpCallsOf, toTranscript } from '@lotsman/core';
 
 const AT = '2026-09-30T10:00:00.000Z';
 

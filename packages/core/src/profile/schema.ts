@@ -8,9 +8,9 @@ import { ID_PATTERN, MCP_SERVER, type SchemaNode } from '../schema.ts';
 
 export const PROFILES_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
-  title: 'lotse profiles',
+  title: 'lotsman profiles',
   description:
-    'The profiles every lotse host shares — listen, the messenger, the widget and headless jobs. `listen` reads it at start.',
+    'The profiles every lotsman host shares — listen, the messenger, the widget and headless jobs. `listen` reads it at start.',
   type: 'object',
   additionalProperties: false,
   required: ['version', 'profiles'],
@@ -41,14 +41,14 @@ export const PROFILES_SCHEMA = {
           type: 'string',
           minLength: 1,
           title: 'Agent',
-          description: 'A launcher id such as opencode. Empty: the agent lotse start would use.',
+          description: 'A launcher id such as opencode. Empty: the agent lotsman start would use.',
         },
         model: {
           type: 'string',
           minLength: 1,
           title: 'Model',
           description:
-            "A model id the agent offers. Empty: lotse sends none and the agent's own default applies. A named model the agent does not offer stops the run.",
+            "A model id the agent offers. Empty: lotsman sends none and the agent's own default applies. A named model the agent does not offer stops the run.",
         },
         configOptions: {
           type: 'object',

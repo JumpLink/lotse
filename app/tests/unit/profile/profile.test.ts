@@ -10,7 +10,7 @@ import {
   resolveProfile,
   withPreamble,
   type SchemaNode,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 const AGENT = OPENCODE_COMMAND;
 

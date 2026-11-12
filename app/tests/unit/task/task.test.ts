@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { AcpClient } from '@lotse/acp/client';
+import { AcpClient } from '@lotsman/acp/client';
 import {
   McpLink,
   OPENCODE_COMMAND,
@@ -24,7 +24,7 @@ import {
   type MessengerSettings,
   type Question,
   type RunDeps,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 import { listTasks } from '../../../src/core/skills.ts';
 import {
@@ -54,8 +54,8 @@ name: demo
 description: A demo task
 allowed-tools: a
 metadata:
-  lotse-profile: p
-  lotse-params: topic, day=today
+  lotsman-profile: p
+  lotsman-params: topic, day=today
 ---
 Report on {{topic}} for {{day}}.
 `;
@@ -103,7 +103,7 @@ function throwsA(kind: new (...args: never[]) => Error, body: () => unknown): bo
 }
 
 function withDir(body: (dir: string) => void): void {
-  const dir = mkdtempSync(join(tmpdir(), 'lotse-tasks-'));
+  const dir = mkdtempSync(join(tmpdir(), 'lotsman-tasks-'));
   try {
     body(dir);
   } finally {
@@ -141,10 +141,12 @@ export default async () => {
       ]);
     });
 
-    await it('the name must be the directory, and a typo in a lotse key is reported', async () => {
+    await it('the name must be the directory, and a typo in a lotsman key is reported', async () => {
       expect(throwsA(TaskFileError, () => parseSkillTask('other', SKILL))).toBe(true);
       expect(
-        throwsA(TaskFileError, () => parseSkillTask('demo', SKILL.replace('lotse-params', 'lotse-paramz'))),
+        throwsA(TaskFileError, () =>
+          parseSkillTask('demo', SKILL.replace('lotsman-params', 'lotsman-paramz')),
+        ),
       ).toBe(true);
     });
 
@@ -181,7 +183,9 @@ export default async () => {
     });
 
     await it('failed: a profile the SKILL.md names but profiles.json lacks', async () => {
-      const { deps: d } = deps(config(), { demo: SKILL.replace('lotse-profile: p', 'lotse-profile: zz') });
+      const { deps: d } = deps(config(), {
+        demo: SKILL.replace('lotsman-profile: p', 'lotsman-profile: zz'),
+      });
       const result = await runTask('demo', { topic: 'x' }, d);
       expect(result.status).toBe('failed');
     });
@@ -219,7 +223,7 @@ export default async () => {
         deps(config(), { demo: SKILL }, { chunks: ['Really?'] }).deps,
       );
       expect(asked.code).toBe(EXIT['needs-person']);
-      const bad = deps(config(), { demo: SKILL.replace('lotse-profile: p', 'lotse-profile: zz') });
+      const bad = deps(config(), { demo: SKILL.replace('lotsman-profile: p', 'lotsman-profile: zz') });
       expect((await runReport('demo', { topic: 'x' }, bad.deps)).code).toBe(EXIT.failed);
       const usage = await runReport('demo', {}, deps(config(), { demo: SKILL }).deps);
       expect(usage.code).toBe(EXIT.usage);
@@ -244,7 +248,7 @@ export default async () => {
     });
 
     await it('lists nothing for a missing directory', async () => {
-      expect(listTasks('/nonexistent-lotse-tasks')).toStrictEqual([]);
+      expect(listTasks('/nonexistent-lotsman-tasks')).toStrictEqual([]);
     });
   });
 
@@ -252,7 +256,7 @@ export default async () => {
     await it('/tasks, /status and a bad /run reply without a model call', async () => {
       await withFakeMcp({}, async (fake) => {
         const { deps: d, state } = deps(config(), { demo: SKILL });
-        const tasksDir = mkdtempSync(join(tmpdir(), 'lotse-chat-tasks-'));
+        const tasksDir = mkdtempSync(join(tmpdir(), 'lotsman-chat-tasks-'));
         mkdirSync(join(tasksDir, 'demo'));
         writeFileSync(join(tasksDir, 'demo', 'SKILL.md'), SKILL);
         const link = new McpLink(() => connectMcp(fake.command));
@@ -262,7 +266,7 @@ export default async () => {
           read: () => cursor.value,
           write: (next) => void (cursor.value = next),
         };
-        const paths = { stateDir: '/nonexistent-lotse-state', tasksDir } as never;
+        const paths = { stateDir: '/nonexistent-lotsman-state', tasksDir } as never;
         const loop = runReceiveLoop({
           link,
           settings: SETTINGS,

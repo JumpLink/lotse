@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { migrateLegacy, parseProfiles, parseUsers } from '@lotse/core';
+import { migrateLegacy, parseProfiles, parseUsers } from '@lotsman/core';
 
 import { ConfigMissingError, loadConfig } from '../../../src/core/config-files.ts';
 import { migrateLegacyFiles } from '../../../src/core/legacy-migration.ts';
@@ -28,7 +28,7 @@ const LEGACY = JSON.stringify({
 });
 
 function withDir(body: (dir: string) => void): void {
-  const dir = mkdtempSync(join(tmpdir(), 'lotse-legacy-'));
+  const dir = mkdtempSync(join(tmpdir(), 'lotsman-legacy-'));
   try {
     body(dir);
   } finally {
@@ -63,7 +63,7 @@ export default async () => {
       withDir((dir) => {
         const listen = pathsIn(dir);
         const before = LEGACY;
-        mkdirSync(join(dir, 'lotse'), { recursive: true });
+        mkdirSync(join(dir, 'lotsman'), { recursive: true });
         writeFileSync(listen.tasksFile, before);
         expect(migrateLegacyFiles(listen)).toBe(true);
         expect(parseUsers(readFileSync(listen.usersFile, 'utf8'))[0]!.id).toBe('me');
@@ -103,7 +103,7 @@ export default async () => {
     await it('starts from users.json and profiles.json with no tasks.json anywhere', async () => {
       withDir((dir) => {
         const listen = pathsIn(dir);
-        mkdirSync(join(dir, 'lotse'), { recursive: true });
+        mkdirSync(join(dir, 'lotsman'), { recursive: true });
         writeFileSync(listen.usersFile, JSON.stringify({ version: 1, users: [{ id: 'me' }] }), {
           mode: 0o600,
         });

@@ -7,7 +7,7 @@
  * host's — core knows no launcher table — so it is passed in.
  */
 
-import type { McpServer } from '@lotse/acp';
+import type { McpServer } from '@lotsman/acp';
 
 import type { AgentCommand } from '../agents/stdio.ts';
 import type { RightsLevel, Task } from '../task/task.ts';

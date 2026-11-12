@@ -1,4 +1,4 @@
-/** `lotse answer <id> <text>` and an answer from the chat: what the text does to the question. */
+/** `lotsman answer <id> <text>` and an answer from the chat: what the text does to the question. */
 
 import { _ } from '../i18n.ts';
 import { withPreamble } from '../profile/resolve.ts';
@@ -19,7 +19,7 @@ import {
 } from './question.ts';
 import { isHeld, offerCode, parsePersonReply } from './person.ts';
 
-/** How `lotse answer` continued a session, or why it did not. */
+/** How `lotsman answer` continued a session, or why it did not. */
 export type AnswerMode =
   | 'allowed'
   | 'declined'
@@ -41,7 +41,7 @@ export interface AnswerResult {
 }
 
 /**
- * `lotse answer <id> <text>`.
+ * `lotsman answer <id> <text>`.
  *
  * A permission question records yes or no in the store, where the run holding the request reads
  * it. A reply question continues the session with the text: `session/load`, else `session/resume`,
@@ -171,7 +171,7 @@ export async function answerQuestion(idText: string, text: string, deps: RunDeps
       question,
     );
   try {
-    // Answered before the turn, so a second `lotse answer` cannot continue the same session twice.
+    // Answered before the turn, so a second `lotsman answer` cannot continue the same session twice.
     update(deps, question, {
       status: 'answered',
       answer: parsed.kind,

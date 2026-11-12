@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Extract translatable strings and compile the catalogues — for BOTH of lotse's domains.
+# Extract translatable strings and compile the catalogues — for BOTH of lotsman's domains.
 #
 #   dev/i18n.sh extract    refresh each po/<domain>.pot and merge it into every po/*.po
 #   dev/i18n.sh compile    build app/dist/locale/<lang>/LC_MESSAGES/<domain>.mo
 #
-# Two domains, because lotse is an app AND a library — docs/adr/0005-two-gettext-domains.md:
+# Two domains, because lotsman is an app AND a library — docs/adr/0005-two-gettext-domains.md:
 #
-#   eu.jumplink.Lotse   app/po/              ← app/src (the window, the CLI, the notifications)
-#   lotse               packages/widget/po/  ← packages/core/src + packages/widget/src
+#   eu.jumplink.Lotsman   app/po/              ← app/src (the window, the CLI, the notifications)
+#   lotsman               packages/widget/po/  ← packages/core/src + packages/widget/src
 #
 # ONE xgettext invocation per domain covers TypeScript and Blueprint, which is not obvious: xgettext
 # has no Blueprint parser at all (0.26 rejects `--language=Blueprint` outright), but Blueprint's
@@ -17,9 +17,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-APP_DOMAIN='eu.jumplink.Lotse'
-LIB_DOMAIN='lotse'
-BUGS='https://github.com/JumpLink/lotse/issues'
+APP_DOMAIN='eu.jumplink.Lotsman'
+LIB_DOMAIN='lotsman'
+BUGS='https://github.com/JumpLink/lotsman/issues'
 
 # A generated `.d.blp.ts` holds the compiled template as a string literal, so scanning it would
 # collect every widget msgid a second time under a path nobody edits. A `.test.ts` is not shipped.

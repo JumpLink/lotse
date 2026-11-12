@@ -1,15 +1,15 @@
 /**
- * Translation for the strings `@lotse/core` and `@lotse/widget` hand to a person.
+ * Translation for the strings `@lotsman/core` and `@lotsman/widget` hand to a person.
  *
  * **English is the source language.** Every msgid in this repository is English and German arrives
  * as a catalogue (`packages/widget/po/de.po`). That direction is the one a stranger can read, and
  * the one gettext is built for: a lookup that resolves nothing returns its msgid, so a missing
  * catalogue is correct English rather than an empty label.
  *
- * **No gettext import here, and that is structural.** `@lotse/core` runs on Node as well as on GJS
+ * **No gettext import here, and that is structural.** `@lotsman/core` runs on Node as well as on GJS
  * — the dual test run is the whole point of the package split (`AGENTS.md`) — and GJS's built-in
  * `gettext` module does not exist on Node. So this file declares the four call sites and nothing
- * else: a translator is *registered* by whoever has one. `@lotse/widget`'s `i18n.ts` does it on
+ * else: a translator is *registered* by whoever has one. `@lotsman/widget`'s `i18n.ts` does it on
  * load (see [ADR 0005](../../../docs/adr/0005-two-gettext-domains.md)), which is what makes a host
  * get German chat strings without writing a line.
  *
@@ -20,12 +20,12 @@
  */
 
 /**
- * The gettext domain of `@lotse/core` + `@lotse/widget`.
+ * The gettext domain of `@lotsman/core` + `@lotsman/widget`.
  *
  * A literal and not an application id: these strings are rendered inside *somebody else's* process,
  * whose `textdomain` is its own. ADR 0005 has the failure this avoids.
  */
-export const LOTSE_TEXT_DOMAIN = 'lotse';
+export const LOTSMAN_TEXT_DOMAIN = 'lotsman';
 
 /** A domain-bound lookup, the shape `@gjsify/adwaita-app`'s `Translator` already has. */
 export interface LibraryTranslator {
@@ -51,10 +51,10 @@ const IDENTITY: LibraryTranslator = Object.assign((msgid: string) => msgid, {
 let translate: LibraryTranslator = IDENTITY;
 
 /**
- * Register the translator for {@link LOTSE_TEXT_DOMAIN}; `null` restores the identity.
+ * Register the translator for {@link LOTSMAN_TEXT_DOMAIN}; `null` restores the identity.
  *
- * Called once by `@lotse/widget` when it loads. A host does not call it — and an application that
- * wanted to route lotse's strings through its own catalogue could, which is the one reason this is
+ * Called once by `@lotsman/widget` when it loads. A host does not call it — and an application that
+ * wanted to route lotsman's strings through its own catalogue could, which is the one reason this is
  * exported rather than internal.
  */
 export function setLibraryTranslator(translator: LibraryTranslator | null): void {

@@ -8,7 +8,7 @@
  * desktop notification (the app's `desktop-notifier.ts`); the messenger channel (`messenger/`) is a second implementation and changes no task.
  *
  * The interface is `send` only. An answer comes back by whatever the channel offers — a button on the
- * desktop notification, a reply the messenger's receive loop reads, or `lotse answer` — and every one
+ * desktop notification, a reply the messenger's receive loop reads, or `lotsman answer` — and every one
  * of them ends in the same `answerQuestion`, so the first answer wins and the others hear "answered".
  */
 
@@ -28,7 +28,7 @@ export interface QuestionMessage {
    */
   readonly asks?: QuestionKind;
   /**
-   * The question's text without the `lotse answer …` hint that `body` ends with — for a channel whose
+   * The question's text without the `lotsman answer …` hint that `body` ends with — for a channel whose
    * person answers in the channel itself and wants its own hint. Set on the message that asks.
    */
   readonly text?: string;

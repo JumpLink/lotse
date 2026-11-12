@@ -12,7 +12,7 @@ import {
   userOf,
   userProblems,
   type SchemaNode,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 import profilesExample from '../../../../examples/profiles.example.json' with { type: 'json' };
 import usersExample from '../../../../examples/users.example.json' with { type: 'json' };

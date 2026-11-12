@@ -7,7 +7,7 @@
  * question, yes, resume — runs on Node and GJS with no process anywhere.
  */
 
-import type { StopReason } from '@lotse/acp';
+import type { StopReason } from '@lotsman/acp';
 
 import type { AgentCommand } from '../agents/stdio.ts';
 import type { Profile } from '../profile/profile.ts';
@@ -66,7 +66,7 @@ export interface RunDeps {
   readonly modelRetryMs?: number;
   /** A SKILL.md task by id, or `null` when there is none. Throws `TaskFileError` for one that does not parse. */
   readonly skill: (id: string) => SkillTask | null;
-  /** Keeps the run for `lotse status` and the precheck's "last run". Absent: not kept. */
+  /** Keeps the run for `lotsman status` and the precheck's "last run". Absent: not kept. */
   readonly record?: (result: RunResult) => void;
   /** Take the task's run lock; `null` when another run of it holds it. Absent: no cross-process lock. */
   readonly lock?: (task: string) => (() => void) | null;

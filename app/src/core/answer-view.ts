@@ -8,7 +8,7 @@
  */
 
 import { _, fmt } from '../i18n.ts';
-import { formatQuestionId, isOpen, normalizeQuestionId, quickReplies, type Question } from '@lotse/core';
+import { formatQuestionId, isOpen, normalizeQuestionId, quickReplies, type Question } from '@lotsman/core';
 
 import { quickReplyLabel, type QuickReply } from './question-actions.ts';
 
@@ -89,7 +89,7 @@ export function answerView(question: Question | null, idText: string, now: Date)
       expiry: '',
       entry: false,
       quickReplies: [],
-      closed: fmt(_('There is no question {label}. `lotse questions` lists the open ones.'), { label }),
+      closed: fmt(_('There is no question {label}. `lotsman questions` lists the open ones.'), { label }),
     };
   }
   const open = isOpen(question, now);

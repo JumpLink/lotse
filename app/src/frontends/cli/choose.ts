@@ -15,10 +15,10 @@ import {
   requireLauncher,
   resolveDefaultWithNote,
   resolveRecorded,
-  type LotsePaths,
+  type LotsmanPaths,
   type ResolvedAgent,
   type ResolvedSource,
-} from '@lotse/core';
+} from '@lotsman/core';
 import { readSettings } from '../../core/settings.ts';
 
 import { err } from './output.ts';
@@ -30,14 +30,14 @@ function announce(agent: ResolvedAgent): ResolvedAgent {
 }
 
 /** An agent for a new session, or for `auth`: the explicit launcher, else the default resolution. */
-export function agentForNew(paths: LotsePaths, explicit: string | undefined): ResolvedAgent | null {
+export function agentForNew(paths: LotsmanPaths, explicit: string | undefined): ResolvedAgent | null {
   if (explicit) {
     return { command: requireLauncher(explicit), source: 'host', version: null, isolation: null };
   }
   const { settings, problem } = readSettings(paths.settingsFile);
   if (problem) err(fmt(_('  {problem}'), { problem }));
   const { agent: found, note } = resolveDefaultWithNote(
-    { ...gatherResolveContext(paths), remedy: `choose again with \`lotse agents --use\`` },
+    { ...gatherResolveContext(paths), remedy: `choose again with \`lotsman agents --use\`` },
     settings.agent,
   );
   if (note) err(fmt(_('  {note}'), { note }));
@@ -54,7 +54,7 @@ export function agentForNew(paths: LotsePaths, explicit: string | undefined): Re
  * id gets its menu; a copy that is gone prints why and sets the exit code.
  */
 export function agentForRecorded(
-  paths: LotsePaths,
+  paths: LotsmanPaths,
   id: string,
   source: ResolvedSource | undefined,
 ): ResolvedAgent | null {

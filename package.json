@@ -1,10 +1,10 @@
 {
-  "name": "lotse",
+  "name": "lotsman",
   "version": "0.4.0",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "type": "module",
-  "description": "Lotse — an ACP client. Starts coding agents as subprocesses over the Agent Client Protocol, manages their sessions, and binds them to a surface. Runs on GJS via gjsify.",
+  "description": "Lotsman — an ACP client. Starts coding agents as subprocesses over the Agent Client Protocol, manages their sessions, and binds them to a surface. Runs on GJS via gjsify.",
   "workspaces": [
     "packages/*",
     "app"
@@ -18,19 +18,19 @@
     "lint": "gjsify foreach -A lint",
     "format": "gjsify foreach -A format",
     "format:check": "oxfmt --check .",
-    "build": "gjsify workspace lotse-cli build",
-    "start": "gjsify workspace lotse-cli start",
-    "test": "gjsify workspace lotse-cli test",
-    "packaging:validate": "desktop-file-validate data/eu.jumplink.Lotse.desktop && appstreamcli validate --no-net --explain data/eu.jumplink.Lotse.metainfo.xml && node scripts/check-metainfo.mjs",
+    "build": "gjsify workspace lotsman-cli build",
+    "start": "gjsify workspace lotsman-cli start",
+    "test": "gjsify workspace lotsman-cli test",
+    "packaging:validate": "desktop-file-validate data/eu.jumplink.Lotsman.desktop && appstreamcli validate --no-net --explain data/eu.jumplink.Lotsman.metainfo.xml && node scripts/check-metainfo.mjs",
     "packaging:install": "sh scripts/install-packaging.sh"
   },
   "gjsify": {
     "flatpak": {
-      "appId": "eu.jumplink.Lotse",
-      "icon": "data/icons/hicolor/scalable/apps/eu.jumplink.Lotse.svg",
+      "appId": "eu.jumplink.Lotsman",
+      "icon": "data/icons/hicolor/scalable/apps/eu.jumplink.Lotsman.svg",
       "kind": "app",
-      "name": "Lotse",
-      "command": "lotse-app",
+      "name": "Lotsman",
+      "command": "lotsman-app",
       "runtime": "gnome",
       "runtimeVersion": "51",
       "sdkExtensions": [
@@ -55,11 +55,11 @@
       "summaryTranslatorHint": "One line, no full stop: what the app does for the person using it",
       "description": [
         {
-          "p": "Lotse is a client for the Agent Client Protocol (ACP), the open standard a coding agent speaks over a JSON-RPC connection on stdio. It starts the agent as a subprocess, keeps its session, and shows you what the agent says while it works.",
+          "p": "Lotsman is a client for the Agent Client Protocol (ACP), the open standard a coding agent speaks over a JSON-RPC connection on stdio. It starts the agent as a subprocess, keeps its session, and shows you what the agent says while it works.",
           "translatorHint": "Opening paragraph: what the app is and which standard it speaks"
         },
         {
-          "p": "The agent decides which model does the work; lotse owns the environment around it — which directory the session runs in, what the agent is allowed to do, and which MCP servers it may reach. A session record says what is reachable, never what is allowed, so every request is checked again, every time.",
+          "p": "The agent decides which model does the work; lotsman owns the environment around it — which directory the session runs in, what the agent is allowed to do, and which MCP servers it may reach. A session record says what is reachable, never what is allowed, so every request is checked again, every time.",
           "translatorHint": "Second paragraph: the app's own scope versus the agent's"
         },
         {
@@ -73,7 +73,7 @@
               "translatorHint": "Feature list: streaming a turn and stopping it"
             },
             {
-              "item": "Answer the agent's permission requests yourself — lotse denies by default rather than approving for you",
+              "item": "Answer the agent's permission requests yourself — lotsman denies by default rather than approving for you",
               "translatorHint": "Feature list: the permission gate"
             },
             {
@@ -87,9 +87,9 @@
       "license": {
         "project": "AGPL-3.0-or-later"
       },
-      "homepageUrl": "https://github.com/JumpLink/lotse",
-      "bugtrackerUrl": "https://github.com/JumpLink/lotse/issues",
-      "vcsBrowserUrl": "https://github.com/JumpLink/lotse",
+      "homepageUrl": "https://github.com/JumpLink/lotsman",
+      "bugtrackerUrl": "https://github.com/JumpLink/lotsman/issues",
+      "vcsBrowserUrl": "https://github.com/JumpLink/lotsman",
       "categories": [
         "Development",
         "GTK"
@@ -120,8 +120,8 @@
       ],
       "provides": {
         "binaries": [
-          "lotse-app",
-          "lotse"
+          "lotsman-app",
+          "lotsman"
         ]
       },
       "releases": [
@@ -130,17 +130,17 @@
           "date": "2026-10-22",
           "description": [
             {
-              "p": "Lotse can download its OpenCode for you when none is installed.",
-              "translatorHint": "Release notes for version 0.5.0 - opening line: Lotse can download its own OpenCode"
+              "p": "Lotsman can download its OpenCode for you when none is installed.",
+              "translatorHint": "Release notes for version 0.5.0 - opening line: Lotsman can download its own OpenCode"
             },
             {
               "ul": [
                 {
-                  "item": "lotse agents --install downloads the pinned OpenCode for your user after asking, and checks it before it is used.",
+                  "item": "lotsman agents --install downloads the pinned OpenCode for your user after asking, and checks it before it is used.",
                   "translatorHint": "Release notes for version 0.5.0 - agent install from the command line. Keep the command as it is."
                 },
                 {
-                  "item": "Apps that embed lotse can offer the same download without bundling the agent.",
+                  "item": "Apps that embed lotsman can offer the same download without bundling the agent.",
                   "translatorHint": "Release notes for version 0.5.0 - embedding apps can offer the install"
                 }
               ]
@@ -152,7 +152,7 @@
           "date": "2026-10-22",
           "description": [
             {
-              "p": "Lotse speaks German, starts the bundled OpenCode by default and warns when a free model is in use.",
+              "p": "Lotsman speaks German, starts the bundled OpenCode by default and warns when a free model is in use.",
               "translatorHint": "Release notes for version 0.4.0 - opening line: German translation, bundled OpenCode default, free-model warning"
             },
             {
@@ -186,13 +186,13 @@
           "date": "2026-10-11",
           "description": [
             {
-              "p": "Kurier is now lotse, and its building blocks are on npm for other apps to embed.",
-              "translatorHint": "Release notes for version 0.3.0 - opening line: the rename to lotse, the libraries on npm. Keep \"Kurier\" and \"lotse\" as they are."
+              "p": "Kurier is now lotsman, and its building blocks are on npm for other apps to embed.",
+              "translatorHint": "Release notes for version 0.3.0 - opening line: the rename to lotsman, the libraries on npm. Keep \"Kurier\" and \"lotsman\" as they are."
             },
             {
               "ul": [
                 {
-                  "item": "The libraries @lotse/acp, @lotse/session, @lotse/core and @lotse/widget are published on npm, so other apps can embed lotse.",
+                  "item": "The libraries @lotsman/acp, @lotsman/session, @lotsman/core and @lotsman/widget are published on npm, so other apps can embed lotsman.",
                   "translatorHint": "Release notes for version 0.3.0 - the libraries are on npm. Keep the package names as they are."
                 },
                 {
@@ -205,7 +205,7 @@
                 },
                 {
                   "item": "Questions from scheduled tasks can be answered from a notification or an answer window.",
-                  "translatorHint": "Release notes for version 0.3.0 - answering a lotse listen question from the desktop"
+                  "translatorHint": "Release notes for version 0.3.0 - answering a lotsman listen question from the desktop"
                 },
                 {
                   "item": "Tool calls are stored in the conversation with their details, and a host can show its own tools with its own title and icon.",
@@ -224,8 +224,8 @@
                   "translatorHint": "Release notes for version 0.3.0 - headless jobs (runJob)"
                 },
                 {
-                  "item": "Kurier is now called lotse. An installed Kurier is upgraded, and your sessions and settings are moved over once.",
-                  "translatorHint": "Release notes for version 0.3.0 - the rename from Kurier to lotse. Keep \"Kurier\" and \"lotse\" as they are."
+                  "item": "Kurier is now called lotsman. An installed Kurier is upgraded, and your sessions and settings are moved over once.",
+                  "translatorHint": "Release notes for version 0.3.0 - the rename from Kurier to lotsman. Keep \"Kurier\" and \"lotsman\" as they are."
                 }
               ],
               "translatorHint": "Release notes for version 0.3.0 - the list of what changed"
@@ -349,29 +349,29 @@
           ]
         },
         {
-          "name": "lotse",
+          "name": "lotsman",
           "buildsystem": "simple",
           "build-commands": [
             "XDG_CACHE_HOME=\"$PWD/flatpak-gjsify-cache\" gjs -m build-aux/gjsify.gjs.mjs install --immutable",
-            "XDG_CACHE_HOME=\"$PWD/flatpak-gjsify-cache\" gjs -m build-aux/gjsify.gjs.mjs workspace lotse-cli build",
-            "XDG_CACHE_HOME=\"$PWD/flatpak-gjsify-cache\" gjs -m build-aux/gjsify.gjs.mjs workspace lotse-cli build:app",
+            "XDG_CACHE_HOME=\"$PWD/flatpak-gjsify-cache\" gjs -m build-aux/gjsify.gjs.mjs workspace lotsman-cli build",
+            "XDG_CACHE_HOME=\"$PWD/flatpak-gjsify-cache\" gjs -m build-aux/gjsify.gjs.mjs workspace lotsman-cli build:app",
             "install -d /app/bin",
-            "printf '#!/usr/bin/gjs -m\\n' > /app/bin/lotse-app",
-            "cat app/dist/lotse-app.gjs.mjs >> /app/bin/lotse-app",
-            "chmod 0755 /app/bin/lotse-app",
-            "printf '#!/usr/bin/gjs -m\\n' > /app/bin/lotse",
-            "cat app/dist/lotse.gjs.mjs >> /app/bin/lotse",
-            "chmod 0755 /app/bin/lotse",
+            "printf '#!/usr/bin/gjs -m\\n' > /app/bin/lotsman-app",
+            "cat app/dist/lotsman-app.gjs.mjs >> /app/bin/lotsman-app",
+            "chmod 0755 /app/bin/lotsman-app",
+            "printf '#!/usr/bin/gjs -m\\n' > /app/bin/lotsman",
+            "cat app/dist/lotsman.gjs.mjs >> /app/bin/lotsman",
+            "chmod 0755 /app/bin/lotsman",
             "for mo in app/dist/locale/*/LC_MESSAGES/*.mo; do lang=${mo#app/dist/locale/}; lang=${lang%%/*}; install -Dm644 \"$mo\" \"/app/share/locale/$lang/LC_MESSAGES/$(basename $mo)\"; done",
-            "install -Dm644 data/eu.jumplink.Lotse.desktop /app/share/applications/eu.jumplink.Lotse.desktop",
-            "install -Dm644 data/eu.jumplink.Lotse.metainfo.xml /app/share/metainfo/eu.jumplink.Lotse.metainfo.xml",
-            "install -Dm644 data/icons/hicolor/scalable/apps/eu.jumplink.Lotse.svg /app/share/icons/hicolor/scalable/apps/eu.jumplink.Lotse.svg",
-            "install -Dm644 data/icons/hicolor/symbolic/apps/eu.jumplink.Lotse-symbolic.svg /app/share/icons/hicolor/symbolic/apps/eu.jumplink.Lotse-symbolic.svg"
+            "install -Dm644 data/eu.jumplink.Lotsman.desktop /app/share/applications/eu.jumplink.Lotsman.desktop",
+            "install -Dm644 data/eu.jumplink.Lotsman.metainfo.xml /app/share/metainfo/eu.jumplink.Lotsman.metainfo.xml",
+            "install -Dm644 data/icons/hicolor/scalable/apps/eu.jumplink.Lotsman.svg /app/share/icons/hicolor/scalable/apps/eu.jumplink.Lotsman.svg",
+            "install -Dm644 data/icons/hicolor/symbolic/apps/eu.jumplink.Lotsman-symbolic.svg /app/share/icons/hicolor/symbolic/apps/eu.jumplink.Lotsman-symbolic.svg"
           ],
           "sources": [
             {
               "type": "git",
-              "url": "https://github.com/JumpLink/lotse.git",
+              "url": "https://github.com/JumpLink/lotsman.git",
               "tag": "v0.5.0",
               "x-checker-data": {
                 "type": "git",

@@ -1,8 +1,8 @@
 # GUI design
 
-The lotse window follows the GNOME HIG and libadwaita. Its layout borrows from established chat
+The lotsman window follows the GNOME HIG and libadwaita. Its layout borrows from established chat
 apps (Claude, ChatGPT, LibreChat): one reading column, quiet chrome, one composer. This look is
-the baseline `@lotse/widget` inherits ([ADR 0001](../adr/0001-lotse-as-an-embeddable-widget.md)).
+the baseline `@lotsman/widget` inherits ([ADR 0001](../adr/0001-lotsman-as-an-embeddable-widget.md)).
 
 ## Principles
 

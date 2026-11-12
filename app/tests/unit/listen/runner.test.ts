@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@gjsify/unit';
 
-import { AcpClient } from '@lotse/acp/client';
-import type { PermissionOption } from '@lotse/acp/types';
+import { AcpClient } from '@lotsman/acp/client';
+import type { PermissionOption } from '@lotsman/acp/types';
 
 import {
   OPENCODE_COMMAND,
@@ -17,7 +17,7 @@ import {
   type SkillTask,
   type RunLogEntry,
   type QuestionMessage,
-} from '@lotse/core';
+} from '@lotsman/core';
 import {
   FixtureAgent,
   opencodeConfigOptions,
@@ -106,7 +106,7 @@ export default async () => {
       expect(h.book[0]!.kind).toBe('reply');
       expect(h.book[0]!.sessionId).toBe('ses_fixture_0001');
       expect(h.sent[0]!.questionId).toBe('A1');
-      expect(h.sent[0]!.body).toContain('lotse answer A1');
+      expect(h.sent[0]!.body).toContain('lotsman answer A1');
     });
 
     await it('a permission request waits for `answer yes`, then allows once', async () => {

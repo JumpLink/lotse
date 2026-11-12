@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@gjsify/unit';
 
-import { AcpClient } from '@lotse/acp/client';
+import { AcpClient } from '@lotsman/acp/client';
 
 import {
   OPENCODE_COMMAND,
@@ -17,7 +17,7 @@ import {
   type RunLogEntry,
   type SkillTask,
   type QuestionMessage,
-} from '@lotse/core';
+} from '@lotsman/core';
 import { FixtureAgent } from '../../support/fixture-agent.ts';
 import { fixture, type Fixture } from '../../support/config.ts';
 import { runConfigured } from '../../support/run-task.ts';
@@ -89,7 +89,7 @@ function harness(config: Fixture, calls: (call: PersonHandler) => Promise<unknow
       attach: async (handler) => {
         handlers.set(h, handler);
         return {
-          server: { type: 'http', name: 'lotse-person', url: 'http://127.0.0.1:1/person/x', headers: [] },
+          server: { type: 'http', name: 'lotsman-person', url: 'http://127.0.0.1:1/person/x', headers: [] },
           detach: () => void handlers.delete(h),
         };
       },
@@ -107,7 +107,7 @@ function harness(config: Fixture, calls: (call: PersonHandler) => Promise<unknow
 const handlers = new Map<Harness, PersonHandler>();
 const handlerOf = (h: Harness): PersonHandler => handlers.get(h)!;
 
-/** Everything lotse wrote or sent, as one string: where a code must never appear. */
+/** Everything lotsman wrote or sent, as one string: where a code must never appear. */
 const everything = (h: Harness, ...more: string[]): string =>
   JSON.stringify([h.book, h.log, h.sent, ...more]);
 

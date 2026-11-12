@@ -10,7 +10,7 @@
  *
  * **Zero-retention is no longer claimed for any model.** It is not in the id, and the only source is a
  * web page. So every free model gets the same warning (`FREE_MODEL_WARNING`): a provider of a free model
- * may keep what it is sent and train on it. The person decides; lotse says so every time.
+ * may keep what it is sent and train on it. The person decides; lotsman says so every time.
  *
  * **Three things it deliberately does not do**, and each of them is a rule rather than an omission:
  *
@@ -19,7 +19,7 @@
  *   selection — a client that picked a model would be holding configuration authority over the agent,
  *   which is the "always allow" mistake in different clothes (`core/config-row.ts`'s header).
  * - **Never hides.** Every id the agent offered is still in the list, in its original relative order
- *   within its group. A model lotse stopped showing is a model a person cannot go back to.
+ *   within its group. A model lotsman stopped showing is a model a person cannot go back to.
  * - **Never probes.** Whether a free model answers from here (a region block, a quota) is found out by
  *   the prompt the person sends, not by burning a turn on each candidate.
  */
@@ -55,7 +55,7 @@ export function isFreeModel(model: string): boolean {
  * Move every free value to the front, and keep the agent's order inside both groups.
  *
  * **The agent's order is kept because it is a statement the agent made** (`core/config.ts`: "an agent
- * that puts its recommended model first knows something about its user"). The only thing lotse adds is
+ * that puts its recommended model first knows something about its user"). The only thing lotsman adds is
  * which group a value is in.
  *
  * **Generic over the value, so the call site keeps its own type.** It is applied to `ConfigValue[]` and

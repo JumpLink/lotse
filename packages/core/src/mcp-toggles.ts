@@ -5,7 +5,7 @@
  * server off for this conversation only; the change applies from the NEXT turn, when the controller
  * puts the new list in front of the agent with `session/resume` (measured 2026-10-26: opencode 2.1.2
  * and claude-agent-acp 0.97.0 honour it; opencode leaves the old server running — an agent-side leak
- * Lotse does not work around).
+ * Lotsman does not work around).
  *
  * Everything decision-shaped is here so Node can test it: which list is active, whether a resume is
  * pending, and whether the toggles may be used at all. The widget draws the view and nothing else.
@@ -14,7 +14,7 @@
  * compare lists. Two servers with one name toggle together.
  */
 
-import type { McpServer } from '@lotse/acp';
+import type { McpServer } from '@lotsman/acp';
 
 import { _, fmt } from './i18n.ts';
 

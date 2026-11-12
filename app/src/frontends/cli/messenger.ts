@@ -1,5 +1,5 @@
 /**
- * `lotse messenger` — the chat requests of `listen`, shown and set.
+ * `lotsman messenger` — the chat requests of `listen`, shown and set.
  *
  * The same file the settings page writes: every flag changes one key of `channel.messenger.requests`
  * and keeps the rest, so the CLI and the GUI never reset each other. Without a flag it only reports.
@@ -8,7 +8,7 @@
 import { _, fmt } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
-import { messengerProblem, requestSettings, type LotsePaths, type RequestSettings } from '@lotse/core';
+import { messengerProblem, requestSettings, type LotsmanPaths, type RequestSettings } from '@lotsman/core';
 import {
   formatEnvSpecs,
   formatServerSpecs,
@@ -121,9 +121,9 @@ export function messengerReport(file: string, settings: Settings, problem: strin
   return lines;
 }
 
-const command = (paths: LotsePaths): CommandModule => ({
+const command = (paths: LotsmanPaths): CommandModule => ({
   command: 'messenger',
-  describe: _('show or set the requests `lotse listen` takes from the chat'),
+  describe: _('show or set the requests `lotsman listen` takes from the chat'),
   builder: (yargs) =>
     yargs
       .option('requests', { type: 'string', describe: _('start an agent run for a chat message: on or off') })

@@ -1,10 +1,10 @@
 /**
- * `lotse agents` — the launchers, and whether their binary is there.
+ * `lotsman agents` — the launchers, and whether their binary is there.
  *
  * A small command with one job: make "not installed" and "broken" different sentences. Both look
  * identical from the outside until you know whether the binary exists, and the fix for each is
  * nothing alike. The SOURCE column says where a usable one came from — the person's own install
- * (`host`) or the copy shipped inside this build (`bundled`) — and the last line names the one lotse
+ * (`host`) or the copy shipped inside this build (`bundled`) — and the last line names the one lotsman
  * would start now.
  */
 
@@ -30,8 +30,8 @@ import {
   resolveAgent,
   type AgentCommand,
   type AgentDetection,
-  type LotsePaths,
-} from '@lotse/core';
+  type LotsmanPaths,
+} from '@lotsman/core';
 import {
   parseChoiceSpec,
   readSettings,
@@ -74,8 +74,8 @@ export function agentsReport(
   lines.push('');
   lines.push(
     chosen
-      ? `lotse would use: ${chosen.id} (${SOURCE_LABEL[chosen.source]}, ${chosen.path}${chosen.version ? `, ${chosen.version}` : ''})`
-      : `lotse would use: none — no agent is available — ${NO_AGENT_REMEDY}`,
+      ? `lotsman would use: ${chosen.id} (${SOURCE_LABEL[chosen.source]}, ${chosen.path}${chosen.version ? `, ${chosen.version}` : ''})`
+      : `lotsman would use: none — no agent is available — ${NO_AGENT_REMEDY}`,
   );
   return lines;
 }
@@ -104,7 +104,7 @@ async function confirm(question: string): Promise<boolean> {
  * program, so the person is asked first with its size; `--yes` is the explicit way to skip the question.
  * Returns the exit code.
  */
-async function installFromCatalog(paths: LotsePaths, id: string, yes: boolean): Promise<number> {
+async function installFromCatalog(paths: LotsmanPaths, id: string, yes: boolean): Promise<number> {
   const entry = BUNDLED_AGENTS.find((candidate) => candidate.id === id);
   if (!entry) {
     err(fmt(_('no agent called {id} in the catalog'), { id }));
@@ -146,9 +146,9 @@ async function installFromCatalog(paths: LotsePaths, id: string, yes: boolean): 
   }
 }
 
-const command = (paths: LotsePaths): CommandModule => ({
+const command = (paths: LotsmanPaths): CommandModule => ({
   command: 'agents',
-  describe: _('list the agent launchers lotse knows how to start'),
+  describe: _('list the agent launchers lotsman knows how to start'),
   builder: (yargs) =>
     yargs
       .option('use', {

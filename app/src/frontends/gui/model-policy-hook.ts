@@ -1,11 +1,11 @@
 /**
- * What `LOTSE_APP_MODEL_POLICY`'s list *means* — the one decision that turns a dev hook into the
- * host policy `LotseChat` takes.
+ * What `LOTSMAN_APP_MODEL_POLICY`'s list *means* — the one decision that turns a dev hook into the
+ * host policy `LotsmanChat` takes.
  *
  * **Its own file because the empty case is the default path of the whole app.** `hookList` answers an
  * unset variable with `[]`, and a predicate built from an empty list denies nothing — which reads
  * like "no rule" and is not one. A policy that is merely *present* makes a model nobody has reported
- * yet `unknown`, `modelBlock` fails closed on `unknown`, and lotse's own window then refused the
+ * yet `unknown`, `modelBlock` fails closed on `unknown`, and lotsman's own window then refused the
  * first turn of every ordinary run with "This model is not allowed here". The bug was invisible in
  * the policy's own tests, because those all pass a policy on purpose. So the mapping lives where it
  * can be run on both runtimes, with the empty list as its first case.
@@ -15,7 +15,7 @@
  * the host's own, over ids the host knows.
  */
 
-import { denyFreeHostedModels, type ModelPolicy } from '@lotse/core';
+import { denyFreeHostedModels, type ModelPolicy } from '@lotsman/core';
 
 /** The one word that reaches for the ready-made policy instead of naming ids. */
 const FREE = 'free';

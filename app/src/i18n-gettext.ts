@@ -7,17 +7,17 @@
  *
  * **Two domains, and this file binds both** ([ADR 0005](../../docs/adr/0005-two-gettext-domains.md)):
  *
- *   · `eu.jumplink.Lotse` — the window, the CLI and the notifications, i.e. everything under
+ *   · `eu.jumplink.Lotsman` — the window, the CLI and the notifications, i.e. everything under
  *     `app/src`. It becomes the process's *default* domain through `textdomain`, which is what
  *     GtkBuilder uses for every `translatable="yes"` string out of `window.blp` — there is no call
  *     site in that path where this app could pass a domain name.
- *   · `lotse` — the strings `@lotse/core` and `@lotse/widget` wrote. The widget binds this itself
+ *   · `lotsman` — the strings `@lotsman/core` and `@lotsman/widget` wrote. The widget binds this itself
  *     when it loads, for a host's sake; the CLI never loads the widget and still renders core's
  *     sentences, so the binding is repeated here. Registering twice is registering the same thing.
  *
  * **Not `@gjsify/adwaita-app`'s `initLocale`, although it does exactly this.** Its barrel imports
  * `Adw`, so the CLI bundle would grow GTK and libadwaita — and `main.ts`'s header records what that
- * costs: a `lotse sessions` over SSH loading a toolkit and dying. The GUI could have used it and the
+ * costs: a `lotsman sessions` over SSH loading a toolkit and dying. The GUI could have used it and the
  * CLI could not, and two surfaces binding their locale two different ways is the bug with two faces.
  *
  * **Call `initI18n()` once, before anything is built.** A label already realised keeps the string it
@@ -36,7 +36,7 @@ import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { LOTSE_TEXT_DOMAIN, setLibraryTranslator } from '@lotse/core';
+import { LOTSMAN_TEXT_DOMAIN, setLibraryTranslator } from '@lotsman/core';
 
 import { TEXT_DOMAIN, setAppTranslator } from './i18n.ts';
 
@@ -49,16 +49,16 @@ export function initI18n(): string | undefined {
   const dir = localeDir();
   if (dir !== undefined) {
     Gettext.bindtextdomain(TEXT_DOMAIN, dir);
-    Gettext.bindtextdomain(LOTSE_TEXT_DOMAIN, dir);
+    Gettext.bindtextdomain(LOTSMAN_TEXT_DOMAIN, dir);
   }
   // The default domain, for GtkBuilder. The library's stays a `dgettext` argument — binding it as
   // the default instead would translate the chat and leave the window around it English.
   Gettext.textdomain(TEXT_DOMAIN);
   setLibraryTranslator(
-    Object.assign((msgid: string) => Gettext.dgettext(LOTSE_TEXT_DOMAIN, msgid), {
+    Object.assign((msgid: string) => Gettext.dgettext(LOTSMAN_TEXT_DOMAIN, msgid), {
       plural: (singular: string, plural: string, n: number) =>
-        Gettext.dngettext(LOTSE_TEXT_DOMAIN, singular, plural, n),
-      context: (context: string, msgid: string) => Gettext.dpgettext(LOTSE_TEXT_DOMAIN, context, msgid),
+        Gettext.dngettext(LOTSMAN_TEXT_DOMAIN, singular, plural, n),
+      context: (context: string, msgid: string) => Gettext.dpgettext(LOTSMAN_TEXT_DOMAIN, context, msgid),
     }),
   );
   setAppTranslator(
@@ -95,7 +95,7 @@ function localeDir(): string | undefined {
 function devLocaleDir(): string | undefined {
   const fileUrl = import.meta.url;
   if (!fileUrl.startsWith('file:') || !fileUrl.includes('/dist/')) return undefined;
-  // bundled: app/dist/lotse.gjs.mjs or app/dist/lotse-app.gjs.mjs → app/dist/locale
+  // bundled: app/dist/lotsman.gjs.mjs or app/dist/lotsman-app.gjs.mjs → app/dist/locale
   const dir = join(dirname(fileURLToPath(fileUrl)), 'locale');
   return existsSync(dir) ? dir : undefined;
 }

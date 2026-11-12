@@ -1,10 +1,10 @@
 {
-  "name": "lotse-cli",
+  "name": "lotsman-cli",
   "version": "0.5.0",
   "license": "AGPL-3.0-or-later",
   "private": true,
   "type": "module",
-  "description": "Lotse app: the `lotse` binary \u2014 a CLI over @lotse/acp and @lotse/session, bundled to a single .gjs.mjs and run on GJS via gjsify.",
+  "description": "Lotsman app: the `lotsman` binary \u2014 a CLI over @lotsman/acp and @lotsman/session, bundled to a single .gjs.mjs and run on GJS via gjsify.",
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts"
@@ -19,11 +19,11 @@
     "lint": "gjsify lint .",
     "lint:fix": "gjsify lint --fix .",
     "build": "gjsify run i18n:compile && gjsify run build:gjs",
-    "build:gjs": "gjsify build src/index.ts --app gjs --outfile dist/lotse.gjs.mjs",
-    "build:app": "gjsify run i18n:compile && gjsify build src/frontends/gui/main.ts --app gjs --outfile dist/lotse-app.gjs.mjs",
-    "build:app:node": "gjsify build src/frontends/gui/main.ts --app node --outfile dist/lotse-app.node.mjs",
-    "start": "gjsify run dist/lotse.gjs.mjs",
-    "start:app": "gjsify run dist/lotse-app.gjs.mjs",
+    "build:gjs": "gjsify build src/index.ts --app gjs --outfile dist/lotsman.gjs.mjs",
+    "build:app": "gjsify run i18n:compile && gjsify build src/frontends/gui/main.ts --app gjs --outfile dist/lotsman-app.gjs.mjs",
+    "build:app:node": "gjsify build src/frontends/gui/main.ts --app node --outfile dist/lotsman-app.node.mjs",
+    "start": "gjsify run dist/lotsman.gjs.mjs",
+    "start:app": "gjsify run dist/lotsman-app.gjs.mjs",
     "dev": "gjsify run build:gjs && gjsify run start",
     "dev:app": "gjsify run build:app && gjsify run start:app",
     "test": "gjsify test",
@@ -41,21 +41,21 @@
       ]
     },
     "ship": {
-      "appId": "eu.jumplink.Lotse",
-      "binaryName": "lotse-app",
+      "appId": "eu.jumplink.Lotsman",
+      "binaryName": "lotsman-app",
       "kind": "app",
-      "name": "Lotse",
+      "name": "Lotsman",
       "bundle": {
-        "linux": "dist/lotse-app.gjs.mjs",
-        "darwin": "dist/lotse-app.node.mjs",
-        "win32": "dist/lotse-app.node.mjs"
+        "linux": "dist/lotsman-app.gjs.mjs",
+        "darwin": "dist/lotsman-app.node.mjs",
+        "win32": "dist/lotsman-app.node.mjs"
       },
       "app": {
         "darwin": "node",
         "win32": "node"
       },
       "localeDir": "dist/locale",
-      "icon": "../data/icons/hicolor/scalable/apps/eu.jumplink.Lotse.svg",
+      "icon": "../data/icons/hicolor/scalable/apps/eu.jumplink.Lotsman.svg",
       "categories": [
         "Development",
         "GTK"
@@ -78,10 +78,10 @@
       "license": {
         "project": "AGPL-3.0-or-later"
       },
-      "description": "Lotse is a client for the Agent Client Protocol (ACP). It starts an agent such as OpenCode as a subprocess, keeps the conversation, and shows what the agent says while it works. The agent and the model behind it are not part of Lotse.",
-      "homepageUrl": "https://github.com/JumpLink/lotse",
-      "bugtrackerUrl": "https://github.com/JumpLink/lotse/issues",
-      "vcsBrowserUrl": "https://github.com/JumpLink/lotse",
+      "description": "Lotsman is a client for the Agent Client Protocol (ACP). It starts an agent such as OpenCode as a subprocess, keeps the conversation, and shows what the agent says while it works. The agent and the model behind it are not part of Lotsman.",
+      "homepageUrl": "https://github.com/JumpLink/lotsman",
+      "bugtrackerUrl": "https://github.com/JumpLink/lotsman/issues",
+      "vcsBrowserUrl": "https://github.com/JumpLink/lotsman",
       "flatpak": {
         "finishArgs": [
           "--device=dri",
@@ -96,10 +96,10 @@
     }
   },
   "dependencies": {
-    "@lotse/acp": "^0.5.0",
-    "@lotse/core": "^0.5.0",
-    "@lotse/session": "^0.5.0",
-    "@lotse/widget": "^0.5.0",
+    "@lotsman/acp": "^0.5.0",
+    "@lotsman/core": "^0.5.0",
+    "@lotsman/session": "^0.5.0",
+    "@lotsman/widget": "^0.5.0",
     "yargs": "^18.1.0"
   },
   "devDependencies": {

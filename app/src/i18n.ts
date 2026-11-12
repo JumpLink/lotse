@@ -6,10 +6,10 @@
  * [ADR 0005](../../docs/adr/0005-two-gettext-domains.md) records the two domains.
  */
 
-import { fmt as coreFmt } from '@lotse/core';
+import { fmt as coreFmt } from '@lotsman/core';
 
 /** The app's gettext domain: the literal application id, not `APP_ID` (a devtools instance may override that). */
-export const TEXT_DOMAIN = 'eu.jumplink.Lotse';
+export const TEXT_DOMAIN = 'eu.jumplink.Lotsman';
 
 export interface AppTranslator {
   (msgid: string): string;
@@ -43,5 +43,5 @@ export function _p(context: string, msgid: string): string {
   return translate.context(context, msgid);
 }
 
-/** Fill `{name}` placeholders in an already translated string. `@lotse/core`'s `fmt`, re-exported. */
+/** Fill `{name}` placeholders in an already translated string. `@lotsman/core`'s `fmt`, re-exported. */
 export const fmt = coreFmt;

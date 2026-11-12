@@ -1,19 +1,19 @@
-# 4. A headless job API in `@lotse/core`
+# 4. A headless job API in `@lotsman/core`
 
 - Status: **Accepted**
 - Date: 2026-10-11
 - Deciders: Pascal Garber
-- Related: [ADR 0001](0001-lotse-as-an-embeddable-widget.md) (its open question),
+- Related: [ADR 0001](0001-lotsman-as-an-embeddable-widget.md) (its open question),
   [ADR 0003](0003-serve-tasks-questions-channel.md) (the runner this borrows from),
-  [Steuererklärung ADR 0002](https://github.com/JumpLink/steuererklaerung/blob/main/docs/adr/0002-all-ai-through-lotse-and-opencode.md)
+  [Steuererklärung ADR 0002](https://github.com/JumpLink/steuererklaerung/blob/main/docs/adr/0002-all-ai-through-lotsman-and-opencode.md)
   (the first consumer), issue #46
 
 ## Context
 
 ADR 0001 leaves one question open: one-shot AI jobs (receipt extraction, document
 classification, metadata review) are not a chat, so a chat widget does not cover them. The
-Steuererklärung has since decided that every AI feature goes through lotse: its one-shot jobs
-run "through lotse's headless job API against the same agent, data directory and login as the
+Steuererklärung has since decided that every AI feature goes through lotsman: its one-shot jobs
+run "through lotsman's headless job API against the same agent, data directory and login as the
 widget", with deny-all permissions, a model allow-list and output it validates itself. It names
 `opencode serve` structured output (`json_schema`) as the transport, and ACP with a result-sink
 tool as the fallback.
@@ -27,22 +27,22 @@ alike.
 
 ## Decision
 
-1. **One function, no widget, no state of its own.** `@lotse/core` exports
+1. **One function, no widget, no state of its own.** `@lotsman/core` exports
    `runJob<T>(options): Promise<JobResult<T>>`. The options are `command` (an `AgentCommand`, the
    same the widget gets, so the same agent, `HOME`/`XDG_*` and login), `cwd`, `prompt`,
    `parse: (value: unknown) => T`, `modelPolicy`, and optionally `model`, `schema`, `mcpServers`,
    `gate`, `signal`, `timeoutMs`, `onLog` and `open`. It imports nothing from `gi://` and
-   nothing from `@lotse/widget`. The result is `{value, sessionId, model, stopReason}`.
+   nothing from `@lotsman/widget`. The result is `{value, sessionId, model, stopReason}`.
 
    *Weighed:* a `Job` class with events, as `AgentSession` has. Rejected: a job has no turns to
    show and nobody watching, and `AgentSession`'s state machine exists for a composer. A single
    awaited call is what the consumer's `LLMProvider` port already looks like.
-2. **The result is the final message, parsed as JSON and validated by the host.** lotse reads the
+2. **The result is the final message, parsed as JSON and validated by the host.** lotsman reads the
    agent's message text after `end_turn`. It accepts exactly two shapes: the whole trimmed
    message is one JSON value, or the message's last ```` ```json ```` fenced block is. Nothing
    else is searched for: no brace hunting, no "repair". The parsed value goes through the host's
-   `parse`, which throws on a mismatch (a Zod `schema.parse` fits as is; lotse does not depend on
-   Zod). When the host passes `schema` (a JSON Schema object), lotse appends one fixed instruction
+   `parse`, which throws on a mismatch (a Zod `schema.parse` fits as is; lotsman does not depend on
+   Zod). When the host passes `schema` (a JSON Schema object), lotsman appends one fixed instruction
    with it to the prompt; validation is still `parse`'s job.
 
    *Decided:* final text over `opencode serve` `json_schema`. One protocol serves every ACP
@@ -52,7 +52,7 @@ alike.
 
    *Weighed:* `opencode serve` `json_schema` gives the strongest guarantee, but it is a second
    protocol to one agent, it bypasses the ACP permission gate and the model gate, and it ties the
-   job API to opencode. A result-sink MCP tool makes the model fill typed arguments, but lotse
+   job API to opencode. A result-sink MCP tool makes the model fill typed arguments, but lotsman
    would have to host an MCP server for every job. If a probe on real receipts shows final text
    is unreliable, the result-sink tool is added behind the same `parse` without changing the
    signature.
@@ -61,25 +61,25 @@ alike.
    `'unknown-model'` (the model gate), `'auth'`, `'refused'` (the turn did not end with
    `end_turn`, a permission was declined, or the agent stopped), `'timeout'`, `'cancelled'`,
    `'agent'` (the process failed). There is no automatic retry: a retry is another model call
-   with private input, and that is the host's decision. The error `message` is lotse's own
+   with private input, and that is the host's decision. The error `message` is lotsman's own
    sentence and never contains the prompt or the answer; the raw answer is on the error as
-   `output` for the host to inspect, and lotse never prints it.
-4. **No transcript and no persistence in lotse.** A job opens a fresh agent, a fresh ACP
+   `output` for the host to inspect, and lotsman never prints it.
+4. **No transcript and no persistence in lotsman.** A job opens a fresh agent, a fresh ACP
    session (`session/new`), runs one turn and closes. It writes no session record, no log file
    and no state; `AgentSession` and the transcript store are not involved. The agent itself may
    keep its session under the host's data directory (opencode does), which is the host's data
    directory and the host's backup, as ADR 0001 already says for the chat.
 5. **The model gate is mandatory and checked before the prompt.** `modelPolicy` is a required
    option, decided so: a host that wants no restriction passes `() => 'allow'` and says so in its own code.
-   When `model` is given, lotse selects it through the session's model config option, as `serve`
+   When `model` is given, lotsman selects it through the session's model config option, as `serve`
    does, and fails `'unknown-model'` if the agent does not offer it. Then `modelBlock` decides on
    the agent's reported current value, and both causes (`'denied'` and `'unknown'`) refuse: no
-   prompt goes to a model nobody named. lotse never picks a model on its own.
+   prompt goes to a model nobody named. lotsman never picks a model on its own.
 6. **Permissions fail closed; nobody is asked.** The default gate is `DENY_EVERYTHING`. A host
    may pass a `PermissionGate` that allows a narrow set (its own read-only MCP tool, say);
    there is no question, no dialog and no `*_always` option. File system and terminal requests
    are refused. `mcpServers` default to `[]` and go unchanged into `session/new`.
-7. **Cancellation is an `AbortSignal`; a timeout is an abort.** On abort lotse sends
+7. **Cancellation is an `AbortSignal`; a timeout is an abort.** On abort lotsman sends
    `session/cancel`, waits a short grace for the turn to settle, then closes the agent; the job
    rejects `'cancelled'`. `timeoutMs` (default 120 s, host-overridable, covering the handshake, `session/new` and
    the turn) aborts the same way and rejects `'timeout'`. The agent process is closed in a
@@ -87,11 +87,11 @@ alike.
    leaves no orphan.
 8. **One agent process per job.** Jobs share nothing: a crash, a hung turn or a cancel touches
    one job only, and the close is exact. The cost is the agent's cold start per job. The `open`
-   seam stays injectable, so a pooled opener can come later without a signature change; lotse
+   seam stays injectable, so a pooled opener can come later without a signature change; lotsman
    sets no concurrency limit, the host does. A pooled or shared agent comes only after the
    bundled opencode's start time is measured and only if Steuererklärung batches suffer
-   ([#55](https://github.com/JumpLink/lotse/issues/55)).
-9. **Job input is private by default.** lotse logs ids and kinds only, as `serve.log` does: never
+   ([#55](https://github.com/JumpLink/lotsman/issues/55)).
+9. **Job input is private by default.** lotsman logs ids and kinds only, as `serve.log` does: never
    the prompt, the answer, a `parse` error's text or a tool's arguments. Agent stderr reaches
    `onLog` only if the host passes one. No error message carries input.
 

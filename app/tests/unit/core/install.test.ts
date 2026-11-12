@@ -20,7 +20,7 @@ import {
   installedPath,
   isInstalled,
   type BundledAgent,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 const BYTES = new TextEncoder().encode('pretend this is a tarball');
 const SHA = createHash('sha256').update(BYTES).digest('hex');
@@ -59,7 +59,7 @@ const unpackBinary = (binary: string) => async (_archive: string, into: string) 
 const LINUX = { platform: 'linux' as const, arch: 'x64' };
 
 async function withDataDir(run: (dir: string) => Promise<void>): Promise<void> {
-  const dir = mkdtempSync(join(tmpdir(), 'lotse-install-'));
+  const dir = mkdtempSync(join(tmpdir(), 'lotsman-install-'));
   try {
     await run(dir);
   } finally {

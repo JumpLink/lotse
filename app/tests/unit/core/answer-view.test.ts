@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from '@gjsify/unit';
 
-import type { Question } from '@lotse/core';
+import type { Question } from '@lotsman/core';
 
 import { answerView, describeExpiry, timeLeft } from '../../../src/core/answer-view.ts';
 
@@ -96,7 +96,7 @@ export default async () => {
       expect(view.closed).toBe('#A1 has expired; nothing waits for an answer any more.');
     });
 
-    await it('an unknown id is named the way lotse questions names it', async () => {
+    await it('an unknown id is named the way lotsman questions names it', async () => {
       const view = answerView(null, '#a9', NOW);
       expect(view.title).toBe('Question #A9');
       expect(view.closed?.startsWith('There is no question #A9.')).toBe(true);

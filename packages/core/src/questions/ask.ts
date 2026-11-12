@@ -95,8 +95,8 @@ export function newQuestion(
 export function howToAnswer(question: Question): string {
   const id = question.id;
   return question.kind === 'permission'
-    ? `Answer: lotse answer ${id} yes|no — expires ${question.expiresAt}`
-    : `Answer: lotse answer ${id} <text> — expires ${question.expiresAt}`;
+    ? `Answer: lotsman answer ${id} yes|no — expires ${question.expiresAt}`
+    : `Answer: lotsman answer ${id} <text> — expires ${question.expiresAt}`;
 }
 
 export async function notify(
@@ -107,7 +107,7 @@ export async function notify(
 ): Promise<void> {
   try {
     await deps.channel.send(user, {
-      title: `lotse · ${question.task} · ${formatQuestionId(question.id)}`,
+      title: `lotsman · ${question.task} · ${formatQuestionId(question.id)}`,
       body: `${shown}\n\n${howToAnswer(question)}`,
       questionId: question.id,
       task: question.task,
@@ -116,7 +116,7 @@ export async function notify(
       expiresAt: question.expiresAt,
     });
   } catch (error) {
-    // The question is in the store and `lotse questions` lists it; a channel that failed is logged.
+    // The question is in the store and `lotsman questions` lists it; a channel that failed is logged.
     deps.log?.({
       event: 'error',
       task: question.task,
@@ -182,7 +182,7 @@ export async function ask(
       });
       deps.log?.({ event: 'expired', task: task.id, detail: { question: current.id } });
       await deps.channel.send(user, {
-        title: `lotse · ${task.id} · ${formatQuestionId(current.id)} expired`,
+        title: `lotsman · ${task.id} · ${formatQuestionId(current.id)} expired`,
         body: 'Nobody answered in time, so the request was cancelled.',
         questionId: current.id,
         task: task.id,
@@ -196,7 +196,7 @@ export async function ask(
 /**
  * `person_needed`: one `person` question, then a poll like `ask`'s. The code, if one comes, is read from
  * the in-memory `waiting` map and returned to the agent; nothing here logs or stores it. On no reply in
- * time the question stays open as `deferred` — the open item `lotse questions` lists — and the call
+ * time the question stays open as `deferred` — the open item `lotsman questions` lists — and the call
  * returns `timeout`.
  */
 export async function personNeeded(

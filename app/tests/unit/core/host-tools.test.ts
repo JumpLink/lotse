@@ -1,7 +1,7 @@
 /**
  * The two host rules about a tool call, tested without a window — `host-tools.ts`.
  *
- * **The negative guarantee is what these cases are for.** "lotse never approves a host-confirmed tool
+ * **The negative guarantee is what these cases are for.** "lotsman never approves a host-confirmed tool
  * through `session/request_permission`" and "an always-allow under a session scope is never handed to
  * the agent and never written down" are both sentences about something that must *not* happen, and
  * neither is visible in a screenshot: a dialog that was not shown looks like a dialog nobody opened,
@@ -27,9 +27,9 @@ import {
   toolRefOf,
   type HostToolPolicy,
   type PermissionView,
-} from '@lotse/core';
+} from '@lotsman/core';
 
-import type { PermissionOption, RequestPermissionRequest } from '@lotse/acp/types';
+import type { PermissionOption, RequestPermissionRequest } from '@lotsman/acp/types';
 
 const ALL_FOUR: PermissionOption[] = [
   { optionId: 'ao', name: 'Allow once', kind: 'allow_once' },
@@ -137,7 +137,7 @@ export default async () => {
   describe('host-tools: the tool the host confirms itself', () => {
     const policy: HostToolPolicy = { hostConfirmed: [{ name: 'elster_submit' }] };
 
-    it('goes to the host and never to lotse’s dialog', () => {
+    it('goes to the host and never to lotsman’s dialog', () => {
       const gate = toolGate({
         view: permissionView(mcpRequest('steuererklaerung.elster_submit')),
         ref: toolRefOf(mcpRequest('steuererklaerung.elster_submit')),
@@ -230,7 +230,7 @@ export default async () => {
         { optionId: 'aa', name: 'Always allow', kind: 'allow_always' },
         { optionId: 'ro', name: 'Decline', kind: 'reject_once' },
       ];
-      // Withdrawn rather than shown as a promise lotse would have to hand to the agent to keep.
+      // Withdrawn rather than shown as a promise lotsman would have to hand to the agent to keep.
       expect(scopedOptions(noOnce, 'session').map((option) => option.optionId)).toStrictEqual(['ro']);
     });
 
@@ -325,7 +325,7 @@ export default async () => {
       expect(grants.sessions).toBe(0);
     });
 
-    it('is lotse’s own behaviour with no policy at all', () => {
+    it('is lotsman’s own behaviour with no policy at all', () => {
       const call = request();
       const gate = toolGate({ view: permissionView(call), ref: toolRefOf(call), sessionId: 's1' });
       expect(gate.type).toBe('ask');

@@ -2,7 +2,7 @@
  * The messenger as a `QuestionChannel`: a question goes to the person as one chat message, through the
  * configured MCP server's send tool. The answers come back through `receive.ts`.
  *
- * The message carries the question id in its first line ("lotse · task · #A3") and says how to reply,
+ * The message carries the question id in its first line ("lotsman · task · #A3") and says how to reply,
  * because the person answers in the chat and the id is how the reply finds its question.
  */
 
@@ -73,7 +73,7 @@ function originIdsOf(result: unknown): string[] {
 /**
  * Send `text` (Markdown) to the configured peer in one call. A server that meets the contract renders it
  * for its protocol, splits it and turns image lines into image messages (`format: "markdown"`); an older
- * one gets the same text as it is, unrendered (`contract.ts`). Lotse cuts and styles nothing itself.
+ * one gets the same text as it is, unrendered (`contract.ts`). Lotsman cuts and styles nothing itself.
  * The result is every message id the server reports, for replies to any part of the text.
  */
 export async function sendToPeerWithIds(
@@ -224,7 +224,7 @@ export function combineChannels(
  * message waits and where to read it. What the messenger gets for a profile with `messengerDetail: "notice"`.
  */
 export function noticeOf(message: QuestionMessage): QuestionMessage {
-  const task = message.task ?? 'lotse';
+  const task = message.task ?? 'lotsman';
   const body = message.asks ? msg(STRINGS.noticeQuestion, { task }) : msg(STRINGS.noticeMessage, { task });
   return {
     title: message.title,

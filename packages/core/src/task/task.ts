@@ -1,9 +1,9 @@
 /**
- * A task as `listen` and `lotse run` run it: what to say, where, with which tools and how much it may
+ * A task as `listen` and `lotsman run` run it: what to say, where, with which tools and how much it may
  * do. It comes from a `tasks/<id>/SKILL.md` (`skill.ts`) bound to a profile; there is no task file.
  */
 
-import type { McpServer } from '@lotse/acp';
+import type { McpServer } from '@lotsman/acp';
 
 /**
  * The three rights levels (ADR 0002 §6). `read` declines every permission request without asking,

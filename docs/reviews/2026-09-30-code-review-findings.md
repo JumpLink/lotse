@@ -1,4 +1,4 @@
-# lotse — Code Review Findings
+# lotsman — Code Review Findings
 
 > **Status as of 2026-10-03.** The body below is the review **as it was written on 2026-09-30**
 > against `main` and is kept unedited, because a review that gets rewritten is no longer a record of
@@ -31,7 +31,7 @@
 > unfixable, and it is what the abandoned `wip/stdio-close-gate` branch was built on.
 >
 > **Per finding, re-checked against `main` on 2026-10-10.** "Core" marks what blocks or shapes the
-> `@lotse/core` extraction.
+> `@lotsman/core` extraction.
 >
 > | #   | Finding                                          | Status                                                     | Core |
 > | --- | ------------------------------------------------ | ---------------------------------------------------------- | ---- |
@@ -50,7 +50,7 @@
 > | 13  | check-schema misses auth/capability shapes       | partly — `AuthMethodInfo`, `SessionCapabilities` checked   |      |
 > | 14  | `session/update` variants unchecked              | fixed                                                      |      |
 > | 15  | TS-stricter fields only noted                    | open                                                       |      |
-> | 16  | "lotse never parses" stderr comment             | partly — new line added, old one still duplicated above it |      |
+> | 16  | "lotsman never parses" stderr comment             | partly — new line added, old one still duplicated above it |      |
 > | 17  | `AuthMethodInfo.kind` "a guess"                  | open                                                       |      |
 > | 18  | `#send` throws, `#write` closes                  | fixed — every failed write closes; split documented        | yes  |
 > | 19  | `ClosedTransport.onClose` fires in a microtask   | fixed — listener called synchronously                      | yes  |
@@ -141,7 +141,7 @@ Evidence:
     process.once('SIGINT', interrupt);
   }
 ```
-Breaks when: `lotse start` is run with piped stdin (not a TTY). The `processTerminal()` returns `interactive: false`, but `runTurn` still registers the `SIGINT` handler. If the parent shell sends `SIGINT` to the process group, the handler fires and cancels the turn — but the gate would have already declined everything. Worse, if the process is in a pipeline, `SIGINT` behavior is platform-dependent.
+Breaks when: `lotsman start` is run with piped stdin (not a TTY). The `processTerminal()` returns `interactive: false`, but `runTurn` still registers the `SIGINT` handler. If the parent shell sends `SIGINT` to the process group, the handler fires and cancels the turn — but the gate would have already declined everything. Worse, if the process is in a pipeline, `SIGINT` behavior is platform-dependent.
 Fix shape: Only register `SIGINT` when `terminal.interactive === true`, or document that `onInterrupt` is only called on TTY.
 
 ### `app/src/frontends/cli/auth.ts:142-149` — `runInteractively` doesn't distinguish spawn failure from exit code
@@ -190,7 +190,7 @@ export interface AgentAuthCapabilities extends Extensible {
   logout?: LogoutCapabilities | null;
 }
 ```
-Breaks when: These types exist but `LOTSE_CLIENT_CAPABILITIES` in `gate.ts` only sets `auth: { terminal: false }` and never uses `logout`. The schema defines `auth.logout` but lotse never sends or handles it. Not a bug, but dead code that adds cognitive load.
+Breaks when: These types exist but `LOTSMAN_CLIENT_CAPABILITIES` in `gate.ts` only sets `auth: { terminal: false }` and never uses `logout`. The schema defines `auth.logout` but lotsman never sends or handles it. Not a bug, but dead code that adds cognitive load.
 Fix shape: Remove if not planned for Slice 1, or add a comment linking to the slice where they'll be used.
 
 ### `app/src/core/transcript.ts:57-61` — Two `session/update` kinds explicitly ignored
@@ -218,7 +218,7 @@ Evidence:
     options.onNotice?.(describeAuth(auth.agent, auth.terminal));
   }
 ```
-Breaks when: `classifyAuthMethods` and `describeAuth` are protocol-knowledge that belongs in `@lotse/acp`. The app should not know that `authMethods` splits into `terminal` vs `agent` kinds — that's the gate's job. The `gate.ts` already exports `classifyAuthMethods`; the app re-imports it.
+Breaks when: `classifyAuthMethods` and `describeAuth` are protocol-knowledge that belongs in `@lotsman/acp`. The app should not know that `authMethods` splits into `terminal` vs `agent` kinds — that's the gate's job. The `gate.ts` already exports `classifyAuthMethods`; the app re-imports it.
 Fix shape: Move `describeAuth` to `gate.ts` (or a new `auth.ts` in acp), or make `AcpClient.initialize` return the classified auth info.
 
 ### `app/src/frontends/cli/auth.ts:79-98` — Auth flow logic duplicates `gate.ts` classification
@@ -268,23 +268,23 @@ for (const field of ts.required) {
   }
 }
 ```
-Breaks when: A field is required in TypeScript (e.g., `NewSessionRequest.cwd`) but optional in the schema. The check reports it as a note, not a failure. This means a client that omits the field would be valid per schema but rejected by lotse's types — a client that *accepts* such a request would be more permissive than lotse.
-Fix shape: Decide if this is acceptable (it's documented as intentional) or make it a failure. The comment says "some fields are required by lotse's own use" — but that's a client-side requirement, not a wire requirement.
+Breaks when: A field is required in TypeScript (e.g., `NewSessionRequest.cwd`) but optional in the schema. The check reports it as a note, not a failure. This means a client that omits the field would be valid per schema but rejected by lotsman's types — a client that *accepts* such a request would be more permissive than lotsman.
+Fix shape: Decide if this is acceptable (it's documented as intentional) or make it a failure. The comment says "some fields are required by lotsman's own use" — but that's a client-side requirement, not a wire requirement.
 
 ---
 
 ## 6. Comments That Lie / Mislead
 
-### `app/src/core/agents/stdio.ts:49-50` — Claims "lotse never parses" stderr, but CLI prints it
+### `app/src/core/agents/stdio.ts:49-50` — Claims "lotsman never parses" stderr, but CLI prints it
 ```
 Evidence:
-/** Lines the agent writes to stderr. ACP says stderr is for logs; lotse never parses it. */
+/** Lines the agent writes to stderr. ACP says stderr is for logs; lotsman never parses it. */
 onStderr?: (line: string) => void;
 ```
-Breaks when: A reader assumes stderr is completely opaque. In `auth.ts:72-74` and `start.ts:82-84`, stderr lines are prefixed with `[agent] ` and printed to lotse's stderr. "Never parses" is technically true (no JSON parsing), but "never looks at" is false.
-Fix shape: Change to "lotse does not parse stderr as protocol messages; it may forward lines for display".
+Breaks when: A reader assumes stderr is completely opaque. In `auth.ts:72-74` and `start.ts:82-84`, stderr lines are prefixed with `[agent] ` and printed to lotsman's stderr. "Never parses" is technically true (no JSON parsing), but "never looks at" is false.
+Fix shape: Change to "lotsman does not parse stderr as protocol messages; it may forward lines for display".
 
-### `packages/acp/src/types.ts:98-109` — `AuthMethodInfo.kind` described as "what lotse reads" but it's a guess
+### `packages/acp/src/types.ts:98-109` — `AuthMethodInfo.kind` described as "what lotsman reads" but it's a guess
 ```
 Evidence:
 /** `terminal` when the agent advertises the tag, `agent` otherwise. A guess, deliberately. */
@@ -343,7 +343,7 @@ Fix shape: Document the microtask timing, or make `onClose` synchronous for `Clo
 - No code path auto-allows
 
 ### Guardrail 3: `fs/read_text_file` and `fs/write_text_file` refused — **HOLDS**
-- `gate.ts:38-40` `LOTSE_CLIENT_CAPABILITIES.fs = { readTextFile: false, writeTextFile: false }`
+- `gate.ts:38-40` `LOTSMAN_CLIENT_CAPABILITIES.fs = { readTextFile: false, writeTextFile: false }`
 - `client.ts:471-477` `#onAgentRequest` responds with `METHOD_NOT_FOUND` + `FileSystemRefusedError` for both
 
 ### Guardrail 4: `_meta` passed through, never parsed — **HOLDS**
@@ -353,7 +353,7 @@ Fix shape: Document the microtask timing, or make `onClose` synchronous for `Clo
 - `client.ts:481-490` Unknown agent methods get `METHOD_NOT_FOUND` (correct JSON-RPC behavior)
 
 ### Architectural Rule: `packages/acp` no `node:child_process`, `gi://`, etc. — **HOLDS**
-- Verified all imports in `packages/acp/src/*.ts` — only internal and `@lotse/acp` imports
+- Verified all imports in `packages/acp/src/*.ts` — only internal and `@lotsman/acp` imports
 - `transport.ts` defines `Transport` interface and `channelTransport` adapter
 - Actual subprocess code is in `app/src/core/agents/stdio.ts` which imports `node:child_process`
 
@@ -379,7 +379,7 @@ Evidence:
 Unverified: The error message includes the method name, which is excellent. But if `reason` is a `ProtocolError` from a parse failure, the cause chain might be deep. No test visible for this path.
 
 ### `scripts/check-schema.mjs` — Whether it runs in CI
-Unverified: The script exists and is documented in AGENTS.md, but no `.github/workflows` visible in the lotse submodule. Need to check if the parent werkstatt CI runs it.
+Unverified: The script exists and is documented in AGENTS.md, but no `.github/workflows` visible in the lotsman submodule. Need to check if the parent werkstatt CI runs it.
 
 ---
 

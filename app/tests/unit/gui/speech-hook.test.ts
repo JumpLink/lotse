@@ -1,8 +1,8 @@
 /**
- * `frontends/gui/speech-hook.ts` — what `LOTSE_APP_SPEECH` stands in for.
+ * `frontends/gui/speech-hook.ts` — what `LOTSMAN_APP_SPEECH` stands in for.
  *
  * **The off case is the one that matters**, for `model-policy-hook.test.ts`'s reason: every ordinary
- * run takes it, and `undefined` is what makes `LotseChat` offer no Conversation toggle at all. An
+ * run takes it, and `undefined` is what makes `LotsmanChat` offer no Conversation toggle at all. An
  * engine that merely exists and says nothing would show the toggle in a window with no speech.
  *
  * The second case pins the promise the file's name makes: the stand-in records and prints, and there

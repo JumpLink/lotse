@@ -8,7 +8,7 @@
  * - Plain text with several open → ambiguous: nothing is answered and the person is asked to name one.
  *
  * **A bare `A3` or `#A3` followed by words is an id; `a3` inside a sentence is not.** The id is read only
- * at the start, and without `#` only in lotse's own spelling (`A` and digits), so "A4 paper please" is
+ * at the start, and without `#` only in lotsman's own spelling (`A` and digits), so "A4 paper please" is
  * the one spelling that reads as an id when it was meant as text — a reply that opens with an id-looking
  * word is the price of not asking for `#` every time. The question it would name is then reported as
  * unknown or answered, never silently applied somewhere else.

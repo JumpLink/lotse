@@ -1,7 +1,7 @@
 /**
  * The answer window: one question, a place to type, Send and Later (`core/answer-dialog.ts`).
  *
- * **It answers nothing itself.** Send writes `answerFrame(text)` to stdout and quits; the caller (`lotse
+ * **It answers nothing itself.** Send writes `answerFrame(text)` to stdout and quits; the caller (`lotsman
  * answer`, or `listen` after a click) hands the text to `answerQuestion`. Later — the button, Esc, closing
  * the window — quits without a frame. What is shown is `core/answer-view.ts`.
  *
@@ -20,7 +20,7 @@ import Gtk from '@girs/gtk-4.0';
 import Pango from '@girs/pango-1.0';
 import { AdwaitaApp, runApplication } from '@gjsify/adwaita-app';
 
-import { findQuestions, normalizeQuestionId, type Question } from '@lotse/core';
+import { findQuestions, normalizeQuestionId, type Question } from '@lotsman/core';
 
 import { answerFrame } from '../../core/answer-dialog.ts';
 import { answerView, type AnswerView } from '../../core/answer-view.ts';
@@ -34,7 +34,7 @@ function readQuestion(idText: string): Question | null {
   const book = questionBook(
     listenPaths().stateDir,
     () => new Date(),
-    (problem) => console.error(`lotse: ${problem}`),
+    (problem) => console.error(`lotsman: ${problem}`),
   );
   // Several users sharing an id is refused by `answerQuestion`; the window does not guess either.
   const found = findQuestions(book.read(), id);
@@ -199,5 +199,5 @@ export function runAnswerWindow(id: string): Promise<number> {
         application.quit();
       }),
   });
-  return runApplication(app, ['lotse-app']);
+  return runApplication(app, ['lotsman-app']);
 }

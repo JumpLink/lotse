@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@gjsify/unit';
 
-import { _, _n, fmt, setLibraryTranslator } from '@lotse/core';
+import { _, _n, fmt, setLibraryTranslator } from '@lotsman/core';
 
 export default async () => {
   await describe('i18n (core, runs on Node and GJS)', async () => {

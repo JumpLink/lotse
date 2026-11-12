@@ -10,7 +10,7 @@ import {
   type AcpClient,
   type McpServer,
   type SessionConfigOption,
-} from '@lotse/acp';
+} from '@lotsman/acp';
 
 import { projectConfigOptions } from '../config.ts';
 import { applyConfigOptions } from '../profile/apply.ts';

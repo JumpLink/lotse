@@ -7,7 +7,7 @@ import {
   resumePending,
   toggleMcpServer,
   type McpServer,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 const SERVERS: McpServer[] = [
   { name: 'steuer', command: '/app/bin/steuer', args: ['mcp'], env: [] },

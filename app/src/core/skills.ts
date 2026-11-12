@@ -6,7 +6,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { isId, parseSkillTask, TaskFileError, type SkillTask } from '@lotse/core';
+import { isId, parseSkillTask, TaskFileError, type SkillTask } from '@lotsman/core';
 
 /** One task's SKILL.md, or `null` when there is no such directory. Throws `TaskFileError`. */
 export function readSkill(tasksDir: string, id: string): SkillTask | null {
@@ -16,7 +16,7 @@ export function readSkill(tasksDir: string, id: string): SkillTask | null {
   return parseSkillTask(id, readFileSync(file, 'utf8'), { cwd: join(tasksDir, id) });
 }
 
-/** What `lotse tasks` shows for one task. */
+/** What `lotsman tasks` shows for one task. */
 export interface TaskEntry {
   readonly id: string;
   readonly description: string;

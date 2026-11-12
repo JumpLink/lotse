@@ -3,13 +3,13 @@
  *
  * A reply is written for the eye: code blocks, tables, link targets, emphasis marks, emoji. Read aloud
  * they are noise or worse, so `speakableText` keeps what a person would say and drops the rest. It does
- * **not** spell numbers out: the engines Lotse uses for German read digits themselves, and a second
+ * **not** spell numbers out: the engines Lotsman uses for German read digits themselves, and a second
  * verbaliser here would be a second opinion about "1.234,56".
  *
  * The result is plain text, one paragraph per line. Every paragraph ends in sentence punctuation, so a
  * heading or a list item that had none still lands as a sentence of its own.
  *
- * **Pure and platform-free.** No `gi://`, no `node:*`: it runs on GJS and on Node alike. Lotse's own
+ * **Pure and platform-free.** No `gi://`, no `node:*`: it runs on GJS and on Node alike. Lotsman's own
  * code-block placeholder is *not* translated here — a surface that wants one passes it in
  * (`codePlaceholder: _('Code omitted')`), so this file stays free of the catalogue.
  *
@@ -24,7 +24,7 @@ export interface SpeakableOptions {
    */
   readonly codePlaceholder?: string;
   /**
-   * Keep the lines Lotse renders for a tool call (`<title> — <status>`, `core/transcript.ts`). They are
+   * Keep the lines Lotsman renders for a tool call (`<title> — <status>`, `core/transcript.ts`). They are
    * dropped by default: a tool line is something to look at, and announcing one is the surface's job.
    */
   readonly keepToolLines?: boolean;

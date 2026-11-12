@@ -6,7 +6,7 @@
  * the person chose is part of what they asked for.
  */
 
-import type { AcpClient, SessionConfigOption } from '@lotse/acp';
+import type { AcpClient, SessionConfigOption } from '@lotsman/acp';
 
 import { configValue, projectConfigOptions } from '../config.ts';
 import type { ConfigOptionValue } from './profile.ts';

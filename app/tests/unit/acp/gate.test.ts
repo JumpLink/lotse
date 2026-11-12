@@ -1,24 +1,24 @@
 import { describe, expect, it } from '@gjsify/unit';
 
-import { AcpClient } from '@lotse/acp/client';
+import { AcpClient } from '@lotsman/acp/client';
 import {
   FileSystemRefusedError,
-  LOTSE_CLIENT_CAPABILITIES,
-  LOTSE_IMPLEMENTATION,
+  LOTSMAN_CLIENT_CAPABILITIES,
+  LOTSMAN_IMPLEMENTATION,
   assertScopeIsNotAuthority,
   classifyAuthMethods,
   denyAll,
   rejectOnce,
-} from '@lotse/acp/gate';
-import { UNSUPPORTED_AGENT_METHODS } from '@lotse/acp/methods';
-import type { Transport } from '@lotse/acp/transport';
+} from '@lotsman/acp/gate';
+import { UNSUPPORTED_AGENT_METHODS } from '@lotsman/acp/methods';
+import type { Transport } from '@lotsman/acp/transport';
 import {
   ERROR_CODES,
   type AuthMethodInfo,
   type PermissionOption,
   type RequestPermissionRequest,
-} from '@lotse/acp/types';
-import { newSession } from '@lotse/session';
+} from '@lotsman/acp/types';
+import { newSession } from '@lotsman/session';
 
 import { FixtureAgent } from '../../support/fixture-agent.ts';
 
@@ -255,18 +255,18 @@ export default async () => {
     });
   });
 
-  await describe('LOTSE_CLIENT_CAPABILITIES and LOTSE_IMPLEMENTATION', async () => {
+  await describe('LOTSMAN_CLIENT_CAPABILITIES and LOTSMAN_IMPLEMENTATION', async () => {
     await it('match what the plan requires', async () => {
-      expect(LOTSE_CLIENT_CAPABILITIES.fs).toStrictEqual({ readTextFile: false, writeTextFile: false });
-      expect(LOTSE_CLIENT_CAPABILITIES.terminal).toBe(false);
-      expect(LOTSE_IMPLEMENTATION.name).toBe('lotse');
-      expect(typeof LOTSE_IMPLEMENTATION.version).toBe('string');
+      expect(LOTSMAN_CLIENT_CAPABILITIES.fs).toStrictEqual({ readTextFile: false, writeTextFile: false });
+      expect(LOTSMAN_CLIENT_CAPABILITIES.terminal).toBe(false);
+      expect(LOTSMAN_IMPLEMENTATION.name).toBe('lotsman');
+      expect(typeof LOTSMAN_IMPLEMENTATION.version).toBe('string');
     });
   });
 
   await describe('classifyAuthMethods — trap 1', async () => {
     await it('the measured opencode shape (no type tag) classifies as agent, not terminal', async () => {
-      // Real wire shape, cast because `kind` is what lotse *derives*, never what the agent sends.
+      // Real wire shape, cast because `kind` is what lotsman *derives*, never what the agent sends.
       const measured = {
         id: 'opencode-login',
         name: 'Login with opencode',

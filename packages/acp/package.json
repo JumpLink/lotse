@@ -1,5 +1,5 @@
 {
-  "name": "@lotse/acp",
+  "name": "@lotsman/acp",
   "version": "0.5.0",
   "license": "LGPL-3.0-or-later",
   "type": "module",
@@ -10,13 +10,13 @@
     "json-rpc",
     "coding-agent"
   ],
-  "homepage": "https://github.com/JumpLink/lotse/tree/main/packages/acp#readme",
+  "homepage": "https://github.com/JumpLink/lotsman/tree/main/packages/acp#readme",
   "bugs": {
-    "url": "https://github.com/JumpLink/lotse/issues"
+    "url": "https://github.com/JumpLink/lotsman/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JumpLink/lotse.git",
+    "url": "git+https://github.com/JumpLink/lotsman.git",
     "directory": "packages/acp"
   },
   "publishConfig": {

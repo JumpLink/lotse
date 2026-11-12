@@ -11,7 +11,7 @@ import {
   pruneQuestions,
   quickReplies,
   type Question,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 const NOW = new Date('2026-10-10T12:00:00.000Z');
 

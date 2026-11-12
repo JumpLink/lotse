@@ -14,7 +14,7 @@
  * would put two bubbles where the person sent one, and would make an answer's own bubbles
  * indistinguishable from two answers. So a run of adjacent entries of one kind is joined.
  *
- * **2. Joined with nothing between, and trimmed only at the end.** `labelOf` in `@lotse/session`
+ * **2. Joined with nothing between, and trimmed only at the end.** `labelOf` in `@lotsman/session`
  * arrived at this first and says why: trimming each chunk before joining glues words together at the
  * seam (`'first '` + `'answer'` becomes `'firstanswer'`), which is the mid-word artefact both
  * functions exist to remove. A test here asserts the two agree on the same input, so a change to one
@@ -58,7 +58,7 @@
  */
 
 import { _n, fmt } from './i18n.ts';
-import type { EntryKind, McpCall, TranscriptEntry } from '@lotse/session';
+import type { EntryKind, McpCall, TranscriptEntry } from '@lotsman/session';
 
 /**
  * Kinds whose adjacent entries are one message rather than several — see decision 1.
@@ -134,7 +134,7 @@ export interface ThoughtItem extends DisclosureItem {
 
 /**
  * A tool call's state as of one line: every earlier line of the same call folded in, newer fields
- * winning. What a host presenter is handed (`LotseChatOptions.toolPresenter`), so it can recognise
+ * winning. What a host presenter is handed (`LotsmanChatOptions.toolPresenter`), so it can recognise
  * its own MCP call without replaying the stream itself.
  */
 export interface ToolCallView {
@@ -150,7 +150,7 @@ export interface ToolCallView {
 }
 
 /**
- * A tool call, closed by default — and with no body, because lotse records the line and the call's
+ * A tool call, closed by default — and with no body, because lotsman records the line and the call's
  * input, never its output. See the file header; the `detail` a future one would carry is a tool's
  * output, and `TranscriptEntry` is where it would have to arrive.
  */
@@ -168,7 +168,7 @@ export interface SystemItem {
 }
 
 /**
- * A line the embedding application recorded (`LotseChat.appendHostItem`). Never merged: two host
+ * A line the embedding application recorded (`LotsmanChat.appendHostItem`). Never merged: two host
  * lines are two things the host did, and joining them would make one claim out of two.
  */
 export interface HostItem {
@@ -335,7 +335,7 @@ function toItem(run: Run): TranscriptItem {
         icon: run.entry.host?.icon || null,
         at: run.at,
       };
-    // A kind a newer lotse wrote. Shown as a note with its text rather than dropped (the person's
+    // A kind a newer lotsman wrote. Shown as a note with its text rather than dropped (the person's
     // history stays whole) or returned as `undefined` (a surface would crash on it).
     default:
       return { kind: 'system', text: `(${String(run.kind)}) ${text}`, at: run.at };

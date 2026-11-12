@@ -1,5 +1,5 @@
 /**
- * `lotse resume <id> [prompt…]` — put a stored session back in front of its agent.
+ * `lotsman resume <id> [prompt…]` — put a stored session back in front of its agent.
  *
  * How it is put back is the agent's decision, negotiated at the handshake, not ours: `session/load`
  * when the agent offers it (the history is replayed), `session/resume` when it does not (the
@@ -18,22 +18,22 @@ import {
   runTurn,
   toTranscript,
   withAuthHint,
-  type LotsePaths,
-} from '@lotse/core';
-import { createSessionStore } from '@lotse/session';
-import type { TranscriptEntry } from '@lotse/session';
+  type LotsmanPaths,
+} from '@lotsman/core';
+import { createSessionStore } from '@lotsman/session';
+import type { TranscriptEntry } from '@lotsman/session';
 
 import { agentForRecorded } from './choose.ts';
 import { commandGate } from './gate.ts';
 import { err, out, pickArgv, showUpdate } from './output.ts';
 import { processTerminal } from './terminal.ts';
 
-const command = (paths: LotsePaths): CommandModule => ({
+const command = (paths: LotsmanPaths): CommandModule => ({
   command: 'resume <id> [prompt..]',
   describe: _('reattach a recorded session and optionally run one prompt turn'),
   builder: (yargs) =>
     yargs
-      .positional('id', { type: 'string', describe: _('the session id from `lotse sessions`') })
+      .positional('id', { type: 'string', describe: _('the session id from `lotsman sessions`') })
       .positional('prompt', {
         type: 'string',
         array: true,
@@ -58,7 +58,7 @@ const command = (paths: LotsePaths): CommandModule => ({
     const store = createSessionStore(paths.sessionsFile);
     const record = store.get(id);
     if (!record) {
-      err(fmt(_('no session with id {id} — `lotse sessions` lists what lotse has'), { id }));
+      err(fmt(_('no session with id {id} — `lotsman sessions` lists what lotsman has'), { id }));
       process.exitCode = 1;
       return;
     }

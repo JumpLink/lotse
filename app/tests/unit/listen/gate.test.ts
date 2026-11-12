@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@gjsify/unit';
 
-import type { RequestPermissionRequest } from '@lotse/acp/types';
+import type { RequestPermissionRequest } from '@lotsman/acp/types';
 
 import {
   callDigest,
@@ -9,7 +9,7 @@ import {
   stripAlways,
   type AskOutcome,
   type GateDecision,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 const ALL_FOUR: RequestPermissionRequest['options'] = [
   { optionId: 'allow_once', name: 'Allow once', kind: 'allow_once' },
