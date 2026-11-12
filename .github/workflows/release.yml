@@ -456,6 +456,10 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
+      # The release notes need `package.json`. The checkout comes FIRST: it cleans the workspace,
+      # and run after the download it deleted `ship/` (v0.6.0 failed on "no assets").
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
       - name: Fetch the packages
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -463,8 +467,8 @@ jobs:
           path: ship
           merge-multiple: true
 
-      # From the TAG rather than a checkout — this job never checks the repo out. `lotsman-app` is
-      # this repo's own public binary name, not a secret.
+      # From the TAG rather than the checkout, which is the ref the run started from. `lotsman-app`
+      # is this repo's own public binary name, not a secret.
       - name: Assert every artifact arrived
         env:
           TAG: ${{ inputs.tag || github.ref_name }}
@@ -494,8 +498,6 @@ jobs:
       # from: `release-notes` fails loudly when the tag has no entry, so a release cannot publish
       # an empty body. It needs the checkout for `package.json`, and the pinned CLI only — the
       # bootstrap is the same one the `npm` job uses, no project dependencies.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
       - name: Set up Node 24 for the release notes
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
