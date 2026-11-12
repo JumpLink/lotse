@@ -126,6 +126,32 @@
       },
       "releases": [
         {
+          "version": "0.6.0",
+          "date": "2026-11-12",
+          "description": [
+            {
+              "p": "Lotsman can read the agent's answers aloud, and runs tasks when you ask for them.",
+              "translatorHint": "Release notes for version 0.6.0 - opening line: answers read aloud, tasks on demand"
+            },
+            {
+              "ul": [
+                {
+                  "item": "A Conversation toggle in the chat speaks each finished sentence of an answer; Esc stops it.",
+                  "translatorHint": "Release notes for version 0.6.0 - read-aloud toggle. Conversation is the label of the toggle."
+                },
+                {
+                  "item": "New commands run, tasks and status, and the matching /run, /tasks and /status in the messenger.",
+                  "translatorHint": "Release notes for version 0.6.0 - new commands. Keep the command names as they are."
+                },
+                {
+                  "item": "serve is now listen, and users moved to users.json; scheduled tasks are gone.",
+                  "translatorHint": "Release notes for version 0.6.0 - breaking changes. Keep serve, listen and users.json as they are."
+                }
+              ]
+            }
+          ]
+        },
+        {
           "version": "0.5.0",
           "date": "2026-10-22",
           "description": [
@@ -372,7 +398,7 @@
             {
               "type": "git",
               "url": "https://github.com/JumpLink/lotsman.git",
-              "tag": "v0.5.0",
+              "tag": "v0.6.0",
               "x-checker-data": {
                 "type": "git",
                 "tag-pattern": "^v(\\d+\\.\\d+\\.\\d+)$",

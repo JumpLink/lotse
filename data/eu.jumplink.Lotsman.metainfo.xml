@@ -37,6 +37,20 @@
     <content_attribute id="language-humor">none</content_attribute>
   </content_rating>
   <releases>
+    <release version="0.6.0" date="2026-11-12">
+      <description>
+        <!-- TRANSLATORS: Release notes for version 0.6.0 - opening line: answers read aloud, tasks on demand -->
+        <p>Lotsman can read the agent's answers aloud, and runs tasks when you ask for them.</p>
+        <ul>
+          <!-- TRANSLATORS: Release notes for version 0.6.0 - read-aloud toggle. Conversation is the label of the toggle. -->
+          <li>A Conversation toggle in the chat speaks each finished sentence of an answer; Esc stops it.</li>
+          <!-- TRANSLATORS: Release notes for version 0.6.0 - new commands. Keep the command names as they are. -->
+          <li>New commands run, tasks and status, and the matching /run, /tasks and /status in the messenger.</li>
+          <!-- TRANSLATORS: Release notes for version 0.6.0 - breaking changes. Keep serve, listen and users.json as they are. -->
+          <li>serve is now listen, and users moved to users.json; scheduled tasks are gone.</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.5.0" date="2026-10-22">
       <description>
         <!-- TRANSLATORS: Release notes for version 0.5.0 - opening line: Lotsman can download its own OpenCode -->
