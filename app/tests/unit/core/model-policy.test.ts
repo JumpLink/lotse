@@ -37,8 +37,8 @@ import {
   MODEL_UNKNOWN_REASON,
   ModelDeniedError,
   type ModelPolicy,
-} from '@lotse/core';
-import type { SessionConfigOption } from '@lotse/acp/types';
+} from '@lotsman/core';
+import type { SessionConfigOption } from '@lotsman/acp/types';
 
 /** A host rule in its simplest honest form: these ids, no. */
 function deny(...ids: string[]): ModelPolicy {
@@ -80,7 +80,7 @@ function ids(values: readonly { readonly value: string }[]): string[] {
 
 export default async function modelPolicy(): Promise<void> {
   await describe('model policy — asking the host', async () => {
-    await it('allows everything when no host set a rule, which is lotse’s own window', async () => {
+    await it('allows everything when no host set a rule, which is lotsman’s own window', async () => {
       // The default path. Every caller passes an optional option straight through, so "the host set
       // nothing" is answered once here rather than branched on at each call site.
       expect(modelAllowed(undefined, 'vendor/paid-1')).toBe(true);
@@ -88,7 +88,7 @@ export default async function modelPolicy(): Promise<void> {
     });
 
     await it('treats a policy that throws as a deny', async () => {
-      // Host code runs inside lotse's render path and can throw on an id it did not expect. "My policy
+      // Host code runs inside lotsman's render path and can throw on an id it did not expect. "My policy
       // crashed" reads as "I have not approved this" — the alternative is a stack trace that takes the
       // config row down with the denied model still selected.
       const broken: ModelPolicy = () => {
@@ -200,7 +200,7 @@ export default async function modelPolicy(): Promise<void> {
     });
 
     await it('is unknown when the agent reported options but no model control', async () => {
-      // The agent answered and named no model: lotse cannot verify where a prompt would go, and a
+      // The agent answered and named no model: lotsman cannot verify where a prompt would go, and a
       // prompt is not sent to a model nobody has named.
       const noModel = options().filter((option) => option.category !== 'model');
       expect(modelBlock(noModel, deny('x'))?.cause).toBe('unknown');
@@ -322,7 +322,7 @@ export default async function modelPolicy(): Promise<void> {
     await it('reads a dropdown row back through the placeholder’s offset', async () => {
       // The whole point of `configSelection` living in core: with a placeholder at row 0 every value
       // sits one row lower, and doing that arithmetic in the widget would send the model *above* the
-      // one the person picked — on the one row where lotse is already refusing to send.
+      // one the person picked — on the one row where lotsman is already refusing to send.
       const view = configRowInput({
         options: options('vendor/model-free'),
         modelPolicy: denyFreeHostedModels,

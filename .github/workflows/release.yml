@@ -8,15 +8,15 @@ name: Release
 # installed and what "green" means. A release cannot be cut from a commit whose tests, type check
 # or lint did not pass.
 #
-# The four LGPL libraries (`@lotse/{acp,session,core,widget}`) go to npm from the `npm` job below,
+# The four LGPL libraries (`@lotsman/{acp,session,core,widget}`) go to npm from the `npm` job below,
 # by npm Trusted Publishing (OIDC): no NPM_TOKEN exists anywhere. The Trusted Publisher entry of
 # each package on npmjs.com names THIS file, so renaming it breaks the publish. The very first
 # publish of a name cannot be done from here — docs/releasing.md has the manual steps.
 #
 # Three artifacts: `ship-deb-rpm-appimage` (.deb, .rpm, .AppImage — all from `gjsify.ship`, the GUI
-# binary `lotse-app`), `ship-macos-windows` (both macos-app-zips, windows-dir-zip, .msi), and
-# `ship-flatpak` (eu.jumplink.Lotse.flatpak, from the hand-maintained manifest that stages both
-# `lotse` and `lotse-app` and bundles opencode as extra-data).
+# binary `lotsman-app`), `ship-macos-windows` (both macos-app-zips, windows-dir-zip, .msi), and
+# `ship-flatpak` (eu.jumplink.Lotsman.flatpak, from the hand-maintained manifest that stages both
+# `lotsman` and `lotsman-app` and bundles opencode as extra-data).
 on:
   push:
     tags: ['v*']
@@ -59,7 +59,7 @@ jobs:
       contents: read
 
   # ── Packaging (ADR 0024 in gjsify: assembly is not host-bound, only running the payload is).
-  # `gjsify.ship` packages the GUI (`lotse-app`), the one binary with a desktop entry and an
+  # `gjsify.ship` packages the GUI (`lotsman-app`), the one binary with a desktop entry and an
   # App-ID. msitools adds `wixl`, the Linux-side MSI compiler `gjsify ship windows --target msi`
   # needs; appimagetool is downloaded below because no distro packages it.
   ship:
@@ -113,10 +113,10 @@ jobs:
         run: gjsify install --immutable
 
       - name: Build the GUI app bundle (GJS, for Linux)
-        run: gjsify workspace lotse-cli build:app
+        run: gjsify workspace lotsman-cli build:app
 
       - name: Build the GUI app bundle (Node, for macOS + Windows)
-        run: gjsify workspace lotse-cli build:app:node
+        run: gjsify workspace lotsman-cli build:app:node
 
       # Pinned by version AND digest, the same shape gjsify's own CI image uses. The RUNTIME pin
       # is the load-bearing half: appimagetool otherwise fetches it per-arch from type2-runtime's
@@ -246,9 +246,9 @@ jobs:
   # `bwrap`, which a `fedora:44` container without `options: --privileged` refuses ("Can't mount
   # proc on /proc: Permission denied").
   #
-  # Builds from the hand-maintained root `eu.jumplink.Lotse.json` — it stages BOTH `lotse` and
-  # `lotse-app` and carries the bundled opencode (`extra-data` + `apply_extra`), which is not
-  # what `gjsify ship --target flatpak` would produce. That manifest's `lotse` module fetches a
+  # Builds from the hand-maintained root `eu.jumplink.Lotsman.json` — it stages BOTH `lotsman` and
+  # `lotsman-app` and carries the bundled opencode (`extra-data` + `apply_extra`), which is not
+  # what `gjsify ship --target flatpak` would produce. That manifest's `lotsman` module fetches a
   # `git` source at a pinned tag (what Flathub builds); for a release the source is the checkout
   # instead, otherwise v0.2.0's CI would package whatever the manifest's tag says.
   ship-flatpak:
@@ -285,7 +285,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /var/lib/flatpak
-          key: flatpak-${{ hashFiles('eu.jumplink.Lotse.json', 'gjsify-lock.json', 'gjsify-sources.json') }}
+          key: flatpak-${{ hashFiles('eu.jumplink.Lotsman.json', 'gjsify-lock.json', 'gjsify-sources.json') }}
           restore-keys: flatpak-
 
       # What the bundle must contain, asserted against the manifest the build reads: the network
@@ -295,7 +295,7 @@ jobs:
       - name: Check the manifest carries the bundled opencode
         run: |
           set -eu
-          m=eu.jumplink.Lotse.json
+          m=eu.jumplink.Lotsman.json
           jq -e '.["finish-args"] | index("--share=network")' "$m" >/dev/null \
             || { echo "::error::$m lacks --share=network"; exit 1; }
           jq -e '[.modules[].sources[]? | select(type == "object" and .type == "extra-data")] | length > 0' "$m" >/dev/null \
@@ -340,34 +340,34 @@ jobs:
       - name: Point the manifest at this checkout
         run: |
           set -eu
-          jq '(.modules[] | select(.name == "lotse") | .sources) |=
+          jq '(.modules[] | select(.name == "lotsman") | .sources) |=
                 map(if type == "object" and .type == "git"
                     then {type: "dir", path: ".", skip: [".git", ".flatpak-builder", "flatpak-build", "repo"]}
                     else . end)' \
-            eu.jumplink.Lotse.json > eu.jumplink.Lotse.ci.json
-          jq -e '[.modules[].sources[]? | select(type == "object" and .type == "git")] | length == 0' eu.jumplink.Lotse.ci.json >/dev/null
+            eu.jumplink.Lotsman.json > eu.jumplink.Lotsman.ci.json
+          jq -e '[.modules[].sources[]? | select(type == "object" and .type == "git")] | length == 0' eu.jumplink.Lotsman.ci.json >/dev/null
 
       # The manifest's build-commands run `gjsify install`/`build`/`build:app` INSIDE the sandbox —
       # no host-side install or build step belongs here.
       - name: Build the Flatpak
         run: |
           set -eu
-          gjsify flatpak build eu.jumplink.Lotse.ci.json \
-            --repo repo --bundle eu.jumplink.Lotse.flatpak
+          gjsify flatpak build eu.jumplink.Lotsman.ci.json \
+            --repo repo --bundle eu.jumplink.Lotsman.flatpak
 
       - name: Assert the bundle arrived
         run: |
           set -eu
-          ls -la eu.jumplink.Lotse.flatpak
-          [ -s eu.jumplink.Lotse.flatpak ] || { echo "::error::missing or empty eu.jumplink.Lotse.flatpak"; exit 1; }
+          ls -la eu.jumplink.Lotsman.flatpak
+          [ -s eu.jumplink.Lotsman.flatpak ] || { echo "::error::missing or empty eu.jumplink.Lotsman.flatpak"; exit 1; }
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ship-flatpak
-          path: eu.jumplink.Lotse.flatpak
+          path: eu.jumplink.Lotsman.flatpak
           compression-level: 0
 
-  # ── npm: @lotse/acp, @lotse/session, @lotse/core, @lotse/widget. Publishes in dependency order,
+  # ── npm: @lotsman/acp, @lotsman/session, @lotsman/core, @lotsman/widget. Publishes in dependency order,
   # so any aborted prefix is a resolvable tree. A tag publishes; a dispatch only does what `npm`
   # says. `id-token: write` is the whole credential: the OIDC token npm exchanges for a
   # short-lived publish token, which is also what makes `provenance: true` (in each package.json)
@@ -404,7 +404,7 @@ jobs:
           want=$(node -p "require('./packages/acp/package.json').version")
           for p in acp session core widget; do
             v=$(node -p "require('./packages/$p/package.json').version")
-            [ "$v" = "$want" ] || { echo "::error::@lotse/$p is $v, @lotse/acp is $want"; exit 1; }
+            [ "$v" = "$want" ] || { echo "::error::@lotsman/$p is $v, @lotsman/acp is $want"; exit 1; }
           done
           if [ "$MODE" = publish ] && [ "${GITHUB_REF_TYPE}" != tag ]; then
             echo "::error::publishing needs a tag; run the workflow from the tag, not a branch"; exit 1
@@ -463,7 +463,7 @@ jobs:
           path: ship
           merge-multiple: true
 
-      # From the TAG rather than a checkout — this job never checks the repo out. `lotse-app` is
+      # From the TAG rather than a checkout — this job never checks the repo out. `lotsman-app` is
       # this repo's own public binary name, not a secret.
       - name: Assert every artifact arrived
         env:
@@ -472,7 +472,7 @@ jobs:
           set -eu
           ls -la ship
           version="${TAG#v}"
-          binary=lotse-app
+          binary=lotsman-app
           missing=0
           for f in \
             "${binary}_${version}-1_all.deb" \
@@ -482,7 +482,7 @@ jobs:
             "${binary}-${version}-1.macos.x86_64.zip" \
             "${binary}-${version}-1.windows.x64.zip" \
             "${binary}-${version}-1.x64.msi" \
-            "eu.jumplink.Lotse.flatpak"; do
+            "eu.jumplink.Lotsman.flatpak"; do
             if [ ! -s "ship/$f" ]; then
               echo "::error::missing or empty artifact: $f"
               missing=1

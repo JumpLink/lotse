@@ -72,7 +72,7 @@ export default async () => {
   });
 
   await describe('actionIntent', async () => {
-    await it('maps every key lotse sends', async () => {
+    await it('maps every key lotsman sends', async () => {
       expect(actionIntent('default')).toStrictEqual({ kind: 'dialog' });
       expect(actionIntent('answer')).toStrictEqual({ kind: 'dialog' });
       expect(actionIntent('reply:yes')).toStrictEqual({ kind: 'answer', text: 'yes' });

@@ -23,7 +23,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { AgentCommand } from '@lotse/core';
+import type { AgentCommand } from '@lotsman/core';
 
 const SERVER = String.raw`
 const fs = require('node:fs');
@@ -124,7 +124,7 @@ export async function withFakeMcp(
   options: FakeMcpOptions,
   run: (fake: FakeMcp) => Promise<void>,
 ): Promise<void> {
-  const dir = mkdtempSync(join(tmpdir(), 'lotse-fake-mcp-'));
+  const dir = mkdtempSync(join(tmpdir(), 'lotsman-fake-mcp-'));
   try {
     mkdirSync(dir, { recursive: true });
     const script = join(dir, 'server.cjs');

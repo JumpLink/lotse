@@ -12,7 +12,7 @@ import {
   sentenceChunker,
   speakableText,
   type VoicePolicy,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 /** `toEqual` compares with `==`, which is no use on arrays. */
 function same(actual: unknown, expected: unknown): void {

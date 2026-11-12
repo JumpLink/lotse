@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@gjsify/unit';
 
-import { displayCwd, resolveCwd, type CwdFacts } from '@lotse/core';
+import { displayCwd, resolveCwd, type CwdFacts } from '@lotsman/core';
 
 /** Synthetic paths only; `exists` answers for exactly the ones a case lists. */
 function facts(existing: string[], over: Partial<CwdFacts> = {}): CwdFacts {
@@ -16,18 +16,18 @@ function facts(existing: string[], over: Partial<CwdFacts> = {}): CwdFacts {
 
 export default async () => {
   await describe('cwd — where a new conversation runs', async () => {
-    await it('prefers LOTSE_CWD over everything', async () => {
+    await it('prefers LOTSMAN_CWD over everything', async () => {
       const all = ['/synthetic/pinned', '/synthetic/proc', '/synthetic/home'];
-      expect(resolveCwd({ LOTSE_CWD: '/synthetic/pinned' }, facts(all))).toBe('/synthetic/pinned');
+      expect(resolveCwd({ LOTSMAN_CWD: '/synthetic/pinned' }, facts(all))).toBe('/synthetic/pinned');
     });
 
-    await it('still reads the KURIER_CWD name from before the rename, and prefers LOTSE_CWD', async () => {
+    await it('still reads the KURIER_CWD name from before the rename, and prefers LOTSMAN_CWD', async () => {
       const all = ['/synthetic/pinned', '/synthetic/old', '/synthetic/proc', '/synthetic/home'];
       expect(resolveCwd({ KURIER_CWD: '/synthetic/old' }, facts(all))).toBe('/synthetic/old');
-      expect(resolveCwd({ KURIER_CWD: '/synthetic/old', LOTSE_CWD: '/synthetic/pinned' }, facts(all))).toBe(
+      expect(resolveCwd({ KURIER_CWD: '/synthetic/old', LOTSMAN_CWD: '/synthetic/pinned' }, facts(all))).toBe(
         '/synthetic/pinned',
       );
-      expect(resolveCwd({ KURIER_CWD: '/synthetic/old', LOTSE_CWD: '  ' }, facts(all))).toBe(
+      expect(resolveCwd({ KURIER_CWD: '/synthetic/old', LOTSMAN_CWD: '  ' }, facts(all))).toBe(
         '/synthetic/old',
       );
     });
@@ -43,7 +43,7 @@ export default async () => {
     });
 
     await it('falls through a candidate that does not exist', async () => {
-      expect(resolveCwd({ LOTSE_CWD: '/synthetic/gone' }, facts(['/synthetic/proc']))).toBe(
+      expect(resolveCwd({ LOTSMAN_CWD: '/synthetic/gone' }, facts(['/synthetic/proc']))).toBe(
         '/synthetic/proc',
       );
       expect(resolveCwd({}, facts(['/synthetic/home']))).toBe('/synthetic/home');
@@ -56,8 +56,8 @@ export default async () => {
 
     await it('refuses a relative path, blank or not, because a session’s cwd is part of its scope', async () => {
       const all = ['relative', '/synthetic/proc'];
-      expect(resolveCwd({ LOTSE_CWD: 'relative' }, facts(all))).toBe('/synthetic/proc');
-      expect(resolveCwd({ LOTSE_CWD: '   ' }, facts(all))).toBe('/synthetic/proc');
+      expect(resolveCwd({ LOTSMAN_CWD: 'relative' }, facts(all))).toBe('/synthetic/proc');
+      expect(resolveCwd({ LOTSMAN_CWD: '   ' }, facts(all))).toBe('/synthetic/proc');
     });
 
     await it('says so with null when nothing exists, rather than inventing a directory', async () => {

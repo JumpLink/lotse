@@ -9,10 +9,10 @@
  * *Configuration Boundaries* says model configuration is "usually owned by the External Agent", and
  * for one agent specifically: "Authentication and model selection are configured through Poolside,
  * not Zed." Zed shows nothing and passes the values through. That works there because the agent has
- * somewhere else to live — beside the editor, in its own TUI. In lotse the agent *is* the window,
+ * somewhere else to live — beside the editor, in its own TUI. In lotsman the agent *is* the window,
  * so "elsewhere" is a terminal the person has to leave to open. Showing what the agent reported, and
- * setting it through the protocol, is the same boundary from the other side: lotse holds no
- * configuration authority over the agent (see `LOTSE_CLIENT_CAPABILITIES` and `setConfigOption`).
+ * setting it through the protocol, is the same boundary from the other side: lotsman holds no
+ * configuration authority over the agent (see `LOTSMAN_CLIENT_CAPABILITIES` and `setConfigOption`).
  *
  * Measured against `opencode acp` 2.0.19, one `session/new` with an empty `mcpServers`:
  *
@@ -36,19 +36,19 @@ import {
   narrowConfigSelect,
   usableConfigValues,
   type UsableConfigValue,
-} from '@lotse/acp/narrow';
+} from '@lotsman/acp/narrow';
 import type {
   KnownConfigCategory,
   SessionConfigOption,
   SetSessionConfigOptionRequest,
-} from '@lotse/acp/types';
+} from '@lotsman/acp/types';
 
 import { freeModelFirst } from './free-models.ts';
 
 /**
  * One value in a `select`, as the surface shows it.
  *
- * Named here as well as in `@lotse/acp/narrow` because the surface's vocabulary is the control's,
+ * Named here as well as in `@lotsman/acp/narrow` because the surface's vocabulary is the control's,
  * not the protocol's: it draws a `ConfigValue`, and it should not have to know that the wire calls it
  * a `SessionConfigSelectOption` with a filter applied. Same shape, one name per layer.
  */

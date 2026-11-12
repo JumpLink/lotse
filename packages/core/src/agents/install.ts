@@ -8,7 +8,7 @@
  *
  * **What it trusts.** Nothing but the catalog. The URL, the size and the sha256 are the pins in
  * `bundled-agents.json`; the bytes are measured against both BEFORE anything is unpacked, and a mismatch
- * leaves no trace. There is deliberately no "latest": a newer opencode arrives with a lotse release that
+ * leaves no trace. There is deliberately no "latest": a newer opencode arrives with a lotsman release that
  * moves the pin, so what runs next to tax data was read by someone. See ADR 0006.
  *
  * **What it never does.** It does not decide that an install happens — the caller asks the person first

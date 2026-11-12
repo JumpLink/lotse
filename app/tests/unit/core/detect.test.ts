@@ -14,7 +14,7 @@ import {
   resolveAgent,
   type AgentDetection,
   type AgentFacts,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 const SHA = 'b'.repeat(64);
 

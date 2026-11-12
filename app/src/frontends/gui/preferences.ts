@@ -1,5 +1,5 @@
 /**
- * The preferences dialog: which agent lotse connects to, how `lotse listen` asks, and which chat requests
+ * The preferences dialog: which agent lotsman connects to, how `lotsman listen` asks, and which chat requests
  * it takes.
  *
  * **Action rows with radio check buttons, not an `Adw.ComboRow`.** A combo row shows one line per item
@@ -11,7 +11,7 @@
  * What is listed is decided in `core/settings-view.ts`; this file renders it and passes a choice back.
  * **An unavailable row is selectable**: the choice may be for an install that is coming, and the note says
  * what runs meanwhile. A write that fails is shown here, and the rows are re-read so they show what the
- * file really holds. A settings file lotse must not overwrite locks the rows (`ChoicesView.readOnly`).
+ * file really holds. A settings file lotsman must not overwrite locks the rows (`ChoicesView.readOnly`).
  *
  * **The dialog opens before the host has answered.** `load(null)` is the cheap view; where a host question
  * exists (a Flatpak) `detect()` runs it asynchronously, and the rows are drawn again from its result. A
@@ -33,7 +33,7 @@ import {
   type MessengerSettings,
   type RequestSettings,
   type ResolveContext,
-} from '@lotse/core';
+} from '@lotsman/core';
 import {
   formatEnvSpecs,
   formatServerSpecs,
@@ -80,10 +80,10 @@ export interface MessengerForm {
 /** What `select` did, so a caller never claims a write that did not happen. */
 export type SelectOutcome = 'chose' | 'unchanged' | 'refused' | 'failed' | 'missing';
 
-const scopeLine = () => _('A change applies the next time lotse starts. This window keeps its agent.');
+const scopeLine = () => _('A change applies the next time lotsman starts. This window keeps its agent.');
 
 const modeLine = () =>
-  _('How lotse listen shows a question an agent asks. A change applies to the next question.');
+  _('How lotsman listen shows a question an agent asks. A change applies to the next question.');
 
 const modeRows = (): readonly {
   readonly mode: DesktopMode;
@@ -104,7 +104,7 @@ const modeRows = (): readonly {
 
 const messengerLine = () =>
   _(
-    'Also ask in a chat, through an MCP server such as curlew, and read the reply as the answer. The first answer wins. A change applies within a minute to a running lotse listen; runs under way finish as they were.',
+    'Also ask in a chat, through an MCP server such as curlew, and read the reply as the answer. The first answer wins. A change applies within a minute to a running lotsman listen; runs under way finish as they were.',
   );
 
 type MessengerField = 'command' | 'args' | 'account' | 'peer' | 'sendTool' | 'waitTool';
@@ -120,7 +120,7 @@ const messengerFields = (): readonly { readonly field: MessengerField; readonly 
 
 const requestsLine = () =>
   _(
-    'A message that answers no question starts an agent run, and the answer comes back in the chat. A change applies the next time lotse listen starts.',
+    'A message that answers no question starts an agent run, and the answer comes back in the chat. A change applies the next time lotsman listen starts.',
   );
 
 type RequestField = 'prefix' | 'profile' | 'preamble' | 'cwd' | 'mcpServers' | 'mcpEnv';
@@ -228,7 +228,7 @@ export class PreferencesDialog {
   }
 
   /**
-   * Choose a row by key, the way a click on it does — `LOTSE_APP_PREFERENCES_AGENT` calls this. Only
+   * Choose a row by key, the way a click on it does — `LOTSMAN_APP_PREFERENCES_AGENT` calls this. Only
    * `'chose'` means a write happened.
    */
   select(key: string): SelectOutcome {
@@ -284,7 +284,7 @@ export class PreferencesDialog {
       this.#rows.push(row);
       this.#checks.set(entry.key, check);
     }
-    // One file holds both choices, so a file lotse must not overwrite locks both groups.
+    // One file holds both choices, so a file lotsman must not overwrite locks both groups.
     this.#modes?.set_sensitive(!view.readOnly);
     this.#messenger?.set_sensitive(!view.readOnly);
     this.#requests?.set_sensitive(!view.readOnly);

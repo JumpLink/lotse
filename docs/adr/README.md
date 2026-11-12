@@ -12,10 +12,10 @@ parts stays **Accepted** and names the record and the parts.
 
 | # | Title | Status |
 |---|---|---|
-| [0001](0001-lotse-as-an-embeddable-widget.md) | lotse as an embeddable widget | Accepted |
+| [0001](0001-lotsman-as-an-embeddable-widget.md) | lotsman as an embeddable widget | Accepted |
 | [0002](0002-assistant-in-continuous-operation.md) | The assistant in continuous operation | Accepted |
-| [0003](0003-serve-tasks-questions-channel.md) | `lotse serve`: tasks, questions and the channel seam | Accepted |
-| [0004](0004-headless-job-api.md) | A headless job API in `@lotse/core` | Accepted |
+| [0003](0003-serve-tasks-questions-channel.md) | `lotsman serve`: tasks, questions and the channel seam | Accepted |
+| [0004](0004-headless-job-api.md) | A headless job API in `@lotsman/core` | Accepted |
 | [0005](0005-two-gettext-domains.md) | Two gettext domains: the app's and the library's | Accepted |
 | [0006](0006-per-user-agent-install.md) | A per-user install of the pinned agent, on request | Accepted |
 | [0007](0007-profiles-tasks-triggers.md) | Profiles, tasks and triggers | Accepted |

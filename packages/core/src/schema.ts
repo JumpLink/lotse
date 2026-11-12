@@ -30,7 +30,7 @@ export const ID_PATTERN = '^[a-z0-9][a-z0-9_-]{0,39}$';
 export const MCP_SERVER: SchemaNode = {
   type: 'object',
   title: 'MCP server',
-  description: 'Passed to the agent unchanged in session/new. lotse reads only its name.',
+  description: 'Passed to the agent unchanged in session/new. lotsman reads only its name.',
   required: ['name'],
 };
 

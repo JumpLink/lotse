@@ -6,7 +6,7 @@
  * - **Tool output is not kept.** A `tool_call` carries `rawOutput` and `content` in whatever shape
  *   the agent's tool used; they are the tool's result and the agent's to keep, and a copy here would
  *   be a second, wrong model of somebody else's tool. The *input* is kept since issue #43, capped at
- *   `TOOL_INPUT_MAX`: an app embedding lotse has to recognise its own MCP call in a transcript (an
+ *   `TOOL_INPUT_MAX`: an app embedding lotsman has to recognise its own MCP call in a transcript (an
  *   order it was asked to place, with the arguments), and the title alone — `execute` for every
  *   code-mode call — cannot say which call that was. Earlier versions stored the title and status
  *   only; `text` is still written exactly as they wrote it.
@@ -15,8 +15,8 @@
  *   exactly the shape the plan forbids.
  */
 
-import type { SessionNotification, SessionUpdate, ToolCall, ToolCallUpdate } from '@lotse/acp/types';
-import { TOOL_INPUT_MAX, type McpCall, type ToolCallRecord, type TranscriptEntry } from '@lotse/session';
+import type { SessionNotification, SessionUpdate, ToolCall, ToolCallUpdate } from '@lotsman/acp/types';
+import { TOOL_INPUT_MAX, type McpCall, type ToolCallRecord, type TranscriptEntry } from '@lotsman/session';
 
 import { chunkToText } from './policy.ts';
 import { describeUsage } from './usage.ts';
@@ -47,7 +47,7 @@ export function toTranscript(notification: SessionNotification, at: string): Tra
       const title = update.title ? `${update.title}${status}` : status.trim();
       // Still dropped when there is no line to read, as before the structured record existed: every
       // agent measured so far sends a status with each update, and a line with an empty `text` is
-      // one `toTranscriptItems` and `lotse sessions` would both have to learn to skip.
+      // one `toTranscriptItems` and `lotsman sessions` would both have to learn to skip.
       if (!title) return [];
       return [
         { ...base, kind: 'tool', toolCallId: update.toolCallId, text: title, tool: toolRecordOf(update) },
@@ -75,7 +75,7 @@ export function toTranscript(notification: SessionNotification, at: string): Tra
       return [];
     default:
       // An update variant from a newer ACP. Recorded as one opaque line: the turn's shape stays
-      // visible, and dropping it would make lotse's record disagree with the agent's.
+      // visible, and dropping it would make lotsman's record disagree with the agent's.
       return [{ ...base, kind: 'system', text: `(${describeUnknown(update)})` }];
   }
 }

@@ -7,8 +7,8 @@ import type Gtk from 'gi://Gtk?version=4.0';
 declare const xml: string;
 export default xml;
 
-/** The class `template $LotsePermissionBody` defines. */
-export declare const GTypeName: 'LotsePermissionBody';
+/** The class `template $LotsmanPermissionBody` defines. */
+export declare const GTypeName: 'LotsmanPermissionBody';
 
 /**
  * Every id inside the template, in source order — what `registerClass` is given.

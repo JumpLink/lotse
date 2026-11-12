@@ -5,8 +5,8 @@
  * A settings.json that cannot be read keeps the previous instance.
  */
 
-import type { ChatRequests, RequestSettings } from '@lotse/core';
-import { requestProblem } from '@lotse/core';
+import type { ChatRequests, RequestSettings } from '@lotsman/core';
+import { requestProblem } from '@lotsman/core';
 
 import { _, fmt } from '../../i18n.ts';
 

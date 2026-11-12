@@ -1,5 +1,5 @@
 /**
- * The people `lotse listen` works for, and the file they live in: `users.json`.
+ * The people `lotsman listen` works for, and the file they live in: `users.json`.
  *
  * Core does not read files: the host passes the text in, like the profiles file. A profile names its
  * user; a profile that names none belongs to the only user there is.

@@ -20,8 +20,8 @@ const ROOT = new URL('..', import.meta.url).pathname;
 
 /** The two domains, their catalogue directory and the source trees they collect from. */
 const DOMAINS = [
-  { domain: 'eu.jumplink.Lotse', po: 'app/po', sources: ['app/src'] },
-  { domain: 'lotse', po: 'packages/widget/po', sources: ['packages/core/src', 'packages/widget/src'] },
+  { domain: 'eu.jumplink.Lotsman', po: 'app/po', sources: ['app/src'] },
+  { domain: 'lotsman', po: 'packages/widget/po', sources: ['packages/core/src', 'packages/widget/src'] },
 ];
 
 /** Minimal .po reader: enough for msgctxt / msgid / msgid_plural / msgstr[n] and the fuzzy flag. */

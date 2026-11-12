@@ -1,5 +1,5 @@
 /**
- * The gate `lotse listen` answers `session/request_permission` with — ADR 0002 §7.
+ * The gate `lotsman listen` answers `session/request_permission` with — ADR 0002 §7.
  *
  * It answers from the person's decisions only: an area a gate was given as released, or a
  * question the person answered yes. Everything else is a new question, or a decline. Three rules
@@ -19,8 +19,8 @@
 
 import { createHash } from 'node:crypto';
 
-import { rejectOnce, type PermissionGate } from '@lotse/acp';
-import type { PermissionOption, RequestPermissionRequest } from '@lotse/acp';
+import { rejectOnce, type PermissionGate } from '@lotsman/acp';
+import type { PermissionOption, RequestPermissionRequest } from '@lotsman/acp';
 
 import type { ReleasedArea, RightsLevel } from './task.ts';
 import type { QuestionAction } from '../questions/question.ts';

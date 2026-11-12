@@ -1,5 +1,5 @@
 /**
- * `lotse run <id> [--param k=v]... [--json]` — run one task now (ADR 0007 §9).
+ * `lotsman run <id> [--param k=v]... [--json]` — run one task now (ADR 0007 §9).
  *
  * Exit code: 0 done, 1 failed, 2 usage error, 3 a question is waiting for a person. The task's output
  * is printed on stdout; `--json` prints the result instead.
@@ -8,7 +8,7 @@
 import { _ } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
-import { parseParamPairs, TaskUsageError, type LotsePaths } from '@lotse/core';
+import { parseParamPairs, TaskUsageError, type LotsmanPaths } from '@lotsman/core';
 
 import type { ListenPaths } from '../../core/paths.ts';
 import { stderrChannel } from '../../core/stderr-channel.ts';
@@ -16,12 +16,12 @@ import { err, out, pickArgv } from './output.ts';
 import { readConfig, runDeps, trackedAgents } from './listen-deps.ts';
 import { reportText, runReport } from './task-commands.ts';
 
-const command = (paths: LotsePaths, listen: ListenPaths): CommandModule => ({
+const command = (paths: LotsmanPaths, listen: ListenPaths): CommandModule => ({
   command: 'run <id>',
   describe: _('run a task now'),
   builder: (yargs) =>
     yargs
-      .positional('id', { type: 'string', describe: _('the task id, from `lotse tasks`') })
+      .positional('id', { type: 'string', describe: _('the task id, from `lotsman tasks`') })
       .option('param', { type: 'string', array: true, describe: _('a parameter, like name=value') })
       .option('json', { type: 'boolean', describe: _('print the result as JSON') })
       .option('quiet', { type: 'boolean', describe: _("do not echo the agent's log lines") })

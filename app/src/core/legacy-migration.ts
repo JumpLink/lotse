@@ -9,7 +9,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join } from 'node:path';
 
-import { isId, migrateLegacy } from '@lotse/core';
+import { isId, migrateLegacy } from '@lotsman/core';
 
 import type { ListenPaths } from './paths.ts';
 import { ensureDir, writePrivateFile } from './private-file.ts';

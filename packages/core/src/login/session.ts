@@ -17,9 +17,9 @@ import { createLoginApi } from './api.ts';
 import type { LoginSession } from './controller.ts';
 import { connectionFacts, type ConnectionFacts } from '../onboarding.ts';
 
-/** Only opencode has the HTTP login API lotse drives; another adapter keeps the terminal hint. */
+/** Only opencode has the HTTP login API lotsman drives; another adapter keeps the terminal hint. */
 export function loginUnavailableReason(agent: AgentCommand): string | null {
-  if (agent.id !== 'opencode') return `${agent.title} has no login lotse can run — use its own login`;
+  if (agent.id !== 'opencode') return `${agent.title} has no login lotsman can run — use its own login`;
   const reason = whyNoLoginServer(agent, currentSandboxFacts());
   if (reason) return reason;
   if (!which(agent.program)) return `${agent.program} is not on PATH — install it, then try again`;
@@ -38,7 +38,7 @@ export async function openLoginSession(agent: AgentCommand): Promise<LoginSessio
     status: (providerId, attemptId) => api.status(providerId, attemptId),
     complete: (providerId, attemptId, code) => api.complete(providerId, attemptId, code),
     cancel: (providerId, attemptId) => api.cancel(providerId, attemptId),
-    // Which file is lotse's does not matter for a count; the settings group asks `ProviderApi` itself.
+    // Which file is lotsman's does not matter for a count; the settings group asks `ProviderApi` itself.
     customProviders: () => custom.configured(''),
     close: () => server.close(),
   };

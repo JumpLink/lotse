@@ -1,19 +1,19 @@
 /**
  * The native GNOME front-end — entry point.
  *
- * A third surface on the same kernel as `lotse start` and the MCP server: it builds an `AcpClient`
+ * A third surface on the same kernel as `lotsman start` and the MCP server: it builds an `AcpClient`
  * and calls the same `app/src/core` actions, and it renders every sentence about a session from the
  * transcript the core produced. Nothing about ACP, about permissions or about a config option is
  * decided in here.
  *
  * **Its own bundle, not a subcommand of the CLI.** `import Gtk from '@girs/gtk-4.0'` becomes a
- * top-level `gi://Gtk` in the bundle, so folding this into `lotse.gjs.mjs` would make every
- * `lotse sessions` in a terminal — including over SSH, where there is no display at all — load GTK
+ * top-level `gi://Gtk` in the bundle, so folding this into `lotsman.gjs.mjs` would make every
+ * `lotsman sessions` in a terminal — including over SSH, where there is no display at all — load GTK
  * and libadwaita and die. Two entry points, one kernel. Verified by the build: `gi://Adw` and
  * `gi://Gtk` appear 0× in the CLI bundle and ≥1× in this one.
  *
- *   build: gjsify workspace lotse-cli build:app    (→ dist/lotse-app.gjs.mjs)
- *   run:   gjsify workspace lotse-cli start:app
+ *   build: gjsify workspace lotsman-cli build:app    (→ dist/lotsman-app.gjs.mjs)
+ *   run:   gjsify workspace lotsman-cli start:app
  *
  * The shell is `@gjsify/adwaita-app`'s `runAdwaitaApp`, which owns the `runAsync` lifecycle — never
  * the synchronous `run()`, which starves the promise-job queue, so an awaited agent answer never
@@ -27,7 +27,7 @@ import GLib from '@girs/glib-2.0';
 import Gtk from '@girs/gtk-4.0';
 import { runAdwaitaApp } from '@gjsify/adwaita-app';
 
-import { LOCAL_PRINCIPAL, createSessionStore, forPrincipal } from '@lotse/session';
+import { LOCAL_PRINCIPAL, createSessionStore, forPrincipal } from '@lotsman/session';
 
 import {
   BUNDLED_AGENTS,
@@ -43,7 +43,7 @@ import {
   resolveCwd,
   resolveDefaultWithNote,
   resolveRecorded,
-} from '@lotse/core';
+} from '@lotsman/core';
 import { answerArg } from '../../core/answer-dialog.ts';
 import { migratedPaths } from '../../core/migrate.ts';
 import { markSeen, readNotices, writeNotices } from '../../core/notices.ts';
@@ -86,13 +86,13 @@ if (answering !== null) process.exit(await runAnswerWindow(answering));
 const hooks = readHooks();
 
 /**
- * The paths — and, on the first run after the rename, the move from the ones lotse wrote
+ * The paths — and, on the first run after the rename, the move from the ones lotsman wrote
  * (`core/migrate.ts`). A note per directory that was not already in place, printed like the
  * settings notes below, because a person whose conversations just moved deserves to be told, and a
  * person whose move *failed* deserves to be told more.
  */
 const { paths, notes: migrationNotes } = migratedPaths();
-for (const note of migrationNotes) console.log(`lotse: ${note}`);
+for (const note of migrationNotes) console.log(`lotsman: ${note}`);
 
 /**
  * What the settings said about themselves: an unreadable file, or a choice that is not available here.
@@ -105,7 +105,7 @@ const settingsNotes: string[] = [];
  * Which agent this window will start on its first prompt.
  *
  * **Resolved once, here, and handed to the window as an `AgentCommand`.** The alternative — the window
- * reading `LOTSE_APP_AGENT` itself — would put an environment lookup and a fallback rule in a widget file,
+ * reading `LOTSMAN_APP_AGENT` itself — would put an environment lookup and a fallback rule in a widget file,
  * and `hooks.ts` exists precisely so that every environment read happens once at startup and can be
  * reasoned about as a whole. An unknown id prints its line here, where a person watching the terminal
  * will see it, and falls back rather than refusing to start. With no hook the agent is resolved as the CLI
@@ -121,48 +121,48 @@ const agent = chooseAgent(hooks.agent, () => {
   if (note) settingsNotes.push(note);
   if (!found || hooks.noAgent) {
     nothingFound = true;
-    console.log(`lotse: ${NO_AGENT_MESSAGE}`);
+    console.log(`lotsman: ${NO_AGENT_MESSAGE}`);
     return null;
   }
   return found;
 });
-// `LOTSE_APP_NO_AGENT` beats `LOTSE_APP_AGENT`: it forces the nothing-found resolution for the empty state.
+// `LOTSMAN_APP_NO_AGENT` beats `LOTSMAN_APP_AGENT`: it forces the nothing-found resolution for the empty state.
 const noAgent = hooks.noAgent === true || nothingFound;
 const emptyView = noAgent ? emptyStateView({ agent: null }) : null;
 
 /**
  * The bundled-agent notice, read once: nothing seen yet (or a file that could not be read, which shows it
- * again) and the copy that runs. `LOTSE_APP_NOTICE` forces the bundled condition — the copy does not exist
+ * again) and the copy that runs. `LOTSMAN_APP_NOTICE` forces the bundled condition — the copy does not exist
  * outside a Flatpak.
  */
 const noticesPath = paths.noticesFile;
 const noticesRead = readNotices(noticesPath);
-if (noticesRead.problem) console.log(`lotse: ${noticesRead.problem}`);
+if (noticesRead.problem) console.log(`lotsman: ${noticesRead.problem}`);
 const notice = noAgent
   ? null
   : noticeView(hooks.notice === true ? 'bundled' : agent.source, noticesRead.notices.seen);
-for (const note of settingsNotes) console.log(`lotse: ${note}`);
-if (agent.note) console.log(`lotse: ${agent.note}`);
+for (const note of settingsNotes) console.log(`lotsman: ${note}`);
+if (agent.note) console.log(`lotsman: ${agent.note}`);
 
 const sandboxed = isSandboxed(currentSandboxFacts());
 
 /**
- * Where a new chat runs. `LOTSE_APP_CWD` is the dev hook that pins it (a screenshot must not show a real
- * directory name), `LOTSE_CWD` is the same override for a person; `resolveCwd` decides the rest.
+ * Where a new chat runs. `LOTSMAN_APP_CWD` is the dev hook that pins it (a screenshot must not show a real
+ * directory name), `LOTSMAN_CWD` is the same override for a person; `resolveCwd` decides the rest.
  */
 const facts = gatherCwdFacts(process.env);
-const cwd = resolveCwd({ ...process.env, ...(hooks.cwd ? { LOTSE_CWD: hooks.cwd } : {}) }, facts);
+const cwd = resolveCwd({ ...process.env, ...(hooks.cwd ? { LOTSMAN_CWD: hooks.cwd } : {}) }, facts);
 
 /**
  * The host's model rule — **and this app is the host that has none.**
  *
- * `LotseChat` takes a `modelPolicy` so that an app embedding it beside data of its own can say where
- * that data may travel (`packages/core/src/model-policy.ts`). lotse's own window carries nobody's
+ * `LotsmanChat` takes a `modelPolicy` so that an app embedding it beside data of its own can say where
+ * that data may travel (`packages/core/src/model-policy.ts`). lotsman's own window carries nobody's
  * data but the person's own conversation, and the agent's model list is the person's own choice, so
  * the honest value here is `undefined` and the composer behaves exactly as it did before the option
  * existed.
  *
- * `LOTSE_APP_MODEL_POLICY` is therefore a dev hook and not a setting: it exists so the blocked state
+ * `LOTSMAN_APP_MODEL_POLICY` is therefore a dev hook and not a setting: it exists so the blocked state
  * can be photographed and so this file shows what a real host writes — a predicate of its own, over
  * ids it knows, rather than a rule borrowed from a core helper. What the list means is
  * `model-policy-hook.ts`, next door: the empty list has to mean *no policy*, and that case needed a
@@ -172,12 +172,12 @@ const modelPolicy = modelPolicyFromHook(hooks.modelPolicy ?? []);
 
 /**
  * The host's speech engine — **and this app ships none**, so the honest value is `undefined` and no
- * Conversation toggle appears. `LOTSE_APP_SPEECH` stands in for one for the same reason
- * `LOTSE_APP_MODEL_POLICY` stands in for a policy, and what it builds is silent: `speech-hook.ts`.
+ * Conversation toggle appears. `LOTSMAN_APP_SPEECH` stands in for one for the same reason
+ * `LOTSMAN_APP_MODEL_POLICY` stands in for a policy, and what it builds is silent: `speech-hook.ts`.
  */
 const speech = speechFromHook(hooks.speech ?? false);
 
-// Dev hook only: inert stdio entries, named after `LOTSE_APP_MCP`, to show the per-conversation toggles.
+// Dev hook only: inert stdio entries, named after `LOTSMAN_APP_MCP`, to show the per-conversation toggles.
 const mcpServers = (hooks.mcp ?? []).map((name) => ({ name, command: 'true', args: [], env: [] }));
 
 const status = await runAdwaitaApp({
@@ -188,15 +188,15 @@ const status = await runAdwaitaApp({
     applicationIcon: APP_ID,
     developerName: 'JumpLink / Art+Code Studio',
     version: APP_VERSION,
-    website: 'https://github.com/JumpLink/lotse',
+    website: 'https://github.com/JumpLink/lotsman',
     license: 'AGPL-3.0-or-later',
     comments: _(
       'An ACP client for GNOME: start a coding agent as a subprocess, watch it work, and answer ' +
         'the questions it asks. The agent brings its own model, its own tools and its own login — ' +
-        'lotse shows what it offers and asks before it acts. The same kernel as the command line.',
+        'lotsman shows what it offers and asks before it acts. The same kernel as the command line.',
     ),
   },
-  // The same read `lotse sessions` does, principal filter included: two surfaces listing different
+  // The same read `lotsman sessions` does, principal filter included: two surfaces listing different
   // sessions from one file would make one of them wrong, and nobody could say which.
   createWindow: (app) =>
     new MainWindow(app, {
@@ -212,7 +212,7 @@ const status = await runAdwaitaApp({
                 writeNotices(noticesPath, markSeen(readNotices(noticesPath).notices, id));
               } catch (error) {
                 console.log(
-                  `lotse: could not remember the notice — ${error instanceof Error ? error.message : String(error)}`,
+                  `lotsman: could not remember the notice — ${error instanceof Error ? error.message : String(error)}`,
                 );
               }
             },
@@ -222,7 +222,7 @@ const status = await runAdwaitaApp({
       ...(modelPolicy ? { modelPolicy } : {}),
       ...(speech ? { speech } : {}),
       ...(mcpServers.length > 0 ? { mcpServers } : {}),
-      // **Only when no agent is pinned.** `LOTSE_APP_AGENT` means "this agent, for everything in this window"
+      // **Only when no agent is pinned.** `LOTSMAN_APP_AGENT` means "this agent, for everything in this window"
       // — a fixture record naming `opencode` must be answered by the stand-in, not start a real one.
       ...(hooks.agent
         ? {}
@@ -293,7 +293,7 @@ const status = await runAdwaitaApp({
       // startup and appends a batch per streamed chunk; a fresh store per append would re-read and
       // re-parse a file that may hold thirty conversations, for every token an agent emits. The store is
       // a synchronous JSON file with no cache of its own, so this is the only place that can be improved,
-      // and "improve it" is a change to `@lotse/session` rather than a decision for a surface.
+      // and "improve it" is a change to `@lotsman/session` rather than a decision for a surface.
       appendTurns: (sessionId, entries) => {
         createSessionStore(paths.sessionsFile).append(sessionId, entries);
       },

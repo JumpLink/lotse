@@ -1,25 +1,25 @@
-# 1. lotse as an embeddable widget
+# 1. lotsman as an embeddable widget
 
 - Status: **Accepted**
 - Date: 2026-10-10
 - Deciders: Pascal Garber
 - Related: [design study](../architecture/embeddable-widget-study.md)
 
-lotse had no ADRs before this one, so it takes number 0001.
+lotsman had no ADRs before this one, so it takes number 0001.
 
 ## Context
 
-lotse is an AGPL app with the session, agent and login logic inside `app/src/core` and the chat
+lotsman is an AGPL app with the session, agent and login logic inside `app/src/core` and the chat
 UI inside a 1356-line `window.ts`. Other GTK apps would like an agent chat without writing their
 own ACP client. An LGPL package may not depend on AGPL code ([werkstatt ADR 0003](../../../../docs/adr/0003-apps-are-agpl-packages-are-lgpl.md)),
 so the reusable parts have to leave `app/`.
 
 ## Decision
 
-1. **Two new LGPL packages.** `@lotse/core` holds the session, agent and login logic moved out
-   of the AGPL app. `@lotse/widget` holds a `LotseChat` widget split out of `window.ts`; the
-   lotse window becomes one consumer of it.
-2. **The host bundles its own agent.** It can ship opencode as Flatpak extra-data, as lotse does.
+1. **Two new LGPL packages.** `@lotsman/core` holds the session, agent and login logic moved out
+   of the AGPL app. `@lotsman/widget` holds a `LotsmanChat` widget split out of `window.ts`; the
+   lotsman window becomes one consumer of it.
+2. **The host bundles its own agent.** It can ship opencode as Flatpak extra-data, as lotsman does.
 3. **The host passes its own MCP servers** in ACP `session/new` `mcpServers`. No global opencode
    config is touched.
 4. **Each host gets its own data directory.** The bundled agent runs with its own `HOME` and
@@ -36,7 +36,7 @@ so the reusable parts have to leave `app/`.
 ### Headless jobs
 
 Non-chat one-shot AI jobs (receipt analysis, document classification) are not covered by a chat
-widget. lotse gets a headless `runJob` API in `@lotse/core` for them, decided in
+widget. lotsman gets a headless `runJob` API in `@lotsman/core` for them, decided in
 [ADR 0004](0004-headless-job-api.md).
 
 ## Probe result (step 1, done)
@@ -64,41 +64,41 @@ reason to offer a login, not to block the chat.
 Planned; steps 1 to 8 are done.
 
 1. Probe `mcpServers` (done, above); probe whether `/api/integration` reports connected providers (done, below).
-2. Make paths and settings injectable. **Done:** `LotsePaths` (`packages/core/src/paths.ts` since step 3: data and config dir plus the
+2. Make paths and settings injectable. **Done:** `LotsmanPaths` (`packages/core/src/paths.ts` since step 3: data and config dir plus the
    sessions, settings and notices files; a bundled agent's `HOME`/`XDG_*` follow `dataDir`) is built once at the
-   app and CLI entry (`lotsePaths()`, defaults and `LOTSE_*` knobs unchanged) and passed down; a host builds
-   its own with `lotsePathsUnder(root)`.
-3. Create `@lotse/core`. **Done:** `packages/core` (LGPL) holds the agents, the session, the turn, the
+   app and CLI entry (`lotsmanPaths()`, defaults and `LOTSMAN_*` knobs unchanged) and passed down; a host builds
+   its own with `lotsmanPathsUnder(root)`.
+3. Create `@lotsman/core`. **Done:** `packages/core` (LGPL) holds the agents, the session, the turn, the
    login, the failure classification and the view-model files, with `data/bundled-agents.json`,
    `login-providers.json` and `free-models.json` moved in beside them. The app imports one barrel
    (`packages/core/src/index.ts`); nothing imports a core file by path. The auth policy came along in the
    same step rather than later: it was split between the CLI and a private function in `run.ts`, so a
    window had to re-derive it (`auth.ts`, with `runLogin` and `open` as the surface's hooks).
-4. Plumb `mcpServers`. **Done:** `AgentSessionOptions.mcpServers` (ACP `McpServer[]`, type exported from `@lotse/core`)
+4. Plumb `mcpServers`. **Done:** `AgentSessionOptions.mcpServers` (ACP `McpServer[]`, type exported from `@lotsman/core`)
    goes unchanged into `session/new` and the reattach of a stored session. Absent means `[]` in `session/new`
    and nothing added to a reattach, as before; there is no CLI flag and no GUI setting.
 
-   **What stayed in `app/src/core`**, and why: `paths.ts` (the XDG and `LOTSE_*` resolver — an app's own
-   environment, while the `LotsePaths` *shape* moved), `settings.ts` and `settings-view.ts` (one app's
+   **What stayed in `app/src/core`**, and why: `paths.ts` (the XDG and `LOTSMAN_*` resolver — an app's own
+   environment, while the `LotsmanPaths` *shape* moved), `settings.ts` and `settings-view.ts` (one app's
    settings file; a host has its own), `notices.ts` (same, with `NOTICE_IDS` and `noticeDue` moved),
    `session-groups.ts` and `private-file.ts`. `frontends/*` is surface code and was never a candidate.
    The unit tests stayed under `app/tests/unit/core/` with their imports repointed, because one runner
    there is what keeps the dual GJS + Node run working.
-5. Create `@lotse/widget`; split `LotseChat` out of `window.ts`. **Done:** `packages/widget` (LGPL) holds
-   `LotseChat`, an `Adw.Bin` a host parents anywhere. It owns the whole chat surface — the transcript,
+5. Create `@lotsman/widget`; split `LotsmanChat` out of `window.ts`. **Done:** `packages/widget` (LGPL) holds
+   `LotsmanChat`, an `Adw.Bin` a host parents anywhere. It owns the whole chat surface — the transcript,
    the composer with its model/effort/mode rows, the tool and thought cards, the permission dialog, the
    failure and login dialogs, and the stack that switches between them. A host passes a resolved
    `AgentCommand`, the cwd a new chat runs in, optional `mcpServers`, three storage callbacks
-   (`createSession`, `appendTurns`, `resolveAgent`) and an optional `gate` wrapper — no `LotsePaths`
+   (`createSession`, `appendTurns`, `resolveAgent`) and an optional `gate` wrapper — no `LotsmanPaths`
    and no store, because both are already behind those. The gate is fail-closed by
    construction: it may answer `'ask'` or `'decline'`, and anything that is not literally `'ask'`
-   resolves the question as `cancelled` — a host can only narrow what lotse would have asked, never
+   resolves the question as `cancelled` — a host can only narrow what lotsman would have asked, never
    widen it.
 
    **What stayed in the app**, and why: `window.ts` (the shell — the header bar, the notice banner and
    the `Adw.Bin` the widget sits in), `window.blp`, `session-list.ts` (one app's sidebar and its date
    grouping; a host embeds one chat, or brings its own list), `preferences.ts` (this app's settings
-   file), `hooks.ts` and `hook-value.ts` (the `LOTSE_APP_*` dev fixtures, an app's own test surface — the
+   file), `hooks.ts` and `hook-value.ts` (the `LOTSMAN_APP_*` dev fixtures, an app's own test surface — the
    widget exposes the methods they drive, such as `stagePermissionRequest()` and `openModelDropdown()`,
    and the GLib timers that call them stay here). Two idle pages are app copy, so they are built in
    `window.blp` as top-level `Adw.StatusPage` objects and handed to the widget as `closedPage` and
@@ -107,7 +107,7 @@ Planned; steps 1 to 8 are done.
 
    The CSS is split the same way: the widget installs its own sheet (`installWidgetCss`, once per display),
    and the app's `APP_CSS` holds its three sidebar rules, so one owner per rule and a host needs no CSS.
-6. Inline provider onboarding. **Done:** `LotseChatOptions.providerOnboarding` (off by default). With it, a new chat
+6. Inline provider onboarding. **Done:** `LotsmanChatOptions.providerOnboarding` (off by default). With it, a new chat
    shows an `Adw.StatusPage` — "Connect a provider", the two ways in the login already offers (browser login, API
    key, with the provider counts of the catalog), **Connect a provider…** (the existing login dialog, unchanged) and
    **Use free hosted models**, labelled as time-limited and sent to the hosting provider. The decision is
@@ -115,14 +115,14 @@ Planned; steps 1 to 8 are done.
    that can run, the catalog reporting **no** connection, and no earlier "free models" choice. Anything unreadable is
    `unknown` and shows the ordinary chat, so the page fails closed into the behaviour that existed before; a turn that
    then fails on a login still gets the auth dialog with **Log in…**. After a successful login the agent restarts and
-   the page gives way to the chat. Nothing reads or keeps a credential; the page only counts providers. The lotse
-   app itself does not opt in. Dev hook: `LOTSE_APP_ONBOARDING=1` (`docs/dev-fixtures.md`). No connected-state signal was
+   the page gives way to the chat. Nothing reads or keeps a credential; the page only counts providers. The lotsman
+   app itself does not opt in. Dev hook: `LOTSMAN_APP_ONBOARDING=1` (`docs/dev-fixtures.md`). No connected-state signal was
    added; `probeConnections` is exported for a host that wants one.
 7. API docs. **Done:** a README for each package ([core](../../packages/core/README.md),
    [widget](../../packages/widget/README.md)) and the host guide [docs/embedding.md](../embedding.md). The examples are
    type-checked files under `app/tests/examples/`, so the docs follow the signatures.
-8. Flatpak module generator from `bundled-agents.json`. **Done:** `flatpakAgentModule` in `@lotse/core` and
-   `scripts/flatpak-agent-module`; a test pins the output byte for byte to the module in lotse's own manifest.
+8. Flatpak module generator from `bundled-agents.json`. **Done:** `flatpakAgentModule` in `@lotsman/core` and
+   `scripts/flatpak-agent-module`; a test pins the output byte for byte to the module in lotsman's own manifest.
 9. Host integration in Steuererklärung.
 
 ## Consequences

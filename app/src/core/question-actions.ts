@@ -3,15 +3,15 @@
  * without GI, so both runtimes test them (`desktop-channel.ts` only speaks D-Bus).
  *
  * **A button answers through `answerQuestion`, never around it.** A quick reply is one of the words
- * `parseAnswer` reads (`quickReplies` in `@lotse/core` decides which a question takes), handed to the
- * same function as `lotse answer <id> <text>`; "Answer…" opens the dialog, whose text goes there too.
+ * `parseAnswer` reads (`quickReplies` in `@lotsman/core` decides which a question takes), handed to the
+ * same function as `lotsman answer <id> <text>`; "Answer…" opens the dialog, whose text goes there too.
  *
  * **No `actions` capability, no buttons.** A notification server that cannot show actions gets the
- * plain notification of before, whose body still names `lotse answer`.
+ * plain notification of before, whose body still names `lotsman answer`.
  */
 
 import { _ } from '../i18n.ts';
-import { quickReplies, type QuestionKind } from '@lotse/core';
+import { quickReplies, type QuestionKind } from '@lotsman/core';
 
 import type { DesktopMode } from './settings.ts';
 
@@ -27,7 +27,7 @@ const REPLY_PREFIX = 'reply:';
  * out rather than imported because `core/` does not reach into `frontends/` (a test keeps them equal).
  * It only groups where the entry is installed (`npm run packaging:install`).
  */
-export const DESKTOP_ENTRY = 'eu.jumplink.Lotse';
+export const DESKTOP_ENTRY = 'eu.jumplink.Lotsman';
 
 export interface NotificationHints {
   readonly desktopEntry: string;
@@ -75,7 +75,7 @@ export type ActionIntent =
   | { readonly kind: 'dialog' }
   | { readonly kind: 'answer'; readonly text: QuickReply };
 
-/** What an `ActionInvoked` key means; `null` for a key lotse never sent. */
+/** What an `ActionInvoked` key means; `null` for a key lotsman never sent. */
 export function actionIntent(key: string): ActionIntent | null {
   if (key === DEFAULT_ACTION || key === DIALOG_ACTION) return { kind: 'dialog' };
   if (key === `${REPLY_PREFIX}yes`) return { kind: 'answer', text: 'yes' };

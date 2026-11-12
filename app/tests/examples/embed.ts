@@ -8,18 +8,18 @@ import {
   DEFAULT_AGENT,
   emptyStateView,
   gatherResolveContext,
-  lotsePathsUnder,
+  lotsmanPathsUnder,
   requireLauncher,
   resolveDefault,
   resolveRecorded,
   type McpServer,
-} from '@lotse/core';
-import { createSessionStore } from '@lotse/session';
-import { LotseChat } from '@lotse/widget';
+} from '@lotsman/core';
+import { createSessionStore } from '@lotsman/session';
+import { LotsmanChat } from '@lotsman/widget';
 
-export function embedChat(window: Adw.ApplicationWindow, dataRoot: string, projectDir: string): LotseChat {
-  // Everything lotse writes goes under `dataRoot`, in the host's own data directory.
-  const paths = lotsePathsUnder(dataRoot);
+export function embedChat(window: Adw.ApplicationWindow, dataRoot: string, projectDir: string): LotsmanChat {
+  // Everything lotsman writes goes under `dataRoot`, in the host's own data directory.
+  const paths = lotsmanPathsUnder(dataRoot);
   const store = createSessionStore(paths.sessionsFile);
 
   // The agent: a bundled copy, else the person's own install. `null` means none was found.
@@ -30,7 +30,7 @@ export function embedChat(window: Adw.ApplicationWindow, dataRoot: string, proje
     { name: 'my-tools', command: '/usr/bin/my-mcp-server', args: [], env: [] },
   ];
 
-  const chat = new LotseChat({
+  const chat = new LotsmanChat({
     // A command is required even when nothing was found; `noAgent` then switches Send off.
     agent: found?.command ?? requireLauncher(DEFAULT_AGENT),
     agentSource: found?.source ?? 'host',

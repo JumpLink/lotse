@@ -1,4 +1,4 @@
-import { parseProfiles, parseUsers, type Profile, type SkillTask, type User } from '@lotse/core';
+import { parseProfiles, parseUsers, type Profile, type SkillTask, type User } from '@lotsman/core';
 
 /** What a run reads from the config: the users, the profiles and the one task `t`. */
 export interface Fixture {

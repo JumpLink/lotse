@@ -1,5 +1,5 @@
 {
-  "id": "eu.jumplink.Lotse",
+  "id": "eu.jumplink.Lotsman",
   "runtime": "org.gnome.Platform",
   "runtime-version": "51",
   "sdk": "org.gnome.Sdk",
@@ -10,7 +10,7 @@
   "build-options": {
     "append-path": "/usr/lib/sdk/node24/bin:/usr/lib/sdk/typescript/bin:/app/bin"
   },
-  "command": "lotse-app",
+  "command": "lotsman-app",
   "finish-args": [
     "--device=dri",
     "--share=ipc",
@@ -62,29 +62,29 @@
       ]
     },
     {
-      "name": "lotse",
+      "name": "lotsman",
       "buildsystem": "simple",
       "build-commands": [
         "XDG_CACHE_HOME=\"$PWD/flatpak-gjsify-cache\" gjs -m build-aux/gjsify.gjs.mjs install --immutable",
-        "XDG_CACHE_HOME=\"$PWD/flatpak-gjsify-cache\" gjs -m build-aux/gjsify.gjs.mjs workspace lotse-cli build",
-        "XDG_CACHE_HOME=\"$PWD/flatpak-gjsify-cache\" gjs -m build-aux/gjsify.gjs.mjs workspace lotse-cli build:app",
+        "XDG_CACHE_HOME=\"$PWD/flatpak-gjsify-cache\" gjs -m build-aux/gjsify.gjs.mjs workspace lotsman-cli build",
+        "XDG_CACHE_HOME=\"$PWD/flatpak-gjsify-cache\" gjs -m build-aux/gjsify.gjs.mjs workspace lotsman-cli build:app",
         "install -d /app/bin",
-        "printf '#!/usr/bin/gjs -m\\n' > /app/bin/lotse-app",
-        "cat app/dist/lotse-app.gjs.mjs >> /app/bin/lotse-app",
-        "chmod 0755 /app/bin/lotse-app",
-        "printf '#!/usr/bin/gjs -m\\n' > /app/bin/lotse",
-        "cat app/dist/lotse.gjs.mjs >> /app/bin/lotse",
-        "chmod 0755 /app/bin/lotse",
+        "printf '#!/usr/bin/gjs -m\\n' > /app/bin/lotsman-app",
+        "cat app/dist/lotsman-app.gjs.mjs >> /app/bin/lotsman-app",
+        "chmod 0755 /app/bin/lotsman-app",
+        "printf '#!/usr/bin/gjs -m\\n' > /app/bin/lotsman",
+        "cat app/dist/lotsman.gjs.mjs >> /app/bin/lotsman",
+        "chmod 0755 /app/bin/lotsman",
         "for mo in app/dist/locale/*/LC_MESSAGES/*.mo; do lang=${mo#app/dist/locale/}; lang=${lang%%/*}; install -Dm644 \"$mo\" \"/app/share/locale/$lang/LC_MESSAGES/$(basename $mo)\"; done",
-        "install -Dm644 data/eu.jumplink.Lotse.desktop /app/share/applications/eu.jumplink.Lotse.desktop",
-        "install -Dm644 data/eu.jumplink.Lotse.metainfo.xml /app/share/metainfo/eu.jumplink.Lotse.metainfo.xml",
-        "install -Dm644 data/icons/hicolor/scalable/apps/eu.jumplink.Lotse.svg /app/share/icons/hicolor/scalable/apps/eu.jumplink.Lotse.svg",
-        "install -Dm644 data/icons/hicolor/symbolic/apps/eu.jumplink.Lotse-symbolic.svg /app/share/icons/hicolor/symbolic/apps/eu.jumplink.Lotse-symbolic.svg"
+        "install -Dm644 data/eu.jumplink.Lotsman.desktop /app/share/applications/eu.jumplink.Lotsman.desktop",
+        "install -Dm644 data/eu.jumplink.Lotsman.metainfo.xml /app/share/metainfo/eu.jumplink.Lotsman.metainfo.xml",
+        "install -Dm644 data/icons/hicolor/scalable/apps/eu.jumplink.Lotsman.svg /app/share/icons/hicolor/scalable/apps/eu.jumplink.Lotsman.svg",
+        "install -Dm644 data/icons/hicolor/symbolic/apps/eu.jumplink.Lotsman-symbolic.svg /app/share/icons/hicolor/symbolic/apps/eu.jumplink.Lotsman-symbolic.svg"
       ],
       "sources": [
         {
           "type": "git",
-          "url": "https://github.com/JumpLink/lotse.git",
+          "url": "https://github.com/JumpLink/lotsman.git",
           "tag": "v0.5.0",
           "x-checker-data": {
             "type": "git",

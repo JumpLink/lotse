@@ -7,12 +7,12 @@
  * looks broken. Every command that both asks a question and runs a turn shares this one object.
  *
  * Questions go to **stderr**, answers come from stdin: that keeps a piped stdout machine-readable,
- * which is what makes `lotse start "…"` composable in a shell.
+ * which is what makes `lotsman start "…"` composable in a shell.
  */
 
 import { createInterface, type Interface } from 'node:readline';
 
-import type { Terminal } from '@lotse/core';
+import type { Terminal } from '@lotsman/core';
 
 export function processTerminal(): Terminal {
   const interactive = Boolean((process.stdin as { isTTY?: boolean }).isTTY);

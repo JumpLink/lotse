@@ -13,18 +13,18 @@
  * live turn to trigger it.
  *
  * NOT part of `gjsify test` / `test.mts`. Built and run explicitly:
- *   gjsify workspace lotse-cli test:real-agent
+ *   gjsify workspace lotsman-cli test:real-agent
  */
 
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { AcpClient } from '@lotse/acp/client';
-import { LOTSE_CLIENT_CAPABILITIES } from '@lotse/acp/gate';
-import { channelTransport } from '@lotse/acp/transport';
+import { AcpClient } from '@lotsman/acp/client';
+import { LOTSMAN_CLIENT_CAPABILITIES } from '@lotsman/acp/gate';
+import { channelTransport } from '@lotsman/acp/transport';
 
-import { OPENCODE_COMMAND, StdioChannel, which } from '@lotse/core';
+import { OPENCODE_COMMAND, StdioChannel, which } from '@lotsman/core';
 
 let exitCode = 0;
 
@@ -49,7 +49,7 @@ async function main(): Promise<void> {
   }
   console.log(`PASS: opencode found on PATH at ${program}`);
 
-  const cwd = mkdtempSync(join(tmpdir(), 'lotse-real-agent-'));
+  const cwd = mkdtempSync(join(tmpdir(), 'lotsman-real-agent-'));
   let channel: StdioChannel | undefined;
   let client: AcpClient | undefined;
 
@@ -86,12 +86,12 @@ async function main(): Promise<void> {
 
     // The advertised capability, not a live fs/read_text_file round trip — see the file header.
     check(
-      LOTSE_CLIENT_CAPABILITIES.fs?.readTextFile === false,
-      'lotse advertises clientCapabilities.fs.readTextFile: false',
+      LOTSMAN_CLIENT_CAPABILITIES.fs?.readTextFile === false,
+      'lotsman advertises clientCapabilities.fs.readTextFile: false',
     );
     check(
-      LOTSE_CLIENT_CAPABILITIES.fs?.writeTextFile === false,
-      'lotse advertises clientCapabilities.fs.writeTextFile: false',
+      LOTSMAN_CLIENT_CAPABILITIES.fs?.writeTextFile === false,
+      'lotsman advertises clientCapabilities.fs.writeTextFile: false',
     );
 
     let sawAvailableCommands = false;

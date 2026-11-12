@@ -8,7 +8,7 @@ the tables and the copy-paste lines moved, and nothing was shortened on the way.
 
 The rules that *change behaviour* rather than describe it are deliberately **not** here — they
 belong beside the code they change, so they live in `AGENTS.md` § Run / build / test: **a hook set to
-`0` or `false` is off**, and **`LOTSE_STANDIN_CHUNKS` takes a prefix** of the stand-in's four fixed
+`0` or `false` is off**, and **`LOTSMAN_STANDIN_CHUNKS` takes a prefix** of the stand-in's four fixed
 sentences. Everything below is the knob list, the copy-paste line and the measurement behind each one.
 
 ## Watching a turn without a model
@@ -16,32 +16,32 @@ sentences. Everything below is the knob list, the copy-paste line and the measur
 `scripts/stand-in-agent.mjs` is a real ACP peer over stdio — real framing, real method names, the
 `fork` marker `opencode acp` sends and the v1 schema does not define. It answers without a model, a
 network or a quota, so a turn can be streamed, stopped and killed as often as needed and looks the
-same twice. `LOTSE_APP_AGENT=stand-in` selects it; it is reachable through the dev hooks and **not** in
+same twice. `LOTSMAN_APP_AGENT=stand-in` selects it; it is reachable through the dev hooks and **not** in
 `LAUNCHERS`, which is the table of programs a person installs.
 
 ```bash
 # a turn that streams and then ends on its own
-LOTSE_APP_AGENT=stand-in LOTSE_APP_THINKING=1 ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_APP_THINKING=1 ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 
 # the two states that are unreachable against a real agent: mid-stream, and a dying agent
-LOTSE_STANDIN_HANG=1             # never answers end_turn — the running state, and what Stop is for
-LOTSE_STANDIN_EXIT_MID_TURN=1    # exits with code 3 during the turn — the gone state
-LOTSE_STANDIN_DELAY_MS=900 LOTSE_STANDIN_CHUNKS=2   # a short, slow answer, to shoot mid-stream
-LOTSE_STANDIN_PERMISSION=1       # asks session/request_permission mid-turn and waits for the answer
+LOTSMAN_STANDIN_HANG=1             # never answers end_turn — the running state, and what Stop is for
+LOTSMAN_STANDIN_EXIT_MID_TURN=1    # exits with code 3 during the turn — the gone state
+LOTSMAN_STANDIN_DELAY_MS=900 LOTSMAN_STANDIN_CHUNKS=2   # a short, slow answer, to shoot mid-stream
+LOTSMAN_STANDIN_PERMISSION=1       # asks session/request_permission mid-turn and waits for the answer
 ```
 
-**`LOTSE_STANDIN_PERMISSION=1` sends all four option kinds**, so the dialog on screen shows four buttons.
+**`LOTSMAN_STANDIN_PERMISSION=1` sends all four option kinds**, so the dialog on screen shows four buttons.
 That is the point of the fixture: the two `*_always` kinds used to be filtered out of the projection,
 and a stand-in that only sent the `*_once` pair would have let that filter pass.
 
-**The order on screen is not the order lotse adds them, and neither is the order the stand-in lists
+**The order on screen is not the order lotsman adds them, and neither is the order the stand-in lists
 them.** Three orders, all measured (`orderOptions` in `packages/core/src/permission.ts` has the reasoning;
 case 9 of `alert-dialog-close.mjs` prints the two GTK facts):
 
 | | order |
 | --- | --- |
 | the stand-in sends | `allow_once`, `allow_always`, `reject_once`, `reject_always` |
-| lotse **adds** the buttons | `reject_once`, `allow_once`, `allow_always`, `reject_always` |
+| lotsman **adds** the buttons | `reject_once`, `allow_once`, `allow_always`, `reject_always` |
 | they appear on screen, top to bottom | `Always decline`, `Always allow`, `Allow once`, `Decline` |
 
 The screen order is the reverse of the add order — libadwaita fills the row bottom-up — so the first
@@ -56,63 +56,63 @@ hook here):
 
 | Variable                              | What it sends                                             | Why it is a knob |
 | ------------------------------------- | --------------------------------------------------------- | ---------------- |
-| `LOTSE_STANDIN_PERMISSION_ONCE`          | only `allow_once` + `reject_once`                          | what an agent with no lasting grant looks like — the minimal two-button dialog |
-| `LOTSE_STANDIN_PERMISSION_ALWAYS_FIRST`  | all four, `*_always` listed **first**                      | the order that used to decide where libadwaita put the focus, so a screenshot can show lotse's order winning |
-| `LOTSE_STANDIN_PERMISSION_NO_REJECT`     | only `allow_once` + `allow_always`                         | **the state with nothing safe to name.** There is no decline, so `default_response` has nothing to point at and libadwaita's fallback lands on `allow_once`; lotse's own grab in `show()` is the only thing keeping the focus on the diff body (case 10 measures what happens without one). Off by default, because the default keeps a decline available |
+| `LOTSMAN_STANDIN_PERMISSION_ONCE`          | only `allow_once` + `reject_once`                          | what an agent with no lasting grant looks like — the minimal two-button dialog |
+| `LOTSMAN_STANDIN_PERMISSION_ALWAYS_FIRST`  | all four, `*_always` listed **first**                      | the order that used to decide where libadwaita put the focus, so a screenshot can show lotsman's order winning |
+| `LOTSMAN_STANDIN_PERMISSION_NO_REJECT`     | only `allow_once` + `allow_always`                         | **the state with nothing safe to name.** There is no decline, so `default_response` has nothing to point at and libadwaita's fallback lands on `allow_once`; lotsman's own grab in `show()` is the only thing keeping the focus on the diff body (case 10 measures what happens without one). Off by default, because the default keeps a decline available |
 
 ```sh
 # four buttons — the default, and the dialog to photograph
-LOTSE_APP_AGENT=stand-in LOTSE_APP_THINKING=1 LOTSE_STANDIN_PERMISSION=1 ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_APP_THINKING=1 LOTSMAN_STANDIN_PERMISSION=1 ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 
 # two allows and no decline: the focus must land on the diff body, not on "Always allow"
-LOTSE_APP_AGENT=stand-in LOTSE_APP_THINKING=1 LOTSE_STANDIN_PERMISSION=1 LOTSE_STANDIN_PERMISSION_NO_REJECT=1 \
-  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_APP_THINKING=1 LOTSMAN_STANDIN_PERMISSION=1 LOTSMAN_STANDIN_PERMISSION_NO_REJECT=1 \
+  ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 ```
 
-`LOTSE_APP_THINKING=1` sends the prompt, `LOTSE_APP_PROMPT=<text>` says which. The two rules about *reading* a
-knob — what `LOTSE_STANDIN_CHUNKS` does with a number, and that both spellings of "off" are off — are stated
+`LOTSMAN_APP_THINKING=1` sends the prompt, `LOTSMAN_APP_PROMPT=<text>` says which. The two rules about *reading* a
+knob — what `LOTSMAN_STANDIN_CHUNKS` does with a number, and that both spellings of "off" are off — are stated
 once, in `AGENTS.md` § Run / build / test, and the front matter above says why they are not here again.
-What a fixture needs from them is only that the stand-in's `flag()` and lotse's
+What a fixture needs from them is only that the stand-in's `flag()` and lotsman's
 `frontends/gui/hook-value.ts` read one value the same way, which is tested on both runtimes.
 
-**The config row, in the same spirit: one flag, and the values it carries.** `LOTSE_STANDIN_CONFIG=1`
+**The config row, in the same spirit: one flag, and the values it carries.** `LOTSMAN_STANDIN_CONFIG=1`
 makes the stand-in report a model / effort / mode row and answer `session/set_config_option` with the
 **full** option list, the way `opencode acp` does — a bare `[]` would empty the row on every pick, which
 is a different state ("this agent has no configuration") dressed up as an answer.
 
 | Variable                   | Default | What it does                                                              |
 | -------------------------- | ------- | ------------------------------------------------------------------------- |
-| `LOTSE_STANDIN_CONFIG`        | unset   | Report `model` / `effort` / `mode` and answer a config-option set.          |
-| `LOTSE_STANDIN_CONFIG_MODELS` | `3`     | How many models the list holds. `400` is opencode's real size, and the one the dropdown's search field is for. |
-| `LOTSE_STANDIN_CONFIG_REFUSE` | unset   | Refuse **every** configuration change — the fail-closed state, which no real agent in reach produces. |
-| `LOTSE_STANDIN_CONFIG_PUSH`   | `1`     | Push `config_option_update` after a *model* change. `0` leaves only the answer, so both doors can be exercised. |
+| `LOTSMAN_STANDIN_CONFIG`        | unset   | Report `model` / `effort` / `mode` and answer a config-option set.          |
+| `LOTSMAN_STANDIN_CONFIG_MODELS` | `3`     | How many models the list holds. `400` is opencode's real size, and the one the dropdown's search field is for. |
+| `LOTSMAN_STANDIN_CONFIG_REFUSE` | unset   | Refuse **every** configuration change — the fail-closed state, which no real agent in reach produces. |
+| `LOTSMAN_STANDIN_CONFIG_PUSH`   | `1`     | Push `config_option_update` after a *model* change. `0` leaves only the answer, so both doors can be exercised. |
 
-**`LOTSE_APP_CONFIG` sets an option through the real path, and its format is `configId=valueId`** — both
+**`LOTSMAN_APP_CONFIG` sets an option through the real path, and its format is `configId=valueId`** — both
 halves, because a control id says which option and not to what, and a value id cannot be resolved on
 its own (`parseConfigOptionSpec`, and a half-spec is refused with a line in the log rather than quietly
 picking something). It **sends the prompt itself when no turn has run**, because the agent is started on
-the first prompt and an option can only be set on a live agent: so `LOTSE_APP_PROMPT` (or a fixture
+the first prompt and an option can only be set on a live agent: so `LOTSMAN_APP_PROMPT` (or a fixture
 sentence) goes out, `session/load` answers with the options, and only then is
-`session/set_config_option` sent. It is therefore applied **before** `LOTSE_APP_THINKING` — one prompt, one
+`session/set_config_option` sent. It is therefore applied **before** `LOTSMAN_APP_THINKING` — one prompt, one
 turn, one set. What a screenshot shows is the row in the state a person's click produces.
 
 ```bash
 # a real set, over the real chain, with the stand-in's 400-model list
-LOTSE_APP_AGENT=stand-in LOTSE_STANDIN_CONFIG=1 LOTSE_STANDIN_CONFIG_MODELS=400 \
-  LOTSE_APP_SESSION=fixture-2 LOTSE_APP_CONFIG=model=openrouter/vendor/model-012 LOTSE_APP_PROMPT=hi \
-  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_STANDIN_CONFIG=1 LOTSMAN_STANDIN_CONFIG_MODELS=400 \
+  LOTSMAN_APP_SESSION=fixture-2 LOTSMAN_APP_CONFIG=model=openrouter/vendor/model-012 LOTSMAN_APP_PROMPT=hi \
+  ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 
 # the refusal: the agent says no, the row stays on what the agent last answered
-LOTSE_APP_AGENT=stand-in LOTSE_STANDIN_CONFIG=1 LOTSE_STANDIN_CONFIG_REFUSE=1 \
-  LOTSE_APP_SESSION=fixture-2 LOTSE_APP_CONFIG=mode=plan LOTSE_APP_PROMPT=hi \
-  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_STANDIN_CONFIG=1 LOTSMAN_STANDIN_CONFIG_REFUSE=1 \
+  LOTSMAN_APP_SESSION=fixture-2 LOTSMAN_APP_CONFIG=mode=plan LOTSMAN_APP_PROMPT=hi \
+  ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 ```
 
 **One line while the three controls fit, wrapped when they do not, and the row raises no floor.** The
 controls sit in a `Gtk.FlowBox` (`max-children-per-line: 3`) with each dropdown inside an `Adw.Clamp` that
 caps what it asks for (`CONFIG_CONTROL_WIDTH_PX`), so a long model id cannot force a wrap. The row sits on
 the composer's card rather than in a strip of its own, so the width cap around it is the composer's clamp.
-The window stops at 360 however the row wraps — so the floor is `Adw.NavigationSplitView`'s and not lotse's content's. The row's own
+The window stops at 360 however the row wraps — so the floor is `Adw.NavigationSplitView`'s and not lotsman's content's. The row's own
 minimum is 293 px with a 32-character model id, which is where "raises no floor" comes from rather than
 from the clamp: a clamp caps a natural width and passes the minimum through
 (`scripts/probes/window-min-width.mjs` prints both, and the sweep).
@@ -141,49 +141,49 @@ that dies takes the cache with it, because live dropdowns over a process that ha
 pointing at nothing.
 
 **Four stand-in knobs for the states no real agent in reach produces**, same off-rule as `flag()`
-(`LOTSE_STANDIN_AUTH` / `LOTSE_STANDIN_PROMPT_AUTH` / `LOTSE_STANDIN_NO_RESUME` / `LOTSE_STANDIN_USAGE`). They exist
+(`LOTSMAN_STANDIN_AUTH` / `LOTSMAN_STANDIN_PROMPT_AUTH` / `LOTSMAN_STANDIN_NO_RESUME` / `LOTSMAN_STANDIN_USAGE`). They exist
 because each of the four is a failure or a line that a healthy agent produces in the middle of a
-conversation, and lotse's surface has a decision for each that nothing else here reaches:
+conversation, and lotsman's surface has a decision for each that nothing else here reaches:
 
 ```sh
-# trap 1: initialize succeeds, session/load answers -32000 → the auth dialog naming `lotse auth`
-LOTSE_STANDIN_AUTH=1
+# trap 1: initialize succeeds, session/load answers -32000 → the auth dialog naming `lotsman auth`
+LOTSMAN_STANDIN_AUTH=1
 
 # trap 2: neither loadSession nor resume → the refusal dialog, not an empty transcript
-LOTSE_STANDIN_NO_RESUME=1
+LOTSMAN_STANDIN_NO_RESUME=1
 
 # issue #2: session/prompt answers the *same* -32000 → the model dialog, not the auth one
-LOTSE_STANDIN_PROMPT_AUTH=1
+LOTSMAN_STANDIN_PROMPT_AUTH=1
 
 # a usage_update with the cost a double really carries → the rounded line in the transcript
-LOTSE_STANDIN_USAGE=1
+LOTSMAN_STANDIN_USAGE=1
 ```
 
-### `LOTSE_STANDIN_PROMPT_AUTH=1` — the same error code, a different kind
+### `LOTSMAN_STANDIN_PROMPT_AUTH=1` — the same error code, a different kind
 
 **The one knob that is not a trap but a misreport.** Measured 2026-10-02 against `opencode acp` 2.0.19
 with **no login**: the anonymous default model `opencode/fledge-alpha-free` is geo-blocked from Germany
 (HTTP 403), and opencode answers any provider 403 on `session/prompt` with
 `-32000 "Authentication required: provider authentication required"` — the same class and the same
-code as `LOTSE_STANDIN_AUTH`'s answer at `session/load`. Nothing on the wire separates the two except that
+code as `LOTSMAN_STANDIN_AUTH`'s answer at `session/load`. Nothing on the wire separates the two except that
 one has a prompt behind it, which is what `failureKind`'s `promptSent` reads. Upstream:
-<https://github.com/JumpLink/lotse/issues/2>.
+<https://github.com/JumpLink/lotsman/issues/2>.
 
 **Nothing streams first.** The measured turn carries no `stopReason` and no text at all, so a fixture
 that echoed the prompt or wrote a thought before refusing would photograph a window that looks as though
-the agent had started answering. `LOTSE_STANDIN_CONFIG=1` is what puts a model dropdown on the row, and the
+the agent had started answering. `LOTSMAN_STANDIN_CONFIG=1` is what puts a model dropdown on the row, and the
 dialog's **Choose another model** button is only there when it is.
 
 ```sh
 # the model-refusal dialog, over the real chain, with a model list behind it
-LOTSE_APP_AGENT=stand-in LOTSE_STANDIN_CONFIG=1 LOTSE_STANDIN_PROMPT_AUTH=1 \
-  LOTSE_APP_SESSION=fixture-2 LOTSE_APP_THINKING=1 LOTSE_APP_PROMPT=hi \
-  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_STANDIN_CONFIG=1 LOTSMAN_STANDIN_PROMPT_AUTH=1 \
+  LOTSMAN_APP_SESSION=fixture-2 LOTSMAN_APP_THINKING=1 LOTSMAN_APP_PROMPT=hi \
+  ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 
 # the same refusal with no configuration row → the dialog still appears, Close only
-LOTSE_APP_AGENT=stand-in LOTSE_STANDIN_PROMPT_AUTH=1 \
-  LOTSE_APP_SESSION=fixture-2 LOTSE_APP_THINKING=1 \
-  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_STANDIN_PROMPT_AUTH=1 \
+  LOTSMAN_APP_SESSION=fixture-2 LOTSMAN_APP_THINKING=1 \
+  ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 ```
 
 **The dropdown opening is the state only a button can reach,** like the dialog's own dismissal: a
@@ -196,11 +196,11 @@ whether it reached. `scripts/probes/` has the measurement behind the one call th
 see `activateDropdown` in `frontends/gui/config-row.ts`.
 
 
-## `LOTSE_APP_MODEL_POLICY` — the state lotse's own window cannot reach
+## `LOTSMAN_APP_MODEL_POLICY` — the state lotsman's own window cannot reach
 
-**A hook rather than a setting, because this app is the host that has no policy.** `LotseChat` takes a
+**A hook rather than a setting, because this app is the host that has no policy.** `LotsmanChat` takes a
 `modelPolicy` (`packages/core/src/model-policy.ts`) so that an app embedding the widget beside data of
-its own — the accounting app beside its receipts, say — can say where that data may travel. lotse's own
+its own — the accounting app beside its receipts, say — can say where that data may travel. lotsman's own
 window carries nobody's data but the person's own conversation, so it passes nothing and behaves exactly
 as it did before the option existed. Without a variable the one state a policy creates would be written,
 tested on both runtimes, and never once seen.
@@ -211,23 +211,23 @@ tested on both runtimes, and never once seen.
 | `free` | `denyFreeHostedModels`, the ready-made rule over `isFreeModel` (`-free` suffix plus exceptions) |
 | `id[,id…]` | deny exactly those model ids, allow the rest |
 
-Read as a list by `hookList` for `LOTSE_APP_SWITCH`'s reason — a variable's syntax is read where every
+Read as a list by `hookList` for `LOTSMAN_APP_SWITCH`'s reason — a variable's syntax is read where every
 variable's syntax is read. What the list *means* is `frontends/gui/model-policy-hook.ts`, which is the
 file a host's own composition root corresponds to.
 
 **An empty list has to mean no policy, and that is a regression test, not a nicety.** `hookList` answers
 an unset variable with `[]`; a `denied.includes(…)` predicate built from it denies nothing, which reads
 like "no rule" and is not one. A policy that is merely *present* makes a model the agent has not reported
-yet `unknown`, `modelBlock` fails closed on `unknown` — and lotse's own window then refused the **first
+yet `unknown`, `modelBlock` fails closed on `unknown` — and lotsman's own window then refused the **first
 turn of every ordinary run** with "This model is not allowed here". The policy's own suite could not catch
 it: every case there passes a policy on purpose. `app/tests/unit/gui/model-policy-hook.test.ts` is where
 the distinction between *absent* and *present and permissive* is now held.
 
 ```sh
 # the blocked composer: the stand-in's own model denied, the refusal dialog closed behind it
-LOTSE_APP_AGENT=stand-in LOTSE_STANDIN_CONFIG=1 LOTSE_APP_PROMPT=hi LOTSE_APP_THINKING=1 \
-  LOTSE_APP_MODEL_POLICY=openrouter/vendor/model-000 LOTSE_APP_DISMISS_FAILURE=1 \
-  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_STANDIN_CONFIG=1 LOTSMAN_APP_PROMPT=hi LOTSMAN_APP_THINKING=1 \
+  LOTSMAN_APP_MODEL_POLICY=openrouter/vendor/model-000 LOTSMAN_APP_DISMISS_FAILURE=1 \
+  ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 ```
 
 Shot with `shot.sh model-policy` (`docs/design/screenshots/model-policy.png`): the model dropdown reads
@@ -242,22 +242,22 @@ first *allowed* model as though it were in use, and choosing that model would em
 end whenever one allowed model is left. `ConfigRowControl.placeholder` (`'Choose…'`, set exactly when
 `selected < 0`) is prepended as row 0 and `configSelection` subtracts the offset, answering `null` for it.
 
-## `LOTSE_APP_SPEECH` — the Conversation toggle, silently
+## `LOTSMAN_APP_SPEECH` — the Conversation toggle, silently
 
-A hook for `LOTSE_APP_MODEL_POLICY`'s reason: `LotseChat` takes an optional `speech` engine from its
-host (ADR 0009, point 12) and **lotse's own window passes none** — the app bundles no TTS, so there is
+A hook for `LOTSMAN_APP_MODEL_POLICY`'s reason: `LotsmanChat` takes an optional `speech` engine from its
+host (ADR 0009, point 12) and **lotsman's own window passes none** — the app bundles no TTS, so there is
 no Conversation toggle in it and nothing of the read-aloud path is reachable from a run.
 
-`LOTSE_APP_SPEECH=1` (a flag) installs a stand-in engine and switches the toggle on through
-`LotseChat.setReadAloud`, the call the button itself makes, before `LOTSE_APP_THINKING` sends its
+`LOTSMAN_APP_SPEECH=1` (a flag) installs a stand-in engine and switches the toggle on through
+`LotsmanChat.setReadAloud`, the call the button itself makes, before `LOTSMAN_APP_THINKING` sends its
 prompt — so the sentences the chunker finds appear as the answer streams, not at the end.
 
 **The stand-in is silent, and it is the only engine a test or screenshot run may use.** It records
 what it was asked to say and prints one line per sentence instead:
 
 ```
-lotse: would speak — The first sentence.
-lotse: would stop speaking
+lotsman: would speak — The first sentence.
+lotsman: would stop speaking
 ```
 
 A real engine here would talk out loud on the machine running the suite. What the stand-in is lives in
@@ -268,15 +268,15 @@ would show the toggle in a window that cannot speak.
 ```sh
 # a streamed answer, read sentence by sentence into the log — synthetic store, pinned cwd
 mkdir -p /tmp/x/project
-LOTSE_SESSIONS_FILE=/tmp/x/sessions.json LOTSE_SETTINGS_FILE=/tmp/x/settings.json \
-  LOTSE_APP_AGENT=stand-in LOTSE_APP_CWD=/tmp/x/project \
-  LOTSE_APP_SPEECH=1 LOTSE_APP_THINKING=1 LOTSE_STANDIN_CHUNKS=4 \
-  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_SESSIONS_FILE=/tmp/x/sessions.json LOTSMAN_SETTINGS_FILE=/tmp/x/settings.json \
+  LOTSMAN_APP_AGENT=stand-in LOTSMAN_APP_CWD=/tmp/x/project \
+  LOTSMAN_APP_SPEECH=1 LOTSMAN_APP_THINKING=1 LOTSMAN_STANDIN_CHUNKS=4 \
+  ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 ```
 
-The bundle is `build:app`'s, not the one `npm run build` makes (that is the CLI's `lotse.gjs.mjs`),
-and the store files have to be pinned: `LOTSE_APP_THINKING` sends into the **pending** chat an empty
-`LOTSE_SESSIONS_FILE` opens, and without them the run reads the person's own sessions.
+The bundle is `build:app`'s, not the one `npm run build` makes (that is the CLI's `lotsman.gjs.mjs`),
+and the store files have to be pinned: `LOTSMAN_APP_THINKING` sends into the **pending** chat an empty
+`LOTSMAN_SESSIONS_FILE` opens, and without them the run reads the person's own sessions.
 
 ## The five pointer-only controls
 
@@ -286,32 +286,32 @@ cannot be flipped between two states inside one run.
 
 | Variable | What it presses |
 | --- | --- |
-| `LOTSE_APP_STOP=1` | the composer's **Stop**, once the turn is running |
-| `LOTSE_APP_STOP_ESCAPE=1` | the open permission dialog, the way Escape does |
-| `LOTSE_APP_DISMISS_FAILURE=1` | the failure dialog's own **Close** |
-| `LOTSE_APP_CHOOSE_MODEL=1` | the `'model'` failure dialog's **Choose another model** (issue #2) |
-| `LOTSE_APP_SWITCH=id[,id…]` | `#open` — sessions in turn, once a failure is on screen |
+| `LOTSMAN_APP_STOP=1` | the composer's **Stop**, once the turn is running |
+| `LOTSMAN_APP_STOP_ESCAPE=1` | the open permission dialog, the way Escape does |
+| `LOTSMAN_APP_DISMISS_FAILURE=1` | the failure dialog's own **Close** |
+| `LOTSMAN_APP_CHOOSE_MODEL=1` | the `'model'` failure dialog's **Choose another model** (issue #2) |
+| `LOTSMAN_APP_SWITCH=id[,id…]` | `#open` — sessions in turn, once a failure is on screen |
 
-`LOTSE_APP_STOP_ESCAPE` records a dismissal as `not-answered: dismissed`, sends `cancelled` over the wire,
+`LOTSMAN_APP_STOP_ESCAPE` records a dismissal as `not-answered: dismissed`, sends `cancelled` over the wire,
 and stops nothing else — the two strings are not the same, so the hook passes the reason and not the
-outcome. `LOTSE_APP_CHOOSE_MODEL` presses the one button **issue #2** exists for: the `'model'` dialog's
+outcome. `LOTSMAN_APP_CHOOSE_MODEL` presses the one button **issue #2** exists for: the `'model'` dialog's
 second response has no shortcut, because `Adw.AlertDialog` has no callable `response()` at all.
 
 ```sh
 # Stop, mid-turn
-LOTSE_APP_AGENT=stand-in LOTSE_APP_THINKING=1 LOTSE_APP_STOP=1 ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_APP_THINKING=1 LOTSMAN_APP_STOP=1 ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 
 # Escape on an open permission dialog, and nothing else
-LOTSE_APP_AGENT=stand-in LOTSE_APP_THINKING=1 LOTSE_STANDIN_PERMISSION=1 LOTSE_APP_STOP_ESCAPE=1 \
-  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_APP_THINKING=1 LOTSMAN_STANDIN_PERMISSION=1 LOTSMAN_APP_STOP_ESCAPE=1 \
+  ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 
 # Close on the refusal dialog, then the session moving on underneath it
-LOTSE_APP_AGENT=stand-in LOTSE_STANDIN_NO_RESUME=1 LOTSE_APP_DISMISS_FAILURE=1 LOTSE_APP_SWITCH=fixture-1,fixture-2 \
-  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_STANDIN_NO_RESUME=1 LOTSMAN_APP_DISMISS_FAILURE=1 LOTSMAN_APP_SWITCH=fixture-1,fixture-2 \
+  ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 
 # issue #2: the model dialog's button, with a model list behind it
-LOTSE_APP_AGENT=stand-in LOTSE_STANDIN_CONFIG=1 LOTSE_STANDIN_PROMPT_AUTH=1 LOTSE_APP_CHOOSE_MODEL=1 \
-  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_STANDIN_CONFIG=1 LOTSMAN_STANDIN_PROMPT_AUTH=1 LOTSMAN_APP_CHOOSE_MODEL=1 \
+  ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 ```
 
 **Why a hook for each, measured rather than assumed.** `ActivateWidget` on an `Adw.AlertDialog` response
@@ -321,7 +321,7 @@ pointer cannot stand in: under Wayland `XTestFakeMotionEvent` does not move it, 
 `GDK_BACKEND=x11` a dialog is mapped but never painted. **The failure dialog's close-response is
 `close`, so `close()`, Escape and pressing Close are the same call** — `scripts/probes/alert-dialog-close.mjs`
 case 1 measures it, and the fourth fact it prints is in [## Probes](#probes); the same case records that
-`Adw.AlertDialog` has no callable `response()` at all, which is why `LOTSE_APP_CHOOSE_MODEL` emits the signal
+`Adw.AlertDialog` has no callable `response()` at all, which is why `LOTSMAN_APP_CHOOSE_MODEL` emits the signal
 itself.
 
 The two rules these five all follow — each hook goes **through the surface** rather than around it, and a
@@ -330,69 +330,69 @@ reason for each, in `AGENTS.md` § Run / build / test.
 
 ## The preferences dialog
 
-Not a sixth pointer-only control in the table above, but the same reason: radio rows are not operable from the devtools plane. `LOTSE_APP_PREFERENCES=1` opens the dialog through `app.preferences`, the action the menu and `<Ctrl>comma` run. `LOTSE_APP_PREFERENCES_AGENT=<key>` opens it and chooses a row through the dialog's own handler; keys are `auto`, `<id>:host`, `<id>:bundled`. `LOTSE_APP_PREFERENCES_PAGE=<name>` opens it on a page (`agent`, `providers`) through `showPage`, which reads `visiblePageName` back. All three follow `flag()`/`hookValue` rules, and each logs one line saying whether it reached.
+Not a sixth pointer-only control in the table above, but the same reason: radio rows are not operable from the devtools plane. `LOTSMAN_APP_PREFERENCES=1` opens the dialog through `app.preferences`, the action the menu and `<Ctrl>comma` run. `LOTSMAN_APP_PREFERENCES_AGENT=<key>` opens it and chooses a row through the dialog's own handler; keys are `auto`, `<id>:host`, `<id>:bundled`. `LOTSMAN_APP_PREFERENCES_PAGE=<name>` opens it on a page (`agent`, `providers`) through `showPage`, which reads `visiblePageName` back. All three follow `flag()`/`hookValue` rules, and each logs one line saying whether it reached.
 
 ```sh
 # 360 px: with GJSIFY_DEVTOOLS=1, resize afterwards:
-#   gdbus call --session --dest eu.jumplink.Lotse --object-path /eu/jumplink/Lotse/devtools \
+#   gdbus call --session --dest eu.jumplink.Lotsman --object-path /eu/jumplink/Lotsman/devtools \
 #     --method org.gjsify.Devtools.ResizeWindow 360 600
-GJSIFY_DEVTOOLS=1 LOTSE_SETTINGS_FILE=/tmp/x/settings.json LOTSE_APP_AGENT=stand-in LOTSE_APP_PREFERENCES_AGENT=opencode:bundled \
-  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+GJSIFY_DEVTOOLS=1 LOTSMAN_SETTINGS_FILE=/tmp/x/settings.json LOTSMAN_APP_AGENT=stand-in LOTSMAN_APP_PREFERENCES_AGENT=opencode:bundled \
+  ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 ```
 
 Rows are action rows with radio buttons rather than an `Adw.ComboRow`: a combo row has no per-item subtitle (path, version, "not found") and wraps badly at 360 px. Versions are never probed here (`--version` is skipped), so a host row shows no version. `app/src/core/settings-view.ts` decides the rows, and an unavailable agent stays listed rather than disappearing. **Inside a Flatpak the dialog opens before the host has answered** — rows read `Checking…` and fill in asynchronously — because waiting would show nothing at all for as long as `flatpak-spawn` takes.
 
-**A save never destroys a settings file lotse could not read** (`saveDecision`): a `version` newer than this build refuses the write outright, and anything else unreadable is first moved to `settings.json.bak`. A change applies the next time lotse starts, because the window resolves its agent once and keeps it.
+**A save never destroys a settings file lotsman could not read** (`saveDecision`): a `version` newer than this build refuses the write outright, and anything else unreadable is first moved to `settings.json.bak`. A change applies the next time lotsman starts, because the window resolves its agent once and keeps it.
 
 ## The login dialog
 
-`LOTSE_APP_LOGIN=1` opens it the way the auth dialog's **Log in…** does, on the real path: a private `opencode serve` and its real provider list, so it needs opencode v2 on `PATH`. Rows are `Adw.ActionRow`s, which the devtools plane can activate. A window that is not visible renders nothing (`Screenshot` answers `empty-snapshot`); a headless `mutter --headless --wayland --virtual-monitor 1280x800` on its own session bus is a display that always draws.
+`LOTSMAN_APP_LOGIN=1` opens it the way the auth dialog's **Log in…** does, on the real path: a private `opencode serve` and its real provider list, so it needs opencode v2 on `PATH`. Rows are `Adw.ActionRow`s, which the devtools plane can activate. A window that is not visible renders nothing (`Screenshot` answers `empty-snapshot`); a headless `mutter --headless --wayland --virtual-monitor 1280x800` on its own session bus is a display that always draws.
 
 ## Provider onboarding
 
-`LOTSE_APP_ONBOARDING=1` (a flag) stages the page as if the probe had found no connected provider and a login could run (`LotseChat.stageOnboarding`): the stand-in agent has no login API, so the real probe can never reach this state against it. Counts on the page are the 2.0.22 catalog's (10 browser logins, 228 keys). **Connect a provider…** then opens the real login dialog, which says it is unavailable for the stand-in. Shot with `shot.sh onboarding` (`docs/design/screenshots/onboarding.png`). The real path is `providerOnboarding: true` on `LotseChat` against opencode v2 with an empty store; `node scripts/probes/provider-connections.mjs` measures the signal it reads.
+`LOTSMAN_APP_ONBOARDING=1` (a flag) stages the page as if the probe had found no connected provider and a login could run (`LotsmanChat.stageOnboarding`): the stand-in agent has no login API, so the real probe can never reach this state against it. Counts on the page are the 2.0.22 catalog's (10 browser logins, 228 keys). **Connect a provider…** then opens the real login dialog, which says it is unavailable for the stand-in. Shot with `shot.sh onboarding` (`docs/design/screenshots/onboarding.png`). The real path is `providerOnboarding: true` on `LotsmanChat` against opencode v2 with an empty store; `node scripts/probes/provider-connections.mjs` measures the signal it reads.
 
 ## First run and New chat
 
-**First run is an empty `LOTSE_SESSIONS_FILE`** (the window opens on the `new` page with a live composer, and no process until a prompt is sent). The first prompt connects, sends `session/new` for the resolved cwd, writes the record (`conversationRecord`, shared with `lotse start`: title from the prompt, `agent`, `agentSource`, `cwd`, `reattach`) and then prompts; the sidebar gets the row on top and marks it. **New chat** is `win.new-chat`: the button in the sidebar header bar, `<Ctrl>n` and `LOTSE_APP_NEW_CHAT` all activate that one action.
+**First run is an empty `LOTSMAN_SESSIONS_FILE`** (the window opens on the `new` page with a live composer, and no process until a prompt is sent). The first prompt connects, sends `session/new` for the resolved cwd, writes the record (`conversationRecord`, shared with `lotsman start`: title from the prompt, `agent`, `agentSource`, `cwd`, `reattach`) and then prompts; the sidebar gets the row on top and marks it. **New chat** is `win.new-chat`: the button in the sidebar header bar, `<Ctrl>n` and `LOTSMAN_APP_NEW_CHAT` all activate that one action.
 
-**The cwd** is `LOTSE_CWD` → the directory lotse was started from (inside a Flatpak: the host shell's, asked once before the window exists, up to 5 s) → `$HOME`; one that is not an absolute existing directory falls through (`packages/core/src/cwd.ts`). The window shows it as one dim line under the composer, home as `~`. The host question is not measured here — this machine is not a Flatpak — only its pure half and the argv are tested.
+**The cwd** is `LOTSMAN_CWD` → the directory lotsman was started from (inside a Flatpak: the host shell's, asked once before the window exists, up to 5 s) → `$HOME`; one that is not an absolute existing directory falls through (`packages/core/src/cwd.ts`). The window shows it as one dim line under the composer, home as `~`. The host question is not measured here — this machine is not a Flatpak — only its pure half and the argv are tested.
 
-- `LOTSE_APP_NEW_CHAT=1` — press New chat through `win.new-chat`. With a turn running it waits for the turn to end, so `LOTSE_APP_THINKING=1 LOTSE_APP_PROMPT=… LOTSE_APP_NEW_CHAT=1` photographs the empty composer *after* a chat exists. The action is activated with `lookup_action('new-chat').activate(null)`: `this.activate_action('win.new-chat', null)` resolves to `Gio.ActionGroup`'s on a window, takes no prefix, returns nothing and did nothing (measured).
-- `LOTSE_APP_NEW_CHAT_MIDTURN=1` — press New chat **while the turn is streaming**: polls (50 ms) until the agent has said something and the turn is still running, then activates `win.new-chat`. New chat stops the turn the way Stop does (`session/cancel`; an open permission settles `cancelled`, `turn-cancelled`), the turn ends `idle` (never `Stopped.` on the new chat), and anything the old turn still says goes to its own record and never to the visible pane — the same holds for opening another row mid-turn (`bind`). After the agent has exited (`gone`), New chat retires the dead handle (awaiting its `close()`) so the next prompt starts a fresh agent; a record that cannot be written after `session/new` says so (`unsavedMessage`: not saved, why, press New chat).
+- `LOTSMAN_APP_NEW_CHAT=1` — press New chat through `win.new-chat`. With a turn running it waits for the turn to end, so `LOTSMAN_APP_THINKING=1 LOTSMAN_APP_PROMPT=… LOTSMAN_APP_NEW_CHAT=1` photographs the empty composer *after* a chat exists. The action is activated with `lookup_action('new-chat').activate(null)`: `this.activate_action('win.new-chat', null)` resolves to `Gio.ActionGroup`'s on a window, takes no prefix, returns nothing and did nothing (measured).
+- `LOTSMAN_APP_NEW_CHAT_MIDTURN=1` — press New chat **while the turn is streaming**: polls (50 ms) until the agent has said something and the turn is still running, then activates `win.new-chat`. New chat stops the turn the way Stop does (`session/cancel`; an open permission settles `cancelled`, `turn-cancelled`), the turn ends `idle` (never `Stopped.` on the new chat), and anything the old turn still says goes to its own record and never to the visible pane — the same holds for opening another row mid-turn (`bind`). After the agent has exited (`gone`), New chat retires the dead handle (awaiting its `close()`) so the next prompt starts a fresh agent; a record that cannot be written after `session/new` says so (`unsavedMessage`: not saved, why, press New chat).
   ```sh
-  GJSIFY_DEVTOOLS=1 LOTSE_SESSIONS_FILE=/tmp/x/sessions.json LOTSE_SETTINGS_FILE=/tmp/x/settings.json \
-    LOTSE_APP_AGENT=stand-in LOTSE_APP_CWD=/tmp/x/project LOTSE_STANDIN_DELAY_MS=1500 \
-    LOTSE_APP_THINKING=1 LOTSE_APP_PROMPT='Say hello.' LOTSE_APP_NEW_CHAT_MIDTURN=1 \
-    ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+  GJSIFY_DEVTOOLS=1 LOTSMAN_SESSIONS_FILE=/tmp/x/sessions.json LOTSMAN_SETTINGS_FILE=/tmp/x/settings.json \
+    LOTSMAN_APP_AGENT=stand-in LOTSMAN_APP_CWD=/tmp/x/project LOTSMAN_STANDIN_DELAY_MS=1500 \
+    LOTSMAN_APP_THINKING=1 LOTSMAN_APP_PROMPT='Say hello.' LOTSMAN_APP_NEW_CHAT_MIDTURN=1 \
+    ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
   ```
-- `LOTSE_APP_CWD=<path>` — pin the cwd so a screenshot never shows a private path; beats `LOTSE_CWD`. `LOTSE_APP_THINKING` + `LOTSE_APP_PROMPT` also send into the pending chat.
+- `LOTSMAN_APP_CWD=<path>` — pin the cwd so a screenshot never shows a private path; beats `LOTSMAN_CWD`. `LOTSMAN_APP_THINKING` + `LOTSMAN_APP_PROMPT` also send into the pending chat.
 - The stand-in answers `session/new` with `ses_standin_0001`, then `…_2`, `…_3`: two chats in one window must not collide in the store.
-- A session opened from the list is reattached on the copy of the agent its record names (`resolveRecorded`), asked on its first prompt. **Not wired with `LOTSE_APP_AGENT`**: that pins one agent for the whole window, otherwise a fixture record naming `opencode` would start a real one.
+- A session opened from the list is reattached on the copy of the agent its record names (`resolveRecorded`), asked on its first prompt. **Not wired with `LOTSMAN_APP_AGENT`**: that pins one agent for the whole window, otherwise a fixture record naming `opencode` would start a real one.
 
 ```sh
 # first run, a prompt, then the empty composer again — synthetic file, pinned cwd
 mkdir -p /tmp/x/project
-GJSIFY_DEVTOOLS=1 LOTSE_SESSIONS_FILE=/tmp/x/sessions.json LOTSE_SETTINGS_FILE=/tmp/x/settings.json \
-  LOTSE_APP_AGENT=stand-in LOTSE_APP_CWD=/tmp/x/project LOTSE_APP_THINKING=1 LOTSE_APP_PROMPT='Say hello.' LOTSE_APP_NEW_CHAT=1 \
-  ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+GJSIFY_DEVTOOLS=1 LOTSMAN_SESSIONS_FILE=/tmp/x/sessions.json LOTSMAN_SETTINGS_FILE=/tmp/x/settings.json \
+  LOTSMAN_APP_AGENT=stand-in LOTSMAN_APP_CWD=/tmp/x/project LOTSMAN_APP_THINKING=1 LOTSMAN_APP_PROMPT='Say hello.' LOTSMAN_APP_NEW_CHAT=1 \
+  ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 ```
 
-Two defects found on the way, both fixed: `agentStatus({status: 'none'})` was `attached: false`, so Send stayed disabled until an agent existed — and the agent only starts on the first prompt (only `LOTSE_APP_THINKING` could send one); and `#open` re-read nothing, so a chat revisited after streaming showed the startup copy of its transcript.
+Two defects found on the way, both fixed: `agentStatus({status: 'none'})` was `attached: false`, so Send stayed disabled until an agent existed — and the agent only starts on the first prompt (only `LOTSMAN_APP_THINKING` could send one); and `#open` re-read nothing, so a chat revisited after streaming showed the startup copy of its transcript.
 
 ## The bundled-agent notice and the no-agent page
 
 The bundled copy exists only inside a Flatpak, so two hooks stand in for it. Both are flags (`0`/`false` = off) and both go through the window's own paths.
 
-- `LOTSE_APP_NOTICE=1` — force the bundled-agent condition: the `Adw.Banner` under the content header shows (fixed English text from `packages/core/src/empty-state.ts`, one **Got it**). Not shown for a host install, with no agent, or once dismissed. The text is kept to three lines at 360 px: `Adw.Banner` ellipsizes beyond that, which cut the statement itself.
-- `LOTSE_APP_NOTICE_DISMISS=1` — press **Got it** by emitting the banner's own `button-clicked`; logs one line. The id lands in `$LOTSE_NOTICES_FILE` (default `$XDG_DATA_HOME/lotse/notices.json`, 0600 in 0700, atomic write); a corrupt or unreadable file shows the notice again and never stops startup.
-- `LOTSE_APP_NO_AGENT=1` — force the nothing-found resolution (beats `LOTSE_APP_AGENT`): the content pane says "No agent found" with the install command (selectable text, no markup), the docs link and a **Preferences** button (`app.preferences`); Send and the entry are off with the reason under the composer. `lotse start`, `lotse auth` and `lotse agents` print the same remedy (`NO_AGENT_REMEDY`).
+- `LOTSMAN_APP_NOTICE=1` — force the bundled-agent condition: the `Adw.Banner` under the content header shows (fixed English text from `packages/core/src/empty-state.ts`, one **Got it**). Not shown for a host install, with no agent, or once dismissed. The text is kept to three lines at 360 px: `Adw.Banner` ellipsizes beyond that, which cut the statement itself.
+- `LOTSMAN_APP_NOTICE_DISMISS=1` — press **Got it** by emitting the banner's own `button-clicked`; logs one line. The id lands in `$LOTSMAN_NOTICES_FILE` (default `$XDG_DATA_HOME/lotsman/notices.json`, 0600 in 0700, atomic write); a corrupt or unreadable file shows the notice again and never stops startup.
+- `LOTSMAN_APP_NO_AGENT=1` — force the nothing-found resolution (beats `LOTSMAN_APP_AGENT`): the content pane says "No agent found" with the install command (selectable text, no markup), the docs link and a **Preferences** button (`app.preferences`); Send and the entry are off with the reason under the composer. `lotsman start`, `lotsman auth` and `lotsman agents` print the same remedy (`NO_AGENT_REMEDY`).
 
 ```sh
 # synthetic everything; a missing sessions file is first run
-GJSIFY_DEVTOOLS=1 LOTSE_SESSIONS_FILE=/tmp/x/sessions.json LOTSE_SETTINGS_FILE=/tmp/x/settings.json \
-  LOTSE_NOTICES_FILE=/tmp/x/notices.json LOTSE_APP_CWD=/tmp/x/project LOTSE_APP_AGENT=stand-in \
-  LOTSE_APP_NOTICE=1 ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs   # or LOTSE_APP_NO_AGENT=1
+GJSIFY_DEVTOOLS=1 LOTSMAN_SESSIONS_FILE=/tmp/x/sessions.json LOTSMAN_SETTINGS_FILE=/tmp/x/settings.json \
+  LOTSMAN_NOTICES_FILE=/tmp/x/notices.json LOTSMAN_APP_CWD=/tmp/x/project LOTSMAN_APP_AGENT=stand-in \
+  LOTSMAN_APP_NOTICE=1 ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs   # or LOTSMAN_APP_NO_AGENT=1
 ```
 
 ## The permission dialog
@@ -405,7 +405,7 @@ print the numbers, and the split between the two kinds of probe, are in [## Prob
 
 **The rank behind the order** (`orderOptions`) is `reject_once`, `allow_once`, `allow_always`,
 `reject_always`, stable within a kind, and the row appears **bottom-up from that** — the order on screen
-is the mirror of the order lotse adds in. The rules that follow from it (both end slots a decline,
+is the mirror of the order lotsman adds in. The rules that follow from it (both end slots a decline,
 `buildDialog` naming `default_response`, `show()` grabbing the focus, and the four short button labels
 with the agent's wording moved into the body's caption line `agentNames`) are in `AGENTS.md` § Run /
 build / test; what is measured here is why they hold — case 9 prints both the focus and the layout
@@ -421,18 +421,18 @@ not depend on the pointer; the dialog's own **Decline** covers the case a person
 `reject_once` and letting the turn continue. A dialog is the right place for the answer to "may this
 run?", not for "end this turn".
 
-**`LOTSE_APP_PERMISSION` is a fallback, not a competitor**, and the wait is a poll rather than a fixed
-delay (`window.ts`): with `LOTSE_STANDIN_PERMISSION=1` the agent's question is the better thing to
+**`LOTSMAN_APP_PERMISSION` is a fallback, not a competitor**, and the wait is a poll rather than a fixed
+delay (`window.ts`): with `LOTSMAN_STANDIN_PERMISSION=1` the agent's question is the better thing to
 photograph and it arrives an unpredictable moment after the prompt goes out, so a fixed delay would
 either beat it or lose to it. It stages only once the gate has not been asked; with no turn running
 that is the first tick, because there is no agent that could ask.
 
 ```bash
 # the agent's own question, mid-turn, over the real chain
-LOTSE_APP_AGENT=stand-in LOTSE_APP_THINKING=1 LOTSE_STANDIN_PERMISSION=1 ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_AGENT=stand-in LOTSMAN_APP_THINKING=1 LOTSMAN_STANDIN_PERMISSION=1 ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 
 # just the dialog, with no agent at all
-LOTSE_APP_PERMISSION=1 ./node_modules/.bin/gjsify run app/dist/lotse-app.gjs.mjs
+LOTSMAN_APP_PERMISSION=1 ./node_modules/.bin/gjsify run app/dist/lotsman-app.gjs.mjs
 ```
 
 ## The window floor
@@ -456,7 +456,7 @@ has the `dbus-run-session`/`mutter --headless` invocation and the numbers that c
 ## Probes
 
 **Two kinds of GTK probe, and which is which.** `scripts/probes/` measures *libadwaita* with
-look-alikes (`gjs -m scripts/probes/<name>.mjs`); `app/tests/probes/` measures *lotse's own widget*,
+look-alikes (`gjs -m scripts/probes/<name>.mjs`); `app/tests/probes/` measures *lotsman's own widget*,
 so it is a TypeScript entry that imports the widget and has to be bundled first:
 
 ```sh
@@ -470,7 +470,7 @@ on the allow button while the app's own screenshot showed a highlighted label in
 
 `dropdown-no-selection.mjs` is a look-alike of the first kind and the reason the config row has a
 placeholder row: `Gtk.DropDown` has no unselected state, and it says so in numbers rather than in a
-comment — see [the model-policy hook](#lotse_app_model_policy--the-state-lotses-own-window-cannot-reach).
+comment — see [the model-policy hook](#lotsman_app_model_policy--the-state-lotsmans-own-window-cannot-reach).
 
 **The focus case measures both readings of `default_response`.** Case 9 of `alert-dialog-close.mjs`
 builds the dialog twice, `allow_once, reject_once` and `reject_once, allow_once`, because the two
@@ -485,7 +485,7 @@ allow-button test matches the *rendered* label of **any** allowing kind rather t
 focused "Always allow" answers Enter exactly as a focused "Allow once" does, and also widens the answer.
 It also samples the focus **every main-loop turn until it settles**, not once, so a focus that passes
 through an allow button and lands somewhere safe afterwards cannot pass. The last two cases exist only
-because lotse began passing the `*_always` kinds through: an agent offering `allow_once` and
+because lotsman began passing the `*_always` kinds through: an agent offering `allow_once` and
 `allow_always` and nothing rejecting leaves no safe button, and the probe fails if any sampled turn names
 one.
 
@@ -496,7 +496,7 @@ at all. The first sample is the body in the first two and `Allow once` in the th
 So **a grab is what matters**, not which kind; the synchronous form is kept because an idle libadwaita
 queues after ours, which is a structural argument and not a measured one. That
 case cannot be reproduced against `PermissionDialog` at all: `present()` maps synchronously, so by the
-time `permission-focus.ts` has a timer running, lotse's grab has already happened and the pre-idle frame
+time `permission-focus.ts` has a timer running, lotsman's grab has already happened and the pre-idle frame
 is not observable from outside. The widget probe therefore covers the **settled** focus and the
 turn-by-turn sequence; neither result is stretched to answer the other.
 
@@ -509,21 +509,21 @@ through `emit`, which is what `AdwAlertDialog` does internally.
 **That measurement still holds now that the `'model'` dialog has a second response, and it is why.**
 `FailureDialog` names its dismissal `close`, and `close` is libadwaita's default `close-response` — so
 `close()`, Escape and pressing Close all arrive as `response("close")`, and never as the remedy. So
-`LOTSE_APP_DISMISS_FAILURE` still photographs a *dismissed* dialog on the one dialog that has something to
+`LOTSMAN_APP_DISMISS_FAILURE` still photographs a *dismissed* dialog on the one dialog that has something to
 dismiss, and the window's single `close()` still takes down whichever dialog is up. The rule was "one
 response, so there is one dismissal"; the rule that survives is the stronger one, "the dismissal is the
 response named `close`".
 
-*The GUI run recipe — detached start, `GJSIFY_DEVTOOLS=1`, a synthetic `LOTSE_SESSIONS_FILE`,
-`LOTSE_APP_SESSION` — is in `AGENTS.md` § Run / build / test, where it belongs: it is how the work is
+*The GUI run recipe — detached start, `GJSIFY_DEVTOOLS=1`, a synthetic `LOTSMAN_SESSIONS_FILE`,
+`LOTSMAN_APP_SESSION` — is in `AGENTS.md` § Run / build / test, where it belongs: it is how the work is
 run, not a fixture.*
 
 ### GTK Behaviour (moved from AGENTS.md)
 
 **The GUI is looked at, not believed:** start it detached (a foreground GJS process is killed by the
-agent sandbox), with `GJSIFY_DEVTOOLS=1` for `org.gjsify.Devtools` on `/eu/jumplink/Lotse/devtools`
-(`Screenshot`, `DumpTree`), `LOTSE_SESSIONS_FILE=<synthetic file>` so no real conversation ends up in a
-screenshot, and `LOTSE_APP_SESSION=<id>` to open a session without a pointer. GTK behaviour a comment
+agent sandbox), with `GJSIFY_DEVTOOLS=1` for `org.gjsify.Devtools` on `/eu/jumplink/Lotsman/devtools`
+(`Screenshot`, `DumpTree`), `LOTSMAN_SESSIONS_FILE=<synthetic file>` so no real conversation ends up in a
+screenshot, and `LOTSMAN_APP_SESSION=<id>` to open a session without a pointer. GTK behaviour a comment
 relies on gets a probe in `scripts/probes/` that prints the numbers the comment quotes.
 
 **Three GTK facts behind the permission dialog, measured not read from signal docs:**
@@ -532,7 +532,7 @@ relies on gets a probe in `scripts/probes/` that prints the numbers the comment 
 - With no `default_response` set, libadwaita focuses the **first added** response — contrary to
   `Adw-1.gir` which says "the last added response will be focused by default"
 
-**Lotse owns the button order, not just the button set** (`orderOptions`). The agent's order is chosen
+**Lotsman owns the button order, not just the button set** (`orderOptions`). The agent's order is chosen
 by the agent; the rank is `reject_once`, `allow_once`, `allow_always`, `reject_always`, stable within a
 kind, and the row appears **bottom-up from that**, so the first added is the bottom button and the last
 added is the topmost. Two measured libadwaita facts fix it: with no `default_response` **the focus goes
@@ -544,8 +544,8 @@ add order choose it, and `show()` grabs the focus — **case 10 builds a look-al
 for that grab. It is not observable from outside `PermissionDialog` (`present()` maps synchronously), so
 the widget probe measures the settled focus and every turn in between instead.
 
-**The button labels are lotse's four short sentences and the agent's own names are not on them.** A
-button is the decision, so its label has to fit one line — the labels were once "lotse's word + the
+**The button labels are lotsman's four short sentences and the agent's own names are not on them.** A
+button is the decision, so its label has to fit one line — the labels were once "lotsman's word + the
 agent's name" and read "Always decline: Always decline in thi…" at the 360 px floor. The agent's wording
 moved into the body as one caption line (`agentNames`), shown only when a name says something the kind
 does not. The terminal prompt follows the same rule: it prints `y = Allow once`, the option a `y` actually
@@ -564,7 +564,7 @@ question. Both runtimes, as in curlew and beifahrer:
   inconvenient parts (a `_meta` bag it invented, a mid-turn `request_permission`, a paginated
   `session/list`), so a client that only passes against a polite peer is not tested.
 - **GJS**: one integration test that proves the real stdio chain against a real agent
-  (`lotse-cli test:real-agent`).
+  (`lotsman-cli test:real-agent`).
 
 If a change makes the Node run impossible, the change is in the wrong file — that dual run is the
 entire point of the `packages/acp` ↔ `app` split.

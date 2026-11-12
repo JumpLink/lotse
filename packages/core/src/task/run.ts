@@ -1,14 +1,14 @@
 /**
  * One run of a task — ADR 0003 — and `runSession`, the part a run, an answer and a chat request share.
  *
- * **Two processes share the question store.** `lotse listen` holds a permission request open and polls
- * the store until the question is answered or expires; `lotse answer` is a second process that writes
+ * **Two processes share the question store.** `lotsman listen` holds a permission request open and polls
+ * the store until the question is answered or expires; `lotsman answer` is a second process that writes
  * the answer. That is why a waiting run reads the store rather than a variable, and why a permission
  * question whose run is gone is marked `cancelled` — a yes to it then has nothing to allow and is
  * dropped (ADR 0002 §8), instead of being applied to a session it was never about.
  */
 
-import type { AcpClient, McpServer, SessionConfigOption, StopReason } from '@lotse/acp';
+import type { AcpClient, McpServer, SessionConfigOption, StopReason } from '@lotsman/acp';
 
 import { _, fmt } from '../i18n.ts';
 import { chunkToText } from '../policy.ts';
@@ -80,7 +80,8 @@ export async function runTask(
   let task: Task;
   try {
     const skill = deps.skill(id);
-    if (!skill) throw new TaskUsageError(fmt(_('there is no task "{id}"; `lotse tasks` lists them'), { id }));
+    if (!skill)
+      throw new TaskUsageError(fmt(_('there is no task "{id}"; `lotsman tasks` lists them'), { id }));
     task = taskOf(skill, deps.profiles, renderTask(skill, params));
   } catch (error) {
     if (error instanceof TaskFileError) return { status: 'failed', reason: error.message };
@@ -255,7 +256,7 @@ export async function runSession(
     });
     if (error instanceof ModelUnavailableError || error instanceof ProfileOptionError) {
       await deps.channel.send(user, {
-        title: `lotse · ${task.id} stopped`,
+        title: `lotsman · ${task.id} stopped`,
         body: reason,
         questionId: null,
         task: task.id,

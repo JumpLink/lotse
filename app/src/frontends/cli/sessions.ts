@@ -1,7 +1,7 @@
 /**
- * `lotse sessions` — lotse's own records, for one principal.
+ * `lotsman sessions` — lotsman's own records, for one principal.
  *
- * Note what this lists and what it does not: these are *lotse's* records, not the agent's. The
+ * Note what this lists and what it does not: these are *lotsman's* records, not the agent's. The
  * agent has its own history and hands it over on request; this is the local file, which is what a
  * resume needs and what a person wants when asking "what did I open here last week".
  */
@@ -9,15 +9,15 @@
 import { _ } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
-import type { LotsePaths } from '@lotse/core';
-import { LOCAL_PRINCIPAL, createSessionStore, forPrincipal } from '@lotse/session';
-import type { SessionRecord } from '@lotse/session';
+import type { LotsmanPaths } from '@lotsman/core';
+import { LOCAL_PRINCIPAL, createSessionStore, forPrincipal } from '@lotsman/session';
+import type { SessionRecord } from '@lotsman/session';
 
 import { err, pickArgv, showSession, showSessionTable } from './output.ts';
 
-const command = (paths: LotsePaths): CommandModule => ({
+const command = (paths: LotsmanPaths): CommandModule => ({
   command: 'sessions',
-  describe: _('list the sessions lotse has recorded'),
+  describe: _('list the sessions lotsman has recorded'),
   builder: (yargs) =>
     yargs
       .option('all', { type: 'boolean', describe: _('include sessions of other principals') })
@@ -44,7 +44,7 @@ const command = (paths: LotsePaths): CommandModule => ({
     if (records.length === 0) {
       err(
         pickArgv<boolean>(raw, 'all') === true
-          ? 'lotse has no sessions yet — `lotse start` opens one'
+          ? 'lotsman has no sessions yet — `lotsman start` opens one'
           : `no sessions for principal "${principal}" (try --all)`,
       );
     }

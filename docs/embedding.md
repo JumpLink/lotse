@@ -1,14 +1,14 @@
-# Embedding a Lotse chat in your GTK4 app
+# Embedding a Lotsman chat in your GTK4 app
 
 A step-by-step guide for a host application written in GJS (TypeScript or JavaScript) with GTK 4 and
 libadwaita that wants an agent chat inside its own window. You get a transcript, a composer, tool cards,
-an approval dialog and a provider login as **one widget**, `LotseChat`. You bring the window, the
+an approval dialog and a provider login as **one widget**, `LotsmanChat`. You bring the window, the
 data directory, the agent choice and your own permission policy.
 
 Both packages are LGPL-3.0-or-later, so you may link them into an application under another licence;
-changes to the packages themselves stay LGPL. Reference: [`@lotse/core`](../packages/core/README.md),
-[`@lotse/widget`](../packages/widget/README.md). Why the line is drawn where it is:
-[ADR 0001](adr/0001-lotse-as-an-embeddable-widget.md).
+changes to the packages themselves stay LGPL. Reference: [`@lotsman/core`](../packages/core/README.md),
+[`@lotsman/widget`](../packages/widget/README.md). Why the line is drawn where it is:
+[ADR 0001](adr/0001-lotsman-as-an-embeddable-widget.md).
 
 The finished code of this guide is `app/tests/examples/embed.ts`; it is type-checked with the app, so
 it matches the signatures.
@@ -16,29 +16,29 @@ it matches the signatures.
 ## 1. Depend on the packages
 
 ```json
-{ "dependencies": { "@lotse/widget": "*", "@lotse/core": "*", "@lotse/session": "*" } }
+{ "dependencies": { "@lotsman/widget": "*", "@lotsman/core": "*", "@lotsman/session": "*" } }
 ```
 
-`@lotse/session` supplies `createSessionStore`, a small JSON store you may use or replace; the widget
-only needs two callbacks (step 4). `@lotse/acp` (the protocol layer) comes in transitively.
+`@lotsman/session` supplies `createSessionStore`, a small JSON store you may use or replace; the widget
+only needs two callbacks (step 4). `@lotsman/acp` (the protocol layer) comes in transitively.
 
-`@lotse/widget` declares the `@girs/*` typings it imports (`gtk-4.0`, `adw-1`, `gdk-4.0`, `glib-2.0`,
+`@lotsman/widget` declares the `@girs/*` typings it imports (`gtk-4.0`, `adw-1`, `gdk-4.0`, `glib-2.0`,
 `gobject-2.0`, `pango-1.0`) as **peer dependencies**: your app owns the one copy, so the widget's types
 and yours are the same types. If you build against a **linked** checkout (`gjsify link`), also set
 `"preserveSymlinks": true` in your `tsconfig.json` `compilerOptions`; without it TypeScript resolves the
 linked package's imports from the checkout's own `node_modules` and sees a second copy of every `@girs/*`
 package.
 
-## 2. Give lotse its own data directory
+## 2. Give lotsman its own data directory
 
-Lotse writes inside **one directory you choose**. It never reads `HOME`, `XDG_*` or `LOTSE_*` for this:
-the directory arrives as a `LotsePaths` value.
+Lotsman writes inside **one directory you choose**. It never reads `HOME`, `XDG_*` or `LOTSMAN_*` for this:
+the directory arrives as a `LotsmanPaths` value.
 
 ```ts
-const paths = lotsePathsUnder(dataRoot); // <dataRoot>/data/…, <dataRoot>/config/…
+const paths = lotsmanPathsUnder(dataRoot); // <dataRoot>/data/…, <dataRoot>/config/…
 ```
 
-| Field | Layout under `lotsePathsUnder(root)` |
+| Field | Layout under `lotsmanPathsUnder(root)` |
 |---|---|
 | `dataDir` | `<root>/data` |
 | `sessionsFile` | `<root>/data/sessions.json` — conversations, with their full text |
@@ -50,7 +50,7 @@ its whole private state under `<dataDir>/agents/<id>/{home,config,data,state,cac
 `XDG_*` point there, so it never reads or writes the person's own `~/.config`, `~/.claude` or login.
 Moving `dataDir` moves all of it.
 
-`lotsePaths()` (XDG plus `LOTSE_*` overrides) belongs to lotse's app, not to the packages — build your
+`lotsmanPaths()` (XDG plus `LOTSMAN_*` overrides) belongs to lotsman's app, not to the packages — build your
 own value.
 
 ## 3. Choose the agent
@@ -67,7 +67,7 @@ const empty = emptyStateView({ agent: found });
 - `found.command` is what you pass as `agent`; `found.source` (`'host'` or `'bundled'`) is `agentSource`.
 - To honour a saved preference, pass an `AgentChoice` as the second argument. The settings file is yours.
 - To **bundle** an agent, ship the program the catalog names (`packages/core/data/bundled-agents.json`,
-  `bundledProgram`). Lotse's own Flatpak does this; for yours, see [Bundle the agent](#bundle-the-agent-flatpak).
+  `bundledProgram`). Lotsman's own Flatpak does this; for yours, see [Bundle the agent](#bundle-the-agent-flatpak).
 - Inside a Flatpak, probing the person's own agent goes through the host; use the async
   `gatherResolveContextAsync(paths)` there so the window is not blocked.
 - When nothing is found, `agent` must still be a command (`requireLauncher(DEFAULT_AGENT)`) and you pass
@@ -101,7 +101,7 @@ other change: the per-user copy is picked up there, behind a shipped copy and ah
 
 ### Bundle the agent (Flatpak)
 
-Generate the module from the catalog instead of copying lotse's manifest:
+Generate the module from the catalog instead of copying lotsman's manifest:
 
 ```bash
 ./scripts/flatpak-agent-module opencode --out opencode-module.json   # --arch x86_64 to restrict
@@ -110,7 +110,7 @@ Generate the module from the catalog instead of copying lotse's manifest:
 Put the module in your manifest's `modules`, **before** your own module, and keep `--share=network` in
 `finish-args` (the agent runs inside the sandbox). It is `extra-data`: url, sha256 and size come from the
 catalog, nothing is downloaded when you generate, and an entry without a checksum fails loudly. In code,
-`flatpakAgentModule(agent, arches?)` from `@lotse/core` returns the same object. Lotse's own manifest
+`flatpakAgentModule(agent, arches?)` from `@lotsman/core` returns the same object. Lotsman's own manifest
 carries the identical module (a test compares them byte for byte), so a refresh of the pin reaches you by
 regenerating. Then point `agentSource` at `'bundled'`, as above.
 
@@ -121,7 +121,7 @@ module as it is. The unpack path (`/app/extra/agents/<id>`) is fixed: `apply_ext
 ## 4. Create the widget
 
 ```ts
-const chat = new LotseChat({
+const chat = new LotsmanChat({
   agent: found?.command ?? requireLauncher(DEFAULT_AGENT),
   agentSource: found?.source ?? 'host',
   newChat: { cwd: projectDir, home: homedir() },
@@ -148,7 +148,7 @@ chat.newChat();
 ## 5. Pass your MCP servers
 
 `mcpServers: McpServer[]` goes **unchanged** to the agent in `session/new` and on reattach, so the agent
-can call your application's tools. Lotse never reads past `type` and never edits the agent's own
+can call your application's tools. Lotsman never reads past `type` and never edits the agent's own
 config. Stdio servers have `name`, `command`, `args`, `env`; remote ones `type: 'http' | 'sse'`, `url`,
 `headers`.
 
@@ -163,10 +163,10 @@ server (step 6 narrows what the dialog is offered, nothing more).
 To show your calls in your own words ("Order placed" instead of `execute`), pass `toolPresenter`. It
 receives each tool call folded into a `ToolCallView`, whose `mcp` list names the server and tool the
 call reached (with opencode's code mode, the agent's own report once it completed). Return
-`{ title, subtitle?, icon? }`, or `null` for lotse's row; the status always stays the agent's, and a
-presenter that throws falls back to lotse's row. To record something your app did into the
+`{ title, subtitle?, icon? }`, or `null` for lotsman's row; the status always stays the agent's, and a
+presenter that throws falls back to lotsman's row. To record something your app did into the
 conversation, call `chat.appendHostItem({ type, text, data?, icon? })` (needs `appendTurns`). Details:
-[`@lotse/widget`](../packages/widget/README.md#toolpresenter-renames-a-row-it-never-restatuses-it).
+[`@lotsman/widget`](../packages/widget/README.md#toolpresenter-renames-a-row-it-never-restatuses-it).
 
 ## 6. Add your permission gate
 
@@ -183,15 +183,15 @@ gate, every question goes to the person.
 
 ### Tools you confirm yourself
 
-Some approvals are not lotse's to give: a legal submission behind a PIN, a payment, a signature.
-Lotse's dialog cannot ask for any of that, so mark the tool and show your own dialog:
+Some approvals are not lotsman's to give: a legal submission behind a PIN, a payment, a signature.
+Lotsman's dialog cannot ask for any of that, so mark the tool and show your own dialog:
 
 ```ts
 hostTools: { hostConfirmed: [{ name: 'steuererklaerung.elster_submit' }, { kind: 'delete' }] },
 confirmTool: async (question) => await myPinDialog(question.view), // true approves ONE call
 ```
 
-**Lotse never approves a marked tool through `session/request_permission`** — not from its own dialog,
+**Lotsman never approves a marked tool through `session/request_permission`** — not from its own dialog,
 not from an "always allow", not from a grant the person gave earlier in the same session, because the
 rule is read before those are. What goes on the wire for your `true` is the agent's own `allow_once`
 and nothing wider, so the next call asks you again. An agent that offered no `allow_once` is answered
@@ -199,7 +199,7 @@ with no approval at all (`cancelled`, plus one notice saying why): a confirmatio
 is not a confirmation.
 
 Everything that is not an explicit `true` is a decline — `false`, a throw, a rejected promise, and no
-`confirmTool` at all. `question.view` is the same projection lotse's own dialog draws from (`tool`,
+`confirmTool` at all. `question.view` is the same projection lotsman's own dialog draws from (`tool`,
 `kind`, `locations`, `rawInput`, `options`).
 
 A rule matches on `name`, on `kind`, or on both ANDed. `name` is compared against the title the agent
@@ -210,7 +210,7 @@ tool into your dialog.
 
 ### An "always allow" that ends with the conversation
 
-ACP has no lasting-approval answer: lotse sends the agent's own option id, and the *agent* decides
+ACP has no lasting-approval answer: lotsman sends the agent's own option id, and the *agent* decides
 whether to ask again — which can outlive the window. If you carry somebody's documents and do not want
 a promise you cannot see the end of:
 
@@ -218,14 +218,14 @@ a promise you cannot see the end of:
 hostTools: { alwaysAllow: 'session' },
 ```
 
-An **Always allow** press is then sent to the agent as its `allow_once`, and lotse remembers the always
+An **Always allow** press is then sent to the agent as its `allow_once`, and lotsman remembers the always
 itself: in memory, keyed by the ACP session id plus the tool's kind and MCP name. It is **written
 nowhere**, so there is nothing to persist and nothing to clear, and a new conversation has a new id and
 therefore an empty memory. Grants are keyed by the tool, not by the arguments: the next file of the same
 edit is the same answer. Where the agent offers nothing narrower than an always, the button is
-**withdrawn** rather than shown as a promise lotse would have to hand the agent to keep.
+**withdrawn** rather than shown as a promise lotsman would have to hand the agent to keep.
 
-The default is `'agent'`: lotse's own behaviour, the agent remembers. Both fields are independent, and a
+The default is `'agent'`: lotsman's own behaviour, the agent remembers. Both fields are independent, and a
 `hostConfirmed` tool is never covered by a grant under either scope.
 
 ## 7. Onboarding and login
@@ -254,18 +254,18 @@ dialog leaves it out only when the policy carries `allowsProvider(id)` (`allowOn
 plain predicate offers every provider and still refuses a denied model at send. Details:
 [custom-providers.md](custom-providers.md).
 
-Lotse never reads or stores a credential; the agent keeps its own (for a bundled agent: under
+Lotsman never reads or stores a credential; the agent keeps its own (for a bundled agent: under
 `<dataDir>/agents/<id>/`).
 
 ### Mount the two pages yourself
 
 If your app has its own preferences dialog and its own welcome screen, you want both pages **outside**
-the chat widget. They are exported, and they are the same pages lotse builds for itself — one factory
+the chat widget. They are exported, and they are the same pages lotsman builds for itself — one factory
 each owns the wiring, so your copy reads the same provider file, starts the same private login server
 and honours the same `modelPolicy`:
 
 ```ts
-import { createProviderSettingsPage, createOnboardingPage, probeConnections } from '@lotse/widget';
+import { createProviderSettingsPage, createOnboardingPage, probeConnections } from '@lotsman/widget';
 
 const settings = createProviderSettingsPage({
   agent: found.command,
@@ -319,7 +319,7 @@ window event, call it from your application's shutdown path as well.
 `<dataRoot>` holds conversation text (and, for a bundled agent, the agent's own login). It is the
 contents of people's work:
 
-- **Mode `0700`** on `<dataRoot>`. Lotse creates its own files `0600` and its subdirectories `0700`;
+- **Mode `0700`** on `<dataRoot>`. Lotsman creates its own files `0600` and its subdirectories `0700`;
   you create the root, so you set its mode.
 - **Never inside a repository** or a synced public folder.
 - **Declare it** in your backup or state manifest: `sessions.json` is irreplaceable user data;
@@ -330,35 +330,35 @@ contents of people's work:
 ## Privacy: say where your data may travel
 
 A conversation can contain everything the agent read through your MCP tools, and it all goes to whatever
-model the agent is configured to use. Two different things in lotse touch that, and only one of them is
+model the agent is configured to use. Two different things in lotsman touch that, and only one of them is
 a policy.
 
-**The dropdown's order and the warning are not protection.** `@lotse/core` recognises free hosted
+**The dropdown's order and the warning are not protection.** `@lotsman/core` recognises free hosted
 models by their id (`isFreeModel`: the `-free` suffix plus a few exceptions) and sorts them to the top
 of the model dropdown (`freeModelFirst`). While one is in use the widget shows `FREE_MODEL_WARNING`
 above the composer — free-model providers may store what is sent and train on it, so it is not for tax
 or client data. The person can close it; it comes back for another free model and in the next
-conversation. Lotse never selects a model, hides one or guesses.
+conversation. Lotsman never selects a model, hides one or guesses.
 
 **`modelPolicy` is the policy.** If your app carries client or personal data, pass one:
 
 ```ts
-import { denyFreeHostedModels } from '@lotse/core';
+import { denyFreeHostedModels } from '@lotsman/core';
 
 modelPolicy: denyFreeHostedModels,
 ```
 
 Denied models leave the dropdown, a denied model turns Send off with a sentence naming the remedy, and
-the prompt is refused before it reaches the wire. Lotse never switches the model for the person — the
+the prompt is refused before it reaches the wire. Lotsman never switches the model for the person — the
 choice stays theirs, it is only narrowed. The check is fail-closed in both directions a host cares
-about: a policy that throws is a deny, and so is a model lotse cannot identify (the agent, once it has answered,
+about: a policy that throws is a deny, and so is a model lotsman cannot identify (the agent, once it has answered,
 reported no model control), because "I do not know where this would go" is not an approval.
 
 `denyFreeHostedModels` denies `isFreeModel`'s answer — any id ending in `-free` plus the few free ids
 without the suffix (`FREE_MODELS_WITHOUT_SUFFIX`) — and an empty id, and **allows a
 well-formed id it does not recognise**, because the list names free models rather than paid ones and
 denying the unrecognised would deny nearly everything, paid models included. For certainty, use
-`allowOnlyProviders(['anthropic', …])` (`@lotse/core`): only ids whose provider — the part before the
+`allowOnlyProviders(['anthropic', …])` (`@lotsman/core`): only ids whose provider — the part before the
 first `/` — is listed are allowed, so a model released tomorrow is denied until you name its provider.
 It does not look inside a provider; or pass a predicate of your own.
 
@@ -370,16 +370,16 @@ Two things `modelPolicy` does not do, and you still have to:
   with retention terms you have read, or a local model.
 
 The full option, the two gates behind it and what counts as free:
-[`@lotse/widget`](../packages/widget/README.md#modelpolicy-blocks-the-send-it-never-switches-the-model).
+[`@lotsman/widget`](../packages/widget/README.md#modelpolicy-blocks-the-send-it-never-switches-the-model).
 
 ## Read the answers aloud: `speech`
 
-Lotse speaks nothing by itself and bundles no speech engine. Pass `speech` and the composer grows a
+Lotsman speaks nothing by itself and bundles no speech engine. Pass `speech` and the composer grows a
 **Conversation** toggle; with it on, each finished sentence of a streamed answer is spoken as soon as
 it is complete, rather than at the end of the turn — points 11 and 12 of
 [ADR 0009](adr/0009-voice-as-a-surface.md).
 
-The option is shaped like the W3C `speechSynthesis` and nothing more, so lotse imports neither a
+The option is shaped like the W3C `speechSynthesis` and nothing more, so lotsman imports neither a
 browser API nor a GNOME one:
 
 ```ts
@@ -392,7 +392,7 @@ speech: { synthesis: speechSynthesis, utterance: (text) => new SpeechSynthesisUt
 your `speak` accepts, as a **function** so a class constructor can be wrapped rather than called. A
 browser host passes `window.speechSynthesis` and `(text) => new SpeechSynthesisUtterance(text)`; a
 test passes a fake that records what it was told to say. The driver behind the toggle is
-`readAloud` in `@lotse/core` — pure, no `gi://`, so a headless host can use it on its own.
+`readAloud` in `@lotsman/core` — pure, no `gi://`, so a headless host can use it on its own.
 
 What the widget does with it:
 
@@ -408,19 +408,19 @@ What the widget does with it:
   continues.
 
 **`voice: 'local-only'` is your promise, not a check.** Whether an engine runs on the machine or
-sends the text to a cloud service cannot be read off a `speechSynthesis`-shaped object, so lotse
+sends the text to a cloud service cannot be read off a `speechSynthesis`-shaped object, so lotsman
 enforces `off` and trusts you for the rest. If the conversation can contain client data, pick a local
 engine.
 
 ## Headless jobs: no widget
 
 Some work has nobody watching it: read a receipt, classify a mail, extract fields from a PDF's text.
-`runJob` from `@lotse/core` runs that against the same agent, login and data directory as the chat,
+`runJob` from `@lotsman/core` runs that against the same agent, login and data directory as the chat,
 with no widget and no `gi://` import, so it also runs in a Node or GJS service
 ([ADR 0004](adr/0004-headless-job-api.md)).
 
 ```ts
-import { JobError, runJob, denyFreeHostedModels } from '@lotse/core';
+import { JobError, runJob, denyFreeHostedModels } from '@lotsman/core';
 import { z } from 'zod';
 
 const Receipt = z.object({ merchant: z.string(), total: z.number() });
@@ -444,9 +444,9 @@ try {
 
 What it promises:
 
-- **One process per job**, closed on every path, success or failure. Nothing is persisted by lotse; the
+- **One process per job**, closed on every path, success or failure. Nothing is persisted by lotsman; the
   agent may keep its own session under your data directory.
-- **The model gate comes first.** `modelPolicy` is required, and a model lotse cannot identify is refused
+- **The model gate comes first.** `modelPolicy` is required, and a model lotsman cannot identify is refused
   like a denied one, before the prompt is sent. Pass `() => 'allow'` if you really mean "any model".
 - **Nobody is asked.** Permissions are declined by default. A `gate` of your own may allow once; an
   "always" answer, an option the agent did not offer, or a throw is a decline, and a decline fails the
@@ -456,18 +456,18 @@ What it promises:
   input, and that is your decision.
 - **A stop is a cancel, then a close.** `timeoutMs` (default 120 s, covering the whole job) and `signal`
   both send `session/cancel`, give the agent a moment to answer, and then end the process.
-- **Logs carry ids and kinds.** `onLog` receives lotse's events (session id, stop reason, error kind,
+- **Logs carry ids and kinds.** `onLog` receives lotsman's events (session id, stop reason, error kind,
   model) and the agent's stderr. `JobError.message` is a fixed sentence; the raw answer is on
-  `JobError.output` for you, and lotse never prints it. `JobError.cause` may hold the error your `parse`
+  `JobError.output` for you, and lotsman never prints it. `JobError.cause` may hold the error your `parse`
   threw, and a Zod error can include the received values, so don't log it.
 - **Misuse throws, it does not reject.** A missing `modelPolicy` or a `timeoutMs` that is not a positive
   finite number up to 2^31-1 is a `TypeError` before anything starts; every other failure is a `JobError`.
 
 ## Translations
 
-The widget's strings live in the gettext domain `lotse`. The `.po` files ship in the `@lotse/widget`
+The widget's strings live in the gettext domain `lotsman`. The `.po` files ship in the `@lotsman/widget`
 package (`po/`); compile them with `msgfmt` into your own locale directory as
-`<dir>/<lang>/LC_MESSAGES/lotse.mo`. Importing `@lotse/widget` binds the domain to
+`<dir>/<lang>/LC_MESSAGES/lotsman.mo`. Importing `@lotsman/widget` binds the domain to
 `GJSIFY_LOCALE_DIR`, else `/usr/share/locale`. To use another directory, call
 `initWidgetI18n(dir)` before building the first widget. A host that has already registered its own
 translator with `setLibraryTranslator` keeps it. Without a catalogue the widget shows English.
@@ -475,8 +475,8 @@ Details: [i18n.md](i18n.md).
 
 ## Where to go next
 
-- [`@lotse/widget`](../packages/widget/README.md): every option and member.
-- [`@lotse/core`](../packages/core/README.md): agent resolution, session, login, view models.
+- [`@lotsman/widget`](../packages/widget/README.md): every option and member.
+- [`@lotsman/core`](../packages/core/README.md): agent resolution, session, login, view models.
 - [login.md](login.md): how the in-app login works, and what was measured.
-- [dev-fixtures.md](dev-fixtures.md): stand-in agent and the `LOTSE_APP_*` hooks, for screenshots and tests.
+- [dev-fixtures.md](dev-fixtures.md): stand-in agent and the `LOTSMAN_APP_*` hooks, for screenshots and tests.
 - [design/README.md](design/README.md): what each state looks like.

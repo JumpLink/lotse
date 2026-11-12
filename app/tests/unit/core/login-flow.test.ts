@@ -12,7 +12,7 @@ import {
   type LoginHooks,
   type LoginMode,
   type OAuthStatus,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 interface Script {
   mode?: LoginMode;

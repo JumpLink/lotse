@@ -1,6 +1,6 @@
 # Listening comparison: German voices
 
-Step 2 of [ADR 0009](../adr/0009-voice-as-a-surface.md): which local voice is Lotse's default, and
+Step 2 of [ADR 0009](../adr/0009-voice-as-a-surface.md): which local voice is Lotsman's default, and
 whether Pocket is worth porting as a Spiel provider.
 
 ## Setup (2026-10-26)
@@ -50,7 +50,7 @@ not a benchmark.
 What follows from it:
 
 - Piper renders a whole utterance before the first sound. The time to first sound is therefore
-  the synthesis time of the first sentence, which is why Lotse speaks sentence by sentence.
+  the synthesis time of the first sentence, which is why Lotsman speaks sentence by sentence.
 - Every `low` and `medium` voice stays far below the 2.5 s budget of ADR 0009 point 11, even for
   the long answer. `thorsten-high` needs 2.5 s for the long answer in one piece, so it only fits
   if answers are split into sentences.

@@ -1,11 +1,11 @@
 /**
- * The one-time move from the directories kurier wrote to the ones lotse writes.
+ * The one-time move from the directories kurier wrote to the ones lotsman writes.
  *
  * Through 0.1.1 the app was called kurier and kept its session file in `$XDG_DATA_HOME/kurier` and
  * its settings in `$XDG_CONFIG_HOME/kurier`. The session file holds the text of a person's
  * conversations with an agent, so the rename must not make it look like the app forgot them.
  *
- * **One rename per directory, and never an overwrite.** `lotse` already existing means a newer run
+ * **One rename per directory, and never an overwrite.** `lotsman` already existing means a newer run
  * (or a fresh install) owns it, so the old one is left where it is and said so rather than merged:
  * merging two session files is a decision nobody asked for. `rename(2)` within one `$XDG_*_HOME` is
  * atomic and carries the mode across, so the `0700` a private directory had stays `0700` and a
@@ -15,19 +15,19 @@
  * than just a boolean: a read-only home or an `EXDEV` across a mount leaves the app pointed at the
  * data it already has, with a line saying what happened, instead of silently starting empty.
  *
- * An explicit `LOTSE_DATA_DIR`/`LOTSE_SESSIONS_FILE` (or the `KURIER_*` spelling) turns the whole
+ * An explicit `LOTSMAN_DATA_DIR`/`LOTSMAN_SESSIONS_FILE` (or the `KURIER_*` spelling) turns the whole
  * thing off: a person who named a directory does not want it moved. A host that builds its paths
- * with `lotsePathsUnder(root)` never comes through here at all.
+ * with `lotsmanPathsUnder(root)` never comes through here at all.
  */
 
 import { existsSync, mkdirSync, renameSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { envKnob, type LotsePaths } from '@lotse/core';
+import { envKnob, type LotsmanPaths } from '@lotsman/core';
 
-import { lotsePaths, xdgConfigHome, xdgDataHome } from './paths.ts';
+import { lotsmanPaths, xdgConfigHome, xdgDataHome } from './paths.ts';
 
-/** The directory kurier used, under the same XDG home as the lotse one. */
+/** The directory kurier used, under the same XDG home as the lotsman one. */
 const LEGACY_DIR_NAME = 'kurier';
 
 /** What happened to one directory. `dir` is the one to use now, whether or not the move worked. */
@@ -50,7 +50,7 @@ export function adoptLegacyDir(current: string, legacy: string): DirMove {
     const parent = dirname(current);
     if (!existsSync(parent)) mkdirSync(parent, { recursive: true, mode: 0o700 });
     renameSync(legacy, current);
-    return { dir: current, moved: true, note: `moved ${legacy} to ${current} (kurier is now lotse)` };
+    return { dir: current, moved: true, note: `moved ${legacy} to ${current} (kurier is now lotsman)` };
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     return {
@@ -63,17 +63,17 @@ export function adoptLegacyDir(current: string, legacy: string): DirMove {
 
 /** The paths to use, after the one-time move, plus a line per directory that was not already in place. */
 export interface MigratedPaths {
-  readonly paths: LotsePaths;
+  readonly paths: LotsmanPaths;
   readonly notes: readonly string[];
 }
 
 /**
  * Resolve the paths and perform the move. The only entry point a surface needs: `app/src/index.ts`
- * and the window call this instead of `lotsePaths()` so that a first run after the rename finds the
+ * and the window call this instead of `lotsmanPaths()` so that a first run after the rename finds the
  * conversations that are already on the disk.
  */
 export function migratedPaths(env: NodeJS.ProcessEnv = process.env): MigratedPaths {
-  const paths = lotsePaths(env);
+  const paths = lotsmanPaths(env);
   const pinned = Boolean(
     envKnob(env, 'DATA_DIR') ||
     envKnob(env, 'SESSIONS_FILE') ||

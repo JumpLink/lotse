@@ -46,7 +46,7 @@ export interface Question {
   /** `yes`, `no`, or `text` — never the text itself, which went to the session. */
   readonly answer: AnswerKind | null;
   readonly answeredAt: string | null;
-  /** What `listen` did, as one sentence. `lotse answer` prints it. */
+  /** What `listen` did, as one sentence. `lotsman answer` prints it. */
   readonly resolution: string | null;
   /** `person` only: the wait ran out, the run is gone, and an answer continues the session. */
   readonly deferred?: boolean;

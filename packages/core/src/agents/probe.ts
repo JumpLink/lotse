@@ -13,7 +13,7 @@ import { effectiveCatalog } from './install.ts';
 import { isolationDirs } from './isolation.ts';
 import { LAUNCHERS } from './launcher.ts';
 import type { CwdFacts } from '../cwd.ts';
-import type { LotsePaths } from '../paths.ts';
+import type { LotsmanPaths } from '../paths.ts';
 import type { ResolveContext } from './resolve.ts';
 import {
   FLATPAK_SPAWN,
@@ -90,14 +90,14 @@ export async function gatherAgentFactsAsync(
   );
 }
 
-export async function gatherResolveContextAsync(paths: LotsePaths): Promise<ResolveContext> {
+export async function gatherResolveContextAsync(paths: LotsmanPaths): Promise<ResolveContext> {
   const catalog = effectiveCatalog(paths.dataDir);
   return resolveContextFrom(paths, await gatherAgentFactsAsync(LAUNCHERS, catalog), catalog);
 }
 
 /** The impure half of resolution: probe this machine once, and say where a bundled copy keeps its state. */
 export function gatherResolveContext(
-  paths: LotsePaths,
+  paths: LotsmanPaths,
   readVersions = true,
   probeHost = true,
 ): ResolveContext {
@@ -106,7 +106,7 @@ export function gatherResolveContext(
 }
 
 function resolveContextFrom(
-  paths: LotsePaths,
+  paths: LotsmanPaths,
   facts: readonly AgentFacts[],
   catalog: readonly BundledAgent[],
 ): ResolveContext {

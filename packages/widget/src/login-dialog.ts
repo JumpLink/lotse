@@ -7,16 +7,16 @@
  * unit test and not only on a screen.
  *
  * Every string that comes from the provider (a name, a field title, the instructions with the device
- * code, an error) goes into a label with `useMarkup: false` — a provider's text is not lotse's to trust
+ * code, an error) goes into a label with `useMarkup: false` — a provider's text is not lotsman's to trust
  * as markup. The dialog is one `Adw.Dialog` whose content is replaced on every state, which is why it has
  * no per-step teardown to get wrong.
  */
 
-import { _, fmt } from '@lotse/core';
+import { _, fmt } from '@lotsman/core';
 import Adw from '@girs/adw-1';
 import Gtk from '@girs/gtk-4.0';
 
-import type { LoginController, LoginField, LoginMethod, LoginProvider, LoginState } from '@lotse/core';
+import type { LoginController, LoginField, LoginMethod, LoginProvider, LoginState } from '@lotsman/core';
 
 const CLAMP_PX = 420;
 
@@ -257,7 +257,7 @@ export class LoginDialog {
   #renderProviders(content: Gtk.Box, controller: LoginController, providers: readonly LoginProvider[]): void {
     content.append(
       plainLabel(
-        _('Use your own subscription, account or API key. lotse stores nothing: the agent keeps it.'),
+        _('Use your own subscription, account or API key. lotsman stores nothing: the agent keeps it.'),
       ),
     );
     const search = new Gtk.SearchEntry({ placeholderText: _('Search providers') });
@@ -303,7 +303,7 @@ export class LoginDialog {
     content.append(plainLabel(`${provider.name}: API key`, ['title-3']));
     content.append(
       plainLabel(
-        'Paste the key from the provider’s console. It goes to the agent, which stores it; lotse keeps nothing.',
+        'Paste the key from the provider’s console. It goes to the agent, which stores it; lotsman keeps nothing.',
       ),
     );
     const entry = new Adw.PasswordEntryRow({ title: 'API key' });

@@ -55,9 +55,9 @@ export interface CustomProviderInput {
 }
 
 export interface CustomProviderFacts {
-  /** Every id opencode knows (`ProviderApi.knownIds`), lotse's own providers included. */
+  /** Every id opencode knows (`ProviderApi.knownIds`), lotsman's own providers included. */
   readonly knownIds: ReadonlySet<string>;
-  /** The ids in lotse's own file: replacing one of those is an edit, not a shadow. */
+  /** The ids in lotsman's own file: replacing one of those is an edit, not a shadow. */
   readonly ownIds: ReadonlySet<string>;
 }
 
@@ -66,7 +66,7 @@ export type CustomProviderPlan =
       readonly kind: 'ok';
       readonly provider: CustomProvider;
       readonly reach: EndpointReach;
-      /** Replaces a provider already in lotse's file. */
+      /** Replaces a provider already in lotsman's file. */
       readonly replaces: boolean;
       readonly privacyNote: string | null;
       /** Context warnings and the preset's server-side note. Shown, never blocking. */
@@ -92,7 +92,7 @@ export function planCustomProvider(
   const idProblem = providerIdProblem(id);
   if (idProblem) return { kind: 'refused', reason: idProblem };
   const replaces = facts.ownIds.has(id);
-  // A reserved id is refused even in lotse's own file: an entry there (by hand, or from an older lotse)
+  // A reserved id is refused even in lotsman's own file: an entry there (by hand, or from an older lotsman)
   // shadows the catalog's all the same.
   if (RESERVED_PROVIDER_IDS.has(id) || (!replaces && facts.knownIds.has(id))) {
     return {

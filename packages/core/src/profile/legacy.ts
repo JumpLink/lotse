@@ -7,7 +7,7 @@
  * person — and never touches tasks.json. An entry that would not validate is left out, not guessed at.
  */
 
-import type { McpServer } from '@lotse/acp';
+import type { McpServer } from '@lotsman/acp';
 
 import { isId, isRecord } from '../parse.ts';
 import { PERSON_NEEDED_OFF, type PersonNeededConfig } from '../task/task.ts';

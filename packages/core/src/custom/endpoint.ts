@@ -1,5 +1,5 @@
 /**
- * Where a custom provider may point, and what lotse says about it. Pure: no network, no process.
+ * Where a custom provider may point, and what lotsman says about it. Pure: no network, no process.
  *
  * **A base URL is a decision about where the prompts go.** opencode sends every prompt, every file it
  * read and every tool result to it, so the rule is about reach, not about syntax (#17, decided

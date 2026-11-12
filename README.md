@@ -1,16 +1,18 @@
-# Lotse
+# Lotsman
 
 An [ACP](https://agentclientprotocol.com) client: a command-line tool that starts a coding agent
 (currently [opencode](https://opencode.ai)) as a subprocess, talks to it over the **Agent Client
 Protocol** — JSON-RPC 2.0 over stdio — and keeps a local record of your sessions.
 
-Lotse has no agent of its own and no model of its own. It runs on **GJS** (GNOME's JavaScript
+Lotsman has no agent of its own and no model of its own. It runs on **GJS** (GNOME's JavaScript
 runtime) via [gjsify](https://github.com/gjsify/gjsify), like [curlew](../curlew/README.md) and
 [beifahrer](../beifahrer/README.md).
 
-> **Formerly Kurier.** Everything up to and including 0.1.1 was released under that name; the
-> rename to Lotse — the pilot who comes aboard and steers a ship through unfamiliar water —
-> happened before the first npm publish. See [CHANGELOG.md](CHANGELOG.md).
+The name is Russian *лоцман*: the pilot who comes aboard and steers a ship through unfamiliar
+water.
+
+> **Formerly Kurier.** Everything up to and including 0.1.1 was released under that name. See
+> [CHANGELOG.md](CHANGELOG.md).
 
 > **Status: early.** One adapter (opencode), one prompt turn per `start`/`resume` call. A GTK4 /
 > libadwaita surface exists and is being built slice by slice; it runs from source, not yet from a
@@ -18,13 +20,13 @@ runtime) via [gjsify](https://github.com/gjsify/gjsify), like [curlew](../curlew
 
 ## Why ACP instead of one SDK per agent
 
-ACP is the reason lotse does not need a driver for every coding agent it wants to run. The agent
-decides which model does the work; lotse only owns the environment — which working directory the
+ACP is the reason lotsman does not need a driver for every coding agent it wants to run. The agent
+decides which model does the work; lotsman only owns the environment — which working directory the
 session runs in, what it is allowed to do, and which MCP servers it may connect to. That split is
 standard, not something this project invented: `session/request_permission` is how an agent asks
 for permission, `fs/read_text_file`/`fs/write_text_file` are how it would read or write files
-*through lotse* if lotse allowed it (it does not — those two are answered `false`), and
-`session/new` with `mcpServers` is how it reaches whichever MCP servers lotse hands it.
+*through lotsman* if lotsman allowed it (it does not — those two are answered `false`), and
+`session/new` with `mcpServers` is how it reaches whichever MCP servers lotsman hands it.
 
 Measured, not assumed — a real `initialize` handshake against `opencode acp` 2.0.19, run entirely
 inside one GJS process with no Node process anywhere in the chain:
@@ -44,18 +46,18 @@ inside one GJS process with no Node process anywhere in the chain:
 
 ```bash
 gjsify install
-gjsify workspace lotse-cli build
-gjsify run app/dist/lotse.gjs.mjs agents
+gjsify workspace lotsman-cli build
+gjsify run app/dist/lotsman.gjs.mjs agents
 ```
 
 The first time you run a session against opencode, you likely need to log in first:
 
 ```bash
-lotse auth --agent opencode
+lotsman auth --agent opencode
 ```
 
 `opencode acp` advertises an interactive login (`Run \`opencode auth login\` in the terminal`) as
-its auth method — not a token lotse could hand over by itself. Without `lotse auth`, a session
+its auth method — not a token lotsman could hand over by itself. Without `lotsman auth`, a session
 started before you are logged in dies on `-32000 auth_required` instead of on your prompt.
 
 ## Use the libraries
@@ -63,7 +65,7 @@ started before you are logged in dies on `-32000 auth_required` instead of on yo
 The four LGPL packages are on npm. To embed the chat in your own GTK4 / libadwaita app:
 
 ```bash
-npm i @lotse/widget @lotse/core @lotse/acp @lotse/session \
+npm i @lotsman/widget @lotsman/core @lotsman/acp @lotsman/session \
   @girs/adw-1 @girs/gdk-4.0 @girs/glib-2.0 @girs/gobject-2.0 @girs/gtk-4.0 @girs/pango-1.0
 ```
 
@@ -73,23 +75,23 @@ compiles them (gjsify); the [host guide](docs/embedding.md) has the walkthrough.
 ## Commands
 
 ```bash
-lotse start [--agent opencode] [prompt…]   # new session, one prompt turn, prints the agent's stream
-lotse sessions                             # list lotse's own records for the local principal
-lotse resume <id> [prompt…]                # reattach a stored session, then optionally one prompt turn
-lotse cancel <id>                          # send session/cancel
-lotse auth [--agent opencode]              # the interactive-login escape hatch
-lotse login [provider]                     # log in through the agent's OAuth flow, no terminal (opencode v2)
-lotse provider list|add|remove [id]        # local models / OpenAI-compatible endpoints for the bundled opencode
-lotse agents                               # the launchers that are registered, and whether the binary is on PATH
-lotse listen                              # receive chat requests and answers; notify on a question
-lotse messenger [--requests on|off …]      # show or set the requests `lotse listen` takes from the chat
-lotse questions [--all] [--json]           # the questions agents are waiting on
-lotse answer <id> [text…] [--dialog]       # yes/no, a reply, or the answer window
+lotsman start [--agent opencode] [prompt…]   # new session, one prompt turn, prints the agent's stream
+lotsman sessions                             # list lotsman's own records for the local principal
+lotsman resume <id> [prompt…]                # reattach a stored session, then optionally one prompt turn
+lotsman cancel <id>                          # send session/cancel
+lotsman auth [--agent opencode]              # the interactive-login escape hatch
+lotsman login [provider]                     # log in through the agent's OAuth flow, no terminal (opencode v2)
+lotsman provider list|add|remove [id]        # local models / OpenAI-compatible endpoints for the bundled opencode
+lotsman agents                               # the launchers that are registered, and whether the binary is on PATH
+lotsman listen                              # receive chat requests and answers; notify on a question
+lotsman messenger [--requests on|off …]      # show or set the requests `lotsman listen` takes from the chat
+lotsman questions [--all] [--json]           # the questions agents are waiting on
+lotsman answer <id> [text…] [--dialog]       # yes/no, a reply, or the answer window
 ```
 
 Custom providers and their rules (keys, LAN, local-model hints): [docs/custom-providers.md](docs/custom-providers.md).
 
-`lotse listen` answers requests from the chat and asks you, by
+`lotsman listen` answers requests from the chat and asks you, by
 desktop notification or, if you configure it, in a chat through an MCP server such as curlew, when an
 agent needs a decision. How to set it up: [docs/listen.md](docs/listen.md); profiles: [docs/profiles.md](docs/profiles.md); tasks: [docs/tasks.md](docs/tasks.md); messenger server contract: [docs/messenger-contract.md](docs/messenger-contract.md).
 
@@ -99,46 +101,46 @@ The GTK4 / libadwaita window is a **separate bundle** from the CLI, because `gi:
 imported under `frontends/gui/`:
 
 ```bash
-gjsify workspace lotse-cli build:app      # → app/dist/lotse-app.gjs.mjs
-gjsify run app/dist/lotse-app.gjs.mjs
+gjsify workspace lotsman-cli build:app      # → app/dist/lotsman-app.gjs.mjs
+gjsify run app/dist/lotsman-app.gjs.mjs
 ```
 
 It picks its agent the same way the CLI does — the bundled `opencode` (its own isolated config and login), your own
-global install only as an opt-in (`lotse agents --use opencode:host`, or **Preferences**, `<Ctrl>comma`: "Your own opencode (global configuration)"; in `settings.json` it is `{"agent": {"id": "opencode", "source": "host"}}`); the setting wins over both. An empty session file opens on a live composer:
+global install only as an opt-in (`lotsman agents --use opencode:host`, or **Preferences**, `<Ctrl>comma`: "Your own opencode (global configuration)"; in `settings.json` it is `{"agent": {"id": "opencode", "source": "host"}}`); the setting wins over both. An empty session file opens on a live composer:
 your first prompt starts the session. Every dev hook, the stand-in agent that needs no model, and the
 measured GTK behaviour are in [docs/dev-fixtures.md](docs/dev-fixtures.md).
 
-**The chat is a widget, and this window is one consumer of it.** `@lotse/widget` (`packages/widget`,
-LGPL) holds `LotseChat` — one conversation: the transcript, the composer with its model and mode
+**The chat is a widget, and this window is one consumer of it.** `@lotsman/widget` (`packages/widget`,
+LGPL) holds `LotsmanChat` — one conversation: the transcript, the composer with its model and mode
 controls, the tool cards, the approval dialog, the login — and another GTK app embeds it by parenting
 one widget and passing which agent, which directory and which MCP servers to use. The window in
 `app/src/frontends/gui/` keeps what only an app has: the sidebar, the menu, Preferences. The line
-between them is drawn in [ADR 0001](docs/adr/0001-lotse-as-an-embeddable-widget.md) and studied in
+between them is drawn in [ADR 0001](docs/adr/0001-lotsman-as-an-embeddable-widget.md) and studied in
 [docs/architecture/embeddable-widget-study.md](docs/architecture/embeddable-widget-study.md).
 
 To embed the chat in your own app, start with the [host guide](docs/embedding.md); the API is documented in
-[`@lotse/widget`](packages/widget/README.md) and [`@lotse/core`](packages/core/README.md).
+[`@lotsman/widget`](packages/widget/README.md) and [`@lotsman/core`](packages/core/README.md).
 
 Translations: [docs/i18n.md](docs/i18n.md).
 
-Where Lotse is going and what it will not become: [docs/vision.md](docs/vision.md).
+Where Lotsman is going and what it will not become: [docs/vision.md](docs/vision.md).
 
 Design decisions are in [docs/adr/](docs/adr/README.md). The GUI's look and screenshots of every
 state are in [docs/design/](docs/design/README.md).
 
 ## Where your data lives
 
-Lotse keeps one record per session — which agent, which directory, the transcript, whether it is
-bound to anything else — at `$XDG_DATA_HOME/lotse/sessions.json` (mode `0600`), written
+Lotsman keeps one record per session — which agent, which directory, the transcript, whether it is
+bound to anything else — at `$XDG_DATA_HOME/lotsman/sessions.json` (mode `0600`), written
 atomically. Never inside this repository: **this repository is public**, and `.gitignore` is only
 the second line of defence, not the first.
 
-Through 0.1.1 that directory was `$XDG_DATA_HOME/kurier` (and `$XDG_CONFIG_HOME/kurier`). Lotse
+Through 0.1.1 that directory was `$XDG_DATA_HOME/kurier` (and `$XDG_CONFIG_HOME/kurier`). Lotsman
 renames each one once on startup, when the new name is free; it never merges two directories and
 keeps using the old one — saying so on stderr — if the move fails.
 
-`lotse listen` keeps its questions, the last run per task and an action log under
-`$XDG_STATE_HOME/lotse/` (mode `0600`). The log holds ids and kinds, never a prompt or a reply.
+`lotsman listen` keeps its questions, the last run per task and an action log under
+`$XDG_STATE_HOME/lotsman/` (mode `0600`). The log holds ids and kinds, never a prompt or a reply.
 
 A session record says what is *reachable*, never what is *allowed*. Nothing in it can grant a
 future call permission on its own — every request the agent makes is checked again, every time. See
@@ -147,17 +149,17 @@ future call permission on its own — every request the agent makes is checked a
 ## What it does not do yet
 
 No packaged surface yet (the libadwaita window runs from source — never a browser page), no Telegram
-bot, no wiring to lotse's own MCP servers, no policy for more than one person in a session, and no
+bot, no wiring to lotsman's own MCP servers, no policy for more than one person in a session, and no
 adapter for Claude Code. Details and the reasoning: [AGENTS.md](AGENTS.md).
 
 ## Releasing
 
 `git tag vX.Y.Z && git push --tags` runs the whole of CI — tests, type check, lint — and, if it
 passes, builds and attaches every installable format to the tag's GitHub release (packaging runs only on a tag or a manual dispatch, never on a push or PR): `.deb`, `.rpm`,
-`.AppImage`, a Flatpak (`eu.jumplink.Lotse.flatpak`, from the manifest in
+`.AppImage`, a Flatpak (`eu.jumplink.Lotsman.flatpak`, from the manifest in
 [data/README.md](data/README.md)), a macOS `.app.zip` (arm64 + x64), and a Windows program
-directory `.zip` and `.msi` (x64). All of it packages the GUI (`lotse-app`), the one binary with
-a desktop entry and an App-ID; the `lotse` CLI installs alongside it inside the `.deb`/`.rpm`/
+directory `.zip` and `.msi` (x64). All of it packages the GUI (`lotsman-app`), the one binary with
+a desktop entry and an App-ID; the `lotsman` CLI installs alongside it inside the `.deb`/`.rpm`/
 Flatpak but ships no format of its own.
 
 Everything is unsigned, which is a legitimate deliverable rather than a placeholder (gjsify ADR
@@ -175,5 +177,5 @@ See [AGENTS.md](AGENTS.md).
 ## License
 
 The apps are [AGPL-3.0-or-later](LICENSE); the reusable packages under `packages/*`
-(`@lotse/acp`, `@lotse/session`, `@lotse/core`, `@lotse/widget`) are LGPL-3.0-or-later, each with its own `LICENSE` and
+(`@lotsman/acp`, `@lotsman/session`, `@lotsman/core`, `@lotsman/widget`) are LGPL-3.0-or-later, each with its own `LICENSE` and
 `COPYING`. © Pascal Garber.

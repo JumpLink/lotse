@@ -1,7 +1,7 @@
 /**
- * `lotse listen` — the long-running receiver: it answers the person's chat requests (`/ask`, `/run`,
+ * `lotsman listen` — the long-running receiver: it answers the person's chat requests (`/ask`, `/run`,
  * `/tasks`, `/status`) and carries their answers to the agents' questions (ADR 0003). It starts no
- * task on its own; a task starts with `lotse run` or `/run`.
+ * task on its own; a task starts with `lotsman run` or `/run`.
  *
  * One process, one pass per minute: look at the request settings, sleep. The messenger receive loop
  * and the notification buttons do the actual work between passes.
@@ -36,12 +36,12 @@ import {
   unreachableProfileNotes,
   type ChannelFailure,
   type ChannelRoute,
-  type LotsePaths,
+  type LotsmanPaths,
   type QuestionChannel,
   type Profile,
   type RunDeps,
   type MessengerSettings,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 import { currentDialogCommand, openAnswerDialog } from '../../core/answer-dialog.ts';
 import type { ListenPaths } from '../../core/paths.ts';
@@ -71,11 +71,11 @@ import {
 const FAILED = new Set(['unknown', 'dropped', 'expired', 'busy', 'invalid']);
 
 /**
- * What a click on a notification does: answer through `answerQuestion`, exactly as `lotse answer`.
+ * What a click on a notification does: answer through `answerQuestion`, exactly as `lotsman answer`.
  * `deps` is read late — the channel exists before them, because they carry it.
  */
 function answerHandlers(
-  paths: LotsePaths,
+  paths: LotsmanPaths,
   deps: () => RunDeps | null,
   feedback: () => QuestionChannel | null,
 ) {
@@ -94,7 +94,7 @@ function answerHandlers(
     for (const user of current.users) {
       if (owner && user.id !== owner) continue;
       await channel.send(user, {
-        title: 'lotse: answer not taken',
+        title: 'lotsman: answer not taken',
         body: result.message,
         questionId: null,
       });
@@ -124,7 +124,7 @@ function answerHandlers(
 }
 
 async function openDesktop(
-  paths: LotsePaths,
+  paths: LotsmanPaths,
   deps: () => RunDeps | null,
   feedback: () => QuestionChannel | null,
 ): Promise<QuestionChannel> {
@@ -158,7 +158,7 @@ interface OpenedChannels {
  * routed by its task's profile (`channels`, `messengerDetail`).
  */
 async function openChannels(
-  paths: LotsePaths,
+  paths: LotsmanPaths,
   stateDir: string,
   profiles: readonly Profile[],
   deps: () => RunDeps | null,
@@ -220,7 +220,7 @@ async function openChannels(
 /** How long a pass sleeps before it looks at the request settings again. */
 const PASS_MS = 60_000;
 
-const command = (paths: LotsePaths, listen: ListenPaths): CommandModule => ({
+const command = (paths: LotsmanPaths, listen: ListenPaths): CommandModule => ({
   command: 'listen',
   describe: _('answer chat requests and ask the person when an agent has a question'),
   builder: (yargs) =>
@@ -245,7 +245,9 @@ const command = (paths: LotsePaths, listen: ListenPaths): CommandModule => ({
       err(fmt(_('  {dropped} permission question(s) from an earlier listen cancelled'), { dropped }));
     err(
       fmt(
-        _('lotse listen — listening for chat requests and answers, questions via {channel}, state in {dir}'),
+        _(
+          'lotsman listen — listening for chat requests and answers, questions via {channel}, state in {dir}',
+        ),
         {
           channel: channel.name,
           dir: listen.stateDir,

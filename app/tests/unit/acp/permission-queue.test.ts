@@ -14,9 +14,9 @@
 
 import { describe, expect, it } from '@gjsify/unit';
 
-import { AcpClient } from '@lotse/acp/client';
-import type { ClientGate } from '@lotse/acp/gate';
-import type { PermissionOption, RequestPermissionRequest } from '@lotse/acp/types';
+import { AcpClient } from '@lotsman/acp/client';
+import type { ClientGate } from '@lotsman/acp/gate';
+import type { PermissionOption, RequestPermissionRequest } from '@lotsman/acp/types';
 
 import { FixtureAgent } from '../../support/fixture-agent.ts';
 

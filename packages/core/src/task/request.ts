@@ -1,6 +1,6 @@
 /** One request from the chat as a run: `/ask` and a plain message, without a task of its own. */
 
-import type { McpServer } from '@lotse/acp';
+import type { McpServer } from '@lotsman/acp';
 
 import { withPreamble } from '../profile/resolve.ts';
 import { withAuthHint } from '../run.ts';

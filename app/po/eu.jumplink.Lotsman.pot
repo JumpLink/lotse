@@ -1,13 +1,13 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the eu.jumplink.Lotse package.
+# This file is distributed under the same license as the eu.jumplink.Lotsman package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: eu.jumplink.Lotse\n"
-"Report-Msgid-Bugs-To: https://github.com/JumpLink/lotse/issues\n"
+"Project-Id-Version: eu.jumplink.Lotsman\n"
+"Report-Msgid-Bugs-To: https://github.com/JumpLink/lotsman/issues\n"
 "POT-Creation-Date: 2026-10-26 18:01+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
@@ -58,7 +58,7 @@ msgid "Question {label}"
 msgstr ""
 
 #: app/src/core/answer-view.ts:92
-msgid "There is no question {label}. `lotse questions` lists the open ones."
+msgid "There is no question {label}. `lotsman questions` lists the open ones."
 msgstr ""
 
 #: app/src/core/answer-view.ts:98
@@ -165,7 +165,7 @@ msgid "Not found on this machine"
 msgstr ""
 
 #: app/src/core/settings-view.ts:148
-msgid "Not known to this version of lotse"
+msgid "Not known to this version of lotsman"
 msgstr ""
 
 #: app/src/core/settings-view.ts:168
@@ -186,7 +186,7 @@ msgstr ""
 
 #: app/src/core/settings-view.ts:185
 msgid ""
-"lotse will not overwrite that file, so choosing an agent is turned off here."
+"lotsman will not overwrite that file, so choosing an agent is turned off here."
 msgstr ""
 
 #: app/src/core/settings-view.ts:187
@@ -195,7 +195,7 @@ msgstr ""
 
 #: app/src/core/settings-view.ts:192
 msgid ""
-"Your saved choice, {choice}, is not available here, so lotse starts "
+"Your saved choice, {choice}, is not available here, so lotsman starts "
 "{instead} instead."
 msgstr ""
 
@@ -228,7 +228,7 @@ msgid "installed {program}"
 msgstr ""
 
 #: app/src/frontends/cli/agents.ts:151
-msgid "list the agent launchers lotse knows how to start"
+msgid "list the agent launchers lotsman knows how to start"
 msgstr ""
 
 #: app/src/frontends/cli/agents.ts:156
@@ -256,7 +256,7 @@ msgstr ""
 
 #: app/src/frontends/cli/answer.ts:70
 msgid ""
-"answer a question from `lotse questions`; yes/no for a permission, text for "
+"answer a question from `lotsman questions`; yes/no for a permission, text for "
 "a reply"
 msgstr ""
 
@@ -321,7 +321,7 @@ msgstr ""
 
 #: app/src/frontends/cli/auth.ts:88
 msgid ""
-"the agent advertised an auth method without an id — nothing lotse can do "
+"the agent advertised an auth method without an id — nothing lotsman can do "
 "with it"
 msgstr ""
 
@@ -349,7 +349,7 @@ msgstr ""
 
 #: app/src/frontends/cli/cancel.ts:41
 msgid ""
-"no session with id {id} and no --agent — `lotse sessions` lists what lotse "
+"no session with id {id} and no --agent — `lotsman sessions` lists what lotsman "
 "has"
 msgstr ""
 
@@ -443,7 +443,7 @@ msgstr ""
 
 #: app/src/frontends/cli/listen.ts:248
 msgid ""
-"lotse listen — listening for chat requests and answers, questions via "
+"lotsman listen — listening for chat requests and answers, questions via "
 "{channel}, state in {dir}"
 msgstr ""
 
@@ -480,11 +480,11 @@ msgid "which agent (default: the bundled copy, else your own install)"
 msgstr ""
 
 #: app/src/frontends/cli/login.ts:195
-msgid "this opencode has no login API (it needs v2) — run `lotse auth` instead"
+msgid "this opencode has no login API (it needs v2) — run `lotsman auth` instead"
 msgstr ""
 
 #: app/src/frontends/cli/login.ts:210
-msgid "\"{wanted}\" is not a provider lotse offers a login for. These are:"
+msgid "\"{wanted}\" is not a provider lotsman offers a login for. These are:"
 msgstr ""
 
 #: app/src/frontends/cli/login.ts:233
@@ -522,7 +522,7 @@ msgid "cancelled."
 msgstr ""
 
 #: app/src/frontends/cli/messenger.ts:126
-msgid "show or set the requests `lotse listen` takes from the chat"
+msgid "show or set the requests `lotsman listen` takes from the chat"
 msgstr ""
 
 #: app/src/frontends/cli/messenger.ts:129
@@ -644,7 +644,7 @@ msgid "which agent (default: the resolved one)"
 msgstr ""
 
 #: app/src/frontends/cli/provider.ts:101
-msgid "{title} has no custom providers lotse can manage"
+msgid "{title} has no custom providers lotsman can manage"
 msgstr ""
 
 #: app/src/frontends/cli/provider.ts:106
@@ -706,7 +706,7 @@ msgid "reattach a recorded session and optionally run one prompt turn"
 msgstr ""
 
 #: app/src/frontends/cli/resume.ts:36
-msgid "the session id from `lotse sessions`"
+msgid "the session id from `lotsman sessions`"
 msgstr ""
 
 #: app/src/frontends/cli/resume.ts:40
@@ -723,7 +723,7 @@ msgid "refuse every tool call without asking"
 msgstr ""
 
 #: app/src/frontends/cli/resume.ts:61
-msgid "no session with id {id} — `lotse sessions` lists what lotse has"
+msgid "no session with id {id} — `lotsman sessions` lists what lotsman has"
 msgstr ""
 
 #: app/src/frontends/cli/resume.ts:139 app/src/frontends/cli/start.ts:145
@@ -735,7 +735,7 @@ msgid "run a task now"
 msgstr ""
 
 #: app/src/frontends/cli/run.ts:24
-msgid "the task id, from `lotse tasks`"
+msgid "the task id, from `lotsman tasks`"
 msgstr ""
 
 #: app/src/frontends/cli/run.ts:25
@@ -747,7 +747,7 @@ msgid "print the result as JSON"
 msgstr ""
 
 #: app/src/frontends/cli/sessions.ts:20
-msgid "list the sessions lotse has recorded"
+msgid "list the sessions lotsman has recorded"
 msgstr ""
 
 #: app/src/frontends/cli/sessions.ts:23
@@ -801,7 +801,7 @@ msgid "Done."
 msgstr ""
 
 #: app/src/frontends/cli/task-commands.ts:67
-msgid "Waiting for you: {id}. Answer it with `lotse answer {id} <text>`."
+msgid "Waiting for you: {id}. Answer it with `lotsman answer {id} <text>`."
 msgstr ""
 
 #: app/src/frontends/cli/task-commands.ts:71
@@ -896,18 +896,18 @@ msgstr ""
 msgid ""
 "An ACP client for GNOME: start a coding agent as a subprocess, watch it "
 "work, and answer the questions it asks. The agent brings its own model, its "
-"own tools and its own login — lotse shows what it offers and asks before it "
+"own tools and its own login — lotsman shows what it offers and asks before it "
 "acts. The same kernel as the command line."
 msgstr ""
 
 #: app/src/frontends/gui/preferences.ts:83
 msgid ""
-"A change applies the next time lotse starts. This window keeps its agent."
+"A change applies the next time lotsman starts. This window keeps its agent."
 msgstr ""
 
 #: app/src/frontends/gui/preferences.ts:86
 msgid ""
-"How lotse listen shows a question an agent asks. A change applies to the "
+"How lotsman listen shows a question an agent asks. A change applies to the "
 "next question."
 msgstr ""
 
@@ -931,7 +931,7 @@ msgstr ""
 msgid ""
 "Also ask in a chat, through an MCP server such as curlew, and read the reply "
 "as the answer. The first answer wins. A change applies within a minute to a "
-"running lotse listen; runs under way finish as they were."
+"running lotsman listen; runs under way finish as they were."
 msgstr ""
 
 #: app/src/frontends/gui/preferences.ts:113
@@ -961,7 +961,7 @@ msgstr ""
 #: app/src/frontends/gui/preferences.ts:123
 msgid ""
 "A message that answers no question starts an agent run, and the answer comes "
-"back in the chat. A change applies the next time lotse listen starts."
+"back in the chat. A change applies the next time lotsman listen starts."
 msgstr ""
 
 #: app/src/frontends/gui/preferences.ts:129

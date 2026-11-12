@@ -25,10 +25,10 @@ import {
   type AgentCommand,
   type AgentDetection,
   type ResolveContext,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 const SHA = 'c'.repeat(64);
-const DATA = '/synthetic/data/lotse';
+const DATA = '/synthetic/data/lotsman';
 
 const CATALOG = parseBundledCatalog({
   checked: '2026-01-01',
@@ -285,7 +285,7 @@ export default async () => {
 
   await describe('gatherAgentFacts — the version spawn is optional', async () => {
     await it('reads --version by default and never spawns it with readVersions false', async () => {
-      const dir = mkdtempSync(join(tmpdir(), 'lotse-probe-'));
+      const dir = mkdtempSync(join(tmpdir(), 'lotsman-probe-'));
       try {
         const program = join(dir, 'synthetic-agent');
         // Leaves a marker file when run, so "never spawned" is observable rather than inferred.

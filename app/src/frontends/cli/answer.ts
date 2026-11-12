@@ -1,5 +1,5 @@
 /**
- * `lotse answer <id> [text…]` — answer a question an agent asked (ADR 0003 §5).
+ * `lotsman answer <id> [text…]` — answer a question an agent asked (ADR 0003 §5).
  *
  * A permission question takes yes or no, which the run that holds the request picks up. A reply
  * question continues the session: `session/load`, else `session/resume`, else a follow-up run that
@@ -13,7 +13,7 @@
 import { _ } from '../../i18n.ts';
 import type { CommandModule } from 'yargs';
 
-import { answerQuestion, type LotsePaths } from '@lotse/core';
+import { answerQuestion, type LotsmanPaths } from '@lotsman/core';
 
 import { currentDialogCommand, openAnswerDialog } from '../../core/answer-dialog.ts';
 import type { ListenPaths } from '../../core/paths.ts';
@@ -45,14 +45,14 @@ async function answerWith(
   id: string,
   text: string,
   quiet: boolean,
-  paths: LotsePaths,
+  paths: LotsmanPaths,
   listen: ListenPaths,
 ): Promise<void> {
   const loaded = readConfig(listen);
   if (!loaded) return;
   const agents = trackedAgents();
   // The agent's reply is printed here; a question it asks back reaches the person through `listen`'s
-  // channel on its next question, and through `lotse questions` right away.
+  // channel on its next question, and through `lotsman questions` right away.
   const deps = runDeps({ paths, listen, loaded, channel: stderrChannel(), open: agents.open, quiet });
   if (!deps) return;
   try {
@@ -65,9 +65,9 @@ async function answerWith(
   }
 }
 
-const command = (paths: LotsePaths, listen: ListenPaths): CommandModule => ({
+const command = (paths: LotsmanPaths, listen: ListenPaths): CommandModule => ({
   command: 'answer <id> [text..]',
-  describe: _('answer a question from `lotse questions`; yes/no for a permission, text for a reply'),
+  describe: _('answer a question from `lotsman questions`; yes/no for a permission, text for a reply'),
   builder: (yargs) =>
     yargs
       .positional('id', { type: 'string', describe: _('the question id, like #A1 or A1') })

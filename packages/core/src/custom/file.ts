@@ -1,11 +1,11 @@
 /**
- * The one opencode config file lotse writes: the bundled copy's custom providers.
+ * The one opencode config file lotsman writes: the bundled copy's custom providers.
  *
  * **Why a file of our own, and why only the bundled copy's.** opencode v2 has no API that writes a
  * provider (`PATCH /api/experimental/config` takes only `shell`, measured on 2.0.22 and 2.0.25), so a
  * custom provider is config. The person's own `~/.config/opencode` is theirs — comments, formatting, a
- * backup rule — and lotse does not touch it. The bundled copy's config directory is lotse's
- * (`isolation.ts`), and inside it lotse writes **its own file**, named by `OPENCODE_CONFIG`
+ * backup rule — and lotsman does not touch it. The bundled copy's config directory is lotsman's
+ * (`isolation.ts`), and inside it lotsman writes **its own file**, named by `OPENCODE_CONFIG`
  * (`customProvidersEnv`), not the directory's `opencode.jsonc`.
  *
  * Measured on opencode 2.0.25 (scratch HOME, `opencode serve`): `OPENCODE_CONFIG` **merges** with the
@@ -53,9 +53,9 @@ export interface CustomProvider {
   readonly models: readonly CustomModel[];
 }
 
-/** `<config>/lotse-providers.json` — next to, not inside, the bundled copy's `opencode/` directory. */
+/** `<config>/lotsman-providers.json` — next to, not inside, the bundled copy's `opencode/` directory. */
 export function customProvidersFile(dirs: IsolationDirs): string {
-  return join(dirs.config, 'lotse-providers.json');
+  return join(dirs.config, 'lotsman-providers.json');
 }
 
 /** What points an agent at that file. Only opencode reads it; another agent gets nothing. */
@@ -64,7 +64,7 @@ export function customProvidersEnv(agentId: string, dirs: IsolationDirs): Record
 }
 
 /**
- * lotse's file for an agent that was started with one, read back off its environment, or `null`.
+ * lotsman's file for an agent that was started with one, read back off its environment, or `null`.
  *
  * Off the command rather than from the isolation directories, because a host embedding the widget hands
  * over an `AgentCommand` and nothing else: `bundledCommand` is the one place that sets the variable, so
@@ -75,7 +75,7 @@ export function customProvidersFileOf(agent: {
   readonly env?: Record<string, string>;
 }): string | null {
   const file = agent.id === 'opencode' ? agent.env?.['OPENCODE_CONFIG'] : undefined;
-  return file && file.endsWith('/lotse-providers.json') ? file : null;
+  return file && file.endsWith('/lotsman-providers.json') ? file : null;
 }
 
 /** A provider id opencode and a URL path both accept. */
@@ -189,7 +189,7 @@ export const LOCK_STALE_MS = 10_000;
 /** Another writer holds the lock right now. Nothing was written; trying again is safe. */
 export class ProvidersFileBusyError extends Error {
   constructor(file: string) {
-    super(`${file} is being written by another lotse right now — try again`);
+    super(`${file} is being written by another lotsman right now — try again`);
     this.name = 'ProvidersFileBusyError';
   }
 }

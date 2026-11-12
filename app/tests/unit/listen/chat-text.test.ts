@@ -7,7 +7,7 @@ import {
   setLibraryTranslator,
   type LibraryTranslator,
   type RequestSettings,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 import { STRINGS, msg } from '../../../../packages/core/src/messenger/strings.ts';
 import { setAppTranslator } from '../../../src/i18n.ts';

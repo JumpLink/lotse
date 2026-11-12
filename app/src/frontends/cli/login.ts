@@ -1,21 +1,21 @@
 /**
- * `lotse login` — log in to a provider through opencode's own OAuth flow, without a terminal login.
+ * `lotsman login` — log in to a provider through opencode's own OAuth flow, without a terminal login.
  *
- * `lotse auth` hands the person to `opencode auth login`, which needs a terminal and a menu. This is the
- * other path, the one a window can use too: lotse starts a private `opencode serve`, asks it to begin the
+ * `lotsman auth` hands the person to `opencode auth login`, which needs a terminal and a menu. This is the
+ * other path, the one a window can use too: lotsman starts a private `opencode serve`, asks it to begin the
  * login, shows the URL and the code it answers with, and waits until the provider is done. It stores
  * nothing — the credential lands in the agent's own store (`core/login/flow.ts`).
  *
  * ```
- * lotse login                       # the providers on offer
- * lotse login poe                   # one method: starts the login
- * lotse login openai --method chatgpt-headless
- * lotse login github-copilot --method device --answer deploymentType=github.com
- * echo "$KEY" | lotse login scaleway   # an API key: read from stdin, never from an argument
+ * lotsman login                       # the providers on offer
+ * lotsman login poe                   # one method: starts the login
+ * lotsman login openai --method chatgpt-headless
+ * lotsman login github-copilot --method device --answer deploymentType=github.com
+ * echo "$KEY" | lotsman login scaleway   # an API key: read from stdin, never from an argument
  * ```
  *
  * It needs opencode v2. v1 has no such API and answers a 404 on the catalog, which this reports as
- * "use `lotse auth`" rather than as a failure.
+ * "use `lotsman auth`" rather than as a failure.
  */
 
 import { _, fmt } from '../../i18n.ts';
@@ -34,11 +34,11 @@ import {
   startServer,
   which,
   whyNoLoginServer,
-  type LotsePaths,
+  type LotsmanPaths,
   type LoginHooks,
   type LoginMethod,
   type LoginProvider,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 import { agentForNew } from './choose.ts';
 import { err, out, pickArgv } from './output.ts';
@@ -115,7 +115,7 @@ export async function readSecret(prompt: string): Promise<string | null> {
   });
 }
 
-const command = (paths: LotsePaths): CommandModule => ({
+const command = (paths: LotsmanPaths): CommandModule => ({
   command: 'login [provider]',
   describe: _('log in to a provider (browser login or API key) through the agent, with no terminal login'),
   builder: (yargs) =>
@@ -192,7 +192,7 @@ const command = (paths: LotsePaths): CommandModule => ({
         providers = await api.providers();
       } catch (error) {
         if (error instanceof LoginApiError && error.httpStatus === 404) {
-          err(_(`this opencode has no login API (it needs v2) — run \`lotse auth\` instead`));
+          err(_(`this opencode has no login API (it needs v2) — run \`lotsman auth\` instead`));
         } else {
           err(`could not read the provider list: ${error instanceof Error ? error.message : String(error)}`);
         }
@@ -207,7 +207,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       }
       const provider = providers.find((candidate) => candidate.id === wanted.toLowerCase());
       if (!provider) {
-        err(fmt(_('"{wanted}" is not a provider lotse offers a login for. These are:'), { wanted }));
+        err(fmt(_('"{wanted}" is not a provider lotsman offers a login for. These are:'), { wanted }));
         listProviders(providers);
         process.exitCode = 1;
         return;
@@ -239,7 +239,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       if (method.kind === 'key') {
         const key = await readSecret(`${provider.name} API key: `);
         if (!key) {
-          err('no key given — pipe it in (`… | lotse login <provider>`) or run this in a terminal.');
+          err('no key given — pipe it in (`… | lotsman login <provider>`) or run this in a terminal.');
           process.exitCode = 1;
           return;
         }
@@ -263,7 +263,7 @@ const command = (paths: LotsePaths): CommandModule => ({
           err(
             prompt.mode === 'code'
               ? '  then paste the code the page shows you.'
-              : '  lotse waits here until the provider is done. Ctrl-C cancels.',
+              : '  lotsman waits here until the provider is done. Ctrl-C cancels.',
           );
         },
         askCode: () => readLine('code: '),
@@ -294,7 +294,7 @@ const command = (paths: LotsePaths): CommandModule => ({
       // The command is finished, so end it. Measured on GJS: any child `startServer` has launched — even
       // a plain `sh` that exits by itself — leaves the main loop running after the handler returns, while
       // the same child through a bare `spawn` does not; the cause is not isolated yet. Without this line
-      // `lotse login` prints its result and then never returns. The delay lets stdout drain first.
+      // `lotsman login` prints its result and then never returns. The delay lets stdout drain first.
       setTimeout(() => process.exit(process.exitCode ?? 0), 50);
     }
   },

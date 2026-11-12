@@ -1,5 +1,5 @@
 /**
- * What `lotse listen` keeps about runs under its state directory (ADR 0003 §7): `runs.json` — ids and
+ * What `lotsman listen` keeps about runs under its state directory (ADR 0003 §7): `runs.json` — ids and
  * outcomes, never a message — and one lock per task, which keeps a run and an answer from driving the
  * same task at once.
  */
@@ -7,7 +7,7 @@
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { RunResult } from '@lotse/core';
+import type { RunResult } from '@lotsman/core';
 
 import { ensureDir, writePrivateFile } from './private-file.ts';
 
@@ -71,7 +71,7 @@ function alive(pid: number): boolean {
   }
 }
 
-/** The tasks whose lock a live process holds — what `lotse status` calls running. */
+/** The tasks whose lock a live process holds — what `lotsman status` calls running. */
 export function runningTasks(stateDir: string): string[] {
   const dir = join(stateDir, 'locks');
   if (!existsSync(dir)) return [];

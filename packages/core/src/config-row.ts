@@ -9,7 +9,7 @@
  * - **a refused set must not move the row** — the person clicked, the agent said no, and a dropdown
  *   still showing the value they chose is a lie about what the agent is doing;
  * - **re-selecting the current value sends nothing** — the row is rebuilt on every answer, and a
- *   rebuild that fires a request turns "lotse showed the model" into "lotse set the model";
+ *   rebuild that fires a request turns "lotsman showed the model" into "lotsman set the model";
  * - **a value the agent did not offer is never sent**, whatever the widget believes is selected.
  *
  * Each of those compiles, each of them runs, and each of them is the bug. `permission.ts` made the
@@ -19,16 +19,16 @@
  * **What is here, in one line:** `configRowInput` (what to draw), `configSelection` (which value a
  * dropdown row means), `configRequest` (what goes on the wire), `configAfterSet` (what the answer did
  * to the row), `isConfigChange` (whether this is a change at all) and `parseConfigOptionSpec` (the one
- * format `LOTSE_APP_CONFIG` is read in).
+ * format `LOTSMAN_APP_CONFIG` is read in).
  *
  * **The agent's `currentValue` is the only truth.** Every view here is built from the last list the
  * agent reported — from `session/new`, from `session/load`/`session/resume`, from a
  * `config_option_update`, and from the answer to a set. Nothing is remembered between sessions and
- * nothing is persisted: lotse keeping a preferred model would be lotse holding configuration
+ * nothing is persisted: lotsman keeping a preferred model would be lotsman holding configuration
  * authority over the agent, which is the "always allow" mistake in different clothes (see
- * `LOTSE_CLIENT_CAPABILITIES`).
+ * `LOTSMAN_CLIENT_CAPABILITIES`).
  *
- * **A `boolean` option is a switch, drawn beside the dropdowns.** lotse announces
+ * **A `boolean` option is a switch, drawn beside the dropdowns.** lotsman announces
  * `session.configOptions.boolean` (`gate.ts`) together with the widget that draws it, so an agent may
  * send one. Switches are a list of their own (`ConfigRowView.switches`) rather than a second kind of
  * `ConfigRowControl`: a dropdown has values, an index and a placeholder, a switch has none of them, and
@@ -45,7 +45,7 @@ import {
   type ConfigValue,
 } from './config.ts';
 import { allowedModelValues, type ModelPolicy } from './model-policy.ts';
-import type { SessionConfigOption, SessionUpdate, SetSessionConfigOptionRequest } from '@lotse/acp/types';
+import type { SessionConfigOption, SessionUpdate, SetSessionConfigOptionRequest } from '@lotsman/acp/types';
 
 /** What the row needs that is not the agent's own answer: a set in flight, and a sentence. */
 export interface ConfigRowInput {
@@ -60,13 +60,13 @@ export interface ConfigRowInput {
   readonly error?: string | null;
   /**
    * The host's rule about which models a prompt may reach. Absent means every value the agent offered
-   * is on the row, which is what lotse's own window does.
+   * is on the row, which is what lotsman's own window does.
    *
    * **A denied value is removed from the model dropdown, and that is a departure from two rules in
    * this repo — stated here because it is deliberate.** `free-models.ts` says the hint "never hides",
-   * and the header above says `currentValue` is the only truth. Both are about lotse's *own*
+   * and the header above says `currentValue` is the only truth. Both are about lotsman's *own*
    * judgement, and neither applies to a host's: a row that still offered a model the host will refuse
-   * to send to is a control that points at a refusal, and "a model lotse stopped showing is a model a
+   * to send to is a control that points at a refusal, and "a model lotsman stopped showing is a model a
    * person cannot go back to" is the *intended* outcome when the host has said they may not go there.
    *
    * What the hiding must not do is lie about what is in use, and it does not: a denied *current* value
@@ -123,7 +123,7 @@ export interface ConfigRowControl {
    * value in the list is a *move* and emits. `configSelection` reads it back as "nothing", so the
    * placeholder can never be sent as a value.
    *
-   * Lotse's own word, generic over the control, and no agent text in it — the accessible name is
+   * Lotsman's own word, generic over the control, and no agent text in it — the accessible name is
    * already the control's name, so a screen reader reads "Model, Choose…".
    */
   readonly placeholder: string | null;
@@ -305,7 +305,7 @@ function projectSelects(
  * **`index` is the dropdown's row, which is not the index into `values` when a `placeholder` is
  * drawn** — the placeholder is row 0 and every value moves down one. That offset is exactly the
  * arithmetic this function exists to keep out of the widget: done there it would send the model
- * *above* the one the person picked, on the one row where lotse is already refusing to send.
+ * *above* the one the person picked, on the one row where lotsman is already refusing to send.
  */
 export function configSelection(
   view: ConfigRowView,
@@ -447,7 +447,7 @@ export function applyConfigUpdate(
 const MODE_CONTROL_ID = 'mode';
 
 /**
- * `LOTSE_APP_CONFIG`'s one format: `configId=valueId`.
+ * `LOTSMAN_APP_CONFIG`'s one format: `configId=valueId`.
  *
  * **Both halves are required, and neither is guessed.** A control id alone says which option to set
  * and not to what, and a value id alone cannot be resolved — a hook that picked the other half would

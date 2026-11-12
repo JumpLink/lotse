@@ -3,13 +3,13 @@
  *
  * Two sources, and the newer one wins where it exists. A line written since issue #43 carries a
  * structured record, folded into `ToolItem.call` by the projection, and its title, status and ACP kind
- * are read from there (`toolRow`). A line older lotse wrote has only the one string
+ * are read from there (`toolRow`). A line older lotsman wrote has only the one string
  * `"<title> — <status>"` (`core/transcript.ts`), and `parseToolLine` reads that back out of the text —
  * the icon then a guess from the title's wording, and the guess is the surface's: it never reaches the
  * record. No `gi://` import, so Node can test both, and the host presenter's fallback with them.
  */
 
-import { _, type ToolCallView } from '@lotse/core';
+import { _, type ToolCallView } from '@lotsman/core';
 
 export type ToolStatus = 'running' | 'done' | 'failed';
 
@@ -60,7 +60,7 @@ export function toolIcon(text: string): string {
 }
 
 /**
- * How a host wants one of its own tool calls drawn. `LotseChatOptions.toolPresenter` returns it.
+ * How a host wants one of its own tool calls drawn. `LotsmanChatOptions.toolPresenter` returns it.
  *
  * Title, subtitle and icon only — never the status, which stays the agent's: a host that could
  * restyle a failed call as anything else could hide that it failed.
@@ -72,7 +72,7 @@ export interface ToolPresentation {
   readonly icon?: string;
 }
 
-/** The host hook. `null` is "not mine — draw it as lotse would". */
+/** The host hook. `null` is "not mine — draw it as lotsman would". */
 export type ToolPresenter = (call: ToolCallView) => ToolPresentation | null;
 
 /** What a tool row draws, whichever source it came from. */
@@ -116,7 +116,7 @@ export function toolRow(
       ({ title, subtitle, icon } = presented as Record<string, unknown>);
     }
   } catch (error) {
-    warn(`the tool presenter threw, so the call is drawn as lotse would: ${String(error)}`);
+    warn(`the tool presenter threw, so the call is drawn as lotsman would: ${String(error)}`);
     return standard;
   }
   if (
@@ -125,7 +125,7 @@ export function toolRow(
     (subtitle !== undefined && typeof subtitle !== 'string') ||
     (icon !== undefined && typeof icon !== 'string')
   ) {
-    warn('the tool presenter returned no usable title, so the call is drawn as lotse would');
+    warn('the tool presenter returned no usable title, so the call is drawn as lotsman would');
     return standard;
   }
   return {

@@ -2,16 +2,16 @@
  * Output, in two streams with two jobs.
  *
  * **stdout carries the answer, stderr carries everything about the answer.** An agent's message
- * goes to stdout so `lotse start "…"` pipes into something useful; progress, notices, tool
+ * goes to stdout so `lotsman start "…"` pipes into something useful; progress, notices, tool
  * questions and the agent's own log lines go to stderr so they never contaminate it. A person
  * watching a turn sees both; a script sees one.
  */
 
 import { _, fmt } from '../../i18n.ts';
-import type { SessionNotification } from '@lotse/acp/types';
-import { labelOf, type SessionRecord } from '@lotse/session';
+import type { SessionNotification } from '@lotsman/acp/types';
+import { labelOf, type SessionRecord } from '@lotsman/session';
 
-import { chunkToText, describeUsage } from '@lotse/core';
+import { chunkToText, describeUsage } from '@lotsman/core';
 
 export function out(line = ''): void {
   process.stdout.write(`${line}\n`);

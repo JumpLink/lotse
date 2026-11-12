@@ -26,7 +26,7 @@ import {
 } from '../../../src/core/settings.ts';
 
 async function withTempDir(run: (dir: string) => Promise<void> | void): Promise<void> {
-  const dir = mkdtempSync(join(tmpdir(), 'lotse-settings-'));
+  const dir = mkdtempSync(join(tmpdir(), 'lotsman-settings-'));
   try {
     await run(dir);
   } finally {
@@ -269,7 +269,7 @@ export default async () => {
 
     await it('the file is 0600 and a directory it creates is 0700', async () => {
       await withTempDir(async (dir) => {
-        const sub = join(dir, 'fresh', 'lotse');
+        const sub = join(dir, 'fresh', 'lotsman');
         const file = join(sub, 'settings.json');
         writeSettings(file, BUNDLED);
         expect(statSync(file).mode & 0o777).toBe(0o600);
@@ -326,7 +326,7 @@ export default async () => {
   });
 
   await describe('the problem kind', async () => {
-    await it('a higher version number is newer-version, even with keys this lotse lacks', async () => {
+    await it('a higher version number is newer-version, even with keys this lotsman lacks', async () => {
       expect(kindOf('{"version":2,"agent":null}')).toBe('newer-version');
       expect(kindOf('{"version":9,"theme":"dark"}')).toBe('newer-version');
       expect(kindOf('{"version":9,"token":"x"}')).toBe('newer-version');

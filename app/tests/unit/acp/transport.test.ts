@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@gjsify/unit';
 
-import { AcpClient } from '@lotse/acp/client';
-import { ClosedTransport } from '@lotse/acp/transport';
+import { AcpClient } from '@lotsman/acp/client';
+import { ClosedTransport } from '@lotsman/acp/transport';
 
 export default async () => {
   await describe('ClosedTransport', async () => {

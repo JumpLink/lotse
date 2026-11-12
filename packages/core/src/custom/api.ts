@@ -6,7 +6,7 @@
  *
  * - `GET /api/config` — a list of the documents opencode read, each `{type: "document", path, info}`,
  *   `info.providers` in the v2 spelling. This is how a provider written **by hand** is read back, and
- *   `path` is how lotse tells its own file from the person's.
+ *   `path` is how lotsman tells its own file from the person's.
  * - `GET /api/integration` — lists a custom provider like a catalog one, with the single method
  *   "Manually enter API Key" and `connections: []` until a key is connected. **A keyless provider is
  *   never "connected" there**, which is why `onboarding.ts` counts a local one itself.
@@ -23,7 +23,7 @@ import { LoginApiError, type HttpResponse, type Send } from '../login/api.ts';
 
 import { hostReach, type EndpointReach } from './endpoint.ts';
 
-/** One custom provider opencode has read, from lotse's file or from the person's own config. */
+/** One custom provider opencode has read, from lotsman's file or from the person's own config. */
 export interface ConfiguredProvider {
   readonly id: string;
   readonly name: string;
@@ -32,7 +32,7 @@ export interface ConfiguredProvider {
   readonly models: readonly string[];
   /** The config document it came from. */
   readonly source: string;
-  /** It is in lotse's own file, so lotse may edit and remove it. Anything else is read-only here. */
+  /** It is in lotsman's own file, so lotsman may edit and remove it. Anything else is read-only here. */
   readonly ours: boolean;
   /** Where the base URL points; `null` without one. */
   readonly reach: EndpointReach | null;
@@ -148,7 +148,7 @@ export interface WaitHooks {
 export const RELOAD_TIMEOUT_MS = 10_000;
 
 export interface ProviderApi {
-  /** Every custom provider opencode has read; `ourFile` marks lotse's own. */
+  /** Every custom provider opencode has read; `ourFile` marks lotsman's own. */
   configured(ourFile: string): Promise<ConfiguredProvider[]>;
   /** Every id opencode knows — catalog and runtime — so a new custom id shadows none. */
   knownIds(): Promise<Set<string>>;

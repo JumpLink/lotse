@@ -22,8 +22,8 @@ import {
   isFreeModel,
   modelControl,
   type ConfigValue,
-} from '@lotse/core';
-import type { SessionConfigOption } from '@lotse/acp/types';
+} from '@lotsman/core';
+import type { SessionConfigOption } from '@lotsman/acp/types';
 
 /** The agent's list, in the agent's order. */
 function values(...ids: string[]): ConfigValue[] {
@@ -85,7 +85,7 @@ export default async function freeModels(): Promise<void> {
     });
 
     await it('keeps the agent’s order within both groups', async () => {
-      // The order is a statement the agent made — its own recommended models first — and lotse has no
+      // The order is a statement the agent made — its own recommended models first — and lotsman has no
       // business re-ordering any of it beyond which group a model is in.
       const sorted = freeModelFirst(
         values('a/1', 'opencode/space-bunny-free', 'a/2', 'opencode/big-pickle', 'a/3'),

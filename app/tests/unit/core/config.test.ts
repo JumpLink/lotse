@@ -19,8 +19,8 @@ import {
   findControl,
   projectConfigOptions,
   type ConfigControl,
-} from '@lotse/core';
-import type { SessionConfigOption } from '@lotse/acp/types';
+} from '@lotsman/core';
+import type { SessionConfigOption } from '@lotsman/acp/types';
 
 import { buildManyModelOptions, opencodeConfigOptions } from '../../support/fixture-agent.ts';
 

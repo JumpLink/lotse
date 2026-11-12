@@ -1,7 +1,7 @@
 /**
  * From "which agent" to the `AgentCommand` that starts it — pure over detections.
  *
- * Three questions, kept apart: an **explicit** id (`--agent`, `LOTSE_APP_AGENT`) wins and is the launcher as
+ * Three questions, kept apart: an **explicit** id (`--agent`, `LOTSMAN_APP_AGENT`) wins and is the launcher as
  * written; **no choice** goes through `resolveAgent` (the setting, else the bundled copy, else a host install); a **recorded**
  * agent (resume, cancel) is the session's own id, never a re-resolution to some other agent.
  *
@@ -44,7 +44,7 @@ export function bundledCommand(entry: BundledAgent, dirs: IsolationDirs): AgentC
     title: `${entry.title} ${entry.version} (bundled)`,
     program: bundledProgram(entry),
     args: [...entry.command],
-    // `OPENCODE_CONFIG` is blanked by the catalog so the person's own value cannot leak in; lotse's own
+    // `OPENCODE_CONFIG` is blanked by the catalog so the person's own value cannot leak in; lotsman's own
     // custom-provider file (`custom/file.ts`) replaces it, inside the isolated tree.
     env: { ...entry.env, ...customProvidersEnv(entry.id, dirs), ...isolationEnv(dirs) },
     bundled: true,
@@ -64,8 +64,8 @@ export interface ResolveContext {
   readonly launchers?: readonly AgentCommand[];
   readonly catalog?: readonly BundledAgent[];
   /**
-   * What to tell the person to do next when a choice had to be dropped — the lotse CLI passes
-   * `choose again with \`lotse agents --use\``, a host app that embeds the widget passes its own or none.
+   * What to tell the person to do next when a choice had to be dropped — the lotsman CLI passes
+   * `choose again with \`lotsman agents --use\``, a host app that embeds the widget passes its own or none.
    */
   readonly remedy?: string;
 }

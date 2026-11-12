@@ -1,10 +1,10 @@
-# `lotse listen` — the receiver: chat requests and questions that ask before they act
+# `lotsman listen` — the receiver: chat requests and questions that ask before they act
 
-`lotse listen` is a long-running process that **only receives**. It listens for
+`lotsman listen` is a long-running process that **only receives**. It listens for
 
 - **requests from the chat**: `/ask <text>` (and a plain message when requests are on), `/run <id>`,
   `/tasks` and `/status` — see [Requests from the chat](#requests-from-the-chat);
-- **answers to open questions**: a reply in the chat, `lotse answer`, or a button on the desktop
+- **answers to open questions**: a reply in the chat, `lotsman answer`, or a button on the desktop
   notification;
 
 and it sends a desktop notification (or a chat message) when an agent needs a decision from you.
@@ -12,32 +12,32 @@ It starts no task on its own and has no clock: scheduling was removed (ADR 0007)
 
 A [task](tasks.md) starts instead from one of three places:
 
-- `lotse run <id>` in a terminal;
+- `lotsman run <id>` in a terminal;
 - `/run <id>` in the chat that `listen` listens to;
 - an outside trigger you set up yourself (a systemd timer, cron, a calendar hook) that calls
-  `lotse run <id>`. Lotse does not ship one; a timer is a few lines of systemd and stays under your
-  control. Exit code `3` of `lotse run` means a question waits for you.
+  `lotsman run <id>`. Lotsman does not ship one; a timer is a few lines of systemd and stays under your
+  control. Exit code `3` of `lotsman run` means a question waits for you.
 
 The contract behind it is [ADR 0003](adr/0003-serve-tasks-questions-channel.md); the design it builds on
 is [ADR 0002](adr/0002-assistant-in-continuous-operation.md).
 
 ```bash
-lotse listen [--quiet]              # listen for chat requests and answers
-lotse questions [--all] [--json]   # open questions (--all: also answered, expired, cancelled)
-lotse answer <id> [text…] [--dialog]  # yes/no for a permission, free text for a reply;
+lotsman listen [--quiet]              # listen for chat requests and answers
+lotsman questions [--all] [--json]   # open questions (--all: also answered, expired, cancelled)
+lotsman answer <id> [text…] [--dialog]  # yes/no for a permission, free text for a reply;
                                       # without text (or with --dialog) the answer window opens
 ```
 
-The startup line says what it does: `lotse listen — listening for chat requests and answers, questions via
-desktop + messenger, state in …`. With no messenger configured it listens for `lotse answer` and the
+The startup line says what it does: `lotsman listen — listening for chat requests and answers, questions via
+desktop + messenger, state in …`. With no messenger configured it listens for `lotsman answer` and the
 desktop buttons only.
 
 ## The user file (`users.json`)
 
-`$XDG_CONFIG_HOME/lotse/users.json` (`LOTSE_USERS_FILE` overrides it), never in this repository, lists
+`$XDG_CONFIG_HOME/lotsman/users.json` (`LOTSMAN_USERS_FILE` overrides it), never in this repository, lists
 the people questions go to. Start from [examples/users.example.json](../examples/users.example.json)
 and keep the file at mode `0600`; `listen` warns when it is readable by others. The schema is
-`USERS_SCHEMA` in `@lotse/core`.
+`USERS_SCHEMA` in `@lotsman/core`.
 
 - **users**: `{id, addresses}`. The desktop channel needs no address.
 
@@ -48,20 +48,20 @@ every problem is reported at start.
 ### Editing the files while `listen` runs
 
 `listen` reads users.json, profiles.json and `settings.json` at start: restart it after editing them
-(`systemctl --user restart lotse-listen`). A task's SKILL.md is read on every run, so an edit applies to
+(`systemctl --user restart lotsman-listen`). A task's SKILL.md is read on every run, so an edit applies to
 the next run. A **run in progress is never interrupted.**
 
 A legacy `tasks.json` is copied once to users.json, profiles.json and `tasks/<id>/SKILL.md` when those
 are missing; `listen` prints one notice, never changes the old file and does not read it afterwards.
 
-Runs of one task never overlap, across `listen`, `lotse run` and `lotse answer` alike.
+Runs of one task never overlap, across `listen`, `lotsman run` and `lotsman answer` alike.
 
 ### Precheck
 
 A task's precheck (a cheap turn that answers `WORK` or `NOTHING`) runs when the task starts, by
-`lotse run` or `/run`; see [tasks](tasks.md). It always has `read` rights and never asks you a
+`lotsman run` or `/run`; see [tasks](tasks.md). It always has `read` rights and never asks you a
 question. `NOTHING` records outcome `nothing` in `runs.json`; a missing verdict or a failed precheck
-records `failed` and the task does not run. lotse puts the time and outcome of the task's last run in
+records `failed` and the task does not run. lotsman puts the time and outcome of the task's last run in
 front of the precheck prompt, so it can ask "is anything newer than that?".
 
 ### Rights
@@ -71,7 +71,7 @@ front of the precheck prompt, so it can ask "is anything newer than that?".
 - `released`: the areas in `released` (`{tool, kind?}`, exact tool title) are allowed once per
   call; anything else becomes a question.
 
-lotse strips every `allow_always`/`reject_always` option and never selects one.
+lotsman strips every `allow_always`/`reject_always` option and never selects one.
 
 ### Question limits
 
@@ -90,10 +90,10 @@ for all its tasks or on a task. A task can only narrow its profile, never widen 
   With a list on both, the task gets the channels in both. A channel the profile excludes stays
   excluded when a task names it, and `listen` says so at start. A reply in the chat cannot answer a
   question that was not sent to the chat. When none of the remaining channels is active, `listen`
-  says so at start; the questions are then in `lotse questions` only.
+  says so at start; the questions are then in `lotsman questions` only.
 - `messengerDetail`: `full` (default) sends the question to the chat. `notice` sends only its id
   and that a question waits in the task, without the question text or the run's message. Read it
-  with `lotse questions` or on the desktop; you can still answer in the chat with its id. `notice`
+  with `lotsman questions` or on the desktop; you can still answer in the chat with its id. `notice`
   on the profile or the task wins; a task cannot set `full` over a profile's `notice`.
 
 Use them for tasks that handle private data when the messenger path is not end-to-end encrypted.
@@ -104,12 +104,12 @@ when an id would name something private.
 ## Question → answer → resume
 
 1. **Permission questions.** The agent asks for a tool the rights do not cover. You get a notification
-   with an id such as `#A1`, and the run waits. `lotse answer A1 yes` (or `ja`, `ok`, `no`, `nein`)
+   with an id such as `#A1`, and the run waits. `lotsman answer A1 yes` (or `ja`, `ok`, `no`, `nein`)
    decides it; a yes allows that one call with those arguments, once. An unanswered question
    expires to `cancelled`. If the run ends or `listen` restarts first, the question is cancelled too,
    and a later yes allows nothing.
 2. **Reply questions.** A turn that ends normally with a last line ending in `?` becomes a
-   question. `lotse answer A2 <text>` continues the session: `session/load`, else `session/resume`,
+   question. `lotsman answer A2 <text>` continues the session: `session/load`, else `session/resume`,
    else a new session that carries the question and your answer as context. The command says which
    one it used. The agent's reply goes to stdout.
 
@@ -133,17 +133,17 @@ person_needed({kind: "login"|"code"|"approval"|"device", origin, prompt, accepts
 
 You get "I need you: <origin> wants <kind>." through every channel and a `person` question (`#A3`).
 The run waits (default 30 min; the call's `timeoutMin`, else the task's `personNeeded.timeoutMin`, else
-Preferences → "Wait for you", `lotse messenger --person-needed-minutes`).
+Preferences → "Wait for you", `lotsman messenger --person-needed-minutes`).
 
 - Reply `done` (`fertig`): you did it yourself → `done`. `no` → `declined`.
 - With `acceptsCode: true` you may reply with the code (4–10 letters or digits) → `code`, and the agent
   enters it. The code lives only in `listen`'s memory: never in the question store, the log, a transcript or a
-  message from lotse (`••••`).
+  message from lotsman (`••••`).
 - With `link` (a login QR code's content, from `person.link`) the message carries "Open or scan this: <link>".
   It is a session challenge: it goes into the message only — not into the question store or the log — and,
   like a code, is refused on a free or hosted-for-free model.
 - No reply in time → `timeout`. The run goes on without you and the question stays open as *deferred*:
-  `lotse questions` lists it. A later `done` continues the session; a late code is refused.
+  `lotsman questions` lists it. A later `done` continues the session; a late code is refused.
 
 Prompt it like this:
 
@@ -154,21 +154,21 @@ Prompt it like this:
 
 Rules: only one waiting call per conversation. A task that may receive a code or a link must not run on a free or
 hosted-for-free model, and the profile must name its model; otherwise the call is refused with a clear
-error. The deferred item reaches the daily reminder task only if its prompt reads `lotse questions`
+error. The deferred item reaches the daily reminder task only if its prompt reads `lotsman questions`
 (the reminder MCP has no write tool).
 
 ## Where the state lives
 
-`$XDG_STATE_HOME/lotse/` (`LOTSE_STATE_DIR` overrides it), mode `0600` in a `0700` directory:
+`$XDG_STATE_HOME/lotsman/` (`LOTSMAN_STATE_DIR` overrides it), mode `0600` in a `0700` directory:
 `questions.json`, `runs.json` (last run, outcome, precheck verdict and session per task; outcome is
 `done`, `asked`, `declined`, `nothing`, `skipped` or `failed`), `listen.log` (JSON lines, ids and
 kinds only, never a prompt or a reply — the one exception is `run-summary`: the final message of a task run, flattened and cut to 300 characters), `pending-requests.json` (ids and times of chat requests not yet answered, never their text) and `locks/`. Closed questions are kept for 7 days.
 
 ## Running it as a service
 
-[data/lotse-listen.service](../data/lotse-listen.service) is an example systemd user unit. Nothing
+[data/lotsman-listen.service](../data/lotsman-listen.service) is an example systemd user unit. Nothing
 installs it; the install commands are in its header. After an edit to users.json,
-profiles.json or `settings.json`, run `systemctl --user restart lotse-listen`.
+profiles.json or `settings.json`, run `systemctl --user restart lotsman-listen`.
 
 ## Channels
 
@@ -184,21 +184,21 @@ ends in `answerQuestion`, so the other channel is told the question is already a
 When the notification server can show actions (`GetCapabilities` lists `actions`), a question's
 notification gets buttons: **Answer…** (and a click on the notification itself) opens the answer
 window; a permission question also gets **Allow once** and **Decline**. A button answers through the
-same `answerQuestion` as `lotse answer <id> yes|no`, so the run that waits picks it up as before. A
-server without actions gets the plain notification, whose text still names `lotse answer`.
+same `answerQuestion` as `lotsman answer <id> yes|no`, so the run that waits picks it up as before. A
+server without actions gets the plain notification, whose text still names `lotsman answer`.
 
-Every notification carries the `desktop-entry` hint `eu.jumplink.Lotse`, so the shell files them
-under one "Lotse" app instead of one source per process. That only works where the desktop entry is
+Every notification carries the `desktop-entry` hint `eu.jumplink.Lotsman`, so the shell files them
+under one "Lotsman" app instead of one source per process. That only works where the desktop entry is
 installed (`npm run packaging:install`). Only questions stay in the notification list; reports are
 transient and show as a banner only.
 
 The answer window shows the task, the question (selectable, scrolls when it is long) and when it
 expires. A reply question gets a text field; a permission question gets only its two buttons.
 <kbd>Ctrl</kbd>+<kbd>Enter</kbd> sends, <kbd>Esc</kbd> or **Later** closes it and leaves the
-question open. `lotse answer <id>` with no text opens the same window, and `--dialog` asks for it
+question open. `lotsman answer <id>` with no text opens the same window, and `--dialog` asks for it
 explicitly; without a display the command says so and nothing opens.
 
-`channel.desktop.mode` in the settings file (`$XDG_CONFIG_HOME/lotse/settings.json`, also under
+`channel.desktop.mode` in the settings file (`$XDG_CONFIG_HOME/lotsman/settings.json`, also under
 *Preferences → Questions* in the app) picks how a question arrives:
 
 ```json
@@ -212,18 +212,18 @@ explicitly; without a display the command says so and nothing opens.
 `listen` reads the setting for every question, so a change needs no restart; it lives in the settings
 file rather than the task file because channels are opened once, at start.
 
-The window is part of the GUI bundle (`lotse-app.gjs.mjs`, built by `gjsify workspace lotse-cli
-build:app`) and is looked up next to the CLI bundle, else as `lotse-app` beside it.
-`LOTSE_ANSWER_DIALOG` names another program (split on spaces); it is started with
-`--answer <id>` and writes one line `lotse-answer:{"text":…}` on stdout, or nothing for Later.
+The window is part of the GUI bundle (`lotsman-app.gjs.mjs`, built by `gjsify workspace lotsman-cli
+build:app`) and is looked up next to the CLI bundle, else as `lotsman-app` beside it.
+`LOTSMAN_ANSWER_DIALOG` names another program (split on spaces); it is started with
+`--answer <id>` and writes one line `lotsman-answer:{"text":…}` on stdout, or nothing for Later.
 
 ### Answering in a chat (the messenger channel)
 
-Lotse sends Markdown and the messenger server renders it for its protocol, splits long text and strips
+Lotsman sends Markdown and the messenger server renders it for its protocol, splits long text and strips
 quoted replies; see [the messenger contract](messenger-contract.md). A server older than the contract
-(Curlew before 0.2.0) gets plain text, and Lotse logs one notice.
+(Curlew before 0.2.0) gets plain text, and Lotsman logs one notice.
 
-lotse speaks no XMPP. The channel is an MCP client: it starts the configured MCP server (curlew's
+lotsman speaks no XMPP. The channel is an MCP client: it starts the configured MCP server (curlew's
 `curlew mcp` by default) over stdio, sends a question with the server's send tool, and long-polls its
 wait-for-reply tool for the answer. Any MCP server with those two tools fits; their names are settings.
 
@@ -260,26 +260,26 @@ guide, with the tool contract and a round-trip test):
 - `curlew daemon` is running; replies only arrive while it is.
 - The account may send. Add a grant to curlew's configuration:
   `{"capability":"xmpp.send","target":"<account>/<address>"}` (same account and peer as above).
-- `curlew mcp` is on `PATH` (inside the Flatpak, on the host: lotse starts it through
+- `curlew mcp` is on `PATH` (inside the Flatpak, on the host: lotsman starts it through
   `flatpak-spawn --host`).
 
 A question arrives as one message whose first line carries the id, with a reply hint:
 
 ```
-lotse · backup · #A3
+lotsman · backup · #A3
 
 Allow rm -rf build/?
 
 Reply: #A3 yes or #A3 no
 ```
 
-Replies are read like `lotse answer`:
+Replies are read like `lotsman answer`:
 
 - `A3 yes` or `#A3 only the first one`: answers that question.
 - Plain text while exactly one question is open **in this chat**: answers it, no id needed. Questions
   kept off the chat (`channels`, `notice`) do not count as open here.
-- Plain text while several are open: nothing is answered; lotse replies with the open ids only.
-- An unknown or already answered id: lotse replies with that.
+- Plain text while several are open: nothing is answered; lotsman replies with the open ids only.
+- An unknown or already answered id: lotsman replies with that.
 - A permission question takes `yes`, `no`, `ja`, `nein`, `allow`, `decline` (and `deny`); anything
   longer is refused with a reply.
 
@@ -289,7 +289,7 @@ Use your messenger's *Reply* on the question's message: the answer then belongs 
 whatever else is open. This beats the rules above (one open question, several open) but not an id you
 type yourself (`#A1 yes` still answers `#A1`). The quote the messenger puts before your text is dropped.
 
-- lotse keeps the id the send tool returned (`originId`) for each question message in
+- lotsman keeps the id the send tool returned (`originId`) for each question message in
   `messenger-refs.json` in the state directory (message id, user and question id, never a text; the
   last 200), and matches it against the `replyToId` the wait tool returns.
 - A reply to the message of a question that is already settled, expired or kept off the chat is told so
@@ -307,8 +307,8 @@ server dies, `listen` restarts it with a growing pause (5 s up to 5 min). A chan
 delivers is never silent: `listen` prints `<channel>: <error>` on stderr and writes an `error` entry
 (channel, kind, message) to `listen.log`. A question the messenger could not send is sent again by the
 receive loop after 30 s, 1, 2, 5 and 10 min, while it is still open; after the last try `listen` says
-it gave up (`lotse questions` still lists it). The retry list lives in memory, so a restart of
-`listen` drops it. lotse adds no encryption of its own: a
+it gave up (`lotsman questions` still lists it). The retry list lives in memory, so a restart of
+`listen` drops it. lotsman adds no encryption of its own: a
 question is as private as the messenger path it travels, and it names the task and the action. To
 keep a task's questions out of the chat, set its `channels` or `messengerDetail: "notice"`.
 
@@ -375,10 +375,10 @@ characters; beyond that the last is cut short with a note.
 | `followUpMinutes` | `30` | How long after an answer a plain message continues that session; `0`: never. |
 | `maxConcurrent` | `1` | Requests running at the same time. |
 
-Set them from the CLI with `lotse messenger` (without flags it shows them):
+Set them from the CLI with `lotsman messenger` (without flags it shows them):
 
 ```sh
-lotse messenger --requests on --request-profile assistant --request-rights confirm \
+lotsman messenger --requests on --request-profile assistant --request-rights confirm \
   --request-mcp-server 'calendar=reminder mcp; mail=curlew mcp' --follow-up-minutes 30
 ```
 

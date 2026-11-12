@@ -73,7 +73,7 @@ function runMcpServer() {
 }
 
 async function probe(binary, model) {
-  const root = mkdtempSync(join(tmpdir(), 'lotse-probe-'));
+  const root = mkdtempSync(join(tmpdir(), 'lotsman-probe-'));
   const log = join(root, 'mcp.log');
   const env = {
     PATH: process.env.PATH,

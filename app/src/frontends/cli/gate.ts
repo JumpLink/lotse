@@ -12,8 +12,8 @@
  * something a flag may edit.
  */
 
-import type { ClientGate } from '@lotse/acp/gate';
-import { terminalGate, type Terminal } from '@lotse/core';
+import type { ClientGate } from '@lotsman/acp/gate';
+import { terminalGate, type Terminal } from '@lotsman/core';
 
 import { err } from './output.ts';
 

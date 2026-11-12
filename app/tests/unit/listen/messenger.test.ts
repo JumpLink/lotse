@@ -29,7 +29,7 @@ import {
   type QuestionChannel,
   type RunDeps,
   type QuestionMessage,
-} from '@lotse/core';
+} from '@lotsman/core';
 import { fileCursorStore } from '../../../src/core/messenger-state.ts';
 import { parseSettings, withMessenger } from '../../../src/core/settings.ts';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -242,8 +242,8 @@ export default async () => {
 
   await describe('messenger channel', async () => {
     const asks: QuestionMessage = {
-      title: 'lotse · t · #A3',
-      body: 'Allow it?\n\nAnswer: lotse answer A3 yes|no — expires x',
+      title: 'lotsman · t · #A3',
+      body: 'Allow it?\n\nAnswer: lotsman answer A3 yes|no — expires x',
       text: 'Allow it?',
       expiresAt: '2026-10-11T00:00:00.000Z',
       questionId: 'A3',
@@ -251,12 +251,12 @@ export default async () => {
     };
     await it('puts the id, the question and the reply hint in one text', async () => {
       const text = messengerText(asks);
-      expect(text.startsWith('lotse · t · #A3\n\nAllow it?')).toBe(true);
+      expect(text.startsWith('lotsman · t · #A3\n\nAllow it?')).toBe(true);
       expect(text).toContain('Reply: #A3 yes or #A3 no');
       expect(text).toContain(`Valid until ${localDeadline('2026-10-11T00:00:00.000Z')}`);
       expect(text).not.toContain('2026-10-11T');
       expect(text).not.toContain('.000Z');
-      expect(text).not.toContain('lotse answer');
+      expect(text).not.toContain('lotsman answer');
     });
     await it('notice mode keeps the question text out and still shows a local deadline', async () => {
       const text = messengerText(
@@ -268,8 +268,8 @@ export default async () => {
     });
     await it('a reply question asks for text; a report carries no hint', async () => {
       expect(messengerText({ ...asks, asks: 'reply' })).toContain('Reply: #A3 <your answer>');
-      expect(messengerText({ title: 'lotse listen stopped', body: 'why', questionId: null })).toBe(
-        'lotse listen stopped\n\nwhy',
+      expect(messengerText({ title: 'lotsman listen stopped', body: 'why', questionId: null })).toBe(
+        'lotsman listen stopped\n\nwhy',
       );
     });
     await it('sends {account, to, text} through the configured send tool', async () => {
@@ -352,8 +352,8 @@ export default async () => {
     const user = { id: 'me', addresses: [] };
     const secret = 'Archive invoice 4711 from Example Corp?';
     const asking = (task: string): QuestionMessage => ({
-      title: `lotse · ${task} · #A5`,
-      body: `${secret}\n\nAnswer: lotse answer A5 <text>`,
+      title: `lotsman · ${task} · #A5`,
+      body: `${secret}\n\nAnswer: lotsman answer A5 <text>`,
       text: secret,
       questionId: 'A5',
       task,
@@ -401,7 +401,12 @@ export default async () => {
             ROUTED,
           );
           await channel.send(user, asking('quiet'));
-          await channel.send(user, { title: 'lotse · quiet', body: secret, questionId: null, task: 'quiet' });
+          await channel.send(user, {
+            title: 'lotsman · quiet',
+            body: secret,
+            questionId: null,
+            task: 'quiet',
+          });
         } finally {
           await link.close();
         }
@@ -456,7 +461,7 @@ export default async () => {
         ROUTED,
       );
       await channel.send(user, asking('t'));
-      await channel.send(user, { title: 'lotse listen stopped', body: 'why', questionId: null });
+      await channel.send(user, { title: 'lotsman listen stopped', body: 'why', questionId: null });
       expect(chat.map((m) => m.text ?? m.body)).toStrictEqual([secret, 'why']);
       expect(desktop.length).toBe(2);
     });
@@ -465,7 +470,7 @@ export default async () => {
   await describe('messenger retry', async () => {
     const user = { id: 'me', addresses: [] };
     const asks: QuestionMessage = {
-      title: 'lotse · t · #A4',
+      title: 'lotsman · t · #A4',
       body: 'Allow it?',
       text: 'Allow it?',
       questionId: 'A4',
@@ -894,7 +899,7 @@ export default async () => {
 
   await describe('cursor file', async () => {
     await it('round-trips, and a missing or broken file reads as no cursor', async () => {
-      const dir = mkdtempSync(join(tmpdir(), 'lotse-cursor-'));
+      const dir = mkdtempSync(join(tmpdir(), 'lotsman-cursor-'));
       try {
         const path = join(dir, 'state', 'messenger-cursor.json');
         const store = fileCursorStore(path);

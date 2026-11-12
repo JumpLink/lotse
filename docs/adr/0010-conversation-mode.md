@@ -5,19 +5,19 @@
 - Deciders: Pascal Garber
 - Related: [ADR 0009](0009-voice-as-a-surface.md) (voice as a surface, amended here),
   [speech recognition measurement](../voice/spracherkennung.md),
-  [issue #89](https://github.com/JumpLink/lotse/issues/89),
+  [issue #89](https://github.com/JumpLink/lotsman/issues/89),
   [Stamped's semantic search](https://github.com/correctiv/stamped) (the machine-fit pattern)
 
 ## Context
 
 ADR 0009 makes voice a surface and builds read-aloud first; hands-free conversation is its last
-step. The owner wants that conversation as the goal, not a speaker button: Lotse notices when the
+step. The owner wants that conversation as the goal, not a speaker button: Lotsman notices when the
 person has stopped speaking and answers, as the phone assistant sprechstunde does with Silero VAD
 (300 ms silence), LiveKit's turn detector and Voxtral in the cloud.
 
 Three things differ from sprechstunde:
 
-- **The agents are slow.** sprechstunde talks to a fast model directly. Lotse talks to coding
+- **The agents are slow.** sprechstunde talks to a fast model directly. Lotsman talks to coding
   agents that call tools for seconds or minutes.
 - **Recognition must be able to run locally.** A profile with `voice: "local-only"`
   (Steuererklärung) must never send speech to a cloud.
@@ -41,10 +41,10 @@ automatic choice that never overrides the person, and no probe on battery.
    1. **Read aloud**: answers are spoken sentence by sentence; Esc or a new prompt stops it.
    2. **Push to talk**: hold a key, speak, release; local recognition.
    3. **Hands-free**: voice activity detection and end-of-turn detection decide when the person
-      has finished. The microphone is closed while Lotse speaks (half duplex).
-   4. **Barge-in**: the person interrupts Lotse mid-sentence. Needs echo cancellation (PipeWire's
-      `echo-cancel` module); without a working canceller Lotse stays at stage 3.
-2. **A slow agent must not sound dead.** Lotse acknowledges the turn itself at once with a short
+      has finished. The microphone is closed while Lotsman speaks (half duplex).
+   4. **Barge-in**: the person interrupts Lotsman mid-sentence. Needs echo cancellation (PipeWire's
+      `echo-cancel` module); without a working canceller Lotsman stays at stage 3.
+2. **A slow agent must not sound dead.** Lotsman acknowledges the turn itself at once with a short
    local phrase, speaks the first sentence as soon as it is streamed (0009, point 11), and
    announces tool calls briefly. The voice profile (0009, point 2) asks the agent for short,
    speakable answers.
@@ -56,7 +56,7 @@ automatic choice that never overrides the person, and no probe on battery.
    detector each list engines with the device they run on:
    - recognition: `large-v3-turbo` on the GPU, parakeet on the CPU, the streaming zipformer on the
      CPU, then the cloud (Voxtral, as in sprechstunde);
-   - voice: as in 0009 (Spiel voices; the device is the speech provider's business, not Lotse's);
+   - voice: as in 0009 (Spiel voices; the device is the speech provider's business, not Lotsman's);
    - VAD and turn detection are small and run on the CPU everywhere.
    Hands-free may combine two: the streaming engine for partial text and the turn decision, a more
    accurate one to re-read the finished turn.
@@ -72,11 +72,11 @@ automatic choice that never overrides the person, and no probe on battery.
    ahead of a slow local engine; that is a setting, not the default.
 7. **The building blocks belong to gjsify.** Next to `speechSynthesis` (0009, point 12), gjsify gets
    the W3C `SpeechRecognition` with local engines and voice activity detection, decided in its own
-   ADR. The machine-fit parts that are not Lotse's (Vulkan hint, GPU guard, battery check, trying
+   ADR. The machine-fit parts that are not Lotsman's (Vulkan hint, GPU guard, battery check, trying
    candidates in order) move there from Stamped, which becomes their second user. The candidate
-   tables and the budget stay in Lotse. This replaces "whisper.cpp later" in 0009, points 3 and 7
+   tables and the budget stay in Lotsman. This replaces "whisper.cpp later" in 0009, points 3 and 7
    of its order of work.
-8. **Lotse does not take over sprechstunde's stack.** LiveKit is a server; Lotse has no HTTP port.
+8. **Lotsman does not take over sprechstunde's stack.** LiveKit is a server; Lotsman has no HTTP port.
    It ports the ideas (VAD threshold, turn detection, spoken numbers), not the code (0009,
    point 10).
 9. **The person's own words are taught, not hoped for.** A term list (project names, tools) goes

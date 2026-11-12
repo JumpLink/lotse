@@ -1,5 +1,5 @@
 /**
- * What `lotse run`, `lotse tasks` and `lotse status` do, and what the chat commands `/run`, `/tasks`
+ * What `lotsman run`, `lotsman tasks` and `lotsman status` do, and what the chat commands `/run`, `/tasks`
  * and `/status` say: one implementation, two surfaces (ADR 0007 §9–11). Nothing here calls a model
  * except `runTask` itself.
  */
@@ -16,14 +16,14 @@ import {
   TaskUsageError,
   type RunDeps,
   type TaskRun,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 import type { ListenPaths } from '../../core/paths.ts';
 import { questionBook } from '../../core/question-state.ts';
 import { runningTasks, runState, type RunRecord } from '../../core/run-state.ts';
 import { listTasks, type TaskEntry } from '../../core/skills.ts';
 
-/** `lotse run`'s exit codes: done, failed, usage error, needs a person. */
+/** `lotsman run`'s exit codes: done, failed, usage error, needs a person. */
 export const EXIT = { done: 0, failed: 1, usage: 2, 'needs-person': 3 } as const;
 
 export type RunReport =
@@ -46,7 +46,7 @@ export async function runReport(
   }
 }
 
-/** The words after `/run`, run like `lotse run`. */
+/** The words after `/run`, run like `lotsman run`. */
 export async function runReportFromText(args: string, deps: RunDeps): Promise<RunReport> {
   try {
     const { id, params } = parseRunArgs(args);
@@ -64,7 +64,7 @@ export function reportText(report: RunReport): string {
     case 'done':
       return result.output || _('Done.');
     case 'needs-person':
-      return fmt(_('Waiting for you: {id}. Answer it with `lotse answer {id} <text>`.'), {
+      return fmt(_('Waiting for you: {id}. Answer it with `lotsman answer {id} <text>`.'), {
         id: formatQuestionId(result.questionId),
       });
     case 'usage':
@@ -109,7 +109,7 @@ export function statusReport(listen: ListenPaths, now: Date = new Date()): Statu
   };
 }
 
-/** How many finished runs `/status` and `lotse status` list. */
+/** How many finished runs `/status` and `lotsman status` list. */
 const RECENT_RUNS = 10;
 
 /** A run's outcome in words. */

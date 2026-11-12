@@ -1,5 +1,5 @@
 /**
- * Custom providers: where a URL may point, the file lotse writes, what opencode reports back, and the plan
+ * Custom providers: where a URL may point, the file lotsman writes, what opencode reports back, and the plan
  * the CLI and the settings group both ask. Bodies are the shapes measured on opencode 2.0.25; every id,
  * URL and key is synthetic.
  */
@@ -51,11 +51,11 @@ import {
   type HttpResponse,
   type LoginProvider,
   type Send,
-} from '@lotse/core';
+} from '@lotsman/core';
 
-const OUR_FILE = '/synthetic/agents/opencode/config/lotse-providers.json';
+const OUR_FILE = '/synthetic/agents/opencode/config/lotsman-providers.json';
 
-/** `GET /api/config` with the directory's file and lotse's own, as measured. */
+/** `GET /api/config` with the directory's file and lotsman's own, as measured. */
 const CONFIG = {
   status: 200,
   json: [
@@ -124,7 +124,7 @@ const FACTS: CustomProviderFacts = {
 };
 
 function withTempDir(run: (dir: string) => void): void {
-  const dir = mkdtempSync(join(tmpdir(), 'lotse-custom-'));
+  const dir = mkdtempSync(join(tmpdir(), 'lotsman-custom-'));
   try {
     run(dir);
   } finally {
@@ -210,11 +210,11 @@ export default async () => {
   });
 
   await describe('the provider file', async () => {
-    const dirs = isolationDirs('/synthetic/data/lotse', 'opencode');
+    const dirs = isolationDirs('/synthetic/data/lotsman', 'opencode');
 
     await it('lives in the bundled copy’s config directory and is named by OPENCODE_CONFIG', async () => {
       expect(customProvidersFile(dirs)).toBe(
-        '/synthetic/data/lotse/agents/opencode/config/lotse-providers.json',
+        '/synthetic/data/lotsman/agents/opencode/config/lotsman-providers.json',
       );
       expect(customProvidersEnv('opencode', dirs)).toStrictEqual({
         OPENCODE_CONFIG: customProvidersFile(dirs),
@@ -270,7 +270,7 @@ export default async () => {
 
     await it('writes 0600 in a 0700 directory, whole', async () => {
       withTempDir((dir) => {
-        const file = join(dir, 'config', 'lotse-providers.json');
+        const file = join(dir, 'config', 'lotsman-providers.json');
         expect(readProvidersDocument(file)).toStrictEqual({ ok: true, raw: {} });
         writeProvidersDocument(file, { providers: {} });
         expect(statSync(file).mode & 0o777).toBe(0o600);
@@ -296,16 +296,16 @@ export default async () => {
 
     await it('writes through a temp file of its own and leaves nothing behind', async () => {
       withTempDir((dir) => {
-        const file = join(dir, 'lotse-providers.json');
+        const file = join(dir, 'lotsman-providers.json');
         writeProvidersDocument(file, { providers: {} });
         updateProvidersDocument(file, (raw) => ({ ...raw, theme: 'x' }));
-        expect(readdirSync(dir)).toStrictEqual(['lotse-providers.json']);
+        expect(readdirSync(dir)).toStrictEqual(['lotsman-providers.json']);
       });
     });
 
     await it('applies a change to the file as it is at write time, not an earlier read', async () => {
       withTempDir((dir) => {
-        const file = join(dir, 'lotse-providers.json');
+        const file = join(dir, 'lotsman-providers.json');
         const model = { baseUrl: 'http://127.0.0.1:1/v1', models: [{ id: 'm' }] };
         const before = readProvidersDocument(file);
         // The other writer (the GUI, say) saves while this one is still on the network.
@@ -321,7 +321,7 @@ export default async () => {
 
     await it('refuses while another writer holds the lock, and takes over a stale one', async () => {
       withTempDir((dir) => {
-        const file = join(dir, 'lotse-providers.json');
+        const file = join(dir, 'lotsman-providers.json');
         const lock = `${file}.lock`;
         writeFileSync(lock, '1\n');
         let busy: unknown = null;
@@ -342,7 +342,7 @@ export default async () => {
 
     await it('releases the lock and writes nothing when the change throws or the file is unreadable', async () => {
       withTempDir((dir) => {
-        const file = join(dir, 'lotse-providers.json');
+        const file = join(dir, 'lotsman-providers.json');
         writeFileSync(file, '{oops');
         let threw = false;
         try {
@@ -358,7 +358,7 @@ export default async () => {
   });
 
   await describe('createProviderApi', async () => {
-    await it('reads back providers from every document, marks lotse’s own and the connected ones', async () => {
+    await it('reads back providers from every document, marks lotsman’s own and the connected ones', async () => {
       const r = router({ 'GET /api/config': CONFIG, 'GET /api/integration': INTEGRATIONS });
       const providers = await createProviderApi(r.send).configured(OUR_FILE);
       expect(providers.map((p) => [p.id, p.ours, p.connected, p.reach])).toStrictEqual([

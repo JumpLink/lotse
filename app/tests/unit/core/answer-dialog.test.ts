@@ -7,7 +7,7 @@ import { describe, expect, it } from '@gjsify/unit';
 
 import { answerArg, answerFrame, dialogCommand, dialogResult } from '../../../src/core/answer-dialog.ts';
 
-const SELF = '/opt/lotse/dist/lotse.gjs.mjs';
+const SELF = '/opt/lotsman/dist/lotsman.gjs.mjs';
 const WAYLAND = { WAYLAND_DISPLAY: 'wayland-0' };
 
 export default async () => {
@@ -19,23 +19,25 @@ export default async () => {
 
     await it('X11 counts as a display too', async () => {
       expect(dialogCommand(SELF, { DISPLAY: ':0' }, () => true)).toStrictEqual({
-        command: ['gjs', '-m', '/opt/lotse/dist/lotse-app.gjs.mjs'],
+        command: ['gjs', '-m', '/opt/lotsman/dist/lotsman-app.gjs.mjs'],
       });
     });
 
-    await it('LOTSE_ANSWER_DIALOG wins and is split on spaces', async () => {
+    await it('LOTSMAN_ANSWER_DIALOG wins and is split on spaces', async () => {
       expect(
         dialogCommand(
           SELF,
-          { ...WAYLAND, LOTSE_ANSWER_DIALOG: ' flatpak run eu.jumplink.Lotse ' },
+          { ...WAYLAND, LOTSMAN_ANSWER_DIALOG: ' flatpak run eu.jumplink.Lotsman ' },
           () => false,
         ),
-      ).toStrictEqual({ command: ['flatpak', 'run', 'eu.jumplink.Lotse'] });
+      ).toStrictEqual({ command: ['flatpak', 'run', 'eu.jumplink.Lotsman'] });
     });
 
-    await it('falls back to the lotse-app executable beside the bundle', async () => {
-      const exists = (path: string) => path === '/opt/lotse/dist/lotse-app';
-      expect(dialogCommand(SELF, WAYLAND, exists)).toStrictEqual({ command: ['/opt/lotse/dist/lotse-app'] });
+    await it('falls back to the lotsman-app executable beside the bundle', async () => {
+      const exists = (path: string) => path === '/opt/lotsman/dist/lotsman-app';
+      expect(dialogCommand(SELF, WAYLAND, exists)).toStrictEqual({
+        command: ['/opt/lotsman/dist/lotsman-app'],
+      });
     });
 
     await it('names the build step when neither is there', async () => {
@@ -80,7 +82,7 @@ export default async () => {
     await it('a non-zero exit or a broken frame fails', async () => {
       expect(dialogResult(3, answerFrame('yes')).kind).toBe('failed');
       expect(dialogResult(null, '').kind).toBe('failed');
-      expect(dialogResult(0, 'lotse-answer:{not json').kind).toBe('failed');
+      expect(dialogResult(0, 'lotsman-answer:{not json').kind).toBe('failed');
       expect(dialogResult(0, answerFrame('   ')).kind).toBe('failed');
     });
   });

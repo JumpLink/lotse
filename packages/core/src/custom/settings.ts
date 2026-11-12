@@ -5,7 +5,7 @@
  * providers (#17: add, remove, see where a hand-written one lives) and what each of them means for the
  * person's data. Connecting a provider is **not** here: it is `LoginController`, the same dialog the menu
  * opens, so there is one login and not two. This file holds the list, the add and remove steps and every
- * refusal as a state a widget draws; `@lotse/widget`'s `ProviderSettings` only renders it.
+ * refusal as a state a widget draws; `@lotsman/widget`'s `ProviderSettings` only renders it.
  *
  * It owns one private server for as long as the group is on screen (`open` starts it, `close` stops it),
  * like the login dialog. A key typed into the add form is held in the one call that hands it to opencode
@@ -61,9 +61,9 @@ export interface SettingsFiles {
 
 export interface ProviderSettingsDeps {
   openSession(): Promise<SettingsSession>;
-  /** Why this agent has no server lotse can drive, or `null` — `loginUnavailableReason`. */
+  /** Why this agent has no server lotsman can drive, or `null` — `loginUnavailableReason`. */
   unavailableReason(): string | null;
-  /** lotse's own file (`customProvidersFileOf`); `null` for an agent that is not lotse's copy. */
+  /** lotsman's own file (`customProvidersFileOf`); `null` for an agent that is not lotsman's copy. */
   readonly file: string | null;
   /** The host's switch for the custom part. */
   readonly allowCustomProviders: boolean;
@@ -85,7 +85,7 @@ export interface ConnectedRow {
   readonly models: number;
   /** The host's policy allows one of its models. */
   readonly offered: boolean;
-  /** Log out works: only on lotse's copy (`HOST_READ_ONLY_REASON`). */
+  /** Log out works: only on lotsman's copy (`HOST_READ_ONLY_REASON`). */
   readonly removable: boolean;
 }
 
@@ -96,7 +96,7 @@ export interface CustomRow {
   readonly models: readonly string[];
   readonly reach: EndpointReach | null;
   readonly keyStored: boolean;
-  /** In lotse's file on lotse's copy; anything else is the person's to edit where `source` says. */
+  /** In lotsman's file on lotsman's copy; anything else is the person's to edit where `source` says. */
   readonly removable: boolean;
   readonly source: string;
   readonly offered: boolean;
@@ -137,7 +137,7 @@ export type AddOutcome =
 
 export const PROVIDER_PRIVACY_NOTE =
   'A provider receives everything a chat sends it — your prompts, the files the agent reads, tool output — ' +
-  'and keeps it under its own terms. lotse stores no key: the agent does.';
+  'and keeps it under its own terms. lotsman stores no key: the agent does.';
 
 export const FREE_MODELS_PRIVACY_NOTE =
   'Free hosted models are listed first. Any of them may keep what it sees and train on it, so nothing ' +
@@ -145,12 +145,12 @@ export const FREE_MODELS_PRIVACY_NOTE =
 
 export const FREE_MODELS_DENIED_NOTE = 'This app does not let a chat use free hosted models.';
 
-export const NOT_LOTSE_COPY_REASON =
-  'Custom providers are added only to the opencode that comes with lotse. Your own opencode keeps them in ' +
-  'its own config, which lotse does not edit.';
+export const NOT_LOTSMAN_COPY_REASON =
+  'Custom providers are added only to the opencode that comes with lotsman. Your own opencode keeps them in ' +
+  'its own config, which lotsman does not edit.';
 
 export const HOST_READ_ONLY_REASON =
-  'This is your own opencode: lotse shows its logins and changes none of them. Log out with ' +
+  'This is your own opencode: lotsman shows its logins and changes none of them. Log out with ' +
   '`opencode auth logout`.';
 
 const CUSTOM_OFF_REASON = 'this app does not add or remove custom providers';
@@ -297,7 +297,7 @@ export class ProviderSettingsController {
       custom: this.#deps.allowCustomProviders
         ? {
             editable: this.#deps.file !== null,
-            readOnlyReason: this.#deps.file === null ? NOT_LOTSE_COPY_REASON : null,
+            readOnlyReason: this.#deps.file === null ? NOT_LOTSMAN_COPY_REASON : null,
             providers: configured.map((provider) => ({
               id: provider.id,
               name: provider.name,
@@ -353,7 +353,7 @@ export class ProviderSettingsController {
     return true;
   }
 
-  /** Remove every login opencode holds for a provider — on lotse's copy only. */
+  /** Remove every login opencode holds for a provider — on lotsman's copy only. */
   async disconnect(id: string): Promise<void> {
     await this.#change(id, async (session) => {
       if (this.#deps.file === null) throw new Error(HOST_READ_ONLY_REASON);
@@ -374,7 +374,7 @@ export class ProviderSettingsController {
     const session = this.#session;
     const file = this.#deps.file;
     if (!this.#deps.allowCustomProviders) return refused(CUSTOM_OFF_REASON);
-    if (file === null) return refused(NOT_LOTSE_COPY_REASON);
+    if (file === null) return refused(NOT_LOTSMAN_COPY_REASON);
     if (!session || this.#state.step !== 'ready') return refused('the providers are not loaded yet');
     if (this.#busy !== null) return refused('another change is still running');
     const document = this.#files.read(file);
@@ -439,16 +439,16 @@ export class ProviderSettingsController {
     return ran ? outcome : refused('another change is still running');
   }
 
-  /** Remove a custom provider from lotse's file, its stored key first. */
+  /** Remove a custom provider from lotsman's file, its stored key first. */
   async removeCustom(id: string): Promise<void> {
     await this.#change(id, async (session) => {
       const file = this.#deps.file;
       if (!this.#deps.allowCustomProviders) throw new Error(CUSTOM_OFF_REASON);
-      if (file === null) throw new Error(NOT_LOTSE_COPY_REASON);
+      if (file === null) throw new Error(NOT_LOTSMAN_COPY_REASON);
       const document = this.#files.read(file);
       if (!document.ok) throw new Error(`${file} could not be read (${document.problem})`);
       if (!documentProviderIds(document.raw).includes(id)) {
-        throw new Error(`${id} is not in lotse's file — remove it where it was written`);
+        throw new Error(`${id} is not in lotsman's file — remove it where it was written`);
       }
       // The key first: once the entry is gone opencode no longer lists the provider, and its credential
       // would be left behind with no way to reach it.

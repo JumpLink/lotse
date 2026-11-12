@@ -69,7 +69,7 @@ export function unreachableProfileNotes(
   return profiles.flatMap((profile) =>
     profile.channels && !profile.channels.some((name) => active.includes(name))
       ? [
-          `profile "${profile.id}" may use only ${profile.channels.join(', ')}, which is not active — its questions are in \`lotse questions\` only`,
+          `profile "${profile.id}" may use only ${profile.channels.join(', ')}, which is not active — its questions are in \`lotsman questions\` only`,
         ]
       : [],
   );

@@ -12,11 +12,11 @@ import {
   openAgent,
   type AgentCommand,
   type AgentHandle,
-  type LotsePaths,
+  type LotsmanPaths,
   type QuestionChannel,
   requestSettings,
   type RunDeps,
-} from '@lotse/core';
+} from '@lotsman/core';
 import { messengerSettings, readSettings } from '../../core/settings.ts';
 
 import type { ListenPaths } from '../../core/paths.ts';
@@ -66,7 +66,7 @@ export function readConfig(listen: ListenPaths): LoadedConfig | null {
 }
 
 /** Every profile's agent, resolved once at start: a launcher that is missing stops `listen` before any run. */
-function agentsFor(paths: LotsePaths, loaded: LoadedConfig): Map<string, AgentCommand> | null {
+function agentsFor(paths: LotsmanPaths, loaded: LoadedConfig): Map<string, AgentCommand> | null {
   const commands = new Map<string, AgentCommand>();
   for (const profile of loaded.profiles) {
     const resolved = agentForNew(paths, profile.agent ?? undefined);
@@ -106,7 +106,7 @@ export function trackedAgents(): OpenAgents {
 }
 
 export interface DepsOptions {
-  readonly paths: LotsePaths;
+  readonly paths: LotsmanPaths;
   readonly listen: ListenPaths;
   readonly loaded: LoadedConfig;
   readonly channel: QuestionChannel;
@@ -114,7 +114,7 @@ export interface DepsOptions {
   readonly quiet: boolean;
 }
 
-function personDefaultMin(paths: LotsePaths): number {
+function personDefaultMin(paths: LotsmanPaths): number {
   const read = readSettings(paths.settingsFile);
   return read.problem ? 30 : requestSettings(messengerSettings(read.settings)).personNeededMinutes;
 }

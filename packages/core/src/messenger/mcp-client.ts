@@ -8,7 +8,7 @@
  * spawns through `cross-spawn`, which knows nothing of the Flatpak sandbox: a curlew on the host is
  * reached through `flatpak-spawn --host` (`toHostCommand`), and that rewrite lives in `StdioChannel`
  * together with the process-group kill and the stdout/stderr end gate. So the SDK supplies the
- * protocol (`Client`) and lotse supplies the pipe, through the SDK's `Transport` seam.
+ * protocol (`Client`) and lotsman supplies the pipe, through the SDK's `Transport` seam.
  *
  * MCP's stdio framing is one JSON message per line, the same as ACP's, which is why `StdioChannel`
  * carries it unchanged.
@@ -18,7 +18,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { JSONRPCMessageSchema, type JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
 
-import type { RawChannel } from '@lotse/acp/transport';
+import type { RawChannel } from '@lotsman/acp/transport';
 
 import { StdioChannel, type AgentCommand } from '../agents/stdio.ts';
 
@@ -143,7 +143,7 @@ export async function connectMcp(command: AgentCommand, options: ConnectOptions 
     ...(options.onStderr ? { onStderr: options.onStderr } : {}),
   });
   const transport = new ChannelTransport(channel);
-  const client = new Client({ name: 'lotse', version: '0.3.0' });
+  const client = new Client({ name: 'lotsman', version: '0.3.0' });
   let markClosed: () => void = () => {};
   const closed = new Promise<void>((resolve) => {
     markClosed = resolve;

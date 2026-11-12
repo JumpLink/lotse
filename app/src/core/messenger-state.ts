@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { CursorStore, PendingRequest, PendingStore, RefStore, SentRef } from '@lotse/core';
+import type { CursorStore, PendingRequest, PendingStore, RefStore, SentRef } from '@lotsman/core';
 
 import { writePrivateFile } from './private-file.ts';
 

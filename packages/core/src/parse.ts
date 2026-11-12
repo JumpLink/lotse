@@ -1,5 +1,5 @@
 /**
- * The small checks every hand-edited JSON file of lotse shares — the task file and the profiles file.
+ * The small checks every hand-edited JSON file of lotsman shares — the task file and the profiles file.
  *
  * Each pushes a sentence onto `problems` and returns a harmless value, so a parser can go on and list
  * every problem of a file at once instead of stopping at the first.

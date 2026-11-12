@@ -2,7 +2,7 @@
  * The inline provider onboarding page: an `Adw.StatusPage` that draws one `OnboardingView`.
  *
  * **Nothing here decides.** Whether the page shows at all, and what it says, is `onboardingView` in
- * `@lotse/core`, tested without a display; this file turns that view into widgets and a click into one
+ * `@lotsman/core`, tested without a display; this file turns that view into widgets and a click into one
  * of two callbacks. The login itself is the existing dialog (`login-dialog.ts`) — this page only leads to
  * it. Every string goes into a label with `useMarkup: false`.
  */
@@ -10,7 +10,7 @@
 import Adw from '@girs/adw-1';
 import Gtk from '@girs/gtk-4.0';
 
-import { onboardingView, type OnboardingInput, type OnboardingView } from '@lotse/core';
+import { onboardingView, type OnboardingInput, type OnboardingView } from '@lotsman/core';
 
 import { CSS } from './css.ts';
 

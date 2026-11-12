@@ -14,7 +14,7 @@
  * - **The log gets ids and outcomes**, never what was asked or answered.
  */
 
-import type { McpServer } from '@lotse/acp';
+import type { McpServer } from '@lotsman/acp';
 
 import { REQUEST_TASK, type RunDeps } from '../task/deps.ts';
 import { runRequest, type RequestRun, type RequestRunResult } from '../task/request.ts';

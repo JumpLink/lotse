@@ -108,7 +108,7 @@ async function rpc(message: Record<string, unknown>, handler: PersonHandler): Pr
         protocolVersion:
           typeof params['protocolVersion'] === 'string' ? params['protocolVersion'] : '2025-03-26',
         capabilities: { tools: {} },
-        serverInfo: { name: 'lotse-person', version: '1' },
+        serverInfo: { name: 'lotsman-person', version: '1' },
       });
     case 'ping':
       return ok({});
@@ -192,7 +192,7 @@ export function createPersonHost(): PersonHost {
       return {
         server: {
           type: 'http',
-          name: 'lotse-person',
+          name: 'lotsman-person',
           url: `http://127.0.0.1:${port}/person/${token}`,
           headers: [],
         },

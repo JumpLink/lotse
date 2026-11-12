@@ -7,7 +7,7 @@
  * `LLMProvider` port. So this file is `openAgent` + `session/new` + `runTurn`, the same three steps
  * `task/run.ts` takes, with two gates in front of the prompt and a parser behind it.
  *
- * **What it keeps from lotse and what it refuses to have.** The agent command, the ACP client, the
+ * **What it keeps from lotsman and what it refuses to have.** The agent command, the ACP client, the
  * model gate (`modelBlock`) and the fail-closed permission default are the widget's own — so a job runs
  * against the same agent, `HOME`/`XDG_*` and login as the chat. What it does not have is state: no
  * session record, no transcript, no log file. The agent may keep its own session under the host's data
@@ -15,8 +15,8 @@
  *
  * **Job input is private by default.** The prompt is somebody's receipt, the answer is what was read
  * off it. Neither appears in a log entry, in an error message or in a thrown error's text: `onLog`
- * gets ids and kinds, a `JobError`'s `message` is one of lotse's fixed sentences, and the raw answer is
- * on `JobError.output` for the host to look at — lotse never prints it.
+ * gets ids and kinds, a `JobError`'s `message` is one of lotsman's fixed sentences, and the raw answer is
+ * on `JobError.output` for the host to look at — lotsman never prints it.
  */
 
 import {
@@ -27,7 +27,7 @@ import {
   type RequestPermissionRequest,
   type SessionConfigOption,
   type StopReason,
-} from '@lotse/acp';
+} from '@lotsman/acp';
 
 import type { AgentCommand } from './agents/stdio.ts';
 import { MODEL_CATEGORY, projectConfigOptions } from './config.ts';
@@ -38,7 +38,7 @@ import { openAgent, runTurn, withAuthHint, type AgentHandle, type OpenAgentOptio
 
 /**
  * Why a job failed. One kind per remedy a host can take, and no kind that a retry would fix silently:
- * lotse never retries (a retry is another model call with private input — the host's decision).
+ * lotsman never retries (a retry is another model call with private input — the host's decision).
  *
  * - `'malformed'` — the answer held no JSON in either accepted shape.
  * - `'invalid'` — it held JSON and the host's `parse` threw.
@@ -65,10 +65,10 @@ export type JobErrorKind =
  * `error.message`. The host who needs more reads `kind`, `output` and `cause`.
  */
 const JOB_ERROR_MESSAGES: Readonly<Record<JobErrorKind, string>> = {
-  malformed: 'the agent answered, but the answer holds no JSON value lotse can read',
+  malformed: 'the agent answered, but the answer holds no JSON value lotsman can read',
   invalid: "the agent's JSON answer did not pass the host's parse",
   denied: 'the model this agent would use is not allowed by the host, so nothing was sent',
-  'unknown-model': 'lotse cannot confirm which model this agent would use, so nothing was sent',
+  'unknown-model': 'lotsman cannot confirm which model this agent would use, so nothing was sent',
   auth: 'the agent wants a login before it runs this job',
   refused: 'the agent did not finish the job: the turn ended early or a permission was declined',
   timeout: 'the job did not finish within its time limit and was cancelled',
@@ -81,7 +81,7 @@ export class JobError extends Error {
   readonly kind: JobErrorKind;
   /**
    * The agent's raw final message, when there was one (`'malformed'`, `'invalid'`, `'refused'`).
-   * **For the host to inspect, never printed by lotse** — it is model output about private input.
+   * **For the host to inspect, never printed by lotsman** — it is model output about private input.
    */
   readonly output: string | null;
 
@@ -94,7 +94,7 @@ export class JobError extends Error {
 }
 
 /**
- * What `onLog` receives. `job` entries are lotse's own and carry ids and kinds only — the session id,
+ * What `onLog` receives. `job` entries are lotsman's own and carry ids and kinds only — the session id,
  * a stop reason, a tool kind, an error kind, the model id — never a prompt, an answer, a parse error's
  * text or a tool's arguments. `agent` entries are the agent's stderr lines, delivered unread; they
  * reach a host only because it passed `onLog` (ADR 0004 §9).

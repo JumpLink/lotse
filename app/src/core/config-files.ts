@@ -1,5 +1,5 @@
 /**
- * Reading users.json and profiles.json for `lotse listen`, once, at start. Editing either takes
+ * Reading users.json and profiles.json for `lotsman listen`, once, at start. Editing either takes
  * effect on a restart the person performs, never under a run that is already going (ADR 0002 §3).
  */
 
@@ -13,7 +13,7 @@ import {
   userProblems,
   type Profile,
   type User,
-} from '@lotse/core';
+} from '@lotsman/core';
 
 import type { ListenPaths } from './paths.ts';
 

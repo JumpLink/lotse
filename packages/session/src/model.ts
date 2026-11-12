@@ -1,5 +1,5 @@
 /**
- * The session record — what a lotse session *is*.
+ * The session record — what a lotsman session *is*.
  *
  * The design rule that shaped this file, taken from beifahrer's ADR 0006 ("recipes are data and
  * hold no gate") and restated for sessions: **a session is a scope, not a permission.** The record
@@ -8,17 +8,17 @@
  * store, therefore none to hand on, therefore a session passed around in a group chat is a
  * corridor and not a key.
  *
- * `assertScopeIsNotAuthority` in `@lotse/acp` is the runtime canary over the same idea, because a
+ * `assertScopeIsNotAuthority` in `@lotsman/acp` is the runtime canary over the same idea, because a
  * TypeScript type cannot stop a later `{ ...session, grants: [...] }`. The canary is what makes
  * this type more than a comment.
  *
- * `boundTo` is optional **on purpose**: lotse has to run standalone, with no curlew anywhere
+ * `boundTo` is optional **on purpose**: lotsman has to run standalone, with no curlew anywhere
  * near it. A messenger integration binds a session to a conversation later; a person at a terminal
  * does not. Nothing else changes.
  */
 
-import { assertScopeIsNotAuthority } from '@lotse/acp/gate';
-import type { SessionId } from '@lotse/acp/types';
+import { assertScopeIsNotAuthority } from '@lotsman/acp/gate';
+import type { SessionId } from '@lotsman/acp/types';
 
 /** Who is in the session. `'local'` is the only value Scheibe 1 can produce. */
 export type Principal = string;
@@ -28,7 +28,7 @@ export const LOCAL_PRINCIPAL: Principal = 'local';
 
 /**
  * Who wrote a line. `host` is the embedding application, never the agent: a line an app built on
- * lotse put into its own conversation (an order placed, a draft saved), recorded next to the agent's
+ * lotsman put into its own conversation (an order placed, a draft saved), recorded next to the agent's
  * so a resumed session shows both in the order they happened.
  */
 export type EntryKind = 'user' | 'agent' | 'thought' | 'tool' | 'system' | 'host';
@@ -62,7 +62,7 @@ export interface McpCall {
  * What one `tool_call`/`tool_call_update` line said about the call, beyond its text.
  *
  * Only the fields the line itself carried are set: an update is a delta, and filling in an absent
- * field here would be lotse inventing a state the agent never sent. Folding the deltas into one
+ * field here would be lotsman inventing a state the agent never sent. Folding the deltas into one
  * view is the projection's job (`toTranscriptItems`), where it can be undone. `rawOutput` and
  * `content` are never stored — they are the tool's result, which is the agent's to keep.
  */
@@ -76,7 +76,7 @@ export interface ToolCallRecord {
   mcp?: readonly McpCall[];
 }
 
-/** A line the embedding application recorded. `type` and `data` are the host's own; lotse reads neither. */
+/** A line the embedding application recorded. `type` and `data` are the host's own; lotsman reads neither. */
 export interface HostRecord {
   type: string;
   data?: unknown;
@@ -91,12 +91,12 @@ export interface HostRecord {
  * One line of the transcript.
  *
  * The transcript is a *record of what happened*, not a re-derivation of it: an agent's own
- * `session/load` is the authority on history, and lotse's copy exists so `lotse sessions` and
- * `lotse resume` can show something without spawning a process. A transcript that claimed more
+ * `session/load` is the authority on history, and lotsman's copy exists so `lotsman sessions` and
+ * `lotsman resume` can show something without spawning a process. A transcript that claimed more
  * than that would be a second source of truth about someone else's conversation.
  *
  * `text` is always the line a human reads, for every kind. The structured fields sit beside it and
- * a reader that knows none of them — `lotse sessions`, an older lotse — still has the whole story.
+ * a reader that knows none of them — `lotsman sessions`, an older lotsman — still has the whole story.
  */
 export interface TranscriptEntry {
   kind: EntryKind;
@@ -107,7 +107,7 @@ export interface TranscriptEntry {
   sessionId?: SessionId;
   /** A tool call's `toolCallId`, for `kind: 'tool'`. */
   toolCallId?: string;
-  /** What the protocol line said about the call, for `kind: 'tool'`. Absent on lines older lotse wrote. */
+  /** What the protocol line said about the call, for `kind: 'tool'`. Absent on lines older lotsman wrote. */
   tool?: ToolCallRecord;
   /** The host's own payload, for `kind: 'host'`. */
   host?: HostRecord;
@@ -121,7 +121,7 @@ export interface TranscriptEntry {
 export type AgentSource = 'host' | 'bundled';
 
 export interface SessionRecord {
-  /** The agent's own session id. Opaque; lotse stores it and hands it back, never parses it. */
+  /** The agent's own session id. Opaque; lotsman stores it and hands it back, never parses it. */
   id: SessionId;
   /** Which adapter started the agent, e.g. `opencode`. */
   agent: string;
@@ -146,7 +146,7 @@ export interface SessionRecord {
   turns: TranscriptEntry[];
 }
 
-/** What `lotse start` needs to open a session. The clock is injected, so the model stays pure. */
+/** What `lotsman start` needs to open a session. The clock is injected, so the model stays pure. */
 export interface NewSession {
   id: SessionId;
   agent: string;
@@ -172,7 +172,7 @@ export function newSession(input: NewSession): SessionRecord {
     reattach: input.reattach ?? null,
     turns: [],
   };
-  // Left off the record when not given, so a record stays byte-identical to what older lotse wrote.
+  // Left off the record when not given, so a record stays byte-identical to what older lotsman wrote.
   if (input.agentSource) record.agentSource = input.agentSource;
   assertScopeIsNotAuthority(record as unknown as Record<string, unknown>);
   return record;
@@ -213,7 +213,7 @@ export function forPrincipal(records: SessionRecord[], principal: Principal): Se
  *
  * "Opening answer" means the **whole run of leading agent turns**, not the first one. An agent's
  * reply arrives as `session/update` chunks and a stream boundary lands wherever the model happened
- * to emit — measured: a one-word answer split into `RESUME-` and `OK`, two turns, and a `lotse
+ * to emit — measured: a one-word answer split into `RESUME-` and `OK`, two turns, and a `lotsman
  * sessions` row labelled `RESUME-`. Joining until the first user turn is what makes the label a
  * sentence rather than a fragment of one.
  */

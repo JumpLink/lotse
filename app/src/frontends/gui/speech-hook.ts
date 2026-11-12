@@ -1,9 +1,9 @@
 /**
- * What `LOTSE_APP_SPEECH` stands in for — a `speechSynthesis`-shaped object that **never makes a
+ * What `LOTSMAN_APP_SPEECH` stands in for — a `speechSynthesis`-shaped object that **never makes a
  * sound**.
  *
- * `LotseChat` takes an optional `speech` engine from its host (`packages/widget/src/chat.ts`), and
- * lotse's own window passes none: the app ships no speech engine, so the Conversation toggle is not
+ * `LotsmanChat` takes an optional `speech` engine from its host (`packages/widget/src/chat.ts`), and
+ * lotsman's own window passes none: the app ships no speech engine, so the Conversation toggle is not
  * offered there. Without a stand-in, the toggle and the sentences it would speak are the only part
  * of the composer that is written, tested on both runtimes, and never once seen — the same reason
  * `model-policy-hook.ts` exists next door.
@@ -13,7 +13,7 @@
  * chunker found, in order. A real engine in a test run would talk out loud on the workstation.
  */
 
-import type { SpeechEngine, SpeechSynthesisLike, SpeechUtteranceLike } from '@lotse/widget';
+import type { SpeechEngine, SpeechSynthesisLike, SpeechUtteranceLike } from '@lotsman/widget';
 
 /** What a run asked for, in the order it asked. Readable after the run, for a smoke check. */
 export class SilentSynthesis implements SpeechSynthesisLike {
@@ -27,12 +27,12 @@ export class SilentSynthesis implements SpeechSynthesisLike {
   speak(utterance: SpeechUtteranceLike): void {
     this.spoken.push(utterance.text);
     this.#speaking = true;
-    console.log(`lotse: would speak — ${utterance.text}`);
+    console.log(`lotsman: would speak — ${utterance.text}`);
   }
 
   cancel(): void {
     this.#speaking = false;
-    console.log('lotse: would stop speaking');
+    console.log('lotsman: would stop speaking');
   }
 }
 

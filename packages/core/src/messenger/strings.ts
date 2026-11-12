@@ -1,7 +1,7 @@
 /**
  * Every sentence the messenger channel says to its person, in one place.
  *
- * Each is marked `N_` for extraction and translated by `msg` (the `lotse` gettext domain), so a handler
+ * Each is marked `N_` for extraction and translated by `msg` (the `lotsman` gettext domain), so a handler
  * never writes a sentence inline; the English text is the msgid. `{name}` marks a value to be filled in; the placeholder names are part of the msgid.
  */
 
@@ -26,19 +26,19 @@ export const STRINGS = {
   validUntil: N_('Valid until {time}'),
   gotIt: N_('Got it, {id}.'),
   gotItRunFailed: N_(
-    'Got it, {id}, but the run failed. `lotse questions` and the listen log have the details.',
+    'Got it, {id}, but the run failed. `lotsman questions` and the listen log have the details.',
   ),
   alreadySettled: N_('{id} is already {status}.'),
   noLongerWaiting: N_('{id} is no longer waiting for an answer.'),
   expiredAt: N_('{id} expired at {time}.'),
   retryDelivered: N_('{id} was not delivered at first; it is now.'),
   retryFailed: N_('{id} still not delivered ({reason}); will try again.'),
-  retryGaveUp: N_('{id} not delivered ({reason}); giving up. `lotse questions` still lists it.'),
+  retryGaveUp: N_('{id} not delivered ({reason}); giving up. `lotsman questions` still lists it.'),
   noticeQuestion: N_(
-    'A question is waiting in {task}. Its text is not sent to this chat: read it with `lotse questions` or on the desktop.',
+    'A question is waiting in {task}. Its text is not sent to this chat: read it with `lotsman questions` or on the desktop.',
   ),
   noticeMessage: N_('{task} has a message for you. Its text is not sent to this chat.'),
-  notHere: N_('{id} is not answered in this chat. Use `lotse answer` or the desktop.'),
+  notHere: N_('{id} is not answered in this chat. Use `lotsman answer` or the desktop.'),
   linkDown: N_('The messenger connection is down; retrying in {seconds} s.'),
   askWhat: N_(
     'What should I do? Write it after {prefix}, for example "{prefix} what is on my calendar today".',

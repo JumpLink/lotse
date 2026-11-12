@@ -32,7 +32,7 @@
  */
 
 import { _, _p } from '../i18n.ts';
-import { byRecency, type SessionRecord } from '@lotse/session';
+import { byRecency, type SessionRecord } from '@lotsman/session';
 
 export type SessionGroupLabel = 'today' | 'yesterday' | 'this-week' | 'earlier';
 

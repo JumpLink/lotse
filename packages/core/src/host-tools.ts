@@ -3,9 +3,9 @@
  * functions over plain data — `permission.ts`'s split, one file along.
  *
  * **Rule one: a tool the host confirms itself.** An embedding host can own a tool whose approval is
- * not lotse's to give: a legal submission that asks for a PIN, a payment, a signature. lotse's dialog
+ * not lotsman's to give: a legal submission that asks for a PIN, a payment, a signature. lotsman's dialog
  * knows none of that, so a host marks such a tool (by name, by kind, or both) and gets a callback
- * with its own dialog instead. The guarantee is negative and it is the whole feature: **lotse never
+ * with its own dialog instead. The guarantee is negative and it is the whole feature: **lotsman never
  * approves a host-confirmed tool through `session/request_permission`** — not from its own dialog, not
  * from an "always allow", not from a grant left over from earlier in the session. The host's `false`
  * is a `decline`, and so is a host that threw, a host with no callback at all, and an agent that
@@ -14,22 +14,22 @@
  * **Rule two: an "always allow" that lives one session.** Normally the *agent* remembers an always
  * (`permission.ts`: ACP has no `allowed_always`, the answer is the agent's own option id and the agent
  * decides whether to ask again). A host carrying somebody's documents may not want a promise it cannot
- * see the end of, so it asks for `alwaysAllow: 'session'`: lotse then answers the agent's **narrower**
+ * see the end of, so it asks for `alwaysAllow: 'session'`: lotsman then answers the agent's **narrower**
  * `allow_once` on the wire and remembers the always itself, in memory, keyed by the ACP session id. A
  * new session has an empty memory because the key is new; nothing is written anywhere, so there is
  * nothing to persist and nothing to clear. Where the agent offers no `allow_once` at all, the
- * `allow_always` button is **withdrawn** (`scopedOptions`) rather than shown as a promise lotse cannot
+ * `allow_always` button is **withdrawn** (`scopedOptions`) rather than shown as a promise lotsman cannot
  * keep that narrow.
  *
- * **Nothing in here is a wider answer than lotse would give on its own**, which is the same rule
- * `ModelPolicy` and `LotseChat.gate` follow: a host policy narrows. The one thing a host *adds* is its
+ * **Nothing in here is a wider answer than lotsman would give on its own**, which is the same rule
+ * `ModelPolicy` and `LotsmanChat.gate` follow: a host policy narrows. The one thing a host *adds* is its
  * own approval for its own tool, and that approval is the host's, taken in the host's dialog, for one
  * call.
  */
 import { _, fmt } from './i18n.ts';
 import { mcpCallsOf } from './transcript.ts';
 
-import type { PermissionOption, RequestPermissionRequest } from '@lotse/acp/types';
+import type { PermissionOption, RequestPermissionRequest } from '@lotsman/acp/types';
 import type { PermissionDecision, PermissionView } from './permission.ts';
 
 /**
@@ -63,12 +63,12 @@ export type HostToolMatch = {
   readonly kind?: string;
 };
 
-/** Who remembers an "always allow": the agent, as ACP intends, or lotse for this one session. */
+/** Who remembers an "always allow": the agent, as ACP intends, or lotsman for this one session. */
 export type AlwaysAllowScope = 'agent' | 'session';
 
-/** The host's rules about tool calls. Absent, and every field absent, is lotse's own behaviour. */
+/** The host's rules about tool calls. Absent, and every field absent, is lotsman's own behaviour. */
 export type HostToolPolicy = {
-  /** Tools lotse may never approve: the host is asked and shows its own dialog. */
+  /** Tools lotsman may never approve: the host is asked and shows its own dialog. */
   readonly hostConfirmed?: readonly HostToolMatch[];
   /** Default `'agent'`. `'session'` keeps an always-allow inside the ACP session it was given in. */
   readonly alwaysAllow?: AlwaysAllowScope;
@@ -76,7 +76,7 @@ export type HostToolPolicy = {
 
 /** What the desk does with a question once the host's rules have been read. */
 export type ToolGate =
-  /** The host's own dialog decides. lotse shows nothing and approves nothing. */
+  /** The host's own dialog decides. lotsman shows nothing and approves nothing. */
   | { readonly type: 'host-confirm' }
   /** An always-allow given earlier in this session covers it; answer with the agent's own id. */
   | { readonly type: 'granted'; readonly optionId: string }
@@ -134,11 +134,11 @@ export function hostConfirmed(policy: HostToolPolicy | undefined, ref: ToolRef):
 }
 
 /**
- * The rules lotse cannot use, as sentences for the log — one per rule that names neither a name nor a
+ * The rules lotsman cannot use, as sentences for the log — one per rule that names neither a name nor a
  * kind.
  *
  * **Because the failure is silent in the direction that matters.** A host that meant to mark its
- * submission tool and passed a rule lotse reads as empty gets lotse's ordinary dialog for it, and the
+ * submission tool and passed a rule lotsman reads as empty gets lotsman's ordinary dialog for it, and the
  * person can approve something the host wanted a PIN for. Nothing in a pure matcher can report that, so the
  * list is returned and the controller says it once at startup.
  */
@@ -184,11 +184,11 @@ export function narrowestReject(options: readonly PermissionOption[]): Permissio
 /**
  * What may be shown, under the host's always-allow scope.
  *
- * `'agent'` — and absent — is every option untouched, which is lotse's own window. `'session'` keeps
- * `allow_always` **only when the agent also offered an `allow_once`**, because that id is what lotse
- * answers with (`sessionAnswer`) and without it the button would be a session promise lotse hands to
+ * `'agent'` — and absent — is every option untouched, which is lotsman's own window. `'session'` keeps
+ * `allow_always` **only when the agent also offered an `allow_once`**, because that id is what lotsman
+ * answers with (`sessionAnswer`) and without it the button would be a session promise lotsman hands to
  * the agent to keep forever. Withdrawing it can leave a question with nothing allowing on it; that is
- * the fail-closed direction, and it is a host's own choice of policy rather than something lotse
+ * the fail-closed direction, and it is a host's own choice of policy rather than something lotsman
  * decided for it.
  */
 export function scopedOptions(
@@ -256,7 +256,7 @@ export class SessionGrants {
  *
  * **The host is asked first, and that is not an optimisation.** A host-confirmed tool is checked
  * before the grants are, so an always-allow a person gave earlier in the session — for the same kind,
- * before the host's rule was ever exercised — cannot answer it. "lotse never approves it, not even via
+ * before the host's rule was ever exercised — cannot answer it. "lotsman never approves it, not even via
  * always-allow" is this line.
  */
 export function toolGate(input: {
@@ -271,7 +271,7 @@ export function toolGate(input: {
   const options = scopedOptions(view.options, policy?.alwaysAllow);
   if (grants !== undefined && typeof sessionId === 'string' && grants.allows(sessionId, ref)) {
     const allow = narrowestAllow(options);
-    // No allowing option on *this* request is not a grant lotse may act on: there is no id to send.
+    // No allowing option on *this* request is not a grant lotsman may act on: there is no id to send.
     // The question goes to the person instead, which is the only other honest answer.
     if (allow !== null) return { type: 'granted', optionId: allow.optionId };
   }
@@ -306,7 +306,7 @@ export const HOST_CONFIRM_NO_ONCE_NOTE = (): string =>
   _('The agent offered no one-time approval for a tool the host confirms, so nothing was approved.');
 
 /**
- * The id that goes on the wire for a chosen option, and whether lotse remembers it for this session.
+ * The id that goes on the wire for a chosen option, and whether lotsman remembers it for this session.
  *
  * Under `'agent'` scope — and for anything that is not an always-allow — this is the identity: the id
  * the person pressed, remembered by nobody but the agent. Under `'session'` scope an `allow_always`
@@ -324,7 +324,7 @@ export function sessionAnswer(
   if (chosen === undefined || chosen.kind !== 'allow_always') return { optionId, remember: false };
   const once = view.options.find((option) => option.kind === 'allow_once');
   // `scopedOptions` withdraws `allow_always` when there is no `allow_once`, so this cannot be reached
-  // from a dialog lotse drew. A direct caller gets the fail-closed reading: lotse does not pass a
+  // from a dialog lotsman drew. A direct caller gets the fail-closed reading: lotsman does not pass a
   // lasting id on under a session policy, and nothing is remembered either.
   if (once === undefined) return { optionId, remember: false };
   return { optionId: once.optionId, remember: true };

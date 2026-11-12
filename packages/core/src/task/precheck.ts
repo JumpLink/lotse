@@ -1,6 +1,6 @@
 /** The precheck of a task: one read-only turn that decides whether the task has anything to do. */
 
-import type { AcpClient } from '@lotse/acp';
+import type { AcpClient } from '@lotsman/acp';
 
 import { chunkToText } from '../policy.ts';
 import { userOf } from '../users/users.ts';
@@ -133,7 +133,7 @@ export async function runPrecheck(
     });
     if (error instanceof ModelUnavailableError) {
       await deps.channel.send(user, {
-        title: `lotse · ${task.id} precheck stopped`,
+        title: `lotsman · ${task.id} precheck stopped`,
         body: reason,
         questionId: null,
         task: task.id,

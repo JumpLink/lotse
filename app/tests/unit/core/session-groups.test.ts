@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@gjsify/unit';
 
-import { newSession, type SessionRecord } from '@lotse/session';
+import { newSession, type SessionRecord } from '@lotsman/session';
 
 import {
   GROUP_ORDER,

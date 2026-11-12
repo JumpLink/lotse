@@ -1,10 +1,10 @@
 /**
- * `frontends/gui/model-policy-hook.ts` — what `LOTSE_APP_MODEL_POLICY`'s list means.
+ * `frontends/gui/model-policy-hook.ts` — what `LOTSMAN_APP_MODEL_POLICY`'s list means.
  *
  * **The first case is a regression test, and it is the one that matters.** While this was four lines
  * inside `main.ts`, the empty list built a predicate that denied nothing — which looks like no rule
  * and is not one. A *present* policy makes a model the agent has not reported yet `unknown`,
- * `modelBlock` fails closed on `unknown`, and lotse's own window then refused the first turn of every
+ * `modelBlock` fails closed on `unknown`, and lotsman's own window then refused the first turn of every
  * ordinary run with "This model is not allowed here". `model-policy.test.ts` could not catch it: every
  * case there passes a policy on purpose. The distinction that needed a test was *absent* versus
  * *present and permissive*, which only this mapping makes.
@@ -14,7 +14,7 @@
  */
 import { describe, expect, it } from '@gjsify/unit';
 
-import { denyFreeHostedModels } from '@lotse/core';
+import { denyFreeHostedModels } from '@lotsman/core';
 
 import { modelPolicyFromHook } from '../../../src/frontends/gui/model-policy-hook.ts';
 

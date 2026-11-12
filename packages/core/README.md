@@ -1,24 +1,24 @@
-# @lotse/core
+# @lotsman/core
 
-Lotse without a surface: which agent to start and how, the session a prompt turn runs in, the view
+Lotsman without a surface: which agent to start and how, the session a prompt turn runs in, the view
 models a chat is drawn from, and the provider login. No `gi://`, no widget, no CLI parser — so it runs
 on GJS and on Node, and a host decides everything that needs deciding.
 
-Licence: **LGPL-3.0-or-later** (`LICENSE`, `COPYING` in this directory). Lotse's apps are AGPL; this
+Licence: **LGPL-3.0-or-later** (`LICENSE`, `COPYING` in this directory). Lotsman's apps are AGPL; this
 package is the part a stranger may link into their own application.
 
-If you want the finished GTK4 / libadwaita chat, use [`@lotse/widget`](../widget/README.md) and read
-the [host guide](../../docs/embedding.md). Use `@lotse/core` directly to drive an agent without that
+If you want the finished GTK4 / libadwaita chat, use [`@lotsman/widget`](../widget/README.md) and read
+the [host guide](../../docs/embedding.md). Use `@lotsman/core` directly to drive an agent without that
 widget, or to build your own surface on the same logic.
 
 ## Install and import
 
 ```bash
-npm i @lotse/core @lotse/acp @lotse/session
+npm i @lotsman/core @lotsman/acp @lotsman/session
 ```
 
 ```ts
-import { lotsePathsUnder, AgentSession } from '@lotse/core';
+import { lotsmanPathsUnder, AgentSession } from '@lotsman/core';
 ```
 
 There is **one entry point**: `.` (`src/index.ts`). Nothing else is importable, so everything below is
@@ -28,13 +28,13 @@ the login policy, the free-model list), which the bundler inlines.
 ## Minimal example
 
 Resolve an agent, start it, run one prompt turn (`denyAll` refuses every permission request). Needs
-`@lotse/acp` as well; the file is type-checked in `app/tests/examples/core-turn.ts`.
+`@lotsman/acp` as well; the file is type-checked in `app/tests/examples/core-turn.ts`.
 
 ```ts
-import { denyAll } from '@lotse/acp';
-import { gatherResolveContext, lotsePathsUnder, openAgent, resolveDefault, runTurn } from '@lotse/core';
+import { denyAll } from '@lotsman/acp';
+import { gatherResolveContext, lotsmanPathsUnder, openAgent, resolveDefault, runTurn } from '@lotsman/core';
 
-const paths = lotsePathsUnder('/path/to/my-app-data');
+const paths = lotsmanPathsUnder('/path/to/my-app-data');
 const agent = resolveDefault(gatherResolveContext(paths));
 if (!agent) throw new Error('no agent found');
 
@@ -56,25 +56,25 @@ For a conversation with state — persistence, reattach, permission questions, c
 
 ## Public surface
 
-### Where lotse writes
+### Where lotsman writes
 
 | Export | What it is |
 |---|---|
-| `LotsePaths` | Every place lotse writes, as one value: `dataDir`, `configDir`, `sessionsFile`, `settingsFile`, `noticesFile`. Core never resolves a directory itself. |
-| `lotsePathsUnder(root)` | The layout for a host: `<root>/data/{sessions,notices}.json`, `<root>/config/settings.json`. |
+| `LotsmanPaths` | Every place lotsman writes, as one value: `dataDir`, `configDir`, `sessionsFile`, `settingsFile`, `noticesFile`. Core never resolves a directory itself. |
+| `lotsmanPathsUnder(root)` | The layout for a host: `<root>/data/{sessions,notices}.json`, `<root>/config/settings.json`. |
 
 A bundled agent's `HOME` and `XDG_*` directories follow `dataDir` (see `isolationDirs` below), so moving
 `dataDir` moves the agent's whole private state with it.
 
-`lotsePaths()` — the XDG and `LOTSE_*` resolver — is **not** exported: which directory a command-line
+`lotsmanPaths()` — the XDG and `LOTSMAN_*` resolver — is **not** exported: which directory a command-line
 tool writes to is that tool's decision, and it lives in the app (`app/src/core/paths.ts`). A host builds
-its own `LotsePaths`, normally with `lotsePathsUnder`.
+its own `LotsmanPaths`, normally with `lotsmanPathsUnder`.
 
 ### Which agent
 
 | Export | What it is |
 |---|---|
-| `LAUNCHERS`, `DEFAULT_AGENT`, `findLauncher`, `requireLauncher`, `launcherIds` | The agent commands lotse can start from `PATH` (opencode today). |
+| `LAUNCHERS`, `DEFAULT_AGENT`, `findLauncher`, `requireLauncher`, `launcherIds` | The agent commands lotsman can start from `PATH` (opencode today). |
 | `AgentCommand` | How one agent process is started: `id`, `title`, `program`, `args`, optional `cwd`, `env`, `bundled`. |
 | `gatherResolveContext(paths, readVersions?, probeHost?)` / `gatherResolveContextAsync(paths)` | Probe this machine once: which agents exist on `PATH`, which bundled copies exist. The async form never blocks, for a sandboxed app. |
 | `resolveDefault(context, setting?)` / `resolveDefaultWithNote` | The agent to start when nobody chose: the setting, else the bundled copy, else the person's own install (an explicit opt-in, `agent.source: "host"`). `null` means none; the `…WithNote` form also says why a setting was not honoured. |
@@ -101,9 +101,9 @@ its own `LotsePaths`, normally with `lotsePathsUnder`.
 | `installInterruptHandler`, `decideInterrupt` | Ctrl-C for a command-line process: cancel first, then terminate. |
 | `conversationRecord`, `titleFromPrompt`, `unsavedMessage` | Build the `SessionRecord` for a new conversation. |
 
-`AgentSessionOptions.mcpServers` takes `readonly McpServer[]`. Lotse forwards them **unchanged** in
+`AgentSessionOptions.mcpServers` takes `readonly McpServer[]`. Lotsman forwards them **unchanged** in
 `session/new` and in the reattach of a stored session, and never reads past `type`. Absent means `[]`
-in `session/new` and nothing added to a reattach. Lotse never edits the agent's own global config for
+in `session/new` and nothing added to a reattach. Lotsman never edits the agent's own global config for
 this.
 
 ```ts
@@ -120,10 +120,10 @@ An agent asks `session/request_permission`; the answer is always a person's or a
 | Export | What it is |
 |---|---|
 | `PermissionDesk`, `PermissionQuestion` | One open question, a queue behind it, no memory. Stop, a closing window and a dying agent settle every waiting question as cancelled. |
-| `permissionView`, `PermissionView`, `usableOptions`, `orderOptions`, `optionLabel`, `decideFromView`, `answerFor` | What the dialog shows and how a button press becomes a decision. Only the four standard option kinds are shown; the wording is lotse's, never the agent's. |
+| `permissionView`, `PermissionView`, `usableOptions`, `orderOptions`, `optionLabel`, `decideFromView`, `answerFor` | What the dialog shows and how a button press becomes a decision. Only the four standard option kinds are shown; the wording is lotsman's, never the agent's. |
 | `PermissionDecision`, `NotAnsweredReason` | The outcome, including why nothing was answered (`dismissed`, `turn-cancelled`, …). |
 | `terminalGate`, `Terminal` | A command-line gate that asks on a terminal. |
-| `ClientGate` (from `@lotse/acp`) | `{ permission }`. Fail-closed by default (`denyAll`). |
+| `ClientGate` (from `@lotsman/acp`) | `{ permission }`. Fail-closed by default (`denyAll`). |
 
 ### Headless jobs
 
@@ -136,7 +136,7 @@ One awaited call, no widget and no `gi://`: input in, a typed value out
 | `JobOptions<T>` | `command`, `cwd`, `prompt`, `parse`, **`modelPolicy` (required)**; optional `model`, `schema`, `mcpServers` (default `[]`), `gate` (default `denyAll`; only `allow_once` passes), `signal`, `timeoutMs`, `onLog`. |
 | `JobResult<T>` | `value`, `sessionId`, `model`, `stopReason`. |
 | `JobError`, `JobErrorKind` | Every rejection: `malformed`, `invalid`, `denied`, `unknown-model`, `auth`, `refused`, `timeout`, `cancelled`, `agent`. `message` is a fixed sentence; the raw answer is on `output`, never logged. No retries. `cause` may hold your `parse`'s error (Zod's can include the received values): don't log it. A missing `modelPolicy` or a `timeoutMs` that is not a positive finite number up to 2^31-1 is a programmer error and throws `TypeError` before anything starts. |
-| `JobLogEntry` | What `onLog` gets: lotse's own events with ids and kinds only, and the agent's stderr lines. |
+| `JobLogEntry` | What `onLog` gets: lotsman's own events with ids and kinds only, and the agent's stderr lines. |
 | `JOB_TIMEOUT_MS`, `jobPrompt(prompt, schema?)` | The default time limit (120 s over the whole job), and the prompt as sent when you pass a JSON Schema. |
 
 A stop (timeout or `signal`) sends `session/cancel`, waits a short grace period, then closes the agent.
@@ -145,7 +145,7 @@ Usage: [docs/embedding.md](../../docs/embedding.md#headless-jobs-no-widget).
 ### Login and auth
 
 Two different things: **auth** is the login the agent's `authMethods` ask for; the **login** is
-lotse's own OAuth / API-key dialog, driven over opencode's HTTP API. Nothing here stores a credential;
+lotsman's own OAuth / API-key dialog, driven over opencode's HTTP API. Nothing here stores a credential;
 the agent keeps its own.
 
 | Export | What it is |
@@ -175,10 +175,10 @@ Details and measurements: [docs/login.md](../../docs/login.md).
 |---|---|
 | `planCustomProvider(input)`, `parseModelSpecs` | Check an id, URL and models against the catalog: `ok` (with the entry, the privacy note and context warnings), `confirm` (plain http on the LAN) or `refused`. |
 | `checkEndpoint`, `hostReach`, `CUSTOM_PRESETS`, `contextWarning`, `MIN_CONTEXT_TOKENS`, `LOCAL_MODEL_HINT` | The URL rules (https or loopback; LAN asks; the rest is refused), the `local-*` presets and the honest hints. |
-| `customProvidersFile`, `customProvidersEnv`, `readProvidersDocument`, `writeProvidersDocument`, `withProvider`, `withoutProvider`, `providerEntry` | lotse's own `lotse-providers.json` for the bundled opencode (via `OPENCODE_CONFIG`), written `0600`, never with a key. |
+| `customProvidersFile`, `customProvidersEnv`, `readProvidersDocument`, `writeProvidersDocument`, `withProvider`, `withoutProvider`, `providerEntry` | lotsman's own `lotsman-providers.json` for the bundled opencode (via `OPENCODE_CONFIG`), written `0600`, never with a key. |
 | `createProviderApi`, `probeModels`, `parseModelList`, `ProviderApi` | On the private server: the configured providers, the ids that may not be shadowed, the usable models per provider, `disconnect`, `waitForProvider`. |
 | `ProviderSettingsController`, `ProviderSettingsView`, `AddOutcome` | The state behind a provider settings page: connected rows, custom rows, privacy notes; `disconnect`, `addCustom` (`added`, `confirm`, `refused`), `removeCustom`, `reload`. The widget's page renders it. |
-| `openSettingsSession(agent)`, `customProvidersFileOf(agent)` | The private server for that controller, and lotse's own file for an agent: `null` for a host opencode, whose custom providers are then read-only (`NOT_LOTSE_COPY_REASON`). |
+| `openSettingsSession(agent)`, `customProvidersFileOf(agent)` | The private server for that controller, and lotsman's own file for an agent: `null` for a host opencode, whose custom providers are then read-only (`NOT_LOTSMAN_COPY_REASON`). |
 | `reachPrivacyNote(reach)`, `PROVIDER_PRIVACY_NOTE`, `FREE_MODELS_PRIVACY_NOTE`, `FREE_MODELS_DENIED_NOTE` | The privacy sentences the page shows, per endpoint and for the page. |
 
 Details and measurements: [docs/custom-providers.md](../../docs/custom-providers.md).
@@ -192,7 +192,7 @@ Details and measurements: [docs/custom-providers.md](../../docs/custom-providers
 | `freeModelInUse(options)` | The current model when it is free, else `null`. `AgentSnapshot.freeModel` carries it. |
 | `FREE_MODEL_WARNING`, `freeModelWarningDue(free, dismissed)` | The warning a free model earns (a `N_` msgid, translate with `_`), and whether it is still owed after the person closed it for one model. |
 
-Free hosted models are time-limited and what you send goes to the provider that hosts them. Lotse
+Free hosted models are time-limited and what you send goes to the provider that hosts them. Lotsman
 labels them that way on the onboarding page; treat the same rule as yours (see
 [Privacy](../../docs/embedding.md#privacy-free-hosted-models-never-get-private-data)).
 
@@ -212,5 +212,5 @@ Pure functions from state to "what to draw", tested on Node and GJS. Use them to
 
 ## Related
 
-[`@lotse/widget`](../widget/README.md) · [host guide](../../docs/embedding.md) ·
-[ADR 0001](../../docs/adr/0001-lotse-as-an-embeddable-widget.md) · [login](../../docs/login.md)
+[`@lotsman/widget`](../widget/README.md) · [host guide](../../docs/embedding.md) ·
+[ADR 0001](../../docs/adr/0001-lotsman-as-an-embeddable-widget.md) · [login](../../docs/login.md)

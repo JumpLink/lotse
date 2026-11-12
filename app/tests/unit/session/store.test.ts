@@ -4,12 +4,12 @@ import { mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { createSessionStore, newSession, type TranscriptEntry } from '@lotse/session';
+import { createSessionStore, newSession, type TranscriptEntry } from '@lotsman/session';
 
 const AT = '2026-09-30T10:00:00.000Z';
 
 async function withTempDir(run: (dir: string) => Promise<void> | void): Promise<void> {
-  const dir = mkdtempSync(join(tmpdir(), 'lotse-store-'));
+  const dir = mkdtempSync(join(tmpdir(), 'lotsman-store-'));
   try {
     await run(dir);
   } finally {

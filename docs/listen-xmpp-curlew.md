@@ -1,8 +1,8 @@
-# Answering `lotse listen` over XMPP with Curlew
+# Answering `lotsman listen` over XMPP with Curlew
 
 This guide wires the [messenger channel](listen.md#answering-in-a-chat-the-messenger-channel) to
 [Curlew](https://github.com/JumpLink/curlew): a bot account sends each question to your own XMPP
-address, and you answer from any XMPP client on your phone or desktop. lotse speaks no XMPP itself;
+address, and you answer from any XMPP client on your phone or desktop. lotsman speaks no XMPP itself;
 it starts `curlew mcp` and calls two of its tools.
 
 > **Warning: the chat is not end-to-end encrypted.** Curlew has no OMEMO yet
@@ -24,7 +24,7 @@ it starts `curlew mcp` and calls two of its tools.
   curlew accounts list --backend xmpp     # prints the account id, e.g. xmpp-abc123
   ```
 
-  lotse's `account` setting and Curlew's grant both use this **account id**, not the JID.
+  lotsman's `account` setting and Curlew's grant both use this **account id**, not the JID.
 
 ## One grant
 
@@ -34,7 +34,7 @@ Add one grant to Curlew's configuration (`$XDG_CONFIG_HOME/curlew/config.json`):
 { "grants": [{ "capability": "xmpp.send", "target": "xmpp-abc123/person@example.org" }] }
 ```
 
-That is all the messenger channel needs. `send_message` (questions and lotse's short replies such as
+That is all the messenger channel needs. `send_message` (questions and lotsman's short replies such as
 "answered") requires it, for that exact account and address. `xmpp_wait_reply` reads Curlew's local
 index and needs no grant. Without the grant, `curlew mcp` does not list `send_message`, every send
 fails, and `listen` prints the error on stderr and in `listen.log`.
@@ -47,9 +47,9 @@ catch-up after each reconnect. Without a running daemon every wait times out, so
 but answers never come back. Run it as a service (Curlew ships a systemd user unit) and restart it
 after you edit the grants: the daemon reads them once at start.
 
-## The lotse settings
+## The lotsman settings
 
-In `$XDG_CONFIG_HOME/lotse/settings.json` (or *Preferences → Messenger*):
+In `$XDG_CONFIG_HOME/lotsman/settings.json` (or *Preferences → Messenger*):
 
 ```json
 {
@@ -80,7 +80,7 @@ Curlew still works with plain text. The full contract, the capability tool and t
 [messenger-contract.md](messenger-contract.md). Any MCP server that offers these two tools works in
 Curlew's place:
 
-| Call | Arguments lotse sends | Result lotse reads |
+| Call | Arguments lotsman sends | Result lotsman reads |
 |---|---|---|
 | `sendTool` | `{account, to, text, format: "markdown"}` (`format` only when the tool has it) | `originIds` (one id per part), else `originId`; the ids a reply will name; an error result counts as not sent |
 | `waitTool` | `{account, peer, after, timeout_s, include_bodies: true, strip_quotes: true}` (`strip_quotes` only when the tool has it) | `{status: "reply" \| "timeout", messages: [{id, bodyText, sentAt, fromSelf, replyToId?}], cursor}` |
@@ -91,14 +91,14 @@ fallback text (XEP-0428) from `bodyText`. See [Reply to the question's message](
 `after` is an ISO 8601 time: on the first start, the time `listen` started, and from then on the
 `cursor` the wait tool returned (else the `sentAt` of the last handled message), kept in
 `messenger-cursor.json`. The tool must return only messages sent strictly after `after`. A message
-with `fromSelf: true` is skipped. lotse reads the result from `structuredContent`, else from the
+with `fromSelf: true` is skipped. lotsman reads the result from `structuredContent`, else from the
 first text block as JSON.
 
 `timeout_s` is 60 for the long wait. Two messages can share a millisecond, and a server may list the
-second one only in a later poll, after the cursor already reached that time. So lotse remembers the
+second one only in a later poll, after the cursor already reached that time. So lotsman remembers the
 `id` of every message read at the cursor's millisecond, and before each long wait it looks once, with
 `after` one millisecond earlier and `timeout_s: 0` (return at once), for a message of that
-millisecond it has not read yet. A server without `id` works too: lotse then tells messages apart by
+millisecond it has not read yet. A server without `id` works too: lotsman then tells messages apart by
 a hash of `sentAt` and the text, so two identical texts in one millisecond count as one.
 
 With [requests from the chat](listen.md#requests-from-the-chat) on, a message that answers no question
@@ -111,7 +111,7 @@ By default every active channel gets every question. Two keys narrow that per ta
 (details: [Which channels a task uses](listen.md#which-channels-a-task-uses)):
 
 - `messengerDetail: "notice"` sends the chat only the question id and that a question waits in the
-  task. Read the question with `lotse questions` or on the desktop; you can still answer in the chat
+  task. Read the question with `lotsman questions` or on the desktop; you can still answer in the chat
   with its id.
 - `channels: ["desktop"]` leaves the messenger out of the task entirely.
 
@@ -134,12 +134,12 @@ profile stays a `notice` whatever the task says. The notice still names the task
 neutral id.
 
 Buttons for answering in the chat are planned
-([JumpLink/lotse#65](https://github.com/JumpLink/lotse/issues/65),
+([JumpLink/lotsman#65](https://github.com/JumpLink/lotsman/issues/65),
 [JumpLink/curlew#81](https://github.com/JumpLink/curlew/issues/81)). Text answers stay the fallback.
 
 ## Test the round trip
 
-1. Start `lotse listen` and check that its first lines say `questions via desktop + messenger` and
+1. Start `lotsman listen` and check that its first lines say `questions via desktop + messenger` and
    name no `messenger:` error.
 2. Add a task that touches nothing and ends with a question, for example:
 
@@ -155,10 +155,10 @@ Buttons for answering in the chat are planned
    ```
 
    A running `listen` picks up the saved file within a minute, with no restart. `listen` starts no task;
-   start this one with `lotse run messenger-test` (or `/run messenger-test` in the chat).
-3. The question arrives in your XMPP client as `lotse · messenger-test · #A1`. Reply `#A1 hello`.
-4. Within about a minute lotse answers in the chat with a short "Got it, #A1.", and
-   `lotse questions --all` shows the question as answered.
+   start this one with `lotsman run messenger-test` (or `/run messenger-test` in the chat).
+3. The question arrives in your XMPP client as `lotsman · messenger-test · #A1`. Reply `#A1 hello`.
+4. Within about a minute lotsman answers in the chat with a short "Got it, #A1.", and
+   `lotsman questions --all` shows the question as answered.
 
 If the question arrives but the answer does not, check that `curlew daemon` is running. If nothing
 arrives, check the grant (the account id and the address must match exactly) and `listen`'s stderr.

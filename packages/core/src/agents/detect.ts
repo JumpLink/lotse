@@ -1,5 +1,5 @@
 /**
- * Which agents are usable, and which one lotse would pick — pure over facts.
+ * Which agents are usable, and which one lotsman would pick — pure over facts.
  *
  * The facts are gathered elsewhere (`probe.ts`), so everything here is "facts in, answer out" and a test
  * hands in a synthetic machine. Three sources, and the word is a promise: `host` means a program on the
@@ -71,7 +71,7 @@ export interface Resolution {
 }
 
 /**
- * The agent lotse would use now: the setting if that agent is available, else the first bundled copy,
+ * The agent lotsman would use now: the setting if that agent is available, else the first bundled copy,
  * else the first host install (no bundle in a dev checkout), else `null`.
  *
  * A setting names an id *and* a source. `host` is available when the id was found on the person's PATH;
@@ -83,7 +83,7 @@ export interface Resolution {
  * shipped opencode has its own isolated config and login (`isolation.ts`), so other people configure
  * it and the own global opencode is never picked up unasked. A host install is the default only where
  * no bundled copy exists. A setting that cannot be honoured falls back to the same default.
- * lotse cannot tell whether either is logged in and does not try (AGENTS.md § Privacy).
+ * lotsman cannot tell whether either is logged in and does not try (AGENTS.md § Privacy).
  */
 export function resolveAgent(input: {
   readonly setting: AgentChoice | null;
@@ -91,8 +91,8 @@ export function resolveAgent(input: {
   readonly bundledAvailable?: (id: string) => boolean;
   readonly catalog?: readonly BundledAgent[];
   /**
-   * What to tell the person to do next when a choice had to be dropped. The lotse CLI passes its own
-   * remedy (`choose again with \`lotse agents --use\`); a host app that embeds the widget answers in its
+   * What to tell the person to do next when a choice had to be dropped. The lotsman CLI passes its own
+   * remedy (`choose again with \`lotsman agents --use\`); a host app that embeds the widget answers in its
    * own surface, so it passes none and the note stays factual instead of naming a command that cannot
    * run there.
    */
